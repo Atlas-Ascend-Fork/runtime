@@ -433,10 +433,10 @@ uint32_t CaptureModel::GetSubModelStreamIdBySqId(const uint16_t sqId)
 
 void CaptureModel::ClearCachedAllSubModels() { cachedAllSubModels_.clear(); }
 
-rtError_t CaptureModel::InitAllSubCaptureModelCondTaskByDefValue()
+rtError_t CaptureModel::InitAllSubCaptureModelCondTaskByDefValue(Stream* const stm)
 {
     for (const auto& it : condHandleTaskMap_) {
-        rtError_t error = it.second->InitCondTaskByDefValue();
+        rtError_t error = it.second->InitCondTaskByDefValue(stm);
         ERROR_RETURN(
             error, "Init cond task default value failed, model_id=%u, retCode=%#x.", Id_(),
             static_cast<uint32_t>(error));
@@ -445,7 +445,7 @@ rtError_t CaptureModel::InitAllSubCaptureModelCondTaskByDefValue()
     auto& allSubModels = GetAllSubCaptureModels();
     for (CaptureModel* subModel : allSubModels) {
         for (const auto& it : subModel->condHandleTaskMap_) {
-            rtError_t error = it.second->InitCondTaskByDefValue();
+            rtError_t error = it.second->InitCondTaskByDefValue(stm);
             ERROR_RETURN(
                 error, "Sub model init cond task default value failed, root model_id=%u, sub model_id=%u, retCode=%#x.",
                 Id_(), subModel->Id_(), static_cast<uint32_t>(error));
@@ -494,7 +494,7 @@ rtError_t CaptureModel::PreModelExecute(Stream* const stm, ExternalEventRefreshI
         error != RT_ERROR_NONE, error, "Build SQ/CQ failed, stream_id=%d, model_id=%u, retCode=%#x.", stm->Id_(), Id_(),
         static_cast<uint32_t>(error));
 
-    error = InitAllSubCaptureModelCondTaskByDefValue();
+    error = InitAllSubCaptureModelCondTaskByDefValue(stm);
     COND_RETURN_ERROR_MSG_INNER(
         error != RT_ERROR_NONE, error,
         "Failed to initialize sub acl graph condition value, stream_id=%d, model_id=%u, retCode=%#x.", stm->Id_(),
@@ -1677,6 +1677,14 @@ rtError_t CaptureModel::Update(void)
 {
     uint32_t releaseSqNum = 0U;
     uint32_t releaseNtyNum = 0U;
+    const std::lock_guard<std::mutex> executeLock(executionOrderMutex_);
+    if (IsCaptureModelRunning()) {
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1017, "Checking whether the capture model is updatable", "modelRI",
+            RtFmtMsg("ModelRI (model_id=%u) is in running", Id_()));
+        return RT_ERROR_MODEL_UPDATE_FAILED;
+    }
+
     rtError_t error = ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum);
     ERROR_RETURN(error, "release sq cq failed, model_id=%d.", Id_());
     for (Stream* stm : StreamList_()) {

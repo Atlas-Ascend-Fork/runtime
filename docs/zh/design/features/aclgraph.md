@@ -762,7 +762,7 @@ rtError_t CaptureModel::ExecuteCommon(Stream * const stm, int32_t timeout, const
     // ...
 
     // 初始化所有子模型条件值（Cond 场景）
-    error = InitAllSubCaptureModelCondTaskByDefValue();
+    error = InitAllSubCaptureModelCondTaskByDefValue(stm);
     // ...
 
     ReportCacheTrackData();
@@ -822,7 +822,7 @@ classDiagram
         +Update() rtError_t
         +StoreCondHandleTaskInfo(streamId, taskId, condHandle) rtError_t
         +CheckSubModelsIsEndCapture() bool
-        +InitAllSubCaptureModelCondTaskByDefValue() rtError_t
+        +InitAllSubCaptureModelCondTaskByDefValue(stm) rtError_t
         +UpdateCondTaskFuncCallMemAll() rtError_t
         +GetSqCqTotalNum(streamNum) void
         +ModelEndGraph() rtError_t
@@ -1100,7 +1100,7 @@ rtError_t CaptureModel::BindSqCq(void)
 classDiagram
     class CondHandle {
         -Model* model_
-        -uint32_t defaultValue_
+        -uint64_t defaultValue_
         -rtCondHandleFlag_t flag_
         -rtCondTaskType_t condType_
         -uint32_t condSize_
@@ -1110,7 +1110,7 @@ classDiagram
         -Notify* subModelNotify_
         +Setup(ctx) rtError_t
         +Destroy() rtError_t
-        +InitCondTaskByDefValue() rtError_t
+        +InitCondTaskByDefValue(stm) rtError_t
         +SubModelDestroy() void
         +GetDevAddr() uint64_t*
         +GetSubCaptureModels() vector~Model*~&
@@ -1141,12 +1141,12 @@ public:
 
     rtError_t Setup(Context *ctx);
     rtError_t Destroy();
-    rtError_t InitCondTaskByDefValue();
+    rtError_t InitCondTaskByDefValue(Stream* const stm);
     void SubModelDestroy();
     // ...
 private:
     Model *model_{nullptr};              // 归属的父模型
-    uint32_t defaultValue_{0U};          // 父模型执行时的默认条件值
+    uint64_t defaultValue_{0U};          // 父模型执行时的默认条件值
     rtCondHandleFlag_t flag_;            // ASSIGN_DEFAULT 表示执行时初始化条件值
     rtCondTaskType_t condType_{RT_COND_TASK_TYPE_MAX}; // 条件类型
     uint32_t condSize_{0U};              // 子模型个数
@@ -1248,7 +1248,7 @@ classDiagram
     
     class CondHandle {
         -Model* model_
-        -uint32_t defaultValue_
+        -uint64_t defaultValue_
         -rtCondHandleFlag_t flag_
         -rtCondTaskType_t condType_
         -uint32_t condSize_

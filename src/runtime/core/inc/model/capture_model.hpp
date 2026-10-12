@@ -355,7 +355,7 @@ private:
     rtError_t PrepareExternalWaitsForReplay(ExternalEventRefreshInfo* refreshInfo);
     rtError_t BindStreamToModel(void);
     void ReportCacheTrackData();
-    rtError_t InitAllSubCaptureModelCondTaskByDefValue();
+    rtError_t InitAllSubCaptureModelCondTaskByDefValue(Stream* const stm);
     std::vector<CaptureModel*>& GetAllSubCaptureModels();
     void RestoreJettyForSnapshot();
     rtError_t RefreshJettyInfoList();

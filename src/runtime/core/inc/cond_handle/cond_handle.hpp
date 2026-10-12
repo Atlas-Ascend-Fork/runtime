@@ -28,10 +28,10 @@ public:
 
     rtError_t Setup(Context* ctx);
     rtError_t Destroy();
-    rtError_t InitCondTaskByDefValue();
+    rtError_t InitCondTaskByDefValue(Stream* const stm);
     void SubModelDestroy();
 
-    uint32_t GetDefaultValue() const { return defaultValue_; }
+    uint64_t GetDefaultValue() const { return defaultValue_; }
     rtCondHandleFlag_t GetFlag() const { return flag_; }
     Model* GetParentModel() const { return model_; }
     uint64_t* GetDevAddr() const { return devAddr_; }
@@ -64,8 +64,8 @@ public:
     uint32_t GetCondSize() const { return condSize_; }
 
 private:
-    Model* model_{nullptr};     // 归属的父模型
-    uint32_t defaultValue_{0U}; // 父模型执行时的默认条件值
+    Model* model_{nullptr}; // 归属的父模型
+    uint64_t defaultValue_{0ULL}; // 父模型执行时的默认条件值，构造后不变，兼作异步拷贝任务的 host 源
     rtCondHandleFlag_t flag_; // RT_COND_HANDLE_ASSIGN_DEFAULT表示模型执行时，条件值初始化为defaultValue_
     rtCondTaskType_t condType_{RT_COND_TASK_TYPE_MAX}; // condition type
     uint32_t condSize_{0U};                            // 子模型个数

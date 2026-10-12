@@ -21,6 +21,7 @@
 #include "notify.hpp"
 #include "runtime.hpp"
 #include "api.hpp"
+#include "memcpy_c.hpp"
 #include "error_message_manage.hpp"
 #include "rt_log.h"
 
@@ -97,8 +98,8 @@ rtError_t CondHandle::Setup(Context* ctx)
     ERROR_RETURN(error, "Failed to memset devAddr, retCode=%#x.", static_cast<uint32_t>(error));
 
     RT_LOG(
-        RT_LOG_DEBUG, "CondHandle setup success, model_id=%u, default_value=%u, flag=%s, dev_addr=%p.", model_->Id_(),
-        defaultValue_, CondHandleFlagToString(flag_).c_str(), devAddr_);
+        RT_LOG_DEBUG, "CondHandle setup success, model_id=%u, default_value=%" PRIu64 ", flag=%s, dev_addr=%p.",
+        model_->Id_(), defaultValue_, CondHandleFlagToString(flag_).c_str(), devAddr_);
 
     InitEmbeddedInnerHandle(this);
     CaptureModel* captureModel = dynamic_cast<CaptureModel*>(model_);
@@ -127,31 +128,24 @@ void CondHandle::SetSubModelExeStream(Stream* exeStream)
     return;
 }
 
-rtError_t CondHandle::InitCondTaskByDefValue()
+rtError_t CondHandle::InitCondTaskByDefValue(Stream* const stm)
 {
     if (flag_ != RT_COND_HANDLE_ASSIGN_DEFAULT) {
         return RT_ERROR_NONE;
     }
 
-    Device* dev = context_->Device_();
-    COND_RETURN_ERROR((dev == nullptr), RT_ERROR_DEVICE_NULL, "Device is null, failed to init cond value.");
-
-    Driver* driver = dev->Driver_();
-    COND_RETURN_ERROR((driver == nullptr), RT_ERROR_DRV_NULL, "Driver is null, failed to init cond value.");
-
-    const uint64_t defValue = static_cast<uint64_t>(defaultValue_);
-    const rtError_t error =
-        driver->MemCopySync(devAddr_, sizeof(uint64_t), &defValue, sizeof(uint64_t), RT_MEMCPY_HOST_TO_DEVICE);
-    if (error == RT_ERROR_DRV_NOT_SUPPORT) {
-        RT_LOG_OUTER_MSG_IMPL(
-            ErrorCode::EE1016, "Initializing the ACL Graph condition value",
-            "The driver does not support synchronous host-to-device memory copy");
-    }
+    COND_RETURN_ERROR((stm == nullptr), RT_ERROR_STREAM_NULL, "Stream is null, failed to init cond value.");
+    // 默认值初始化须在模型执行任务之前，异步拷贝任务可以天然保证默认值刷新的时机正确性。
+    // defaultValue_ 构造后不变，可直接作为拷贝任务的 host 源
+    uint64_t realSize = 0;
+    const rtError_t error = MemcopyAsync(
+        devAddr_, sizeof(uint64_t), &defaultValue_, sizeof(uint64_t), RT_MEMCPY_HOST_TO_DEVICE, stm, &realSize);
     ERROR_RETURN(
-        error, "Failed to init cond default value, condFlag=%s, condType=%s, condSize=%u, defValue=%u retCode=%#x.",
+        error,
+        "Failed to init cond default value, condFlag=%s, condType=%s, condSize=%u, defValue=%" PRIu64 ", retCode=%#x.",
         CondHandleFlagToString(flag_).c_str(), CondTaskTypeToString(condType_).c_str(), condSize_, defaultValue_,
         static_cast<uint32_t>(error));
-    RT_LOG(RT_LOG_DEBUG, "defValue=%u, condType=%s", defValue, CondTaskTypeToString(condType_).c_str());
+    RT_LOG(RT_LOG_DEBUG, "defValue=%" PRIu64 ", condType=%s", defaultValue_, CondTaskTypeToString(condType_).c_str());
 
     return RT_ERROR_NONE;
 }
