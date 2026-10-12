@@ -6349,10 +6349,8 @@ rtError_t ApiErrorDecorator::GetErrorVerbose(const uint32_t deviceId, rtErrorInf
 rtError_t ApiErrorDecorator::RepairError(const uint32_t deviceId, const rtErrorInfo* const errorInfo)
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(errorInfo, RT_ERROR_INVALID_VALUE, "Rectifying the device faults");
-    if (errorInfo->tryRepair == 0U) {
-        RT_LOG(RT_LOG_ERROR, "Repair flag is invalid [%u], should be 1.", errorInfo->tryRepair);
-        return RT_ERROR_INVALID_VALUE;
-    }
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+        errorInfo->tryRepair == 0U, RT_ERROR_INVALID_VALUE, "Rectifying the device faults", errorInfo->tryRepair, "1");
     const Runtime* const rtInstance = Runtime::Instance();
     uint32_t realDeviceId = 0U;
     rtError_t error = rtInstance->ChgUserDevIdToDeviceId(deviceId, &realDeviceId);
