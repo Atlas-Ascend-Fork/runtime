@@ -20,6 +20,7 @@
 #include "thread_local_container.hpp"
 #include "global_state_manager.hpp"
 #include "stream.hpp"
+#include "stream_mem_pool.hpp"
 #include <vector>
 #define INVALID_UINT32 (0xFFFFFFFFU)
 
@@ -167,7 +168,7 @@ rtError_t rtStreamSynchronize(rtStream_t stm)
         RtFmtMsg(
             "Stream (stream_id=%d) is in abort state. Call a stream synchronization API only after the stream abort "
             "operation has completed successfully",
-            exeStream->Id_()));
+            (exeStream != nullptr) ? exeStream->Id_() : INVALID_STREAM_ID));
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -196,7 +197,7 @@ rtError_t rtStreamSynchronizeWithTimeout(rtStream_t stm, int32_t timeout)
         RtFmtMsg(
             "Stream (stream_id=%d) is in abort state. Call a stream synchronization API only after the stream abort "
             "operation has completed successfully",
-            exeStream->Id_()));
+            (exeStream != nullptr) ? exeStream->Id_() : INVALID_STREAM_ID));
 #ifndef CFG_DEV_PLATFORM_PC
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
 #else
