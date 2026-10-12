@@ -5852,7 +5852,8 @@ rtError_t ApiImpl::GetDeviceSatStatus(void* const outputAddrPtr, const uint64_t 
         "Obtaining the overflow status of tasks in all streams on the current device");
 
     COND_RETURN_ERROR_MSG_INNER(
-        ((curCtx->CtxGetOverflowAddr() == nullptr)), RT_ERROR_DRV_OUT_MEMORY, "Overflow addr can not be null.");
+        ((curCtx->CtxGetOverflowAddr() == nullptr)), RT_ERROR_DRV_OUT_MEMORY,
+        "The overflow detection address is null due to insufficient device memory during memory allocation.");
 
     if (curCtx->Device_()->GetDevProperties().deviceSatStatus == DeviceSatStatus::DEVICE_SAT_STATUS_V2) {
         error = curCtx->GetSatStatusForStars(outputSize, curStm);
@@ -5884,7 +5885,8 @@ rtError_t ApiImpl::CleanDeviceSatStatus(Stream* const stm)
         curStm, curCtx, RT_ERROR_STREAM_CONTEXT, "Clearing the overflow/underflow detection status");
 
     COND_RETURN_ERROR_MSG_INNER(
-        ((curCtx->CtxGetOverflowAddr() == nullptr)), RT_ERROR_DRV_OUT_MEMORY, "Overflow addr can not be null.");
+        ((curCtx->CtxGetOverflowAddr() == nullptr)), RT_ERROR_DRV_OUT_MEMORY,
+        "The overflow detection address is null due to insufficient device memory during memory allocation.");
     const rtError_t error =
         MemSetAsync(curStm, curCtx->CtxGetOverflowAddr(), OVERFLOW_ADDR_MAX_SIZE, 0U, OVERFLOW_ADDR_MAX_SIZE);
     return error;
