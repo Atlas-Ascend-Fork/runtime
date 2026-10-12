@@ -426,6 +426,7 @@ set(libruntime_v200_src_files
     ${xpu_tprt_api_file}
     ${xpu_tprt_src_file}
     ${RUNTIME_CORE_DIR}/src/plugin_manage/v200/plugin_old_arch.cc
+    $<$<NOT:$<STREQUAL:${PRODUCT},ascend031>>:${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg.cc>
     $<$<NOT:$<STREQUAL:${PRODUCT},ascend031>>:${libruntime_v200_src_files_exclude_for_tiny}>
     $<$<STREQUAL:${PRODUCT},ascend031>:${libruntime_src_files_include_for_tiny}>
 )
@@ -443,6 +444,7 @@ set(libruntime_v201_src_files
     ${RUNTIME_CORE_DIR}/src/common/ioctl/v201/ioctl_utils.cc
     ${RUNTIME_CORE_DIR}/src/device/v201/dev_simt_stack_checker.cc
     ${RUNTIME_DIR}/src/runtime/driver/v201/npu_driver.cc
+    ${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
     ${RUNTIME_FEATURE_DIR}/dqs/stars_dqs_cond_isa_helper.cc
     ${RUNTIME_CORE_DIR}/src/kernel/v100/program_plat.cc
     ${RUNTIME_FEATURE_DIR}/snapshot/device_snapshot.cc

@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <limits>
 #include <string>
 #include "memcpy_c.hpp"
 #include "memory_task.h"
@@ -16,6 +17,7 @@
 #include "memset_common.h"
 #include "thread_local_container.hpp"
 #include "inner_thread_local.hpp"
+#include "npu_driver.hpp"
 #include "stream_david.hpp"
 #include "profiler_c.hpp"
 
@@ -323,6 +325,83 @@ rtError_t SetMemcpyDesc(
     }
 
     RT_LOG(RT_LOG_INFO, "Set memcpyDesc info success, srcAddr=%p, dstAddr=%p, count=%llu", srcAddr, dstAddr, count);
+    return RT_ERROR_NONE;
+}
+
+rtError_t MemcopyAsyncForUBDma(
+    void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
+    Stream* const stm, const rtTaskCfgInfo_t* const cfgInfo, const rtD2DAddrCfgInfo_t* const addrCfg)
+{
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(stm, RT_ERROR_STREAM_NULL, "Asynchronous memory copy");
+    if (cpySize == 0U) {
+        return RT_ERROR_NONE;
+    }
+
+    constexpr uint64_t maxSegmentNumPerChunk = 2U;
+    const uint64_t chunkNum = (cpySize / MEMCPY_ASYNC_UB_SIZE) + (((cpySize % MEMCPY_ASYNC_UB_SIZE) != 0U) ? 1U : 0U);
+    COND_RETURN_ERROR(
+        chunkNum > (std::numeric_limits<uint32_t>::max() / maxSegmentNumPerChunk), RT_ERROR_INVALID_VALUE,
+        "The number of host VMM address segments exceeds the upper limit, count=%" PRIu64 ".", cpySize);
+    uint32_t rangeCnt = static_cast<uint32_t>(chunkNum * maxSegmentNumPerChunk);
+    std::unique_ptr<addr_range[]> ranges(new (std::nothrow) addr_range[rangeCnt]);
+    COND_RETURN_ERROR(
+        ranges == nullptr, RT_ERROR_MEMORY_ALLOCATION,
+        "Failed to allocate host VMM address segment array, segmentCapacity=%u.", rangeCnt);
+
+    const bool isH2D = (kind == RT_MEMCPY_HOST_TO_DEVICE);
+    const uint64_t hostAddr = isH2D ? RtPtrToValue(src) : RtPtrToValue(dst);
+    rtError_t error = NpuDriver::MemGetAddrSegOfUB(stm->Device_()->Id_(), hostAddr, cpySize, ranges.get(), &rangeCnt);
+    ERROR_RETURN_MSG_INNER(
+        error, "Get host VMM address segments failed, count=%" PRIu64 ", retCode=%#x.", cpySize,
+        static_cast<uint32_t>(error));
+
+    uint64_t totalSize = 0U;
+    for (uint32_t i = 0U; i < rangeCnt; ++i) {
+        const addr_range& range = ranges[i];
+        if ((range.addr == 0U) || (range.size == 0U) || (range.size > (cpySize - totalSize)) ||
+            (range.addr > (std::numeric_limits<uint64_t>::max() - (range.size - 1U)))) {
+            RT_LOG(
+                RT_LOG_ERROR,
+                "Invalid host VMM address segment, index=%u, segmentCnt=%u, addr=0x%" PRIx64 ", size=%" PRIu64
+                ", count=%" PRIu64 ".",
+                i, rangeCnt, range.addr, range.size, cpySize);
+            return RT_ERROR_DRV_ERR;
+        }
+        totalSize += range.size;
+    }
+    COND_RETURN_ERROR(
+        totalSize != cpySize, RT_ERROR_DRV_ERR,
+        "The total size of host VMM address segments is invalid, segmentCnt=%u, totalSize=%" PRIu64 ", count=%" PRIu64
+        ".",
+        rangeCnt, totalSize, cpySize);
+
+    uint64_t doneSize = 0U;
+    for (uint32_t i = 0U; i < rangeCnt; ++i) {
+        const uint64_t doingSize = ranges[i].size;
+        uint64_t realSize = doingSize;
+        error = MemcopyAsync(
+            static_cast<void*>(static_cast<char_t*>(dst) + doneSize), destMax - doneSize,
+            static_cast<const void*>(static_cast<const char_t*>(src) + doneSize), doingSize, kind, stm, &realSize,
+            nullptr, cfgInfo, addrCfg);
+        if (error != RT_ERROR_NONE) {
+            RT_LOG(
+                RT_LOG_ERROR,
+                "Copy host VMM address segment failed, index=%u, segmentCnt=%u, doneSize=%" PRIu64
+                ", doingSize=%" PRIu64 ", realSize=%" PRIu64 ", retCode=%#x.",
+                i, rangeCnt, doneSize, doingSize, realSize, static_cast<uint32_t>(error));
+            return error;
+        }
+        COND_RETURN_ERROR(
+            realSize != doingSize, RT_ERROR_DRV_ERR,
+            "Invalid actual copy size, index=%u, segmentCnt=%u, doingSize=%" PRIu64 ", realSize=%" PRIu64 ".", i,
+            rangeCnt, doingSize, realSize);
+        doneSize += doingSize;
+        RT_LOG(
+            RT_LOG_DEBUG,
+            "Copy host VMM address segment success, index=%u, segmentCnt=%u, addr=0x%" PRIx64 ", size=%" PRIu64
+            ", doneSize=%" PRIu64 ".",
+            i, rangeCnt, ranges[i].addr, ranges[i].size, doneSize);
+    }
     return RT_ERROR_NONE;
 }
 

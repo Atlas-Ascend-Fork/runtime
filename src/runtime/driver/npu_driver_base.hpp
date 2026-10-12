@@ -138,6 +138,8 @@ drvError_t __attribute__((weak)) halShrIdSetPodPid(const char* name, uint32_t sd
 drvError_t __attribute__((weak)) halParseSDID(uint32_t sdid, struct halSDIDParseInfo* sdid_parse);
 DVresult __attribute__((weak)) halShmemSetPodPid(const char* name, uint32_t sdid, int pid[], int num);
 drvError_t __attribute__((weak)) halUpdateAddress(uint64_t device_addr, uint64_t len);
+drvError_t __attribute__((weak))
+halMemGetAddrSeg(uint32_t devId, struct addr_range addrIn, struct addr_range* addrOut, uint32_t* cnt, uint64_t flag);
 
 drvError_t __attribute__((weak))
 halAsyncDmaCreate(uint32_t devId, struct halAsyncDmaInputPara* in, struct halAsyncDmaOutputPara* out);

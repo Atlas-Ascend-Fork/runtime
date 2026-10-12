@@ -225,6 +225,7 @@ set(libruntime_src_files_include_for_tiny
     ${RUNTIME_CORE_DIR}/src/pool/event_pool_stub.cc
     ${RUNTIME_CORE_DIR}/src/pool/event_expanding_stub.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_stub.cc
+    ${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
     ${RUNTIME_CORE_DIR}/src/engine/engine_factory_stub.cc
     ${RUNTIME_CORE_DIR}/src/kernel/binary_loader.cc
     ${RUNTIME_CORE_DIR}/src/kernel/json_parse.cc

@@ -706,6 +706,8 @@ public:
         const uint32_t sdid, uint32_t* srvId, uint32_t* chipId, uint32_t* dieId, uint32_t* pyhId) override;
     static rtError_t ShmemSetPodPid(const char* name, uint32_t sdid, int32_t pid[], int32_t num);
     static rtError_t UpdateAddrVA2PA(uint64_t devAddr, uint64_t len);
+    static rtError_t MemGetAddrSegOfUB(
+        uint32_t devId, uint64_t hostAddr, uint64_t cpySize, struct addr_range* outRange, uint32_t* outRangeCnt);
     static rtError_t QueryUbInfo(const uint32_t deviceId, rtUbDevQueryCmd cmd, void* const devInfo);
     static rtError_t GetDevResAddress(
         const uint32_t deviceId, const rtDevResInfo* const resInfo, uint64_t* resAddr, uint32_t* resLen);

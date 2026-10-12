@@ -30,6 +30,10 @@ rtError_t MemcopyAsync(
     void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
     Stream* const stm, uint64_t* const realSize, const std::shared_ptr<void>& guardMem = nullptr,
     const rtTaskCfgInfo_t* const cfgInfo = nullptr, const rtD2DAddrCfgInfo_t* const addrCfg = nullptr);
+rtError_t MemcopyAsyncForUBDma(
+    void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
+    Stream* const stm, const rtTaskCfgInfo_t* const cfgInfo = nullptr,
+    const rtD2DAddrCfgInfo_t* const addrCfg = nullptr);
 rtError_t MemSetAsync(
     Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount);
 rtError_t SetMemcpyDesc(

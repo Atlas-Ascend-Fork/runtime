@@ -323,6 +323,7 @@ set(runtimeut_src_list
     ${TOP_DIR}/src/runtime/driver/driver.cc
     ${TOP_DIR}/src/runtime/driver/npu_driver_dcache_lock_common.cpp
     ${TOP_DIR}/src/runtime/driver/npu_driver_tiny.cpp
+    ${TOP_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
     ${TOP_DIR}/src/runtime/feature/model/model.cc
     ${TOP_DIR}/src/runtime/feature/model/model_stars.cc
     ${TOP_DIR}/src/runtime/feature/model/model_rebuild.cc

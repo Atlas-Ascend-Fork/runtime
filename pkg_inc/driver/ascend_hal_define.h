@@ -834,6 +834,11 @@ enum ADVISE_MEM_TYPE {
 
 enum MEMCPY_SUMBIT_TYPE { MEMCPY_SUMBIT_SYNC = 0, MEMCPY_SUMBIT_ASYNC = 1, MEMCPY_SUMBIT_MAX_TYPE };
 
+struct addr_range {
+    unsigned long long addr;
+    unsigned long long size;
+};
+
 struct drvMem2D {
     unsigned long long* dst;       /**< destination memory address */
     unsigned long long dpitch;     /**< pitch of destination memory */
@@ -1546,6 +1551,7 @@ typedef enum tagDrvFeature {
     FEATURE_SVM_MEM_REGISTER_HOST_PINNED = 13,
     FEATURE_DMS_GET_BOARD_LOCATION = 14,
     FEATURE_SVM_PROCESS_DEVICE_MEM_SNAPSHOT = 15,
+    FEATURE_SVM_GET_ADDR_SEG = 16,
     FEATURE_MAX
 } drvFeature_t;
 /*=============================== query feature END ===============================*/

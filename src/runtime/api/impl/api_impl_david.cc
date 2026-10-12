@@ -970,6 +970,11 @@ rtError_t ApiImplDavid::MemcpyAsync(
     }
     COND_RETURN_AND_MSG_INVALID_CONTEXT_STREAM_WITH_FUNC_DESC(
         curStm, curCtx, RT_ERROR_STREAM_CONTEXT, "Asynchronous memory copy");
+    if (Runtime::Instance()->GetConnectUbFlag() &&
+        ((kind == RT_MEMCPY_HOST_TO_DEVICE) || (kind == RT_MEMCPY_DEVICE_TO_HOST)) &&
+        NpuDriver::CheckIsSupportFeature(curStm->Device_()->Id_(), FEATURE_SVM_GET_ADDR_SEG)) {
+        return MemcopyAsyncForUBDma(dst, destMax, src, cnt, kind, curStm, cfgInfo, addrCfg);
+    }
 
     uint32_t transType = UINT32_MAX;
     rtError_t error = RT_ERROR_NONE;

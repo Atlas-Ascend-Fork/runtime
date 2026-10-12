@@ -484,6 +484,7 @@ macro(add_runtime_library target_name)
         ${RUNTIME_DIR}/src/runtime/driver/npu_driver_queue.cc
         ${RUNTIME_DIR}/src/runtime/driver/npu_driver_res.cc
         ${RUNTIME_DIR}/src/runtime/driver/npu_driver_tiny.cpp
+        ${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
         ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_common.cpp
         ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_opb.cpp
         $<TARGET_OBJECTS:runtime_platform_arch5162>

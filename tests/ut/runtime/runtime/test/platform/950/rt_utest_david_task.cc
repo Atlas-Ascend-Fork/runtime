@@ -106,6 +106,59 @@ static void* NothrowNewFail(size_t size, const std::nothrow_t& tag)
 namespace {
 std::vector<RtDebugSendInfo> g_davidDebugRequests;
 
+struct UbMemcpyCall {
+    void* dst;
+    uint64_t destMax;
+    const void* src;
+    uint64_t size;
+    rtMemcpyKind_t kind;
+};
+
+std::vector<addr_range> g_addrRanges;
+std::vector<UbMemcpyCall> g_ubMemcpyCalls;
+uint64_t g_ubMemcpyMaxRealSize = UINT64_MAX;
+uint64_t g_queriedHostAddr = 0U;
+uint64_t g_queriedCopySize = 0U;
+
+rtError_t GetAddrRangesStub(
+    uint32_t devId, uint64_t hostAddr, uint64_t cpySize, struct addr_range* outRange, uint32_t* outRangeCnt)
+{
+    UNUSED(devId);
+    g_queriedHostAddr = hostAddr;
+    g_queriedCopySize = cpySize;
+    if (*outRangeCnt < g_addrRanges.size()) {
+        return RT_ERROR_INVALID_VALUE;
+    }
+    for (size_t i = 0U; i < g_addrRanges.size(); ++i) {
+        outRange[i] = g_addrRanges[i];
+    }
+    *outRangeCnt = static_cast<uint32_t>(g_addrRanges.size());
+    return RT_ERROR_NONE;
+}
+
+rtError_t RecordUbMemcpyAsyncStub(
+    void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
+    Stream* const stm, uint64_t* const realSize, const std::shared_ptr<void>& guardMem,
+    const rtTaskCfgInfo_t* const cfgInfo, const rtD2DAddrCfgInfo_t* const addrCfg)
+{
+    UNUSED(stm);
+    UNUSED(guardMem);
+    UNUSED(cfgInfo);
+    UNUSED(addrCfg);
+    g_ubMemcpyCalls.push_back({dst, destMax, src, cpySize, kind});
+    *realSize = (cpySize > g_ubMemcpyMaxRealSize) ? g_ubMemcpyMaxRealSize : cpySize;
+    return RT_ERROR_NONE;
+}
+
+void ResetUbMemcpyStubState()
+{
+    g_addrRanges.clear();
+    g_ubMemcpyCalls.clear();
+    g_ubMemcpyMaxRealSize = UINT64_MAX;
+    g_queriedHostAddr = 0U;
+    g_queriedCopySize = 0U;
+}
+
 rtError_t RecordDavidDebugRequest(
     Driver* const driver, const uint32_t sqId, uint8_t* const sqe, const uint32_t deviceId, const uint32_t tsId)
 {
@@ -321,6 +374,7 @@ protected:
         ((Runtime*)Runtime::Instance())->DeviceRelease(device_);
         ((Runtime*)Runtime::Instance())->SetIsUserSetSocVersion(false);
         rtDeviceReset(0);
+        ResetUbMemcpyStubState();
         GlobalMockObject::reset();
     }
 
@@ -722,6 +776,109 @@ TEST_F(TaskTestDavid, TestMemcopyAsyncFail)
 
     ret = rtStreamDestroy(stream);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+}
+
+TEST_F(TaskTestDavid, MemcopyAsyncForUBDmaUsesDriverSegmentSizesForH2D)
+{
+    uint8_t hostBuffer[10] = {};
+    uint8_t deviceBuffer[10] = {};
+    ResetUbMemcpyStubState();
+    g_addrRanges = {{0x1000U, 4U}, {0x2000U, 6U}};
+    MOCKER(NpuDriver::MemGetAddrSegOfUB).expects(once()).will(invoke(GetAddrRangesStub));
+    MOCKER(MemcopyAsync).expects(exactly(2)).will(invoke(RecordUbMemcpyAsyncStub));
+
+    const rtError_t error = MemcopyAsyncForUBDma(
+        deviceBuffer, sizeof(deviceBuffer), hostBuffer, sizeof(deviceBuffer), RT_MEMCPY_HOST_TO_DEVICE, stream_);
+
+    ASSERT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(g_queriedHostAddr, RtPtrToValue(hostBuffer));
+    EXPECT_EQ(g_queriedCopySize, sizeof(deviceBuffer));
+    ASSERT_EQ(g_ubMemcpyCalls.size(), 2U);
+    EXPECT_EQ(g_ubMemcpyCalls[0].dst, static_cast<void*>(deviceBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].destMax, sizeof(deviceBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].src, static_cast<const void*>(hostBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].size, 4U);
+    EXPECT_EQ(g_ubMemcpyCalls[0].kind, RT_MEMCPY_HOST_TO_DEVICE);
+    EXPECT_EQ(g_ubMemcpyCalls[1].dst, static_cast<void*>(deviceBuffer + 4U));
+    EXPECT_EQ(g_ubMemcpyCalls[1].destMax, sizeof(deviceBuffer) - 4U);
+    EXPECT_EQ(g_ubMemcpyCalls[1].src, static_cast<const void*>(hostBuffer + 4U));
+    EXPECT_EQ(g_ubMemcpyCalls[1].size, 6U);
+    EXPECT_EQ(g_ubMemcpyCalls[1].kind, RT_MEMCPY_HOST_TO_DEVICE);
+}
+
+TEST_F(TaskTestDavid, MemcopyAsyncForUBDmaUsesDriverSegmentSizesForD2H)
+{
+    uint8_t hostBuffer[10] = {};
+    uint8_t deviceBuffer[10] = {};
+    ResetUbMemcpyStubState();
+    g_addrRanges = {{0x1000U, 4U}, {0x2000U, 6U}};
+    MOCKER(NpuDriver::MemGetAddrSegOfUB).expects(once()).will(invoke(GetAddrRangesStub));
+    MOCKER(MemcopyAsync).expects(exactly(2)).will(invoke(RecordUbMemcpyAsyncStub));
+
+    const rtError_t error = MemcopyAsyncForUBDma(
+        hostBuffer, sizeof(hostBuffer), deviceBuffer, sizeof(deviceBuffer), RT_MEMCPY_DEVICE_TO_HOST, stream_);
+
+    ASSERT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(g_queriedHostAddr, RtPtrToValue(hostBuffer));
+    ASSERT_EQ(g_ubMemcpyCalls.size(), 2U);
+    EXPECT_EQ(g_ubMemcpyCalls[0].dst, static_cast<void*>(hostBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].destMax, sizeof(deviceBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].src, static_cast<const void*>(deviceBuffer));
+    EXPECT_EQ(g_ubMemcpyCalls[0].size, 4U);
+    EXPECT_EQ(g_ubMemcpyCalls[0].kind, RT_MEMCPY_DEVICE_TO_HOST);
+    EXPECT_EQ(g_ubMemcpyCalls[1].dst, static_cast<void*>(hostBuffer + 4U));
+    EXPECT_EQ(g_ubMemcpyCalls[1].destMax, sizeof(deviceBuffer) - 4U);
+    EXPECT_EQ(g_ubMemcpyCalls[1].src, static_cast<const void*>(deviceBuffer + 4U));
+    EXPECT_EQ(g_ubMemcpyCalls[1].size, 6U);
+    EXPECT_EQ(g_ubMemcpyCalls[1].kind, RT_MEMCPY_DEVICE_TO_HOST);
+}
+
+TEST_F(TaskTestDavid, MemcopyAsyncForUBDmaRejectsInvalidDriverSegments)
+{
+    uint8_t hostBuffer[10] = {};
+    uint8_t deviceBuffer[10] = {};
+    ResetUbMemcpyStubState();
+    g_addrRanges = {{RtPtrToValue(hostBuffer), 4U}, {RtPtrToValue(hostBuffer + 4U), 5U}};
+    MOCKER(NpuDriver::MemGetAddrSegOfUB).expects(once()).will(invoke(GetAddrRangesStub));
+    MOCKER(MemcopyAsync).expects(never());
+
+    const rtError_t error = MemcopyAsyncForUBDma(
+        deviceBuffer, sizeof(deviceBuffer), hostBuffer, sizeof(deviceBuffer), RT_MEMCPY_HOST_TO_DEVICE, stream_);
+
+    EXPECT_EQ(error, RT_ERROR_DRV_ERR);
+    EXPECT_TRUE(g_ubMemcpyCalls.empty());
+}
+
+TEST_F(TaskTestDavid, MemcopyAsyncForUBDmaRejectsPartialSegmentCopy)
+{
+    uint8_t hostBuffer[10] = {};
+    uint8_t deviceBuffer[10] = {};
+    ResetUbMemcpyStubState();
+    g_addrRanges = {{0x1000U, sizeof(hostBuffer)}};
+    g_ubMemcpyMaxRealSize = 4U;
+    MOCKER(NpuDriver::MemGetAddrSegOfUB).expects(once()).will(invoke(GetAddrRangesStub));
+    MOCKER(MemcopyAsync).expects(once()).will(invoke(RecordUbMemcpyAsyncStub));
+
+    const rtError_t error = MemcopyAsyncForUBDma(
+        deviceBuffer, sizeof(deviceBuffer), hostBuffer, sizeof(hostBuffer), RT_MEMCPY_HOST_TO_DEVICE, stream_);
+
+    EXPECT_EQ(error, RT_ERROR_DRV_ERR);
+    ASSERT_EQ(g_ubMemcpyCalls.size(), 1U);
+    EXPECT_EQ(g_ubMemcpyCalls[0].size, sizeof(hostBuffer));
+}
+
+TEST_F(TaskTestDavid, MemcopyAsyncForUBDmaRejectsSegmentCountOverflow)
+{
+    uint8_t hostBuffer = 0U;
+    uint8_t deviceBuffer = 0U;
+    ResetUbMemcpyStubState();
+    MOCKER(NpuDriver::MemGetAddrSegOfUB).expects(never());
+    MOCKER(MemcopyAsync).expects(never());
+
+    const rtError_t error =
+        MemcopyAsyncForUBDma(&deviceBuffer, UINT64_MAX, &hostBuffer, UINT64_MAX, RT_MEMCPY_HOST_TO_DEVICE, stream_);
+
+    EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
 }
 
 TEST_F(TaskTestDavid, TestMdlEndGraphForAicpuStream)
