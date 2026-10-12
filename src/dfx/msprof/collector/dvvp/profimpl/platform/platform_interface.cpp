@@ -161,6 +161,8 @@ std::vector<std::string> PlatformInterface::GetHiddenCliArgs() const { return {}
 
 uint16_t PlatformInterface::GetMaxMonitorNumber() const { return MAX_COLLECT_MONITOR_NUM; }
 
+uint32_t PlatformInterface::GetAccProfileFixedCoreMask() const { return 0; }
+
 uint16_t PlatformInterface::GetQosMonitorNumber() const { return MAX_COLLECT_MONITOR_NUM; }
 
 uint16_t PlatformInterface::GetBiuPerfGroupNum() const { return BIU_PERF_HIGHER_GROUP_NUM; }

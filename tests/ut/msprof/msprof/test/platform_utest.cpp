@@ -162,6 +162,7 @@ TEST_F(PLATFORM_UTEST, NtsMetricsReturnsEmptyBeforePlatformInit)
     EXPECT_EQ(PROFILING_SUCCESS, platform->Uninit());
 
     EXPECT_EQ("", platform->GetNtsEvents("PipeUtilization"));
+    EXPECT_EQ(0U, platform->GetAccProfileFixedCoreMask());
 }
 
 TEST_F(PLATFORM_UTEST, DefaultPlatformInterfaceNtsMetricsIsEmpty)

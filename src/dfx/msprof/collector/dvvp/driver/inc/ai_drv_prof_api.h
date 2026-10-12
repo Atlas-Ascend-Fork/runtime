@@ -442,7 +442,8 @@ struct DrvPeripheralProfileCfg {
           cfgMode(0),
           aicMode(0),
           bufLen(0),
-          aivMode(0)
+          aivMode(0),
+          fixedCoreMask(0)
     {}
     virtual ~DrvPeripheralProfileCfg() {}
     bool startSuccess;
@@ -456,6 +457,7 @@ struct DrvPeripheralProfileCfg {
     uint32_t aicMode;
     uint32_t bufLen;
     uint32_t aivMode;
+    uint32_t fixedCoreMask; // Non-zero value overrides the core-list derived mask.
     std::string profDataFilePath;
     std::string profDataFile;
 };

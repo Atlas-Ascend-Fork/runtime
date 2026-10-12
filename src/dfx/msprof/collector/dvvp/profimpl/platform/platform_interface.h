@@ -256,6 +256,8 @@ public:
     virtual std::string GetL2CacheEvents();
     virtual PlatformFeature PmuMetricsToFeature(const std::string& key) const;
     virtual uint16_t GetMaxMonitorNumber() const;
+    // Fixed core mask for ACC profile. Zero means the mask is derived from the core list.
+    virtual uint32_t GetAccProfileFixedCoreMask() const;
     virtual uint16_t GetQosMonitorNumber() const;
     virtual std::vector<BiuPerfChannelInfo> GetBiuPerfChannelInfos(
         const std::vector<uint32_t>& groupVector, uint32_t groupNum) const;

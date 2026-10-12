@@ -386,6 +386,14 @@ uint16_t Platform::GetMaxMonitorNumber() const
     return platform_->GetMaxMonitorNumber();
 }
 
+uint32_t Platform::GetAccProfileFixedCoreMask() const
+{
+    if (platform_ == nullptr) {
+        return 0;
+    }
+    return platform_->GetAccProfileFixedCoreMask();
+}
+
 int32_t Platform::GetMaxAiPmuEvent() const
 {
     if (platform_ == nullptr) {
