@@ -532,6 +532,7 @@ struct ModelSerialSchedTaskInfo {
     uint32_t pid;
     uint32_t groupId;
     uint32_t exeSqId;
+    uint32_t modelSchedMode;
 };
 
 } // namespace runtime

@@ -526,3 +526,33 @@ TEST_F(UTEST_ACL_Modelri, TestaclmdlRICaptureToModelRIBegin)
     ret = aclmdlRICaptureToModelRIBegin(stream, modelRI, mode);
     EXPECT_EQ(ret, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
 }
+
+TEST_F(UTEST_ACL_Modelri, TestaclmdlRISetAttribute)
+{
+    aclmdlRI modelRI = (aclmdlRI)0x01;
+    int32_t schMode = RT_MDL_SCH_EXCLUSIVE;
+    auto ret = aclmdlRISetAttribute(modelRI, ACL_MDL_ATTR_SCH_MODE_INT32, &schMode);
+    EXPECT_EQ(ret, ACL_SUCCESS);
+
+    ret = aclmdlRISetAttribute(nullptr, ACL_MDL_ATTR_SCH_MODE_INT32, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+
+    ret = aclmdlRISetAttribute(modelRI, ACL_MDL_ATTR_SCH_MODE_INT32, nullptr);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+
+    ret = aclmdlRISetAttribute(modelRI, ACL_MDL_ATTR_RESERVED, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+
+    ret = aclmdlRISetAttribute(modelRI, static_cast<aclrtModelAttr>(ACL_MDL_ATTR_RESERVED + 1), &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtsSetModelAttr(_, _, _))
+        .WillOnce(Return(ACL_ERROR_RT_PARAM_INVALID));
+    ret = aclmdlRISetAttribute(modelRI, ACL_MDL_ATTR_SCH_MODE_INT32, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtsSetModelAttr(_, _, _))
+        .WillOnce(Return(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+    ret = aclmdlRISetAttribute(modelRI, ACL_MDL_ATTR_SCH_MODE_INT32, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+}

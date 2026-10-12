@@ -808,6 +808,11 @@ rtError_t ApiDecorator::ModelSetSchGroupId(Model* const mdl, const int16_t schGr
     return impl_->ModelSetSchGroupId(mdl, schGrpId);
 }
 
+rtError_t ApiDecorator::ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value)
+{
+    return impl_->ModelAttrSet(mdl, attrId, value);
+}
+
 rtError_t ApiDecorator::ModelTaskUpdate(
     Stream* desStm, uint32_t desTaskId, Stream* sinkStm, rtMdlTaskUpdateInfo_t* para)
 {

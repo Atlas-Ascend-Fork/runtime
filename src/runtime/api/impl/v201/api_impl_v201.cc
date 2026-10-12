@@ -10,7 +10,9 @@
 
 #include "api_impl_v201.hpp"
 
+#include "context.hpp"
 #include "dqs_c.hpp"
+#include "error_message_manage.hpp"
 
 namespace cce {
 namespace runtime {
@@ -35,6 +37,24 @@ rtError_t ApiImplV201::StreamWaitEvent(Stream* const stm, Event* const evt, cons
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     }
     return ApiImplDavid::StreamWaitEvent(stm, evt, timeout, flag);
+}
+
+// model
+rtError_t ApiImplV201::ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value)
+{
+    RT_LOG(RT_LOG_INFO, "ModelAttrSet, attrId=%d.", static_cast<int32_t>(attrId));
+    Context* const curCtx = CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
+
+    COND_RETURN_AND_MSG_INVALID_CONTEXT_MODEL_WITH_FUNC_DESC(
+        mdl, curCtx, RT_ERROR_MODEL_CONTEXT, "Setting a model attribute");
+    if (attrId != RT_MODEL_ATTR_SCH_MODE) {
+        RT_LOG_OUTER_MSG_INVALID_PARAM(attrId);
+        return RT_ERROR_INVALID_VALUE;
+    }
+    const rtMdlSchMode schMode = *RtPtrToPtr<rtMdlSchMode*>(value);
+    mdl->SetSchMode((schMode == RT_MDL_SCH_EXCLUSIVE) ? RT_MODEL_SCHED_EXCLUSIVE : RT_MODEL_SCHED_NORMAL);
+    return RT_ERROR_NONE;
 }
 
 } // namespace runtime

@@ -217,6 +217,18 @@ VISIBILITY_DEFAULT
 rtError_t rtsModelGetId(rtModel_t mdl, uint32_t* modelId) { return rtModelGetId(mdl, modelId); }
 
 VISIBILITY_DEFAULT
+rtError_t rtsSetModelAttr(rtModel_t mdl, rtModelAttr modelAttrId, void* value)
+{
+    Api* const apiInstance = Api::Instance();
+    NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
+    RT_VALIDATE_AND_UNWRAP_OBJECT(mdl, Model, realModel);
+
+    const rtError_t error = apiInstance->ModelAttrSet(realModel, modelAttrId, value);
+    ERROR_RETURN_WITH_EXT_ERRCODE(error);
+    return ACL_RT_SUCCESS;
+}
+
+VISIBILITY_DEFAULT
 rtError_t rtsModelAbort(rtModel_t mdl) { return rtModelAbort(mdl); }
 
 #ifdef __cplusplus

@@ -186,6 +186,7 @@ const std::map<AclProfType, std::string> PROF_TYPE_TO_NAMES = {
     {AclProfType::AclrtGetFunctionName, "aclrtGetFunctionName"},
     {AclProfType::AclmdlRISetName, "aclmdlRISetName"},
     {AclProfType::AclmdlRIGetName, "aclmdlRIGetName"},
+    {AclProfType::AclmdlRISetAttribute, "aclmdlRISetAttribute"},
     {AclProfType::AclrtGetBufFromChain, "aclrtGetBufFromChain"},
     {AclProfType::AclrtGetBufChainNum, "aclrtGetBufChainNum"},
     {AclProfType::AclrtAppendBufChain, "aclrtAppendBufChain"},

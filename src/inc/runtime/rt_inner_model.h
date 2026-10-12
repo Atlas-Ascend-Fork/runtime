@@ -17,6 +17,16 @@
 extern "C" {
 #endif
 
+typedef enum tagRtModelAttr {
+    RT_MODEL_ATTR_SCH_MODE = 0, // schedule mode attribute, value is rtMdlSchMode
+    RT_MODEL_ATTR_BUFF,         // reserved
+} rtModelAttr;
+
+typedef enum tagRtMdlSchMode {
+    RT_MDL_SCH_DEFAULT = 0,   // default mode
+    RT_MDL_SCH_EXCLUSIVE = 1, // exclusive mode
+} rtMdlSchMode;
+
 /**
  * @ingroup dvrt_base
  * @brief condition task handle.
@@ -146,6 +156,17 @@ RTS_API rtError_t rtStreamAddCondTask(rtCondTaskParams params, rtStream_t stm, u
  * @return RT_ERROR_INVALID_VALUE for error input
  */
 RTS_API rtError_t rtStreamBeginCaptureToModel(rtStream_t stm, rtModel_t mdl, const rtStreamCaptureMode mode);
+
+/**
+ * @ingroup rt_model
+ * @brief set model attribute
+ * @param [in] mdl           model to set attribute
+ * @param [in] modelAttrId   attribute type, only RT_MODEL_ATTR_SCH_MODE is supported currently
+ * @param [in] value         attribute value, RT_MODEL_ATTR_SCH_MODE takes rtMdlSchMode value
+ * @return ACL_RT_SUCCESS for ok
+ * @return ACL_ERROR_RT_PARAM_INVALID for error input
+ */
+RTS_API rtError_t rtsSetModelAttr(rtModel_t mdl, rtModelAttr modelAttrId, void* value);
 
 #if defined(__cplusplus)
 }

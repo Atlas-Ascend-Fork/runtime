@@ -87,6 +87,7 @@ static rtError_t InitModelSerialSchedTaskCommon(
     modelTask->exeSqId = param->stream->GetSqId();
     modelTask->groupId = param->stream->GetGroupId();
     modelTask->modelId = param->model->Id_();
+    modelTask->modelSchedMode = static_cast<uint32_t>(param->model->GetSchMode());
 
     const auto& headStmList = param->model->GetHeadStreamList_();
     COND_RETURN_ERROR_MSG_INNER(
@@ -251,6 +252,7 @@ static void FillModelSerialSchedSqeCommon(
     aicpuDqsSqe->notifyId = modelTask->notifyId;
     aicpuDqsSqe->pid = modelTask->pid;
     aicpuDqsSqe->userGroupId = modelTask->groupId;
+    aicpuDqsSqe->schedMode = modelTask->modelSchedMode;
 }
 
 void ConstructSqeForModelSerialSchedPreProcTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)

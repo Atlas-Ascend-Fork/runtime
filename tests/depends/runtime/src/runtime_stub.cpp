@@ -1956,6 +1956,14 @@ rtError_t aclStub::rtsModelGetName(rtModel_t mdl, const uint32_t maxLen, char_t*
     return RT_ERROR_NONE;
 }
 
+rtError_t aclStub::rtsSetModelAttr(rtModel_t mdl, rtModelAttr modelAttrId, void* value)
+{
+    (void)mdl;
+    (void)modelAttrId;
+    (void)value;
+    return RT_ERROR_NONE;
+}
+
 rtError_t aclStub::rtsBinaryLoadFromData(
     const void* const data, const uint64_t length, const rtLoadBinaryConfig_t* const optionalCfg, rtBinHandle* handle)
 {
@@ -4197,6 +4205,11 @@ rtError_t rtsModelSetName(rtModel_t mdl, const char_t* mdlName)
 rtError_t rtsModelGetName(rtModel_t mdl, const uint32_t maxLen, char_t* const mdlName)
 {
     return MockFunctionTest::aclStubInstance().rtsModelGetName(mdl, maxLen, mdlName);
+}
+
+rtError_t rtsSetModelAttr(rtModel_t mdl, rtModelAttr modelAttrId, void* value)
+{
+    return MockFunctionTest::aclStubInstance().rtsSetModelAttr(mdl, modelAttrId, value);
 }
 
 rtError_t rtsBinaryLoadFromData(

@@ -195,7 +195,8 @@ struct RtDavidStarsAicpuDqsSqe {
     uint32_t userGroupId : 16;
     uint32_t sqId : 16;
     uint32_t pid;
-    uint32_t res1[5];
+    uint32_t schedMode;
+    uint32_t res1[4];
 
     /* word14 */
     uint32_t subTopicId : 12;

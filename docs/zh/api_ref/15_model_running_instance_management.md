@@ -23,6 +23,7 @@
 - [`aclError aclmdlRISetName(aclmdlRI modelRI, const char *name)`](#aclmdlRISetName)：设置模型运行实例的名称。若针对同一个模型运行实例设置多次，以最后一次为准。
 - [`aclError aclmdlRIGetName(aclmdlRI modelRI, uint32_t maxLen, char *name)`](#aclmdlRIGetName)：获取模型运行实例的名称。如果没有调用aclmdlRISetName接口，调用本接口获取到的为空字符串。
 - [`aclError aclmdlRIGetId(aclmdlRI modelRI, uint32_t *modelRIId)`](#aclmdlRIGetId)：获取模型运行实例的ID。
+- [`aclError aclmdlRISetAttribute(aclmdlRI modelRI, aclrtModelAttr mdlAttrType, void *value)`](#aclmdlRISetAttribute)：设置模型运行实例的属性，当前仅支持设置调度模式属性（默认调度/独占调度）。
 - [`aclError aclrtCheckArchCompatibility(const char *socVersion, int32_t *canCompatible)`](#aclrtCheckArchCompatibility)：根据AI处理器版本判断算子指令是否兼容。
 - [`aclError aclmdlRIAbort(aclmdlRI modelRI)`](#aclmdlRIAbort)：停止正在执行的模型运行实例。
 - [`aclError aclmdlRIGetStreams(aclmdlRI modelRI, aclrtStream *streams, uint32_t *numStreams)`](#aclmdlRIGetStreams)：获取模型运行实例关联的Stream。
@@ -1199,6 +1200,63 @@ aclError aclmdlRIGetId(aclmdlRI modelRI, uint32_t *modelRIId)
 | --- | :---: | --- |
 | modelRI | 输入 | 模型运行实例。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。 |
 | modelRIId | 输出 | 模型运行实例的ID。 |
+
+### 返回值说明
+
+返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
+
+<br>
+<br>
+<br>
+
+<a id="aclmdlRISetAttribute"></a>
+
+## aclmdlRISetAttribute
+
+```c
+aclError aclmdlRISetAttribute(aclmdlRI modelRI, aclrtModelAttr mdlAttrType, void *value)
+```
+
+### 产品支持情况
+
+<!-- npu="950" id8501 -->
+- Ascend 950PR&950DT系列产品：不支持
+<!-- end id8501 -->
+<!-- npu="A3" id8502 -->
+- Atlas A3系列产品：不支持
+<!-- end id8502 -->
+<!-- npu="910b" id8503 -->
+- Atlas A2系列产品：不支持
+<!-- end id8503 -->
+<!-- npu="310b" id8504 -->
+- Atlas 200I/500 A2推理产品：不支持
+<!-- end id8504 -->
+<!-- npu="310p" id8505 -->
+- Atlas推理系列产品：不支持
+<!-- end id8505 -->
+<!-- npu="910" id8506 -->
+- Atlas训练系列产品：不支持
+<!-- end id8506 -->
+<!-- npu="IPV350" id8507 -->
+- IPV350：不支持
+<!-- end id8507 -->
+
+### 功能说明
+
+设置模型运行实例的属性。当前仅支持设置调度模式属性（ACL_MDL_ATTR_SCH_MODE_INT32），用于配置模型以默认调度或独占调度模式执行。
+
+使用约束：
+- 需在模型执行前（例如调用[aclmdlRIExecute](#aclmdlRIExecute)或[aclmdlRIExecuteAsync](#aclmdlRIExecuteAsync)接口前）完成属性设置。
+- 若针对同一个模型运行实例设置多次，以最后一次为准。
+- 仅在软件调度场景下生效。
+
+### 参数说明
+
+| 参数名 | 输入/输出 | 说明 |
+| --- | :---: | --- |
+| modelRI | 输入 | 模型运行实例。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。<br>modelRI支持通过以下方式获取：<br><br>  - 调用[aclmdlRICaptureBegin](#aclmdlRICaptureBegin)接口捕获Stream上下发的任务后，可通过[aclmdlRICaptureGetInfo](#aclmdlRICaptureGetInfo)接口获取模型运行实例，再传入本接口。<br>  - 调用[aclmdlRIBuildBegin](#aclmdlRIBuildBegin)、[aclmdlRIBuildEnd](#aclmdlRIBuildEnd)等接口构建模型运行实例，再传入本接口。 |
+| mdlAttrType | 输入 | 属性类型，当前仅支持配置为ACL_MDL_ATTR_SCH_MODE_INT32（调度模式属性）。类型定义请参见[aclrtModelAttr](25-02_Enumerations.md#aclrtModelAttr)。 |
+| value | 输入 | 属性值指针。当mdlAttrType为ACL_MDL_ATTR_SCH_MODE_INT32时，指向int32_t类型的数据，取值范围：0表示默认调度，1表示独占调度。 |
 
 ### 返回值说明
 

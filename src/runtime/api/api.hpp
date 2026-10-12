@@ -500,6 +500,7 @@ public:
         uint32_t* const taskId) = 0;
     virtual rtError_t DebugUnRegisterForStream(Stream* const stm) = 0;
     virtual rtError_t ModelSetSchGroupId(Model* const mdl, const int16_t schGrpId) = 0;
+    virtual rtError_t ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value) = 0;
     virtual rtError_t ModelTaskUpdate(
         Stream* desStm, uint32_t desTaskId, Stream* sinkStm, rtMdlTaskUpdateInfo_t* para) = 0;
     virtual rtError_t ModelGetNodes(const Model* const mdl, uint32_t* const num) = 0;

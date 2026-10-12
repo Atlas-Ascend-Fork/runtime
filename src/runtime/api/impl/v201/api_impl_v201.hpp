@@ -23,6 +23,8 @@ public:
     rtError_t StreamWaitEvent(
         Stream* const stm, Event* const evt, const uint32_t timeout,
         const uint32_t flag = RT_EVENT_WAIT_DEFAULT) override;
+    // model
+    rtError_t ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value) override;
 };
 } // namespace runtime
 } // namespace cce

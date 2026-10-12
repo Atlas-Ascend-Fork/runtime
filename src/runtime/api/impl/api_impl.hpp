@@ -414,6 +414,7 @@ public:
         uint32_t* const taskId) override;
     rtError_t DebugUnRegisterForStream(Stream* const stm) override;
     rtError_t ModelSetSchGroupId(Model* const mdl, const int16_t schGrpId) override;
+    rtError_t ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value) override;
     rtError_t ModelTaskUpdate(
         Stream* desStm, uint32_t desTaskId, Stream* sinkStm, rtMdlTaskUpdateInfo_t* para) override;
     rtError_t ModelGetNodes(const Model* const mdl, uint32_t* const num) override;

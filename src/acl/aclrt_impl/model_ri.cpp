@@ -305,6 +305,29 @@ aclError aclmdlRIGetNameImpl(aclmdlRI modelRI, uint32_t maxLen, char* name)
     return ACL_SUCCESS;
 }
 
+aclError aclmdlRISetAttributeImpl(aclmdlRI modelRI, aclrtModelAttr mdlAttrType, void* value)
+{
+    ACL_PROFILING_REG(acl::AclProfType::AclmdlRISetAttribute);
+    ACL_LOG_INFO("start to execute aclmdlRISetAttribute, mdlAttrType is [%d]", static_cast<int32_t>(mdlAttrType));
+    ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(modelRI);
+    ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(value);
+
+    switch (mdlAttrType) {
+        case ACL_MDL_ATTR_SCH_MODE_INT32: {
+            ACL_REQUIRES_RTS_OK(
+                rtsSetModelAttr(static_cast<rtModel_t>(modelRI), static_cast<rtModelAttr>(mdlAttrType), value));
+            break;
+        }
+        default: {
+            ACL_LOG_ERROR("invalid mdlAttrType, mdlAttrType is [%d]", static_cast<int32_t>(mdlAttrType));
+            return ACL_ERROR_INVALID_PARAM;
+        }
+    }
+
+    ACL_LOG_INFO("successfully execute aclmdlRISetAttribute");
+    return ACL_SUCCESS;
+}
+
 aclError aclmdlRIGetIdImpl(aclmdlRI modelRI, uint32_t* modelRIId)
 {
     ACL_PROFILING_REG(acl::AclProfType::AclmdlRIGetId);

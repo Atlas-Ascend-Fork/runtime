@@ -13,6 +13,7 @@
 
 #include "driver/ascend_hal.h"
 #include "runtime/rt.h"
+#include "rts.h"
 #include "rts_dqs.h"
 #include "gtest/gtest.h"
 #include "mockcpp/mockcpp.hpp"
@@ -2187,6 +2188,7 @@ TEST_F(TaskTestV201, Test_ConstructSqeForModelSerialSchedTask)
     modelTask.sqId = 4U;
     modelTask.pid = 5U;
     modelTask.groupId = 6U;
+    modelTask.modelSchedMode = 7U;
     task.u.modelSerialSchedTask = modelTask;
 
     rtDavidSqe_t davidSqe = {};
@@ -2200,10 +2202,12 @@ TEST_F(TaskTestV201, Test_ConstructSqeForModelSerialSchedTask)
     EXPECT_EQ(davidSqe.aicpuDqsSqe.sqId, 4U);
     EXPECT_EQ(davidSqe.aicpuDqsSqe.pid, 5U);
     EXPECT_EQ(davidSqe.aicpuDqsSqe.userGroupId, 6U);
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, 7U);
 
     ConstructSqeForModelSerialSchedPostProcTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
     EXPECT_EQ(davidSqe.aicpuDqsSqe.header.type, RT_DAVID_SQE_TYPE_AICPU_H);
     EXPECT_EQ(davidSqe.aicpuDqsSqe.modelId, 1U);
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, 7U);
 
     ConstructSqeForModelSerialSchedNotifyWaitTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
     EXPECT_EQ(davidSqe.notifySqe.header.type, RT_DAVID_SQE_TYPE_NOTIFY_WAIT);
@@ -2515,4 +2519,95 @@ TEST_F(TaskTestV201, EndGraphNotifyWaitReadOnlyTask)
     EXPECT_EQ(sqe.notifySqe.header.type, RT_DAVID_SQE_TYPE_NOTIFY_WAIT);
     EXPECT_FALSE(sqe.notifySqe.cntFlag);
     EXPECT_NO_THROW(ReleaseResourceForEndGraphNotifyWaitTaskOnlModel(&readOnlyTask));
+}
+
+TEST_F(TaskTestV201, Test_ModelAttrSet)
+{
+    rtModel_t model;
+    rtError_t ret = rtModelCreate(&model, 0);
+    ASSERT_EQ(ret, RT_ERROR_NONE);
+    Model* mdl = rt_ut::UnwrapOrNull<Model>(model);
+    ASSERT_NE(mdl, nullptr);
+
+    rtMdlSchMode schMode = RT_MDL_SCH_EXCLUSIVE;
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_EXCLUSIVE);
+
+    schMode = RT_MDL_SCH_DEFAULT;
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_NORMAL);
+
+    ret = rtsSetModelAttr(nullptr, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, nullptr);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    ret = rtsSetModelAttr(model, static_cast<rtModelAttr>(RT_MODEL_ATTR_BUFF + 1), &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_BUFF, &schMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    rtMdlSchMode invalidMode = static_cast<rtMdlSchMode>(RT_MDL_SCH_EXCLUSIVE + 1);
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &invalidMode);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    ret = rtModelDestroy(model);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+}
+
+TEST_F(TaskTestV201, Test_ModelSerialSchedAttrToSqe)
+{
+    DevProperties origProps = stream_->Device_()->GetDevProperties();
+    DevProperties props = origProps;
+    props.modelScheduleSoftware = true;
+    stream_->Device_()->RefreshDevProperties(props);
+
+    rtModel_t model;
+    rtError_t ret = rtModelCreate(&model, 0);
+    ASSERT_EQ(ret, RT_ERROR_NONE);
+    Model* mdl = rt_ut::UnwrapOrNull<Model>(model);
+    ASSERT_NE(mdl, nullptr);
+
+    rtMdlSchMode schMode = RT_MDL_SCH_EXCLUSIVE;
+    ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_EXCLUSIVE);
+
+    mdl->headStreams_.push_back(stream_);
+
+    Notify* notify = new (std::nothrow) Notify(0, 0);
+    ASSERT_NE(notify, nullptr);
+
+    TaskInfo task = {};
+    task.stream = stream_;
+    TaskInfo* tmpTask = &task;
+    Driver* driver = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DeviceGetBareTgid).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP(static_cast<TaskInfo* (Stream::*)(TaskInfo*, tsTaskType_t, rtError_t&, uint32_t, UpdateTaskFlag)>(
+                   &Stream::AllocTask))
+        .stubs()
+        .will(returnValue(tmpTask));
+    MOCKER(DavidSendTask).stubs().will(returnValue(RT_ERROR_NONE));
+
+    ret = ModelSerialSchedPreProc(stream_, notify, mdl);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(task.u.modelSerialSchedTask.modelSchedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+
+    rtDavidSqe_t davidSqe = {};
+    const TaskSqeInfo sqeInfo = {};
+    ConstructSqeForModelSerialSchedPreProcTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+
+    ConstructSqeForModelSerialSchedPostProcTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+
+    stream_->Device_()->RefreshDevProperties(origProps);
+    delete notify;
+    ret = rtModelDestroy(model);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
 }

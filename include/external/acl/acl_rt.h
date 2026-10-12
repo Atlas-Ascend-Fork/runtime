@@ -409,6 +409,11 @@ typedef void* aclrtParamHandle;
 typedef void* aclmdlRI;
 
 typedef enum {
+    ACL_MDL_ATTR_SCH_MODE_INT32 = 0,
+    ACL_MDL_ATTR_RESERVED = 0xFFFF,
+} aclrtModelAttr;
+
+typedef enum {
     ACL_MODEL_RI_CAPTURE_MODE_GLOBAL = 0,
     ACL_MODEL_RI_CAPTURE_MODE_THREAD_LOCAL,
     ACL_MODEL_RI_CAPTURE_MODE_RELAXED,
@@ -4994,6 +4999,18 @@ ACL_FUNC_VISIBILITY aclError aclmdlRISetName(aclmdlRI modelRI, const char* name)
  * @retval OtherValues Failure
  */
 ACL_FUNC_VISIBILITY aclError aclmdlRIGetName(aclmdlRI modelRI, uint32_t maxLen, char* name);
+
+/**
+ * @ingroup AscendCL
+ * @brief set model attribute
+ * @param [in] modelRI      model to set attribute
+ * @param [in] mdlAttrType  attribute type, only ACL_MDL_ATTR_SCH_MODE_INT32 is supported currently
+ * @param [in] value        attribute value, ACL_MDL_ATTR_SCH_MODE_INT32 takes int32_t value:
+ *                          0: default mode, 1: exclusive mode
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclmdlRISetAttribute(aclmdlRI modelRI, aclrtModelAttr mdlAttrType, void* value);
 
 /**
  * @ingroup AscendCL

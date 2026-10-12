@@ -3815,6 +3815,14 @@ rtError_t ApiImpl::ModelSetSchGroupId(Model* const mdl, const int16_t schGrpId)
     return RT_ERROR_NONE;
 }
 
+rtError_t ApiImpl::ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value)
+{
+    UNUSED(mdl);
+    UNUSED(attrId);
+    UNUSED(value);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
 rtError_t ApiImpl::CacheLastTaskExtendInfo(const char* const extendInfoPtr, const size_t infoSize)
 {
     const uint32_t lastStreamId = InnerThreadLocalContainer::GetLastStreamId();

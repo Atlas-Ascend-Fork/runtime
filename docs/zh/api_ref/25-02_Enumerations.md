@@ -70,6 +70,7 @@ enum 类型数据。
 - [aclrtMemManagedRangeAttribute](#aclrtMemManagedRangeAttribute)
 - [aclrtMemPoolAttr](#aclrtMemPoolAttr)
 - [aclrtMemSharedHandleType](#aclrtMemSharedHandleType)
+- [aclrtModelAttr](#aclrtModelAttr)
 - [aclrtRandomNumFuncType](#aclrtRandomNumFuncType)
 - [aclrtReduceKind](#aclrtReduceKind)
 - [aclrtRunMode](#aclrtRunMode)
@@ -2192,6 +2193,26 @@ typedef enum aclrtMemSharedHandleType {
 仅Atlas A3系列产品支持ACL\_MEM\_SHARE\_HANDLE\_TYPE\_FABRIC选项。
 <!-- end id79 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-02_Enumerations_res.md#id14 -->
+
+<br>
+
+<a id="aclrtModelAttr"></a>
+
+## aclrtModelAttr
+
+```c
+typedef enum {
+    ACL_MDL_ATTR_SCH_MODE_INT32 = 0, // 调度模式属性
+    ACL_MDL_ATTR_RESERVED = 0xFFFF,  // 预留值
+} aclrtModelAttr;
+```
+
+**表 1**  枚举项说明
+
+| 枚举项 | 说明 |
+| --- | --- |
+| ACL_MDL_ATTR_SCH_MODE_INT32 | 调度模式属性，属性值为int32_t类型：0表示默认调度，1表示独占调度。 |
+| ACL_MDL_ATTR_RESERVED | 预留值。 |
 
 <br>
 

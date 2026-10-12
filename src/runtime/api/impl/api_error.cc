@@ -3888,6 +3888,25 @@ rtError_t ApiErrorDecorator::ModelSetSchGroupId(Model* const mdl, const int16_t 
     return error;
 }
 
+rtError_t ApiErrorDecorator::ModelAttrSet(Model* const mdl, const rtModelAttr attrId, void* const value)
+{
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(mdl, RT_ERROR_INVALID_VALUE, "Setting a model attribute");
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(value, RT_ERROR_INVALID_VALUE, "Setting a model attribute");
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+        attrId != RT_MODEL_ATTR_SCH_MODE, RT_ERROR_INVALID_VALUE, "Setting a model attribute", attrId,
+        std::to_string(static_cast<int32_t>(RT_MODEL_ATTR_SCH_MODE)));
+    const rtMdlSchMode schMode = *RtPtrToPtr<rtMdlSchMode*>(value);
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+        (schMode != RT_MDL_SCH_DEFAULT) && (schMode != RT_MDL_SCH_EXCLUSIVE), RT_ERROR_INVALID_VALUE,
+        "Setting a model attribute", schMode,
+        std::to_string(static_cast<int32_t>(RT_MDL_SCH_DEFAULT)) + " or " +
+            std::to_string(static_cast<int32_t>(RT_MDL_SCH_EXCLUSIVE)));
+
+    const rtError_t error = impl_->ModelAttrSet(mdl, attrId, value);
+    ERROR_RETURN(error, "ModelAttrSet failed, attrId=%d.", static_cast<int32_t>(attrId));
+    return error;
+}
+
 rtError_t ApiErrorDecorator::ModelEndGraph(Model* const mdl, Stream* const stm, const uint32_t flags)
 {
     Stream* curStm = Runtime::Instance()->GetCurStream(stm);

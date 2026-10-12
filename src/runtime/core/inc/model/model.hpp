@@ -42,6 +42,11 @@ enum ModelType {
     RT_MODEL_MAX
 };
 
+enum ModelSchedMode : uint8_t {
+    RT_MODEL_SCHED_NORMAL = 0,
+    RT_MODEL_SCHED_EXCLUSIVE = 1,
+};
+
 struct UbAsyncJettyInfo {
     uint16_t functionId;
     uint16_t dieId;
@@ -225,6 +230,8 @@ public:
     void SetExeStream(Stream* exeStream) { exeStream_ = exeStream; }
     int16_t GetSchGroupId() const { return schGroupId_; }
     void SetSchGroupId(int16_t schGrpId) { schGroupId_ = schGrpId; }
+    ModelSchedMode GetSchMode() const { return schMode_; }
+    void SetSchMode(const ModelSchedMode schMode) { schMode_ = schMode; }
     rtError_t BindQueue(const uint32_t queueId, const rtModelQueueFlag_t flag);
     void ExecuteComplete(void);
     rtError_t LabelAlloc(Label* const labelIn, uint16_t& labelId);
@@ -396,6 +403,7 @@ private:
     std::mutex labelMapMutex_;
     bool isModelDelete_;
     int16_t schGroupId_;
+    ModelSchedMode schMode_{RT_MODEL_SCHED_NORMAL};
     std::mutex cmoIdMapMutex_;
     std::map<uint32_t, uint16_t> logicIdToCMOIdMap_;
     uint64_t labelCount_;

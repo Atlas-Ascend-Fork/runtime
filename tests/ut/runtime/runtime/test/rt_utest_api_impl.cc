@@ -2988,6 +2988,41 @@ TEST_F(ApiImplTest, modelGetName_decorator_test)
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
+TEST_F(ApiImplTest, modelSetAttr_test)
+{
+    rtModel_t model;
+    rtError_t error = rtsModelCreate(&model, 0);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+
+    rtMdlSchMode schMode = RT_MDL_SCH_EXCLUSIVE;
+    error = rtsSetModelAttr(nullptr, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+
+    error = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, nullptr);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+
+    error = rtsSetModelAttr(model, static_cast<rtModelAttr>(RT_MODEL_ATTR_BUFF + 1), &schMode);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+
+    rtMdlSchMode invalidMode = static_cast<rtMdlSchMode>(RT_MDL_SCH_EXCLUSIVE + 1);
+    error = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &invalidMode);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+
+    // only v201 supports setting model attributes, other impls return not support
+    error = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
+    EXPECT_EQ(error, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+
+    error = rtsSetModelAttr(model, RT_MODEL_ATTR_BUFF, &schMode);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+
+    Model* realModel = rt_ut::UnwrapOrNull<Model>(model);
+    ASSERT_NE(realModel, nullptr);
+    EXPECT_EQ(realModel->GetSchMode(), RT_MODEL_SCHED_NORMAL);
+
+    error = rtsModelDestroy(model);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+}
+
 TEST_F(ApiImplTest, LaunchDqsTask_Test)
 {
     Runtime* rtInstance = (Runtime*)Runtime::Instance();

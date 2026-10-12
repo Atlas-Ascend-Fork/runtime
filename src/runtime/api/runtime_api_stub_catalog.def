@@ -2224,6 +2224,10 @@ RUNTIME_API(model, rtError_t, rtsModelSetName,
     (rtModel_t mdl, const char_t* mdlName),
     (mdl, mdlName), FEATURE_NOT_SUPPORT, EXPORT)
 
+RUNTIME_API(model, rtError_t, rtsSetModelAttr,
+    (rtModel_t mdl, rtModelAttr modelAttrId, void* value),
+    (mdl, modelAttrId, value), FEATURE_NOT_SUPPORT, EXPORT)
+
 RUNTIME_API(model, rtError_t, rtsModelUnbindStream,
     (rtModel_t mdl, rtStream_t stm),
     (mdl, stm), FEATURE_NOT_SUPPORT, EXPORT)

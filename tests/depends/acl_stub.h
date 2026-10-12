@@ -531,6 +531,7 @@ public:
     virtual rtError_t rtsFuncGetName(const void* func, const uint32_t maxLen, char_t* const name);
     virtual rtError_t rtsModelSetName(rtModel_t mdl, const char_t* mdlName);
     virtual rtError_t rtsModelGetName(rtModel_t mdl, const uint32_t maxLen, char_t* const mdlName);
+    virtual rtError_t rtsSetModelAttr(rtModel_t mdl, rtModelAttr modelAttrId, void* value);
 
     virtual rtError_t rtsBinaryLoadFromData(
         const void* const data, const uint64_t length, const rtLoadBinaryConfig_t* const optionalCfg,
@@ -1181,6 +1182,7 @@ public:
     MOCK_METHOD3(rtsFuncGetName, rtError_t(const void* func, const uint32_t maxLen, char_t* const name));
     MOCK_METHOD2(rtsModelSetName, rtError_t(rtModel_t mdl, const char_t* mdlName));
     MOCK_METHOD3(rtsModelGetName, rtError_t(rtModel_t mdl, const uint32_t maxLen, char_t* const mdlName));
+    MOCK_METHOD3(rtsSetModelAttr, rtError_t(rtModel_t mdl, rtModelAttr modelAttrId, void* value));
 
     MOCK_METHOD4(
         rtsBinaryLoadFromData, rtError_t(
