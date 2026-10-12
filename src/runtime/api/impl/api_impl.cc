@@ -1401,7 +1401,7 @@ rtError_t ApiImpl::StreamCreate(Stream** const stm, const int32_t priority, cons
 
     const bool isHostSupport =
         dev->IsSupportFeature(RtOptionalFeatureType::RT_FEATURE_MODEL_PERSISTENT_STREAM_UNLIMITED_DEPTH);
-    bool isTsSupport = dev->CheckFeatureSupport(TS_FEATURE_SOFTWARE_SQ_ENABLE);
+    const bool isTsSupport = dev->CheckFeatureSupport(TS_FEATURE_SOFTWARE_SQ_ENABLE);
     bool isDrvSupport =
         NpuDriver::CheckIsSupportFeature(curCtx->Device_()->Id_(), FEATURE_TRSDRV_SQ_SUPPORT_DYNAMIC_BIND);
 
