@@ -292,6 +292,9 @@ rtError_t CaptureModel::RestoreForSoftwareSqForOneModels(Device* const dev)
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
+void CaptureModel::RollbackSqCqArray() {}
+void CaptureModel::RollbackAllSqCq() {}
+
 void CaptureModel::RestoreJettyForSnapshot() {}
 
 rtError_t CaptureModel::BindSqCqAndSendSqe(void) { return RT_ERROR_FEATURE_NOT_SUPPORT; }

@@ -1150,6 +1150,21 @@ TEST_F(DavidTaskTest, construct_davidsqe_for_stars_memcpy_async_sqe_d2d)
     TaskUnInitProc(&task);
 }
 
+TEST_F(DavidTaskTest, construct_davidsqe_for_memcpy_rejects_size_greater_than_uint32_max)
+{
+    TaskInfo task = {};
+    rtDavidSqe_t sqe = {};
+
+    InitByStream(&task, stream_);
+    task.u.memcpyAsyncTaskInfo.copyType = RT_MEMCPY_ADDR_D2D_SDMA;
+    task.u.memcpyAsyncTaskInfo.copyKind = RT_MEMCPY_DEVICE_TO_DEVICE;
+    task.u.memcpyAsyncTaskInfo.size = static_cast<uint64_t>(UINT32_MAX) + 1U;
+
+    ConstructDavidMemcpySqe(&task, &sqe, 0U);
+
+    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_DAVID_SQE_TYPE_INVALID);
+}
+
 TEST_F(DavidTaskTest, memcpy_async_task_init_d2h_ex)
 {
     TaskInfo memcpyTask = {};

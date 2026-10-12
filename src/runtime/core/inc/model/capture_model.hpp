@@ -328,6 +328,8 @@ private:
     rtError_t UnBindSqCq(void);
     rtError_t ConfigLogicSqTail(void) const;
     rtError_t UpdateStreamActiveTaskFuncCallMem(void);
+    void RollbackSqCqArray(void);
+    void RollbackAllSqCq(void);
     void ClearStreamActiveTask(void);
     void ReleaseNotifyListOnDestroy(std::vector<Notify*>& notifyList);
     void ReleaseArgLoaderBackupOnDestroy();

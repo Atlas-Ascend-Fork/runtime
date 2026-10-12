@@ -553,6 +553,18 @@ TEST_F(DavidStreamTest, auto_split_task_clean)
     rtStreamDestroy(stream);
 }
 
+TEST_F(DavidStreamTest, ModelTaskCleanAllowsNullModel)
+{
+    DavidStream* const davidStream = static_cast<DavidStream*>(stream_);
+    davidStream->SetModel(nullptr);
+    davidStream->isModelComplete = true;
+
+    davidStream->ModelTaskClean();
+
+    EXPECT_FALSE(davidStream->isModelComplete);
+    EXPECT_EQ(davidStream->Model_(), nullptr);
+}
+
 TEST_F(DavidStreamTest, setup_aicpu)
 {
     DavidStream* stream = new DavidStream(device_, 0, RT_STREAM_AICPU, nullptr);

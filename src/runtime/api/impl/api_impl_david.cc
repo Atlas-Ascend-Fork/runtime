@@ -1398,6 +1398,9 @@ rtError_t ApiImplDavid::GetDeviceSatStatus(void* const outputAddrPtr, const uint
         curStm, curCtx, RT_ERROR_STREAM_CONTEXT,
         "Obtaining the overflow status of tasks in all streams on the current device");
 
+    COND_RETURN_ERROR_MSG_INNER(
+        ((curCtx->CtxGetOverflowAddr() == nullptr)), RT_ERROR_DRV_OUT_MEMORY, "Overflow addr can not be null.");
+
     error = StreamGetSatStatus(outputSize, curStm);
     COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
 

@@ -1237,7 +1237,9 @@ void DavidStream::ModelTaskClean()
 {
     RecycleModelBindStreamAllTask(this, true);
     isModelComplete = false;
-    Model_()->SetIsSendSqe(false);
+    if (Model_() != nullptr) {
+        Model_()->SetIsSendSqe(false);
+    }
 }
 
 rtError_t DavidStream::StreamRecoverAbort()

@@ -4968,6 +4968,20 @@ static rtError_t MemcpyAsyncTaskInitV1Stub(TaskInfo* const taskInfo, void* memcp
     return RT_ERROR_NONE;
 }
 
+TEST_F(ApiDavidTest, GetDeviceSatStatusReturnsOutOfMemoryWhenOverflowAddrIsNull)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    void* const overflowAddr = context->overflowAddr_;
+    context->overflowAddr_ = nullptr;
+    ApiImplDavid apiImpl;
+    uint64_t output = 0U;
+
+    EXPECT_EQ(apiImpl.GetDeviceSatStatus(&output, sizeof(output), nullptr), RT_ERROR_DRV_OUT_MEMORY);
+
+    context->overflowAddr_ = overflowAddr;
+}
+
 TEST_F(ApiDavidTest, test_memcpy_kinds_task_on_david)
 {
     rtError_t error = RT_ERROR_NONE;

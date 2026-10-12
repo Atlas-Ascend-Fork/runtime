@@ -3013,3 +3013,78 @@ TEST_F(CloudV2CaptureModelTest, AllocSqCqAndBindInternalNoResource)
     model.streams_.clear();
     model.logicSqs_.clear();
 }
+
+TEST_F(CloudV2CaptureModelTest, RollbackSqCqArrayReleasesAllocatedResources)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    CaptureModel model;
+    model.context_ = context;
+    model.sqCqArray_ = new rtDeviceSqCqInfo_t[1U]();
+    model.sqCqNum_ = 1U;
+    DeviceSqCqPool* const sqCqPool = context->Device_()->GetDeviceSqCqManage();
+    MOCKER_CPP(&DeviceSqCqPool::FreeSqCq).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    model.RollbackSqCqArray();
+
+    EXPECT_EQ(model.sqCqArray_, nullptr);
+    EXPECT_EQ(model.sqCqNum_, 0U);
+}
+
+TEST_F(CloudV2CaptureModelTest, RollbackSqCqArrayIgnoresEmptyResources)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    CaptureModel model;
+    model.context_ = context;
+
+    model.RollbackSqCqArray();
+
+    EXPECT_EQ(model.sqCqArray_, nullptr);
+    EXPECT_EQ(model.sqCqNum_, 0U);
+}
+
+TEST_F(CloudV2CaptureModelTest, RollbackAllSqCqReleasesRootAndSubModels)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    CaptureModel rootModel;
+    CaptureModel subModel;
+    rootModel.context_ = context;
+    subModel.context_ = context;
+    rootModel.cachedAllSubModels_.push_back(&subModel);
+    MOCKER_CPP(&CaptureModel::ReleaseSqCqInternal).expects(exactly(2)).will(returnValue(RT_ERROR_NONE));
+
+    rootModel.RollbackAllSqCq();
+
+    EXPECT_EQ(rootModel.cachedAllSubModels_.size(), 1U);
+}
+
+TEST_F(CloudV2CaptureModelTest, AllocSqCqAndBindInternalRollsBackWhenSqAddrAllocationFails)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    CaptureModel model;
+    model.context_ = context;
+    LogicSq logicSq(context->Device_());
+    model.logicSqs_.push_back(&logicSq);
+    MOCKER_CPP(&CaptureModel::AllocSqCqProc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP(&CaptureModel::AllocAllLogicSqDeviceAddr).stubs().will(returnValue(RT_ERROR_DRV_OUT_MEMORY));
+    MOCKER_CPP(&DeviceSqCqPool::FreeSqCq).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(model.AllocSqCqAndBindInternal(), RT_ERROR_DRV_OUT_MEMORY);
+    EXPECT_EQ(model.sqCqArray_, nullptr);
+    EXPECT_EQ(model.sqCqNum_, 0U);
+
+    model.logicSqs_.clear();
+}
+
+TEST_F(CloudV2CaptureModelTest, UnBindSqCqAllowsMissingSwitchInfo)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    CaptureModel model;
+    model.context_ = context;
+
+    EXPECT_EQ(model.UnBindSqCq(), RT_ERROR_NONE);
+}

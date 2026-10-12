@@ -1259,8 +1259,11 @@ rtError_t CaptureModel::BuildSqCq(Stream* const exeStream)
     // 阶段一：Notify申请，发送endgraph挪到了endcapture阶段
 
     // 阶段二：SqCq申请
+    uint32_t releaseSqNum = 0U;
+    uint32_t releaseNtyNum = 0U;
     error = AllocAllSqCq();
     if (error != RT_ERROR_NONE) {
+        RollbackAllSqCq();
         RT_LOG(
             RT_LOG_ERROR, "alloc all sqcq failed, stream_id=%d, model_id=%u, retCode=%#x.", exeStream->Id_(), Id_(),
             static_cast<uint32_t>(error));
@@ -1270,6 +1273,7 @@ rtError_t CaptureModel::BuildSqCq(Stream* const exeStream)
     // 阶段三：LoadComplete 刷notify record与子model notify wait sqe
     error = UpdateNotifyIdAll(exeStream);
     if (error != RT_ERROR_NONE) {
+        ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum, false);
         RT_LOG(
             RT_LOG_ERROR, "update all notify id failed, stream_id=%d, model_id=%u, retCode=%#x.", exeStream->Id_(),
             Id_(), static_cast<uint32_t>(error));
@@ -1278,6 +1282,7 @@ rtError_t CaptureModel::BuildSqCq(Stream* const exeStream)
 
     error = LoadCompleteAll(loadCompleteNotifyId_);
     if (error != RT_ERROR_NONE) {
+        ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum, false);
         RT_LOG(
             RT_LOG_ERROR, "load complete all failed, stream_id=%d, model_id=%u, retCode=%#x.", exeStream->Id_(), Id_(),
             static_cast<uint32_t>(error));
@@ -1287,6 +1292,7 @@ rtError_t CaptureModel::BuildSqCq(Stream* const exeStream)
     UpdateIsNeedUpdateEndGraphFlagAll();
     error = UpdateStreamActiveTaskFuncCallMemAll();
     if (error != RT_ERROR_NONE) {
+        ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum, false);
         RT_LOG(
             RT_LOG_ERROR, "update all stream active task failed, stream_id=%d, model_id=%u, retCode=%#x.",
             exeStream->Id_(), Id_(), static_cast<uint32_t>(error));
@@ -1295,6 +1301,7 @@ rtError_t CaptureModel::BuildSqCq(Stream* const exeStream)
 
     error = UpdateCondTaskFuncCallMemAll();
     if (error != RT_ERROR_NONE) {
+        ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum, false);
         RT_LOG(
             RT_LOG_ERROR, "update all cond task failed, stream_id=%d, model_id=%u, retCode=%#x.", exeStream->Id_(),
             Id_(), static_cast<uint32_t>(error));
@@ -1527,7 +1534,7 @@ rtError_t CaptureModel::UnBindSqCq(void)
     rtError_t error = RT_ERROR_NONE;
     Device* const dev = Context_()->Device_();
 
-    COND_RETURN_ERROR((switchInfo_ == nullptr), RT_ERROR_INVALID_VALUE, "switch info is null");
+    COND_RETURN_WARN((switchInfo_ == nullptr), RT_ERROR_NONE, "switch info is null");
 
     /* unbind stream from model */
     for (auto stm : StreamList_()) {
@@ -2076,6 +2083,32 @@ rtError_t CaptureModel::SendLoadCompleteEndGraph()
     return RT_ERROR_NONE;
 }
 
+void CaptureModel::RollbackSqCqArray()
+{
+    if (sqCqNum_ == 0U) {
+        return;
+    }
+
+    (void)Context_()->Device_()->GetDeviceSqCqManage()->FreeSqCq(sqCqArray_, sqCqNum_, FreePolicy::LAZY);
+
+    DELETE_A(sqCqArray_);
+    sqCqNum_ = 0U;
+    return;
+}
+
+void CaptureModel::RollbackAllSqCq()
+{
+    std::vector<CaptureModel*> models;
+    models.push_back(this);
+    auto& subs = GetAllSubCaptureModels();
+    models.insert(models.end(), subs.begin(), subs.end());
+
+    for (CaptureModel* curMdl : models) {
+        uint32_t releaseNum = 0U;
+        (void)curMdl->ReleaseSqCqInternal(releaseNum);
+    }
+}
+
 rtError_t CaptureModel::AllocSqCqAndBindInternal()
 {
     const uint32_t logicSqNum = static_cast<uint32_t>(GetLogicSqs().size());
@@ -2110,13 +2143,11 @@ rtError_t CaptureModel::AllocSqCqAndBindInternal()
     // 走到这里必然是 software-sq（BuildSqCq 入口已过滤），用 AllocAllLogicSqDeviceAddr 替代原 AllocSqAddr
     // 原 AllocSqAddr 为 stream 级别分配 sqAddr_；software-sq 场景 sqe 在 LogicSq 中，改为给 LogicSq 分配 deviceSqeAddr_
     error = AllocAllLogicSqDeviceAddr(Context_()->Device_()->GetDevProperties().expandStreamAdditionalSqeNum);
-    ERROR_PROC_RETURN_MSG_INNER(error, DELETE_A(sqCqArray_); sqCqNum_ = 0U;
-                                , "alloc sq addr failed, model_id=%u, retCode=%#x.", Id_(),
-                                static_cast<uint32_t>(error));
+    ERROR_PROC_RETURN_MSG_INNER(error, RollbackSqCqArray();, "alloc sq addr failed, model_id=%u, retCode=%#x.", Id_(),
+                                                           static_cast<uint32_t>(error));
 
     error = BindSqCqAndSendSqe();
-    ERROR_PROC_RETURN_MSG_INNER(error, DELETE_A(sqCqArray_); sqCqNum_ = 0U;
-                                , "bind sq cq failed, model_id=%u, retCode=%#x.", Id_(), static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "bind sq cq failed, model_id=%u, retCode=%#x.", Id_(), static_cast<uint32_t>(error));
 
     SetFirstExecute(true);
     return RT_ERROR_NONE;

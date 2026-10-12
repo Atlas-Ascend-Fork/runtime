@@ -492,6 +492,21 @@ TEST_F(ApiCloudDisableThreadTest, overflow_test)
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
+TEST_F(ApiCloudDisableThreadTest, DeviceSatStatusReturnsOutOfMemoryWhenOverflowAddrIsNull)
+{
+    Context* const context = Runtime::Instance()->CurrentContext();
+    ASSERT_NE(context, nullptr);
+    void* const overflowAddr = context->overflowAddr_;
+    context->overflowAddr_ = nullptr;
+    ApiImpl apiImpl;
+    uint64_t output = 0U;
+
+    EXPECT_EQ(apiImpl.GetDeviceSatStatus(&output, sizeof(output), nullptr), RT_ERROR_DRV_OUT_MEMORY);
+    EXPECT_EQ(apiImpl.CleanDeviceSatStatus(nullptr), RT_ERROR_DRV_OUT_MEMORY);
+
+    context->overflowAddr_ = overflowAddr;
+}
+
 TEST_F(ApiCloudDisableThreadTest, kernel_launch_success_dfx)
 {
     rtError_t error;

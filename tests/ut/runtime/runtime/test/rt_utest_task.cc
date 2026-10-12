@@ -3835,6 +3835,21 @@ TEST_F(TaskTest, ConstructSqeForMemcpyAsyncTask)
     TaskUnInitProc(&memcpyAsyncTask);
 }
 
+TEST_F(TaskTest, ConstructSqeForMemcpyAsyncTaskRejectsSizeGreaterThanUint32Max)
+{
+    TaskInfo memcpyAsyncTask = {};
+    rtStarsSqe_t sqe = {};
+
+    InitByStream(&memcpyAsyncTask, stream_);
+    memcpyAsyncTask.u.memcpyAsyncTaskInfo.copyType = RT_MEMCPY_ADDR_D2D_SDMA;
+    memcpyAsyncTask.u.memcpyAsyncTaskInfo.copyKind = RT_MEMCPY_DEVICE_TO_DEVICE;
+    memcpyAsyncTask.u.memcpyAsyncTaskInfo.size = static_cast<uint64_t>(UINT32_MAX) + 1U;
+
+    ConstructSqeForMemcpyAsyncTask(&memcpyAsyncTask, &sqe, TaskSqeInfo{0ULL, 0ULL});
+
+    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_STARS_SQE_TYPE_INVALID);
+}
+
 bool CheckPcieBarStub(void) { return true; }
 
 TEST_F(TaskTest, TestStreamLabelSwitchByIndexTaskInitFailed)
