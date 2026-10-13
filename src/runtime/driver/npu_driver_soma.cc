@@ -38,7 +38,7 @@ rtError_t NpuDriver::StreamMemPoolCreate(
         .va = 0ULL,
         .maxSize = size};
 
-    drvError_t drvRet = halMemPoolCreate(pool, &prop);
+    const drvError_t drvRet = halMemPoolCreate(pool, &prop);
     DRV_PROCESS_ERROR_RETURN(
         drvRet, "Call driver api halMemPoolCreate failed, drvRetCode=%d.", static_cast<int32_t>(drvRet));
 

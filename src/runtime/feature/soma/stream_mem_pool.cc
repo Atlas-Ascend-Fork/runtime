@@ -143,23 +143,27 @@ Segment* SegmentManager::TryToReuse(
     Segment* reuseSeg = nullptr;
     if (state.singleDependencies != 0) {
         reuseSeg = SingleStreamReuse(size, streamId, flag);
-        if (reuseSeg != nullptr)
+        if (reuseSeg != nullptr) {
             return reuseSeg;
+        }
     }
     if (state.eventDependencies != 0) {
         reuseSeg = StreamEventReuse(size, streamId, flag);
-        if (reuseSeg != nullptr)
+        if (reuseSeg != nullptr) {
             return reuseSeg;
+        }
     }
     if (state.opportunistic != 0) {
         reuseSeg = StreamInternalReuse(size, streamId, true, flag);
-        if (reuseSeg != nullptr)
+        if (reuseSeg != nullptr) {
             return reuseSeg;
+        }
     }
     if (state.internalDependencies != 0) {
         reuseSeg = StreamInternalReuse(size, streamId, false, flag);
-        if (reuseSeg != nullptr)
+        if (reuseSeg != nullptr) {
             return reuseSeg;
+        }
     }
     return reuseSeg;
 }
@@ -239,7 +243,7 @@ uint64_t SegmentManager::GetAllocSize(uint64_t ptr)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = allocedMap_.find(ptr);
-    return (it != allocedMap_.end()) ? it->second->segsize : 0;
+    return (it != allocedMap_.end()) ? it->second->segsize : 0UL;
 }
 
 void SegmentManager::MergeIntoCachedSegs(Segment*& seg)
@@ -413,7 +417,7 @@ rtError_t SegmentManager::TrimCachedSegs(const uint64_t minBytesToKeep)
                 RT_LOG_DEBUG, "Split last segment with size=%lu for exact trimming, reserved size=%lu, size=%lu.",
                 seg->segsize, reserveSize_, minBytesToKeep);
             (void)cachedSegs_.erase(seg);
-            uint64_t leftSize = reserveSize_ - minBytesToKeep;
+            const uint64_t leftSize = reserveSize_ - minBytesToKeep;
             Segment* left = seg->SplitLeft(leftSize);
             (void)cachedSegs_.insert(seg);
             COND_RETURN_AND_MSG_OUTER(
