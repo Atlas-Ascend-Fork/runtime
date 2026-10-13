@@ -2717,6 +2717,71 @@ TEST_F(ApiTest, kernel_launch_with_default_stream)
     rtDevBinaryUnRegister(binHdl);
 }
 
+TEST_F(ApiTest, host_malloc_rejects_size_alignment_overflow)
+{
+    auto* const drv = static_cast<NpuDriver*>(Runtime::Instance()->CurrentContext()->Device_()->Driver_());
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::HostMemAlloc).expects(never());
+    rtMallocAttribute_t attr = {};
+    attr.attr = RT_MEM_MALLOC_ATTR_MODULE_ID;
+    attr.value.moduleId = DEFAULT_MODULEID;
+    rtMallocConfig_t cfg = {&attr, 1U};
+    const uint64_t sizes[] = {UINT64_MAX - 30U, UINT64_MAX - 1U, UINT64_MAX};
+
+    for (const uint64_t size : sizes) {
+        SCOPED_TRACE(size);
+        void* hostPtr = nullptr;
+        EXPECT_EQ(rtMallocHost(&hostPtr, size, DEFAULT_MODULEID), ACL_ERROR_RT_PARAM_INVALID);
+        EXPECT_EQ(hostPtr, nullptr);
+        EXPECT_EQ(rtsMallocHost(&hostPtr, size, nullptr), ACL_ERROR_RT_PARAM_INVALID);
+        EXPECT_EQ(hostPtr, nullptr);
+        EXPECT_EQ(rtsMallocHost(&hostPtr, size, &cfg), ACL_ERROR_RT_PARAM_INVALID);
+        EXPECT_EQ(hostPtr, nullptr);
+    }
+}
+
+TEST_F(ApiTest, host_malloc_preserves_maximum_aligned_size)
+{
+    auto* const drv = static_cast<NpuDriver*>(Runtime::Instance()->CurrentContext()->Device_()->Driver_());
+    const uint64_t size = UINT64_MAX - 31U;
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::HostMemAlloc)
+        .expects(exactly(2))
+        .with(mockcpp::any(), eq(size))
+        .will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
+
+    int storage = 0;
+    void* hostPtr = &storage;
+    EXPECT_EQ(rtMallocHost(&hostPtr, size, DEFAULT_MODULEID), ACL_ERROR_RT_MEMORY_ALLOCATION);
+    EXPECT_EQ(hostPtr, &storage);
+    EXPECT_EQ(rtsMallocHost(&hostPtr, size, nullptr), ACL_ERROR_RT_MEMORY_ALLOCATION);
+    EXPECT_EQ(hostPtr, &storage);
+}
+
+TEST_F(ApiTest, host_malloc_preserves_normal_size_alignment)
+{
+    auto* const drv = static_cast<NpuDriver*>(Runtime::Instance()->CurrentContext()->Device_()->Driver_());
+    int storage = 0;
+    void* allocatedPtr = &storage;
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::HostMemAlloc)
+        .expects(exactly(6))
+        .with(outBoundP(&allocatedPtr, sizeof(allocatedPtr)), eq(uint64_t{32U}))
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::HostMemAlloc)
+        .expects(exactly(2))
+        .with(outBoundP(&allocatedPtr, sizeof(allocatedPtr)), eq(uint64_t{64U}))
+        .will(returnValue(RT_ERROR_NONE));
+    const uint64_t sizes[] = {1U, 31U, 32U, 33U};
+
+    for (const uint64_t size : sizes) {
+        SCOPED_TRACE(size);
+        void* hostPtr = nullptr;
+        EXPECT_EQ(rtMallocHost(&hostPtr, size, DEFAULT_MODULEID), ACL_RT_SUCCESS);
+        EXPECT_EQ(hostPtr, allocatedPtr);
+        hostPtr = nullptr;
+        EXPECT_EQ(rtsMallocHost(&hostPtr, size, nullptr), ACL_RT_SUCCESS);
+        EXPECT_EQ(hostPtr, allocatedPtr);
+    }
+}
+
 TEST_F(ApiTest, host_mem_alloc_free)
 {
     rtError_t error;

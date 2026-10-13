@@ -42,6 +42,9 @@ rtError_t HostMallocImpl(void** const hostPtr, const uint64_t size, const uint16
     const uint32_t deviceId = curCtx->Device_()->Id_();
     RT_LOG(RT_LOG_INFO, "size=%" PRIu64 ", moduleId=%hu, deviceId=%u.", size, moduleId, deviceId);
 
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+        size > (UINT64_MAX - 0x1FU), RT_ERROR_INVALID_VALUE, "Host memory allocation", size,
+        RtFmtMsg("less than or equal to %" PRIu64, UINT64_MAX - 0x1FU));
     const uint64_t curSize = (((size + 0x1FU) >> 5U) << 5U); // 32 byte align
 
     return curCtx->Device_()->Driver_()->HostMemAlloc(hostPtr, curSize, deviceId, moduleId);
@@ -199,6 +202,10 @@ rtError_t ApiImplHostMemory::HostMallocWithCfg(void** const hostPtr, const uint6
 
         Context* const curCtx = Runtime::Instance()->CurrentContext(true, DEFAULT_DEVICE_ID);
         CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
+        COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+            size > (UINT64_MAX - 0x1FU), RT_ERROR_INVALID_VALUE,
+            "Allocating host memory based on the configuration attributes", size,
+            RtFmtMsg("less than or equal to %" PRIu64, UINT64_MAX - 0x1FU));
         // 32 byte align
         const uint64_t curSize = (((size + 0x1FU) >> 5U) << 5U);
 
