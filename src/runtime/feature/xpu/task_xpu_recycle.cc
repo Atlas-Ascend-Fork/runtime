@@ -351,19 +351,6 @@ void XpuRecycleTaskProcCqe(const Stream* const stm)
         XpuProcLogicCqUntilEmpty(stm);
     }
 }
-
-void XpuTaskReclaimAllStream(const Device* const dev)
-{
-    std::vector<Stream*> allStreams;
-    dev->GetStreamSqCqManage()->GetAllStream(allStreams);
-    RT_LOG(RT_LOG_INFO, "Travel all streams, num=%zu.", allStreams.size());
-    for (const auto streamLoop : allStreams) {
-        streamLoop->StreamRecycleLock();
-        XpuRecycleTaskProcCqe(streamLoop);
-        (void)XpuRecycleTaskBySqHead(streamLoop);
-        streamLoop->StreamRecycleUnlock();
-    }
-}
 // ================================================== 对外出口区 ======================================== //
 } // namespace runtime
 } // namespace cce

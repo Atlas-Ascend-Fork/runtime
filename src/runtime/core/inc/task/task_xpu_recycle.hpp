@@ -15,7 +15,6 @@ namespace cce {
 namespace runtime {
 rtError_t XpuRecycleTaskBySqHead(const Stream* const stm);
 void XpuRecycleTaskProcCqe(const Stream* const stm);
-void XpuTaskReclaimAllStream(const Device* const dev);
 } // namespace runtime
 } // namespace cce
 #endif

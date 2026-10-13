@@ -41,28 +41,6 @@ rtError_t GetSqState1(const uint32_t deviceId, const uint32_t sqId, uint32_t& st
     status = TPRT_SQ_STATE_IS_QUITTED;
 }
 
-TEST_F(XpuRecycleTest, xpu_recycle_test_01)
-{
-    MOCKER(drvGetPlatformInfo).stubs().will(invoke(drvGetPlatformInfo_online));
-    MOCKER_CPP(&XpuDevice::ParseXpuConfigInfo).stubs().will(invoke(ParseXpuConfigInfo_mock));
-
-    rtError_t error = rtSetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(error, ACL_RT_SUCCESS);
-    Runtime* rt = (Runtime*)Runtime::Instance();
-    XpuContext* context = static_cast<XpuContext*>(rt->GetXpuCtxt());
-
-    const uint32_t prio = RT_STREAM_PRIORITY_DEFAULT;
-    const uint32_t flag = 0;
-    Stream** result = new Stream*(nullptr);
-    error = context->StreamCreate(prio, flag, result);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    XpuStream* stream = static_cast<XpuStream*>(context->StreamList_().front());
-    XpuTaskReclaimAllStream(context->Device_());
-
-    rtResetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    delete result;
-}
-
 TEST_F(XpuRecycleTest, xpu_recycle_test_02)
 {
     MOCKER(drvGetPlatformInfo).stubs().will(invoke(drvGetPlatformInfo_online));
