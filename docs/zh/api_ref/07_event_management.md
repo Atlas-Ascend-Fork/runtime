@@ -967,7 +967,7 @@ aclError aclrtStreamWaitEventWithFlag(aclrtStream stream, aclrtEvent event, uint
 | --- | :---: | --- |
 |stream|输入| 指定Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。<br>当flag为ACL_EVENT_WAIT_EXTERNAL时，仅支持在图捕获（ACL Graph）场景下使用，且stream参数处指定的Stream必须是正处于捕获状态。|
 |event|输入| 需等待的Event。类型定义请参见[aclrtEvent](25-05_Typedefs.md#aclrtEvent)。<br>当flag为ACL_EVENT_WAIT_EXTERNAL时，event仅支持通过[aclrtCreateEventExWithFlag](#aclrtCreateEventExWithFlag)接口创建，且flag必须为ACL_EVENT_SYNC。其他flag或其他创建Event的接口均不支持。|
-|timeout|输入| 超时时间，单位为秒。<br>当flag为ACL_EVENT_WAIT_DEFAULT时，功能等价于[aclrtStreamWaitEventWithTimeout](#aclrtStreamWaitEventWithTimeout)接口，但本接口timeout参数类型为uint32_t。<br>当flag为ACL_EVENT_WAIT_EXTERNAL时，timeout参数仅支持设置为0，表示永不超时。|
+|timeout|输入| 超时时间，单位为毫秒。<br>当flag为ACL_EVENT_WAIT_DEFAULT时，功能等价于[aclrtStreamWaitEventWithTimeout](#aclrtStreamWaitEventWithTimeout)接口，但本接口timeout参数类型为uint32_t。<br>当flag为ACL_EVENT_WAIT_EXTERNAL时，timeout参数仅支持设置为0，表示永不超时。|
 |flag|输入| 指定等待动作的行为。flag取值如下：<br>- 当flag为ACL_EVENT_WAIT_DEFAULT时，表示默认标记，适用于普通场景，等价于[aclrtStreamWaitEventWithTimeout](#aclrtStreamWaitEventWithTimeout)接口。<br>- 当flag为ACL_EVENT_WAIT_EXTERNAL时，图捕获场景专用，当用户正在把Stream上的任务捕获成计算图时，带上这个flag，表示本次等待一个图之外的事件，用于实现图和外部Stream之间做同步、以及实现图和图之间做同步。<br><br>宏定义如下：<br>#define ACL_EVENT_WAIT_DEFAULT 0x00U<br>#define ACL_EVENT_WAIT_EXTERNAL 0x01U<br> |
 
 ### 返回值说明
@@ -1029,7 +1029,7 @@ aclError aclrtStreamWaitEventWithTimeout(aclrtStream stream, aclrtEvent event, i
 | --- | :---: | --- |
 | stream | 输入 | 指定Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。<br>多Stream同步等待场景下，例如，Stream2等待Stream1的场景，此处配置为Stream2。 |
 | event | 输入 | 需等待的Event。类型定义请参见[aclrtEvent](25-05_Typedefs.md#aclrtEvent)。 |
-| timeout | 输入 | 超时时间。<br>取值>=0，用于配置具体的超时时间，单位是秒。0代表永不超时。 |
+| timeout | 输入 | 超时时间。<br>取值>=0，用于配置具体的超时时间，单位是毫秒。0代表永不超时。 |
 
 ### 返回值说明
 
