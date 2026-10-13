@@ -16,4 +16,4 @@ Value -1 for parameter --aicore_num is invalid. Reason: The AI Core num should b
 
 ## Solution
 
-Please adjust the parameter according to the documentation or contact Huawei technical support.
+Please adjust the parameter according to the documentation or contact technical support.

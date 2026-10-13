@@ -4,7 +4,7 @@ This file provides guidance for agents working in this code repository.
 
 ## Project Overview
 
-Runtime is the runtime component of Huawei CANN (Compute Architecture for Neural Networks), providing Ascend NPU runtime user programming interfaces and core runtime implementations.
+Runtime is the runtime component of CANN (Compute Architecture for Neural Networks), providing Ascend NPU runtime user programming interfaces and core runtime implementations.
 
 Main features:
 - **Runtime components**: Device management, stream management, event management, memory management, task scheduling, and more

@@ -21,4 +21,4 @@ Operator QuantBatchMatmulV3 compilation failed. Optype is QuantBatchMatmulV3.
 
 ## Solution
 
-For a custom operator, check the operator implementation and arguments based on the error log. For a Huawei built-in operator, obtain the host log and contact technical support at https://www.hiascend.com/support.
+For a custom operator, check the operator implementation and arguments based on the error log. For a built-in operator, obtain the host log and contact technical support at https://www.hiascend.com/support.

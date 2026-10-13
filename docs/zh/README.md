@@ -82,5 +82,5 @@
 </p>
 
 <p align="center">
-  <sub>CANN Runtime 文档 | 华为昇腾</sub>
+  <sub>CANN Runtime 文档 | 昇腾</sub>
 </p>

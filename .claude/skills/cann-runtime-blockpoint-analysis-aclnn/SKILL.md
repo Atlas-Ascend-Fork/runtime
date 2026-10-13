@@ -14,7 +14,7 @@ argument-hint: "[算子名称，如 aclnnAdd / aclnnMatMul]"
 
 ## 评估对象
 
-CANN Runtime 是华为昇腾 CANN（Compute Architecture for Neural Networks）的
+CANN Runtime 是昇腾 CANN（Compute Architecture for Neural Networks）的
 Runtime 运行时模块，为算子开发者提供设备管理、内存管理、Stream/Context
 管理等底层运行时 API。
 
@@ -221,7 +221,7 @@ git clone https://gitcode.com/cann/ops-math.git 2>/dev/null || (cd ops-math && g
 
 | 知识领域 | 允许的来源 | 禁止的来源 |
 |---------|-----------|-----------|
-| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 华为官网、CSDN、博客、CUDA 经验推断 |
+| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 昇腾官网、CSDN、博客、CUDA 经验推断 |
 | aclnn 算子相关知识 | **优先** `reference/ops-nn/`、`reference/ops-transformer/`、`reference/ops-math/`，不足时向用户求助 | 自行猜测、脑补 |
 | AscendC 相关知识 | **优先** `reference/asc-devkit/`，不足时向用户求助 | 自行猜测、脑补 |
 | 其他非 Runtime 仓 API | **优先** `reference/` 下查找，不足时向用户求助 | 自行猜测、脑补、基于经验推断 |
