@@ -9,10 +9,10 @@
 
 | 知识领域 | 允许的来源 | 禁止的来源 | 理由 |
 |---------|-----------|-----------|------|
-| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 华为官网、CSDN、博客、Stack Overflow、CUDA/ROCm 经验推断 | 评估 Runtime 仓库文档是否自足 |
-| 两段式调用范式 / workspace / executor 概念 | **直接查** `references/aclnn-two-phase-calling.md` 和 `reference/ops-math/docs/zh/context/两段式接口.md` | 期望 Runtime docs/ 包含、华为官网、CSDN、自行猜测 | 属于 aclnn 知识，非 Runtime 仓职责 |
-| aclnn 算子库 API | **优先**查 `reference/ops-nn/`、`reference/ops-transformer/`、`reference/ops-math/`，不足时向用户求助 | 华为官网、CSDN、博客、自行猜测 | aclnn 调用路径是评估对象的一部分，外源知识优先从 reference 仓库获取 |
-| Tensor/Scalar API | **优先**仓库 docs/ 和 example/，不足时查 `reference/` 下相关仓库，仍不足时向用户求助 | 华为官网、CSDN、博客、自行猜测 | 数据描述 API 是调用链的关键环节 |
+| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 昇腾官网、CSDN、博客、Stack Overflow、CUDA/ROCm 经验推断 | 评估 Runtime 仓库文档是否自足 |
+| 两段式调用范式 / workspace / executor 概念 | **直接查** `references/aclnn-two-phase-calling.md` 和 `reference/ops-math/docs/zh/context/两段式接口.md` | 期望 Runtime docs/ 包含昇腾官网、CSDN、自行猜测 | 属于 aclnn 知识，非 Runtime 仓职责 |
+| aclnn 算子库 API | **优先**查 `reference/ops-nn/`、`reference/ops-transformer/`、`reference/ops-math/`，不足时向用户求助 | 昇腾官网、CSDN、博客、自行猜测 | aclnn 调用路径是评估对象的一部分，外源知识优先从 reference 仓库获取 |
+| Tensor/Scalar API | **优先**仓库 docs/ 和 example/，不足时查 `reference/` 下相关仓库，仍不足时向用户求助 | 昇腾官网、CSDN、博客、自行猜测 | 数据描述 API 是调用链的关键环节 |
 | AscendC 相关知识 | **优先** `reference/asc-devkit/`，不足时向用户求助 | 外部网络、自行猜测 | 外源知识优先从 reference 仓库获取 |
 | 其他非 Runtime 仓知识 | **优先** `reference/` 下查找，不足时向用户求助 | 外部网络、自行猜测 | 外源知识优先从 reference 仓库获取 |
 | C/C++ 编程 | 角色已有技能 | — | 通用基础技能 |
@@ -24,7 +24,7 @@
 ### Runtime API（最严格）
 
 - 只能从仓库根目录下的 `docs/` 和 `example/` 获取信息
-- 不得使用华为官网的 Runtime API 文档
+- 不得使用昇腾官网的 Runtime API 文档
 - 不得使用 CSDN、博客、论坛等第三方资料
 - 不得凭借对 CUDA Runtime / PyTorch C++ API 的经验推断参数含义
 - 遇到资料不足时，**必须记录为断点**，不得脑补

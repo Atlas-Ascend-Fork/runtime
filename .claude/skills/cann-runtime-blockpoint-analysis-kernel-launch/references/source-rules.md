@@ -9,7 +9,7 @@
 
 | 知识领域 | 允许的来源 | 禁止的来源 | 理由 |
 |---------|-----------|-----------|------|
-| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 华为官网、CSDN、博客、Stack Overflow、CUDA/ROCm 经验推断 | 评估 Runtime 仓库文档是否自足 |
+| Runtime API 用法 | **仅限**仓库 docs/ 和 example/ | 昇腾官网、CSDN、博客、Stack Overflow、CUDA/ROCm 经验推断 | 评估 Runtime 仓库文档是否自足 |
 | AscendC 核函数编写 | **优先** `reference/asc-devkit/`，不足时向用户求助 | 外部网络、自行猜测 | 外源知识优先从 reference 仓库获取 |
 | AscendC 核函数编译 | **优先** `reference/asc-devkit/`，不足时向用户求助 | 外部网络、自行猜测 | 外源知识优先从 reference 仓库获取 |
 | aclnn 算子相关知识 | **优先** `reference/ops-nn/`、`reference/ops-transformer/`、`reference/ops-math/`，不足时向用户求助 | 外部网络、自行猜测 | 外源知识优先从 reference 仓库获取 |
@@ -23,7 +23,7 @@
 ### Runtime API（最严格）
 
 - 只能从仓库根目录下的 `docs/` 和 `example/` 获取信息
-- 不得使用华为官网的 Runtime API 文档
+- 不得使用昇腾官网的 Runtime API 文档
 - 不得使用 CSDN、博客、论坛等第三方资料
 - 不得凭借对 CUDA Runtime / ROCm HIP 的经验推断参数含义
 - **不得**使用仓库根目录下的《AscendC算子开发指南》或其他非 docs/example/ 目录

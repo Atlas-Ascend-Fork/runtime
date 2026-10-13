@@ -8,4 +8,4 @@ An unknown error occurred. Please check the log.
 
 ## 解决方法
 
-内部错误，请根据日志进一步定位问题，或联系华为工程师。
+内部错误，请根据日志进一步定位问题，或提ISSUE。

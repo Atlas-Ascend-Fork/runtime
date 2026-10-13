@@ -1,6 +1,6 @@
 # 核函数定义与 <<<>>> 内核调用符语法
 
-> 来源：AscendC 官方文档（华为昇腾 CANN 商用版 8.5.0）
+> 来源：AscendC 官方文档（昇腾 CANN 商用版 8.5.0）
 > 职责归属：AscendC（asc-devkit），非 Runtime 仓库
 
 ## 一、核函数定义

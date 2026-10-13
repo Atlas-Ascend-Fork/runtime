@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-Runtime 是华为 CANN (Compute Architecture for Neural Networks) 的运行时组件，提供 Ascend NPU 运行时用户编程接口和运行时核心实现。
+Runtime 是 CANN (Compute Architecture for Neural Networks) 的运行时组件，提供 Ascend NPU 运行时用户编程接口和运行时核心实现。
 
 主要功能：
 - **Runtime 组件**：设备管理、流管理、Event 管理、内存管理、任务调度等

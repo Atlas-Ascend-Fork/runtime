@@ -12,7 +12,7 @@
 
 ## 系统架构总览
 
-**功能概述**：CANN Runtime 是华为昇腾 AI 处理器的运行时组件...
+**功能概述**：CANN Runtime 是昇腾 AI 处理器的运行时组件...
 
 ### 整体架构图
 
@@ -22,18 +22,18 @@ graph TB
         ACL["ACL API"]
         RT["rt* API"]
     end
-  
+
     subgraph Core["Runtime 核心层"]
         Runtime["Runtime"]
         Device["Device"]
         Stream["Stream"]
         Task["Task"]
     end
-  
+
     subgraph Driver["驱动层"]
         HAL["HAL驱动"]
     end
-  
+
     API --> Core --> Driver
 ```
 

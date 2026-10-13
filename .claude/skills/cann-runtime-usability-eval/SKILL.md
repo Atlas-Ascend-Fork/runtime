@@ -14,7 +14,7 @@ description: >
 
 ## 评估对象
 
-CANN Runtime 是华为昇腾 CANN（Compute Architecture for Neural Networks）的
+CANN Runtime 是昇腾 CANN（Compute Architecture for Neural Networks）的
 Runtime 运行时模块，为算子开发者提供设备管理、内存管理、Stream/Context
 管理等底层运行时 API。
 
@@ -61,7 +61,7 @@ ls reports/*blockpoint* 2>/dev/null
 
 | 知识领域 | 允许的来源 | 禁止的来源 |
 |---------|-----------|-----------|
-| Runtime 仓库评估 | 仓库 docs/ 和 example/ 为主要来源 | 华为官网、CSDN、博客等外部 Runtime 资料 |
+| Runtime 仓库评估 | 仓库 docs/ 和 example/ 为主要来源 | 昇腾官网、CSDN、博客等外部 Runtime 资料 |
 | AscendC 衔接判断 | AscendC 指南目录（仅用于判断衔接完整性） | 外部网络 AscendC 资料（静态评估不使用） |
 | 横向对比（附录 B） | 行业经验（CUDA/ROCm）定性对比 | — |
 | C/C++/CMake 基础 | 已有技能 | — |
