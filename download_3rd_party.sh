@@ -72,7 +72,7 @@ trap 'if [[ -n "${TEMP_FILE}" ]]; then rm -f -- "${TEMP_FILE}"; fi' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-for TOOL in wget sha256sum; do
+for TOOL in wget sha256sum git; do
     if ! command -v "${TOOL}" >/dev/null 2>&1; then
         echo "Error: ${TOOL} is required." >&2
         exit 1
@@ -82,6 +82,22 @@ done
 check_sha256() {
     printf '%s  %s\n' "$1" "$2" | sha256sum --check --status
 }
+
+ASC_COMM_URL="https://gitcode.com/cann/asc-comm.git"
+ASC_COMM_TAG="cacb3ec39b70552231f534727adf5519eafd732b"
+ASC_COMM_DIR="${WORK_DIR}/asc-comm"
+if [[ ! -d "${ASC_COMM_DIR}/.git" ]]; then
+    mkdir -p -- "${WORK_DIR}"
+    echo "Clone from ${ASC_COMM_URL} to ${ASC_COMM_DIR}"
+    git clone "${ASC_COMM_URL}" "${ASC_COMM_DIR}"
+fi
+git -C "${ASC_COMM_DIR}" checkout --quiet "${ASC_COMM_TAG}"
+ASC_COMM_HEAD="$(git -C "${ASC_COMM_DIR}" rev-parse HEAD)"
+if [[ "${ASC_COMM_HEAD}" != "${ASC_COMM_TAG}" ]]; then
+    echo "Error: asc-comm commit mismatch: expected ${ASC_COMM_TAG}, got ${ASC_COMM_HEAD}" >&2
+    exit 1
+fi
+echo "Verified Git dependency: asc-comm ${ASC_COMM_TAG}"
 
 for ITEM in "${DOWNLOAD_LIST[@]}"; do
     read -r URL SHA256 FILE_NAME <<< "${ITEM}"

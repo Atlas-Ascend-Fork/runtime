@@ -60,6 +60,7 @@
         <file value="libplatform_static.a" file_type="static" install_softlink="$(TARGET_ENV)/lib64/device/lib64/libplatform_static.a" optional="true"/>
         <file value="libkernel_load_platform.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/device/lib64/libkernel_load_platform.so" optional="true"/>
         <file value="libascend_hal.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/device/lib64/libascend_hal.so" optional="true"/>
+        <file value="libasccomm_aicpu.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/device/lib64/libasccomm_aicpu.so" optional="true"/>
     </file_info>
     <file_info value="runtime_lib_devlib_aarch" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/devlib/linux/aarch64" install_path="$(TARGET_ENV)/devlib/linux/aarch64" install_mod="440" optional="true">
         <file value="libacl_rt.so" file_type="shared"/>

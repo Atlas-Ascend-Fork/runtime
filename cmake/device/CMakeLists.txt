@@ -47,6 +47,7 @@ include(${RUNTIME_DIR}/src/dfx/error_manager/error_manager_headers.cmake)
 include(${RUNTIME_DIR}/src/acl/aclrt/acl_rt_headers.cmake)
 include(${RUNTIME_DIR}/src/dfx/trace/atrace_headers.cmake)
 include(${RUNTIME_DIR}/src/dfx/msprof/msprof_headers.cmake)
+include(${RUNTIME_DIR}/cmake/third_party/asc_comm.cmake)
 
 add_dependencies(mmpa c_sec)
 add_dependencies(static_mmpa c_sec)
@@ -60,6 +61,10 @@ install(FILES
 install(FILES
     $<TARGET_FILE:c_sec>
     DESTINATION ${DEVICE_LIBRARY_PATH} COMPONENT npu-runtime
+)
+
+install(TARGETS asccomm_aicpu
+    LIBRARY DESTINATION ${DEVICE_LIBRARY_PATH} ${INSTALL_OPTIONAL} COMPONENT npu-runtime
 )
 
 include(${RUNTIME_DIR}/version.cmake)
@@ -94,6 +99,30 @@ add_cann_sign_file(
 install(FILES
   ${tsch_compat_sign_file}
   DESTINATION compat
+  COMPONENT npu-runtime
+)
+
+cann_pack_targets_and_files(
+  OUTPUT_TARGET "pack_asccomm_aicpu"
+  OUTPUT "asccomm_aicpu.tar.gz"
+  TARGETS asccomm_aicpu
+  SIZE_LIMIT 1024
+  MANIFEST "bin_hash.cfg"
+  TAR_ROOT_DIR "aicpu_kernels_device"
+)
+
+add_cann_sign_file(
+  OUTPUT_TARGET sign_asccomm_aicpu
+  INPUT "asccomm_aicpu.tar.gz"
+  CONFIG "${RUNTIME_DIR}/scripts/package/sign.xml"
+  RESULT_VAR "asccomm_aicpu_sign_file"
+  VERSION "${CANN_VERSION_npu-runtime_VERSION}"
+  DEPENDS pack_asccomm_aicpu
+)
+
+install(FILES
+  ${asccomm_aicpu_sign_file}
+  DESTINATION opp/built-in/op_impl/aicpu/kernel
   COMPONENT npu-runtime
 )
 

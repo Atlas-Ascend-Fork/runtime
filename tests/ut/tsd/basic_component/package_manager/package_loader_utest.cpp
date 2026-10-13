@@ -597,7 +597,11 @@ TEST_F(PackageLoaderComponentTest, SupportLoadPkg_KnownAndUnknownPackages_Return
 
     processModeManager.GetPackageManager().envInfo_.SetPlatInfoChipType(static_cast<uint32_t>(tsd::CHIP_DC));
     EXPECT_TRUE(processModeManager.GetPackageManager().loader_.SupportLoadPkg("aicpu_hcomm.tar.gz"));
+    EXPECT_FALSE(processModeManager.GetPackageManager().loader_.SupportLoadPkg("asccomm_aicpu.tar.gz"));
     EXPECT_FALSE(processModeManager.GetPackageManager().loader_.SupportLoadPkg("cann-tsch-compat.tar.gz"));
+
+    processModeManager.GetPackageManager().envInfo_.SetPlatInfoChipType(static_cast<uint32_t>(tsd::CHIP_ASCEND_950));
+    EXPECT_TRUE(processModeManager.GetPackageManager().loader_.SupportLoadPkg("asccomm_aicpu.tar.gz"));
 }
 
 TEST_F(PackageLoaderComponentTest, LoadPackageToDeviceByConfig_CommonSinkUnsupported_ReturnsOk)

@@ -56,6 +56,11 @@
         <path value="$(TARGET_ENV)/include/experiment/msprof/toolchain"/>
         <path value="$(TARGET_ENV)/include/experiment/msprof/profiling"/>
         <path value="compat"/>
+        <path value="opp"/>
+        <path value="opp/built-in"/>
+        <path value="opp/built-in/op_impl"/>
+        <path value="opp/built-in/op_impl/aicpu"/>
+        <path value="opp/built-in/op_impl/aicpu/kernel"/>
     </dir_info>
     <file_info dst_path="$(TARGET_ENV)/include/version" install_path="$(TARGET_ENV)/include/version" install_type="devel" install_mod="440">
         <file value="cann_version.h"/>
@@ -264,6 +269,10 @@
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/data" install_path="$(TARGET_ENV)/data" install_type="all">
         <file value="platform_config" install_mod="440"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="opp/built-in/op_impl/aicpu/kernel"
+               install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all">
+        <file value="asccomm_aicpu.tar.gz" install_mod="440" entity="true" optional="true"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/conf" install_path="$(TARGET_ENV)/conf" install_type="all">
         <file value="ascend_package_load.ini" install_mod="444" entity="true"/>
