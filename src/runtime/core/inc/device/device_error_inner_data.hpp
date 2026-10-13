@@ -384,6 +384,21 @@ struct StarsV2CoreTimeoutDfxInfo {
     StarsV2OneCoreTimeoutDfxInfo coreInfo[RT_STARS_V2_AICORE_NUM + RT_STARS_V2_AIVECTOR_NUM];
 };
 
+enum NoCoreTimeoutAccType : uint16_t {
+    ACC_TYPE_AIC = 0U,
+    ACC_TYPE_AIV = 1U,
+    ACC_TYPE_AICPU = 2U,
+    ACC_TYPE_SDMA = 3U,
+    ACC_TYPE_CCU = 4U
+};
+
+struct StarsNoCoreTimeoutDfxInfo {
+    StarsErrorCommonInfo comm;
+    uint16_t acsqId;
+    uint16_t accType;
+    uint8_t rsv[8];
+};
+
 struct StarsSqeErrorInfo {
     uint16_t streamId;
     uint16_t sqId;
@@ -538,6 +553,7 @@ struct StarsDeviceErrorInfoRingBuffer {
         StarsCcuErrorInfo ccuErrorInfo;
         StarsCoreTimeoutDfxInfo coreTimeoutDfxInfo;
         StarsV2CoreTimeoutDfxInfo starsV2CoreTimeoutDfxInfo;
+        StarsNoCoreTimeoutDfxInfo starsNoCoreTimeoutDfxInfo;
     } u;
 };
 
@@ -571,6 +587,7 @@ struct StarsDeviceErrorInfo {
         StarsCcuErrorInfo ccuErrorInfo;
         StarsCoreTimeoutDfxInfo coreTimeoutDfxInfo;
         StarsV2CoreTimeoutDfxInfo starsV2CoreTimeoutDfxInfo;
+        StarsNoCoreTimeoutDfxInfo starsNoCoreTimeoutDfxInfo;
     } u;
 };
 } // namespace runtime

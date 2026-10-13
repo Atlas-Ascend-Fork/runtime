@@ -41,6 +41,7 @@ static bool RegisterStarsErrorProcFunc()
         RegErrorProcFunc(chip, SQE_ERROR, &DeviceErrorProc::ProcessStarsSqeErrorInfo);
         RegErrorProcFunc(chip, HCCL_FFTSPLUS_TIMEOUT_ERROR, &DeviceErrorProc::ProcessStarsHcclFftsPlusTimeoutErrorInfo);
         RegErrorProcFunc(chip, AICORE_TIMEOUT_DFX, &DeviceErrorProc::ProcessStarsCoreTimeoutDfxInfo);
+        RegErrorProcFunc(chip, NOCORE_TIMEOUT_ERROR, &DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo);
     }
     return true;
 }

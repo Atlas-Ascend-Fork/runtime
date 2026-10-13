@@ -72,6 +72,7 @@ enum rtErrorType : std::uint8_t {
     CCU_ERROR,
     AICORE_EXT_ERROR,
     AIVECTOR_EXT_ERROR,
+    NOCORE_TIMEOUT_ERROR,
     ERROR_TYPE_BUTT
 };
 

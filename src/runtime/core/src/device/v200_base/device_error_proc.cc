@@ -54,6 +54,7 @@ static bool RegisterDavidErrorProcFunc()
         RegErrorProcFunc(chip, FUSION_KERNEL_ERROR, &ProcessDavidStarsFusionKernelErrorInfo);
         RegErrorProcFunc(chip, CCU_ERROR, &ProcessDavidStarsCcuErrorInfo);
         RegErrorProcFunc(chip, AICORE_TIMEOUT_DFX, &ProcessStarsV2CoreTimeoutDfxInfo);
+        RegErrorProcFunc(chip, NOCORE_TIMEOUT_ERROR, &DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo);
     }
     return true;
 }

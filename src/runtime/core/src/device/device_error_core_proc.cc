@@ -35,6 +35,24 @@ constexpr uint32_t TS_SDMA_STATUS_LINK_ERROR = 0x9U;
 constexpr uint32_t TS_SDMA_STATUS_POISON_ERROR = 0xAU;
 } // namespace
 
+const char_t* GetNoCoreTimeoutAccTypeName(const uint16_t accType)
+{
+    switch (accType) {
+        case ACC_TYPE_AIC:
+            return "AIC";
+        case ACC_TYPE_AIV:
+            return "AIV";
+        case ACC_TYPE_AICPU:
+            return "AICPU";
+        case ACC_TYPE_SDMA:
+            return "SDMA";
+        case ACC_TYPE_CCU:
+            return "CCU";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 const std::map<uint32_t, std::string> g_aicOrSdmaOrHcclLocalMulBitEccEventIdBlkList = {
     {0x80CD8008U, "L2BUFF multi bit Err."},
     {0x80F2180DU, "HBMA/MATA Os Err."},
@@ -1356,6 +1374,40 @@ rtError_t DeviceErrorProc::ProcessStarsCoreTimeoutDfxInfo(
                 coreInfo.coreId, coreInfo.coreType, coreInfo.subError, coreInfo.currentPc, coreInfo.slotId);
         }
     }
+    return RT_ERROR_NONE;
+}
+
+rtError_t DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo(
+    const StarsDeviceErrorInfo* const info, const uint64_t errorNumber, const Device* const dev,
+    const DeviceErrorProc* const insPtr)
+{
+    UNUSED(insPtr);
+    if (info == nullptr || dev == nullptr) {
+        RT_LOG(RT_LOG_ERROR, "info or device is null");
+        return RT_ERROR_NONE;
+    }
+
+    const StarsNoCoreTimeoutDfxInfo& timeoutInfo = info->u.starsNoCoreTimeoutDfxInfo;
+    const StarsErrorCommonInfo& common = timeoutInfo.comm;
+    RT_LOG(
+        RT_LOG_ERROR,
+        "task timeout due to no available cores, device_id=%u, stream_id=%hu, task_id=%hu, acsq_id=%hu, "
+        "acc_type=%s, serial number=%" PRIu64 ".",
+        dev->Id_(), common.streamId, common.taskId, timeoutInfo.acsqId,
+        GetNoCoreTimeoutAccTypeName(timeoutInfo.accType), errorNumber);
+    const std::string reason = RtFmtMsg(
+        "No available cores were assigned before the task timed out on the device (device_id=%u, acc_type=%s(%hu)). "
+        "Check whether other tasks occupy the corresponding execution resources, "
+        "reduce concurrent tasks, and try again",
+        dev->Id_(), GetNoCoreTimeoutAccTypeName(timeoutInfo.accType), timeoutInfo.accType);
+    RT_LOG_OUTER_MSG_IMPL(ErrorCode::EE1023, "Executing the task", reason);
+
+    TaskInfo* errTaskPtr =
+        GetTaskInfo(dev, static_cast<uint32_t>(common.streamId), static_cast<uint32_t>(common.taskId), true);
+    if (errTaskPtr != nullptr) {
+        errTaskPtr->isRingbufferGet = true;
+    }
+
     return RT_ERROR_NONE;
 }
 

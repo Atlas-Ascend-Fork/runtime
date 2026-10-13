@@ -1328,6 +1328,86 @@ TEST_F(DeviceTest, STARS_AicoreTimeoutDfx3)
     delete device;
 }
 
+TEST_F(DeviceTest, GetNoCoreTimeoutAccTypeName_ReturnsExpectedName)
+{
+    struct AccTypeNameCase {
+        uint16_t accType;
+        const char_t* expectedName;
+    };
+    const AccTypeNameCase cases[] = {
+        {ACC_TYPE_AIC, "AIC"},   {ACC_TYPE_AIV, "AIV"}, {ACC_TYPE_AICPU, "AICPU"},
+        {ACC_TYPE_SDMA, "SDMA"}, {ACC_TYPE_CCU, "CCU"}, {static_cast<uint16_t>(ACC_TYPE_CCU + 1U), "UNKNOWN"},
+    };
+
+    for (const auto& testCase : cases) {
+        EXPECT_STREQ(GetNoCoreTimeoutAccTypeName(testCase.accType), testCase.expectedName);
+    }
+}
+
+TEST_F(DeviceTest, STARS_NoCoreTimeoutDfx_NullInputReturnsSuccess)
+{
+    StarsDeviceErrorInfo errorInfo = {};
+
+    EXPECT_EQ(DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo(nullptr, 0U, nullptr, nullptr), RT_ERROR_NONE);
+    EXPECT_EQ(DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo(&errorInfo, 0U, nullptr, nullptr), RT_ERROR_NONE);
+}
+
+TEST_F(DeviceTest, STARS_NoCoreTimeoutDfx_MatchedTaskIsMarkedFromRingbuffer)
+{
+    rtSetDevice(1);
+    Device* const device = Runtime::Instance()->DeviceRetain(1, 0);
+    ASSERT_NE(device, nullptr);
+
+    constexpr uint16_t streamId = 7U;
+    constexpr uint16_t taskId = 11U;
+    TaskInfo taskInfo = {};
+    StarsDeviceErrorInfo errorInfo = {};
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.comm.streamId = streamId;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.comm.taskId = taskId;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.acsqId = 3U;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.accType = ACC_TYPE_AICPU;
+    MOCKER_CPP(&TaskFactory::GetTask)
+        .expects(once())
+        .with(static_cast<int32_t>(streamId), taskId)
+        .will(returnValue(&taskInfo));
+
+    const rtError_t ret = DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo(&errorInfo, 19U, device, nullptr);
+
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_TRUE(taskInfo.isRingbufferGet);
+    GlobalMockObject::verify();
+    GlobalMockObject::reset();
+    Runtime::Instance()->DeviceRelease(device);
+    EXPECT_EQ(rtDeviceReset(1), RT_ERROR_NONE);
+}
+
+TEST_F(DeviceTest, STARS_NoCoreTimeoutDfx_MissingTaskReturnsSuccess)
+{
+    rtSetDevice(1);
+    Device* const device = Runtime::Instance()->DeviceRetain(1, 0);
+    ASSERT_NE(device, nullptr);
+
+    constexpr uint16_t streamId = 9U;
+    constexpr uint16_t taskId = 13U;
+    StarsDeviceErrorInfo errorInfo = {};
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.comm.streamId = streamId;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.comm.taskId = taskId;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.acsqId = 5U;
+    errorInfo.u.starsNoCoreTimeoutDfxInfo.accType = ACC_TYPE_SDMA;
+    MOCKER_CPP(&TaskFactory::GetTask)
+        .expects(once())
+        .with(static_cast<int32_t>(streamId), taskId)
+        .will(returnValue(static_cast<TaskInfo*>(nullptr)));
+
+    const rtError_t ret = DeviceErrorProc::ProcessStarsNoCoreTimeoutDfxInfo(&errorInfo, 23U, device, nullptr);
+
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    GlobalMockObject::verify();
+    GlobalMockObject::reset();
+    Runtime::Instance()->DeviceRelease(device);
+    EXPECT_EQ(rtDeviceReset(1), RT_ERROR_NONE);
+}
+
 TEST_F(DeviceTest, STARS_AicoreTimeoutDfxSlotInfo1)
 {
     // no ffts+
