@@ -1110,22 +1110,29 @@ TEST_F(DavidTaskTest, construct_davidsqe_for_add_end_graph_task)
 {
     TaskInfo task = {};
     InitByStream(&task, stream_);
+    task.taskSn = 0x12345678U;
     AddEndGraphTaskInit(&task, 0, 0, 0, 0, 0);
-    rtDavidSqe_t sqe;
+    rtDavidSqe_t sqe = {};
     TaskSqeInfo sqeInfo = {0ULL, 0ULL};
     ToConstructSqe(&task, static_cast<void*>(&sqe), sqeInfo);
     EXPECT_EQ(sqe.aicpuSqe.header.type, RT_DAVID_SQE_TYPE_AICPU_D);
+    EXPECT_EQ(sqe.aicpuSqe.usrData.extraFieldLow, task.taskSn);
+    EXPECT_EQ(sqe.aicpuSqe.usrData.res5, 0xFFFFU);
+    EXPECT_EQ(sqe.aicpuSqe.usrDataLen, 40U);
 }
 
 TEST_F(DavidTaskTest, construct_davidsqe_for_stars_timeout_sqe)
 {
     TaskInfo task = {};
-    rtDavidSqe_t sqe;
+    rtDavidSqe_t sqe = {};
     TaskSqeInfo sqeInfo = {0ULL, 0ULL};
     InitByStream(&task, stream_);
     TimeoutSetTaskInit(&task, RT_TIMEOUT_TYPE_OP_EXECUTE, 10);
     ToConstructSqe(&task, static_cast<void*>(&sqe), sqeInfo);
     EXPECT_EQ(sqe.aicpuControlSqe.header.type, RT_DAVID_SQE_TYPE_AICPU_D);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.cmdType, static_cast<uint8_t>(TS_AICPU_TIMEOUT_CONFIG));
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.u.timeoutCfg.opExecuteTimeout, 10U);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrDataLen, 20U);
 }
 
 TEST_F(DavidTaskTest, construct_davidsqe_for_stars_memcpy_async_sqe_d2d)
@@ -2386,12 +2393,31 @@ TEST_F(DavidTaskTest, AicoreLogFmtRegex_V200_EZ9999)
 TEST_F(DavidTaskTest, construct_davidsqe_for_model_to_aicpu)
 {
     TaskInfo task = {};
-    rtDavidSqe_t sqe;
+    rtDavidSqe_t sqe = {};
     TaskSqeInfo sqeInfo = {0ULL, 0ULL};
     InitByStream(&task, stream_);
     ModelToAicpuTaskInit(&task, 0, 1, RT_KERNEL_DEFAULT, 1);
     ToConstructSqe(&task, static_cast<void*>(&sqe), sqeInfo);
     EXPECT_EQ(sqe.aicpuControlSqe.header.type, RT_DAVID_SQE_TYPE_AICPU_D);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.cmdType, static_cast<uint8_t>(TS_AICPU_MODEL_OPERATE));
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.u.modelOperate.modelId, 0U);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrDataLen, 24U);
+}
+
+TEST_F(DavidTaskTest, construct_davidsqe_for_aicpu_msg_version)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    AicpuMsgVersionTaskInit(&task);
+    rtDavidSqe_t sqe = {};
+    const TaskSqeInfo sqeInfo = {0ULL, 0ULL};
+    ToConstructSqe(&task, static_cast<void*>(&sqe), sqeInfo);
+
+    EXPECT_EQ(sqe.aicpuControlSqe.header.type, RT_DAVID_SQE_TYPE_AICPU_D);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.cmdType, static_cast<uint8_t>(TS_AICPU_MSG_VERSION));
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.u.msgVersion.magicNum, MAGIC_NUMBER_FOR_AICPU_MSG_VERSION);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrData.u.msgVersion.version, AICPU_MSG_VERSION_FOR_DAVID);
+    EXPECT_EQ(sqe.aicpuControlSqe.usrDataLen, 12U);
 }
 
 TEST_F(DavidTaskTest, construct_davidsqe_for_davinci)

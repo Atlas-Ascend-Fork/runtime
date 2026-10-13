@@ -19,6 +19,25 @@
 namespace cce {
 namespace runtime {
 #if F_DESC("TaskTimeoutSetTask")
+static void FillTimeoutConfigUserData(
+    DavidStarsAicpuUserData* const usrData, const TimeoutSetTaskInfo* const timeoutSetTask)
+{
+    usrData->pid = 0U;
+    usrData->cmdType = static_cast<uint8_t>(TS_AICPU_TIMEOUT_CONFIG);
+    usrData->vfId = 0U;
+    usrData->tid = 0U;
+    usrData->tsId = 0U;
+    usrData->u.timeoutCfg.opWaitTimeoutEn = timeoutSetTask->opWaitTimeoutEn;
+    usrData->u.timeoutCfg.opWaitTimeout = timeoutSetTask->opWaitTimeout;
+
+    usrData->u.timeoutCfg.opExecuteTimeoutEn = timeoutSetTask->opExecuteTimeoutEn;
+    if ((timeoutSetTask->opExecuteTimeoutEn) && (timeoutSetTask->opExecuteTimeout == 0U)) {
+        usrData->u.timeoutCfg.opExecuteTimeout = RT_STARS_AICPU_DEFAULT_TIMEOUT;
+    } else {
+        usrData->u.timeoutCfg.opExecuteTimeout = timeoutSetTask->opExecuteTimeout;
+    }
+}
+
 static void ConstructDavidSqeForTimeoutSetTask(TaskInfo* taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)
 {
     rtDavidSqe_t* davidSqe = static_cast<rtDavidSqe_t*>(sqe);
@@ -40,20 +59,7 @@ static void ConstructDavidSqeForTimeoutSetTask(TaskInfo* taskInfo, void* const s
     aicpuCtrlSqe->sqeIndex = 0U; // useless
     aicpuCtrlSqe->kernelCredit = RT_STARS_DEFAULT_AICPU_KERNEL_CREDIT;
 
-    aicpuCtrlSqe->usrData.pid = 0U;
-    aicpuCtrlSqe->usrData.cmdType = static_cast<uint8_t>(TS_AICPU_TIMEOUT_CONFIG);
-    aicpuCtrlSqe->usrData.vfId = 0U;
-    aicpuCtrlSqe->usrData.tid = 0U;
-    aicpuCtrlSqe->usrData.tsId = 0U;
-    aicpuCtrlSqe->usrData.u.timeoutCfg.opWaitTimeoutEn = timeoutSetTask->opWaitTimeoutEn;
-    aicpuCtrlSqe->usrData.u.timeoutCfg.opWaitTimeout = timeoutSetTask->opWaitTimeout;
-
-    aicpuCtrlSqe->usrData.u.timeoutCfg.opExecuteTimeoutEn = timeoutSetTask->opExecuteTimeoutEn;
-    if ((timeoutSetTask->opExecuteTimeoutEn) && (timeoutSetTask->opExecuteTimeout == 0U)) {
-        aicpuCtrlSqe->usrData.u.timeoutCfg.opExecuteTimeout = RT_STARS_AICPU_DEFAULT_TIMEOUT;
-    } else {
-        aicpuCtrlSqe->usrData.u.timeoutCfg.opExecuteTimeout = timeoutSetTask->opExecuteTimeout;
-    }
+    FillTimeoutConfigUserData(&(aicpuCtrlSqe->usrData), timeoutSetTask);
 
     aicpuCtrlSqe->subTopicId = 0U;
     aicpuCtrlSqe->topicId = 5U; // EVENT_TS_CTRL_MSG

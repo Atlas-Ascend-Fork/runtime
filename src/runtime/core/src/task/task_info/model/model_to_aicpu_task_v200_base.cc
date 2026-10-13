@@ -18,6 +18,21 @@
 namespace cce {
 namespace runtime {
 
+static void FillModelOperateUserData(
+    DavidStarsAicpuUserData* const usrData, const ModelToAicpuTaskInfo* const modelTask, const Stream* const stm)
+{
+    usrData->pid = 0U;
+    usrData->cmdType = static_cast<uint8_t>(TS_AICPU_MODEL_OPERATE);
+    usrData->vfId = 0U;
+    usrData->tid = 0U;
+    usrData->tsId = 0U;
+    usrData->u.modelOperate.streamId = static_cast<uint16_t>(stm->Id_());
+    usrData->u.modelOperate.cmdType = static_cast<uint8_t>(modelTask->cmdType);
+    usrData->u.modelOperate.modelId = static_cast<uint16_t>(modelTask->modelId);
+    usrData->u.modelOperate.modelInfoAddrLow = static_cast<uint32_t>(modelTask->modelArgPtr);
+    usrData->u.modelOperate.modelInfoAddrHigh = static_cast<uint16_t>(modelTask->modelArgPtr >> UINT32_BIT_NUM);
+}
+
 static void ConstructDavidSqeForModelToAicpuTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)
 {
     rtDavidSqe_t* davidSqe = static_cast<rtDavidSqe_t*>(sqe);
@@ -39,18 +54,7 @@ static void ConstructDavidSqeForModelToAicpuTask(TaskInfo* const taskInfo, void*
     aicpuCtrlSqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT_DAVID;
     aicpuCtrlSqe->sqeLength = 0U;
 
-    aicpuCtrlSqe->usrData.pid = 0U;
-    aicpuCtrlSqe->usrData.cmdType = static_cast<uint8_t>(TS_AICPU_MODEL_OPERATE);
-    aicpuCtrlSqe->usrData.vfId = 0U;
-    aicpuCtrlSqe->usrData.tid = 0U;
-    aicpuCtrlSqe->usrData.tsId = 0U;
-    aicpuCtrlSqe->usrData.u.modelOperate.streamId = static_cast<uint16_t>(stm->Id_());
-    aicpuCtrlSqe->usrData.u.modelOperate.cmdType = static_cast<uint8_t>(taskInfo->u.modelToAicpuTask.cmdType);
-    aicpuCtrlSqe->usrData.u.modelOperate.modelId = static_cast<uint16_t>(taskInfo->u.modelToAicpuTask.modelId);
-    aicpuCtrlSqe->usrData.u.modelOperate.modelInfoAddrLow =
-        static_cast<uint32_t>(taskInfo->u.modelToAicpuTask.modelArgPtr);
-    aicpuCtrlSqe->usrData.u.modelOperate.modelInfoAddrHigh =
-        static_cast<uint16_t>(taskInfo->u.modelToAicpuTask.modelArgPtr >> UINT32_BIT_NUM);
+    FillModelOperateUserData(&(aicpuCtrlSqe->usrData), &(taskInfo->u.modelToAicpuTask), stm);
 
     aicpuCtrlSqe->subTopicId = 0U;
     aicpuCtrlSqe->topicId = 5U; // EVENT_TS_CTRL_MSG

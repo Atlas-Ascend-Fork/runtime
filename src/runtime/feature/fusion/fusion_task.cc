@@ -35,30 +35,29 @@ constexpr uint32_t MASK_AICPU = 0x00000044U;
 constexpr uint32_t MASK_CCU = 0x00044000U;
 
 static void ConstructAicpuSubSqeResField(
-    TaskInfo* const taskInfo, rtDavidSqe_t* const davidSqe, const Stream* const stm, const uint32_t kernelFlag,
-    uint32_t aicpuIndex)
+    DavidStarsAicpuKernelUserData* const usrData, const TaskInfo* const taskInfo, const Stream* const stm,
+    uint32_t kernelFlag, uint32_t aicpuIndex)
 {
-    FusionTaskInfo* const fusionKernelTask = &(taskInfo->u.fusionKernelTask);
-    RtDavidStarsAicpuKernelSqe* const sqe = &(davidSqe->aicpuSqe);
+    const FusionTaskInfo* const fusionKernelTask = &(taskInfo->u.fusionKernelTask);
 
     /* word4-5 */
     uint64_t addr = RtPtrToValue(fusionKernelTask->aicpuArgsDesc[aicpuIndex].soName);
-    sqe->taskSoAddrLow = static_cast<uint32_t>(addr);
-    sqe->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->taskSoAddrLow = static_cast<uint32_t>(addr);
+    usrData->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
 
     /* word6-7 */
     addr = RtPtrToValue(fusionKernelTask->args);
-    sqe->paramAddrLow = static_cast<uint32_t>(addr);
-    sqe->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
-    sqe->res5 = fusionKernelTask->argsInfo->aicpuArgs[aicpuIndex].kfcArgsFmtOffset;
+    usrData->paramAddrLow = static_cast<uint32_t>(addr);
+    usrData->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->res5 = fusionKernelTask->argsInfo->aicpuArgs[aicpuIndex].kfcArgsFmtOffset;
 
     /* word8-11 */
     addr = RtPtrToValue(fusionKernelTask->aicpuArgsDesc[aicpuIndex].funcName);
-    ConstructDavidAICpuSqeForDavinciTaskResFieldPart(sqe, addr, kernelFlag, stm);
+    ConstructDavidAICpuSqeForDavinciTaskResFieldPart(usrData, addr, kernelFlag, stm);
 
     /* word12-13 */
-    sqe->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
-    sqe->extraFieldHigh = 0U;
+    usrData->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
+    usrData->extraFieldHigh = 0U;
 
     return;
 }
@@ -100,8 +99,10 @@ void ConstructAicpuSubSqeBase(
     sqe->sqeIndex = 0U; // useless
 
     /* words4-13 use reserved field */
-    /* words4-13 */
-    ConstructAicpuSubSqeResField(taskInfo, sqeAddr, stm, kernelFlag, aicpuIndex);
+    ConstructAicpuSubSqeResField(&(sqe->usrData), taskInfo, stm, kernelFlag, aicpuIndex);
+    if ((kernelFlag & RT_KERNEL_DUMPFLAG) != 0U) {
+        sqe->kernelCredit = RT_STARS_ADJUST_KERNEL_CREDIT;
+    }
 
     /* word14 */
     sqe->subTopicId = 0U;
@@ -123,7 +124,7 @@ void ConstructAicpuSubSqeBase(
     RT_LOG(
         RT_LOG_INFO,
         "taskIdx=%u, sqeIndex=%u, aicpuIndex=%u, kfcArgsFmtOffset=%hu, kernelFlag=%u, aicpuKernelType=%hu.", taskIdx,
-        sqeIndex, aicpuIndex, sqe->res5, kernelFlag, aicpuKernelType);
+        sqeIndex, aicpuIndex, sqe->usrData.res5, kernelFlag, aicpuKernelType);
 
     return;
 }

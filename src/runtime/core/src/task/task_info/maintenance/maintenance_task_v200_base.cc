@@ -91,6 +91,18 @@ void AicpuMsgVersionTaskInit(TaskInfo* taskInfo)
     return;
 }
 
+static void FillAicpuMsgVersionUserData(
+    DavidStarsAicpuUserData* const usrData, const AicpuMsgVersionTaskInfo* const task)
+{
+    usrData->pid = 0U;
+    usrData->cmdType = static_cast<uint8_t>(TS_AICPU_MSG_VERSION);
+    usrData->vfId = 0U;
+    usrData->tid = 0U;
+    usrData->tsId = 0U;
+    usrData->u.msgVersion.magicNum = task->magicNum;
+    usrData->u.msgVersion.version = task->version;
+}
+
 static void ConstructDavidSqeForAicpuMsgVersionTask(
     TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)
 {
@@ -114,13 +126,7 @@ static void ConstructDavidSqeForAicpuMsgVersionTask(
     aicpuCtrlSqe->sqeIndex = 0U; // useless
     aicpuCtrlSqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
 
-    aicpuCtrlSqe->usrData.pid = 0U;
-    aicpuCtrlSqe->usrData.cmdType = static_cast<uint8_t>(TS_AICPU_MSG_VERSION);
-    aicpuCtrlSqe->usrData.vfId = 0U;
-    aicpuCtrlSqe->usrData.tid = 0U;
-    aicpuCtrlSqe->usrData.tsId = 0U;
-    aicpuCtrlSqe->usrData.u.msgVersion.magicNum = task->magicNum;
-    aicpuCtrlSqe->usrData.u.msgVersion.version = task->version;
+    FillAicpuMsgVersionUserData(&(aicpuCtrlSqe->usrData), task);
 
     aicpuCtrlSqe->subTopicId = 0U;
     aicpuCtrlSqe->topicId = 5U;     // EVENT_TS_CTRL_MSG

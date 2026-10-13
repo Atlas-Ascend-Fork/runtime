@@ -31,50 +31,53 @@ namespace runtime {
 #if F_DESC("DavinciKernelTask")
 
 void ConstructDavidAICpuSqeForDavinciTaskResFieldPart(
-    RtDavidStarsAicpuKernelSqe* const sqe, const uint64_t addr, const uint8_t kernelFlag, const Stream* const stm)
+    DavidStarsAicpuKernelUserData* const usrData, const uint64_t addr, const uint8_t kernelFlag,
+    const Stream* const stm)
 {
     /* word8-9 */
-    sqe->taskNameStrPtrLow = static_cast<uint32_t>(addr);
-    sqe->taskNameStrPtrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->taskNameStrPtrLow = static_cast<uint32_t>(addr);
+    usrData->taskNameStrPtrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
 
     /* word10-11 */
-    sqe->pL2ctrlLow = 0U;
-    sqe->pL2ctrlHigh = 0U;
-    sqe->overflowEn = stm->IsOverflowEnable();
-    sqe->dumpEn = 0U;
+    usrData->pL2ctrlLow = 0U;
+    usrData->pL2ctrlHigh = 0U;
+    usrData->overflowEn = stm->IsOverflowEnable();
+    usrData->dumpEn = 0U;
     if ((kernelFlag & RT_KERNEL_DUMPFLAG) != 0U) {
-        sqe->dumpEn = 1U; // 1: aicpu dump enable
-        sqe->kernelCredit = RT_STARS_ADJUST_KERNEL_CREDIT;
+        usrData->dumpEn = 1U; // 1: aicpu dump enable
     }
-    sqe->debugDumpEn = 0U;
+    usrData->debugDumpEn = 0U;
     if (stm->IsDebugRegister() && stm->GetBindFlag()) {
-        sqe->debugDumpEn = 1U;
+        usrData->debugDumpEn = 1U;
     }
     return;
 }
 
 static void ConstructDavidAICpuSqeForDavinciTaskResField(
-    AicpuTaskInfo* const aicpuTaskInfo, rtDavidSqe_t* const davidSqe, const Stream* const stm, const uint8_t kernelFlag)
+    DavidStarsAicpuKernelUserData* const usrData, const AicpuTaskInfo* const aicpuTaskInfo, const Stream* const stm,
+    const uint8_t kernelFlag, const uint32_t taskSn)
 {
-    RtDavidStarsAicpuKernelSqe* const sqe = &(davidSqe->aicpuSqe);
-
     /* word4-5 */
     uint64_t addr = RtPtrToValue(aicpuTaskInfo->soName);
-    sqe->taskSoAddrLow = static_cast<uint32_t>(addr);
-    sqe->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->taskSoAddrLow = static_cast<uint32_t>(addr);
+    usrData->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
 
     /* word6-7 */
     const uint8_t* tmpAddr = RtPtrToPtr<const uint8_t*, void*>(aicpuTaskInfo->comm.args);
     const void* paramAddr = tmpAddr + aicpuTaskInfo->headParamOffset;
     addr = RtPtrToValue(paramAddr);
-    sqe->paramAddrLow = static_cast<uint32_t>(addr);
-    sqe->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->paramAddrLow = static_cast<uint32_t>(addr);
+    usrData->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
     // for kfcArgsFmtOffset, A1算子目前不用，先赋默认值
-    sqe->res5 = 0xFFFFU;
+    usrData->res5 = 0xFFFFU;
 
     /* word8-11 */
     addr = RtPtrToValue(aicpuTaskInfo->funcName);
-    ConstructDavidAICpuSqeForDavinciTaskResFieldPart(sqe, addr, kernelFlag, stm);
+    ConstructDavidAICpuSqeForDavinciTaskResFieldPart(usrData, addr, kernelFlag, stm);
+
+    /* word12-13 */
+    usrData->extraFieldLow = taskSn; // send task id info to aicpu
+    usrData->extraFieldHigh = 0U;
     return;
 }
 
@@ -140,12 +143,10 @@ void ConstructDavidAICpuSqeForDavinciTaskBase(
     sqe->sqeLength = 0U;
 
     /* words4-13 use reserved field */
-    /* word4-11 */
-    ConstructDavidAICpuSqeForDavinciTaskResField(aicpuTaskInfo, davidSqe, stm, kernelFlag);
-
-    /* word12-13 */
-    sqe->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
-    sqe->extraFieldHigh = 0U;
+    ConstructDavidAICpuSqeForDavinciTaskResField(&(sqe->usrData), aicpuTaskInfo, stm, kernelFlag, taskInfo->taskSn);
+    if ((kernelFlag & RT_KERNEL_DUMPFLAG) != 0U) {
+        sqe->kernelCredit = RT_STARS_ADJUST_KERNEL_CREDIT;
+    }
 
     /* word14 */
     sqe->subTopicId = 0U;

@@ -11,6 +11,7 @@
 #ifndef CCE_RUNTIME_DAVID_AICPU_SQE_H
 #define CCE_RUNTIME_DAVID_AICPU_SQE_H
 
+#include <cstddef>
 #include "base.h"
 #include "task_info_base.hpp"
 #include "driver/ascend_hal_define.h"
@@ -87,7 +88,6 @@ struct RtDavidStarsAicpuControlSqe {
     uint8_t sqeLength : 3;
 
     /* words4-9 use reserved field */
-    /* word4-9 */
     DavidStarsAicpuUserData usrData;
 
     /* word10-13 */
@@ -111,25 +111,8 @@ union AicpuResv {
     } fusionSubTypeDesc;
     uint16_t res1;
 };
-struct RtDavidStarsAicpuKernelSqe {
-    /* word0-1 */
-    rtDavidStarsSqeHeader_t header;
 
-    /* word2 */
-    AicpuResv resv;
-    uint16_t kernelType : 7;
-    uint16_t batchMode : 1;
-    uint16_t topicType : 4;
-    uint16_t qos : 3;
-    uint16_t res2 : 1;
-
-    /* word3 */
-    uint16_t sqeIndex;
-    uint8_t kernelCredit;
-    uint8_t res3 : 5;
-    uint8_t sqeLength : 3;
-
-    /* words4-13 use reserved field */
+struct DavidStarsAicpuKernelUserData {
     /* word4-5 */
     uint32_t taskSoAddrLow;
     uint32_t taskSoAddrHigh : 16;
@@ -156,6 +139,28 @@ struct RtDavidStarsAicpuKernelSqe {
     /* word12-13 */
     uint32_t extraFieldLow; // send task id info to aicpu
     uint32_t extraFieldHigh;
+};
+
+struct RtDavidStarsAicpuKernelSqe {
+    /* word0-1 */
+    rtDavidStarsSqeHeader_t header;
+
+    /* word2 */
+    AicpuResv resv;
+    uint16_t kernelType : 7;
+    uint16_t batchMode : 1;
+    uint16_t topicType : 4;
+    uint16_t qos : 3;
+    uint16_t res2 : 1;
+
+    /* word3 */
+    uint16_t sqeIndex;
+    uint8_t kernelCredit;
+    uint8_t res3 : 5;
+    uint8_t sqeLength : 3;
+
+    /* words4-13 use reserved field */
+    DavidStarsAicpuKernelUserData usrData;
 
     /* word14 */
     uint32_t subTopicId : 12;

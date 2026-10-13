@@ -84,6 +84,41 @@ static void ConstructDavidDvppSqe(
         taskInfo->stream->Device_()->Id_(), stream->Id_(), taskInfo->id);
 }
 
+static void FillMultipleAicpuUserData(
+    DavidStarsAicpuKernelUserData* const usrData, const rtUncommonAicpuParams_t* const params,
+    const StarsArgLoaderResult& result, const Stream* const stm, const uint32_t taskSn)
+{
+    /* word4-5 */
+    uint64_t addr = RtPtrToValue(params->soNameAddr);
+    usrData->taskSoAddrLow = static_cast<uint32_t>(addr);
+    usrData->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->res4 = 0U;
+
+    /* word6-7 */
+    addr = RtPtrToValue(result.kerArgs);
+    usrData->paramAddrLow = static_cast<uint32_t>(addr);
+    usrData->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->res5 = 0xFFFFU;
+
+    /* word8-9 */
+    addr = RtPtrToValue(params->kernelNameAddr);
+    usrData->taskNameStrPtrLow = static_cast<uint32_t>(addr);
+    usrData->taskNameStrPtrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
+    usrData->res6 = 0U;
+
+    /* word10-11 */
+    usrData->pL2ctrlLow = 0U;
+    usrData->pL2ctrlHigh = 0U;
+    usrData->overflowEn = stm->IsOverflowEnable();
+    usrData->dumpEn = 0U;
+    usrData->debugDumpEn = 0U;
+    usrData->res7 = 0U;
+
+    /* word12-13 */
+    usrData->extraFieldLow = taskSn; // send task id info to aicpu
+    usrData->extraFieldHigh = 0U;
+}
+
 static void CommonConstructDavidAICpuSqe(
     TaskInfo* const taskInfo, rtDavidSqe_t* const command, uint64_t sqBaseAddr,
     const rtUncommonAicpuParams_t* const params)
@@ -131,35 +166,7 @@ static void CommonConstructDavidAICpuSqe(
     sqe->sqeLength = 0U;
 
     /* words4-13 use reserved field */
-    /* word4-5 */
-    uint64_t addr = RtPtrToValue(params->soNameAddr);
-    sqe->taskSoAddrLow = static_cast<uint32_t>(addr);
-    sqe->taskSoAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
-    sqe->res4 = 0U;
-
-    /* word6-7 */
-    addr = RtPtrToValue(result.kerArgs);
-    sqe->paramAddrLow = static_cast<uint32_t>(addr);
-    sqe->paramAddrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
-    sqe->res5 = 0xFFFFU;
-
-    /* word8-9 */
-    addr = RtPtrToValue(params->kernelNameAddr);
-    sqe->taskNameStrPtrLow = static_cast<uint32_t>(addr);
-    sqe->taskNameStrPtrHigh = static_cast<uint16_t>(addr >> UINT32_BIT_NUM);
-    sqe->res6 = 0U;
-
-    /* word10-11 */
-    sqe->pL2ctrlLow = 0U;
-    sqe->pL2ctrlHigh = 0U;
-    sqe->overflowEn = stm->IsOverflowEnable();
-    sqe->dumpEn = 0U;
-    sqe->debugDumpEn = 0U;
-    sqe->res7 = 0U;
-
-    /* word12-13 */
-    sqe->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
-    sqe->extraFieldHigh = 0U;
+    FillMultipleAicpuUserData(&(sqe->usrData), params, result, stm, taskInfo->taskSn);
 
     /* word14 */
     sqe->subTopicId = 0U;

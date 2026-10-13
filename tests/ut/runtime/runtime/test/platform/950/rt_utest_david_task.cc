@@ -94,6 +94,75 @@
 using namespace testing;
 using namespace cce::runtime;
 
+TEST(DavidAicpuSqeLayoutTest, KernelUserDataPreservesWireWords)
+{
+    rtDavidSqe_t sqe = {};
+    auto& userData = sqe.aicpuSqe.usrData;
+    userData.taskSoAddrLow = 0x11223344U;
+    userData.taskSoAddrHigh = 0x5566U;
+    userData.res4 = 0x7788U;
+    userData.paramAddrLow = 0x99AABBCCU;
+    userData.paramAddrHigh = 0xDDEEU;
+    userData.res5 = 0x1234U;
+    userData.taskNameStrPtrLow = 0x13572468U;
+    userData.taskNameStrPtrHigh = 0xABCDU;
+    userData.res6 = 0x5678U;
+    userData.pL2ctrlLow = 0x10203040U;
+    userData.pL2ctrlHigh = 0x9ABCU;
+    userData.overflowEn = 1U;
+    userData.dumpEn = 1U;
+    userData.debugDumpEn = 1U;
+    userData.res7 = 0x1A2BU;
+    userData.extraFieldLow = 0xCAFEBABEU;
+    userData.extraFieldHigh = 0xDEADBEEFU;
+
+    const uint32_t expected[16] = {0U,          0U,          0U,          0U,          0x11223344U, 0x77885566U,
+                                   0x99AABBCCU, 0x1234DDEEU, 0x13572468U, 0x5678ABCDU, 0x10203040U, 0xD15F9ABCU,
+                                   0xCAFEBABEU, 0xDEADBEEFU, 0U,          0U};
+    EXPECT_EQ(std::memcmp(&sqe, expected, sizeof(sqe)), 0);
+}
+
+TEST(DavidAicpuSqeLayoutTest, ControlUserDataPreservesMessageLengths)
+{
+    rtDavidSqe_t sqe = {};
+    auto& control = sqe.aicpuControlSqe;
+    control.usrData.pid = 0x11223344U;
+    control.usrData.vfId = 0x22U;
+    control.usrData.tid = 0x33U;
+    control.usrData.tsId = 0x44U;
+
+    control.usrData.cmdType = static_cast<uint8_t>(TS_AICPU_MSG_VERSION);
+    control.usrData.u.msgVersion.magicNum = 0x5A5AU;
+    control.usrData.u.msgVersion.version = 1U;
+    control.usrDataLen = 12U;
+    const uint32_t versionWords[6] = {0x11223344U, 0x44332200U, 0x00015A5AU, 0U, 0U, 0U};
+    EXPECT_EQ(control.usrDataLen, 12U);
+    EXPECT_EQ(std::memcmp(&(control.usrData), versionWords, sizeof(versionWords)), 0);
+
+    control.usrData.u = {};
+    control.usrData.cmdType = static_cast<uint8_t>(TS_AICPU_TIMEOUT_CONFIG);
+    control.usrData.u.timeoutCfg.opWaitTimeoutEn = 1U;
+    control.usrData.u.timeoutCfg.opExecuteTimeoutEn = 1U;
+    control.usrData.u.timeoutCfg.opWaitTimeout = 0x10203040U;
+    control.usrData.u.timeoutCfg.opExecuteTimeout = 0x50607080U;
+    control.usrDataLen = 20U;
+    const uint32_t timeoutWords[6] = {0x11223344U, 0x44332208U, 0x00000003U, 0x10203040U, 0x50607080U, 0U};
+    EXPECT_EQ(control.usrDataLen, 20U);
+    EXPECT_EQ(std::memcmp(&(control.usrData), timeoutWords, sizeof(timeoutWords)), 0);
+
+    control.usrData.u = {};
+    control.usrData.cmdType = static_cast<uint8_t>(TS_AICPU_MODEL_OPERATE);
+    control.usrData.u.modelOperate.modelInfoAddrLow = 0xAABBCCDDU;
+    control.usrData.u.modelOperate.modelInfoAddrHigh = 0x1234U;
+    control.usrData.u.modelOperate.streamId = 0x5678U;
+    control.usrData.u.modelOperate.modelId = 0x9ABCU;
+    control.usrData.u.modelOperate.cmdType = 0x21U;
+    control.usrDataLen = 24U;
+    const uint32_t modelWords[6] = {0x11223344U, 0x44332201U, 0xAABBCCDDU, 0x00001234U, 0x9ABC5678U, 0x21U};
+    EXPECT_EQ(control.usrDataLen, 24U);
+    EXPECT_EQ(std::memcmp(&(control.usrData), modelWords, sizeof(modelWords)), 0);
+}
+
 using NothrowNewFunc = void* (*)(size_t, const std::nothrow_t&);
 
 static void* NothrowNewFail(size_t size, const std::nothrow_t& tag)

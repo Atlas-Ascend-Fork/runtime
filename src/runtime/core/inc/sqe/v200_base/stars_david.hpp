@@ -569,7 +569,8 @@ void ConstructDavidSqeBase(TaskInfo* const taskInfo, void* const sqe, const Task
 void ConstructDavidAICpuSqeForDavinciTaskBase(
     TaskInfo* const taskInfo, rtDavidSqe_t* const davidSqe, uint64_t sqBaseAddr);
 void ConstructDavidAICpuSqeForDavinciTaskResFieldPart(
-    RtDavidStarsAicpuKernelSqe* const sqe, const uint64_t addr, const uint8_t kernelFlag, const Stream* const stm);
+    DavidStarsAicpuKernelUserData* const usrData, const uint64_t addr, const uint8_t kernelFlag,
+    const Stream* const stm);
 void FillTopicType(RtDavidStarsAicpuKernelSqe* const sqe, const uint32_t kernelFlag);
 void ConstructDavidAICpuSqeForDavinciTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo);
 void ConstructDavidSqeForCmoTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo);

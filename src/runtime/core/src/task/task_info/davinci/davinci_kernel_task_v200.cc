@@ -30,7 +30,7 @@ void ConstructDavidAICpuSqeForDavinciTask(TaskInfo* const taskInfo, void* const 
     PrintDavidSqe(davidSqe, "AICpuTask");
     RT_LOG(
         RT_LOG_INFO, "topic_type=%hu, kernel_type=%u, dump_en=%u", aicpuKernelSqe->topicType,
-        aicpuKernelSqe->kernelType, aicpuKernelSqe->debugDumpEn);
+        aicpuKernelSqe->kernelType, aicpuKernelSqe->usrData.debugDumpEn);
     UpdateDavidSqeHeadUpdate(taskInfo, sqe);
     return;
 }

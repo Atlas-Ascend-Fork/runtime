@@ -20,6 +20,23 @@ namespace runtime {
 
 #if F_DESC("AddEndGraphTask")
 
+static void FillAddEndGraphUserData(DavidStarsAicpuKernelUserData* const usrData, const TaskInfo* const taskInfo)
+{
+    // soname aicpu no need
+    usrData->taskSoAddrLow = 0U;
+    usrData->taskSoAddrHigh = 0U;
+    usrData->paramAddrLow = static_cast<uint32_t>(taskInfo->u.addEndGraphTask.argptr);
+    usrData->paramAddrHigh = static_cast<uint16_t>(taskInfo->u.addEndGraphTask.argptr >> UINT32_BIT_NUM);
+    usrData->taskNameStrPtrLow = static_cast<uint32_t>(taskInfo->u.addEndGraphTask.endGraphNamePtr);
+    usrData->taskNameStrPtrHigh = static_cast<uint16_t>(taskInfo->u.addEndGraphTask.endGraphNamePtr >> UINT32_BIT_NUM);
+    usrData->pL2ctrlLow = 0U;
+    usrData->pL2ctrlHigh = 0U;
+    usrData->overflowEn = 0U;
+    usrData->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
+    usrData->extraFieldHigh = 0U;
+    usrData->res5 = 0xFFFFU;
+}
+
 static void ConstructDavidSqeForAddEndGraphTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)
 {
     rtDavidSqe_t* davidSqe = static_cast<rtDavidSqe_t*>(sqe);
@@ -41,29 +58,13 @@ static void ConstructDavidSqeForAddEndGraphTask(TaskInfo* const taskInfo, void* 
     aicpuKernelSqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT_DAVID;
     aicpuKernelSqe->sqeLength = 0U;
 
-    // soname aicpu no need
-    aicpuKernelSqe->taskSoAddrLow = 0U;
-    aicpuKernelSqe->taskSoAddrHigh = 0U;
-
-    aicpuKernelSqe->paramAddrLow = static_cast<uint32_t>(taskInfo->u.addEndGraphTask.argptr);
-    aicpuKernelSqe->paramAddrHigh = static_cast<uint16_t>(taskInfo->u.addEndGraphTask.argptr >> UINT32_BIT_NUM);
-
-    aicpuKernelSqe->taskNameStrPtrLow = static_cast<uint32_t>(taskInfo->u.addEndGraphTask.endGraphNamePtr);
-    aicpuKernelSqe->taskNameStrPtrHigh =
-        static_cast<uint16_t>(taskInfo->u.addEndGraphTask.endGraphNamePtr >> UINT32_BIT_NUM);
-    aicpuKernelSqe->pL2ctrlLow = 0U;
-    aicpuKernelSqe->pL2ctrlHigh = 0U;
-    aicpuKernelSqe->overflowEn = 0U;
-    aicpuKernelSqe->extraFieldLow = taskInfo->taskSn; // send task id info to aicpu
-    aicpuKernelSqe->extraFieldHigh = 0U;
+    FillAddEndGraphUserData(&(aicpuKernelSqe->usrData), taskInfo);
 
     aicpuKernelSqe->subTopicId = 0U;
     aicpuKernelSqe->topicId = 3U;     // EVENT_TS_HWTS_KERNEL
     aicpuKernelSqe->groupId = 0U;
     aicpuKernelSqe->usrDataLen = 40U; // size: word4-13
     aicpuKernelSqe->destPid = 0U;
-
-    aicpuKernelSqe->res5 = 0xFFFFU;
 
     PrintDavidSqe(davidSqe, "AddEndGraphTask");
     RT_LOG(
