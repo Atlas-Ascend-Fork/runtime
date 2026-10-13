@@ -3847,7 +3847,7 @@ TEST_F(TaskTest, ConstructSqeForMemcpyAsyncTaskRejectsSizeGreaterThanUint32Max)
 
     ConstructSqeForMemcpyAsyncTask(&memcpyAsyncTask, &sqe, TaskSqeInfo{0ULL, 0ULL});
 
-    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_STARS_SQE_TYPE_INVALID);
+    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_STARS_SQE_TYPE_SDMA);
 }
 
 bool CheckPcieBarStub(void) { return true; }

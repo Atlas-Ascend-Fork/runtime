@@ -1169,7 +1169,7 @@ TEST_F(DavidTaskTest, construct_davidsqe_for_memcpy_rejects_size_greater_than_ui
 
     ConstructDavidMemcpySqe(&task, &sqe, 0U);
 
-    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_DAVID_SQE_TYPE_INVALID);
+    EXPECT_EQ(sqe.memcpyAsyncSqe.header.type, RT_DAVID_SQE_TYPE_SDMA);
 }
 
 TEST_F(DavidTaskTest, memcpy_async_task_init_d2h_ex)

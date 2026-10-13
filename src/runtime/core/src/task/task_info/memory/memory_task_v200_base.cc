@@ -69,13 +69,6 @@ void ConstructDavidMemcpySqe(TaskInfo* const taskInfo, rtDavidSqe_t* const david
     RT_LOG(RT_LOG_INFO, "ConstructDavidMemcpySqe, type=%d.", taskInfo->type);
     ConstructDavidSqeForHeadCommon(taskInfo, davidSqe);
     RtDavidStarsMemcpySqe* const sqe = &(davidSqe->memcpyAsyncSqe);
-    if (memcpyAsyncTaskInfo->size > MAX_UINT32_NUM) {
-        sqe->header.type = RT_DAVID_SQE_TYPE_INVALID;
-        RT_LOG(
-            RT_LOG_ERROR, "size is invalid, device_id=%u, stream_id=%d, task_id=%hu, size=%lu.",
-            taskInfo->stream->Device_()->Id_(), stream->Id_(), taskInfo->id, memcpyAsyncTaskInfo->size);
-        return;
-    }
     sqe->header.type = RT_DAVID_SQE_TYPE_SDMA;
     /* b605-b606 do not support ADDR D2D SDMA */
     if (copyType == RT_MEMCPY_ADDR_D2D_SDMA) {

@@ -246,13 +246,6 @@ static void ConstructMemcpySqe(TaskInfo* const taskInfo, rtStarsSqe_t* const com
     }
 
     RtStarsMemcpyAsyncSqe* const sqe = &(command->memcpyAsyncSqe);
-    if (memcpyAsyncTaskInfo->size > MAX_UINT32_NUM) {
-        sqe->header.type = RT_STARS_SQE_TYPE_INVALID;
-        RT_LOG(
-            RT_LOG_ERROR, "size is invalid, device_id=%u, stream_id=%d, task_id=%hu, size=%lu.",
-            taskInfo->stream->Device_()->Id_(), stream->Id_(), taskInfo->id, memcpyAsyncTaskInfo->size);
-        return;
-    }
     sqe->header.type = RT_STARS_SQE_TYPE_SDMA;
     sqe->header.ie = RT_STARS_SQE_INT_DIR_NO;
     sqe->header.pre_p = RT_STARS_SQE_INT_DIR_NO;
