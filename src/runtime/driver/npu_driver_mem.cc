@@ -174,9 +174,9 @@ rtError_t NpuDriver::FreeHostSharedMemory(rtFreeHostSharedMemoryIn* const in, co
         }
         RT_LOG(RT_LOG_DEBUG, "halHostUnregister: device_id=%u, drvRetCode=%d!", deviceId, static_cast<int32_t>(drvRet));
         int32_t ret = munmap(in->ptr, in->size);
-        COND_RETURN_ERROR_MSG_CALL(
-            ERR_MODULE_SYSTEM, ret != 0, RT_ERROR_SEC_HANDLE, "Call munmap failed, retCode=%d, size=%" PRIu64 "(bytes)",
-            ret, in->size);
+        COND_PROC_RETURN_ERROR_MSG_CALL(
+            ERR_MODULE_SYSTEM, ret != 0, RT_ERROR_SEC_HANDLE, (void)close(in->fd),
+            "Call munmap failed, retCode=%d, size=%" PRIu64 "(bytes)", ret, in->size);
         RT_LOG(RT_LOG_DEBUG, "free host shared mem munmap success");
 
         ret = stat(name.data(), &buf);
