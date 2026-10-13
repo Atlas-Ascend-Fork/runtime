@@ -219,7 +219,7 @@ aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_
 | --- | :---: | --- |
 | notify | 输入 | 需等待的Notify。类型定义请参见[aclrtNotify](25-05_Typedefs.md#aclrtNotify)。 |
 | stream | 输入 | 指定Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。<br>多Stream同步等待场景下，例如，Stream2等Stream1的场景，此处配置为Stream2。 |
-| timeout | 输入 | 等待的超时时间。<br>取值说明如下：<br><br>  - 0：表示永久等待；<br>  - >0：配置具体的超时时间，单位是秒。 |
+| timeout | 输入 | 等待的超时时间。<br>取值说明如下：<br><br>  - 0：表示永久等待；<br>  - >0：配置具体的超时时间，单位是毫秒。 |
 
 ### 返回值说明
 
