@@ -46,21 +46,13 @@ add_custom_command(OUTPUT ${LINK_OBJ_ASCEND910B}
             -mllvm --cce-aicore-jump-expand=true
             -std=c++17 -fstack-protector-all
             -I${CMAKE_CURRENT_BINARY_DIR}
-            -I${TOP_DIR}/asc/asc-devkit/
-            -I${TOP_DIR}/asc/asc-devkit/include/
-            -I${TOP_DIR}/asc/asc-devkit/include/basic_api/
-            -I${TOP_DIR}/asc/asc-devkit/include/micro_api/
-            -I${TOP_DIR}/asc/asc-devkit/include/simt_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/
-            -I${TOP_DIR}/asc/asc-devkit/impl/basic_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/micro_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/simt_api/
+            "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             -I${TILING_GEN_DIR}
             -o ${LINK_OBJ_ASCEND910B}
             ${DUMP_STAT_OP_SRC}
-    DEPENDS ${DUMP_STAT_OP_SRC} ${DUMP_STAT_OP_HEADERS} ${tiling_gen_file}
+    DEPENDS asc_kernel_headers ${DUMP_STAT_OP_SRC} ${DUMP_STAT_OP_HEADERS} ${tiling_gen_file}
     COMMENT "CompileStage dump_stat_op_ascend910B"
-    VERBATIM
+    COMMAND_EXPAND_LISTS VERBATIM
 )
 
 add_custom_target(dump_stat_op_ascend910B ALL
@@ -102,21 +94,13 @@ add_custom_command(OUTPUT ${OBJ_ASCEND950_O}
             -mllvm -cce-aicore-record-overflow=false
             -mllvm -cce-aicore-long-call
             -I${CMAKE_CURRENT_SOURCE_DIR}
-            -I${TOP_DIR}/asc/asc-devkit/
-            -I${TOP_DIR}/asc/asc-devkit/include/
-            -I${TOP_DIR}/asc/asc-devkit/include/basic_api/
-            -I${TOP_DIR}/asc/asc-devkit/include/micro_api/
-            -I${TOP_DIR}/asc/asc-devkit/include/simt_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/
-            -I${TOP_DIR}/asc/asc-devkit/impl/basic_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/micro_api/
-            -I${TOP_DIR}/asc/asc-devkit/impl/simt_api/
+            "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             -I${TILING_GEN_DIR}
             -o ${OBJ_ASCEND950_O}
             ${DUMP_STAT_OP_SRC}
-    DEPENDS ${DUMP_STAT_OP_SRC} ${DUMP_STAT_OP_HEADERS} ${tiling_gen_file}
+    DEPENDS asc_kernel_headers ${DUMP_STAT_OP_SRC} ${DUMP_STAT_OP_HEADERS} ${tiling_gen_file}
     COMMENT "CompileStage dump_stat_op_ascend950_o"
-    VERBATIM
+    COMMAND_EXPAND_LISTS VERBATIM
 )
 
 add_custom_command(OUTPUT ${LINK_OBJ_FATBIN_ASCEND950}
