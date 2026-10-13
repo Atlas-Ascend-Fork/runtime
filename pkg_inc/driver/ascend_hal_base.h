@@ -5866,6 +5866,24 @@ DLLEXPORT drvError_t halHostGetDevicePointerAddrCount(uint32_t dev_id, uint32_t*
 DLLEXPORT drvError_t
 halHostGetDevicePointerAddrRange(uint32_t dev_id, struct drv_addr_range* addr_range, uint32_t* count);
 
+/**
+ * @ingroup driver
+ * @brief Get address ranges for async DMA copy.
+ * @attention
+ * 1. This function finds registered segments within the given VA range,
+ *    merges continuous segments with the same token_id, and splits by 256MB.
+ * 2. The output segments can be directly used for async DMA copy.
+ * @param [in]  dev_id  for host address: target device id; for device address: owner device id.
+ * @param [in]  addr_in input address range.
+ * @param [out] addr_out output array of address ranges.
+ * @param [in/out] cnt  input: allocated array size, output: actual count of ranges.
+ * @param [in] flag     must be 0 currently.
+ * @return DRV_ERROR_NONE : success
+ * @return DRV_ERROR_XXX : fail
+ */
+DLLEXPORT drvError_t
+halMemGetAddrSeg(uint32_t dev_id, struct addr_range addr_in, struct addr_range* addr_out, uint32_t* cnt, uint64_t flag);
+
 #ifdef __cplusplus
 }
 #endif

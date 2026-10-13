@@ -796,6 +796,7 @@ add_library(runtime_model OBJECT EXCLUDE_FROM_ALL
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_mbuf.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_res.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_tiny.cpp
+    ${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_common.cpp
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_opb.cpp
     ${RUNTIME_DIR}/src/dfx/msprof/collector/dvvp/profapi/stub/profapi_stub.cpp
@@ -862,6 +863,7 @@ add_library(runtime_model_v200 OBJECT EXCLUDE_FROM_ALL
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_mbuf.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_res.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_tiny.cpp
+    ${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg_stub.cc
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_common.cpp
     ${RUNTIME_DIR}/src/runtime/driver/npu_driver_dcache_lock_david.cpp
     ${RUNTIME_DIR}/src/dfx/msprof/collector/dvvp/profapi/stub/profapi_stub.cpp

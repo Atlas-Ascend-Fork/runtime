@@ -1157,7 +1157,9 @@ bool NpuDriver::CheckIsSupportFeature(uint32_t devId, int32_t featureType)
         "FEATURE_APM_RES_MAP_REMOTE",
         "FEATURE_SVM_MEM_REGISTER_HOST_PINNED",
         "FEATURE_DMS_GET_BOARD_LOCATION",
+        "FEATURE_SVM_GET_ADDR_SEG",
     };
+
     static_assert(
         (sizeof(featureNameTable) / sizeof(featureNameTable[0])) == static_cast<size_t>(FEATURE_MAX),
         "featureNameTable must match drvFeature_t");

@@ -360,6 +360,7 @@ set(runtimeut_910b_src_list
     ${TOP_DIR}/src/runtime/api/inner.cc
     ${TOP_DIR}/src/runtime/core/src/task/task_to_sqe.cc
     ${TOP_DIR}/src/runtime/driver/npu_driver_tiny.cpp
+    ${TOP_DIR}/src/runtime/driver/npu_driver_addr_seg.cc
     ${TOP_DIR}/src/runtime/core/src/engine/engine.cc
     ${TOP_DIR}/src/runtime/core/src/engine/hwts/package_rebuilder.cc
     ${TOP_DIR}/src/runtime/core/src/engine/stars/stars_engine.cc
