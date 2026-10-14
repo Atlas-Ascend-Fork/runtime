@@ -131,6 +131,7 @@ constexpr uint32_t ICACHE_PREFETCH_UNIT = 512U;
 static constexpr uint32_t RT_STARS_MAX_KERNEL_CREDIT_UINT32 = 254U;        // STARS MAX KERNEL_CREDIT = 255.
 static constexpr uint32_t RT_STARS_DEFAULT_KERNEL_CREDIT_UINT32 = 254U;
 static constexpr float64_t RT_STARS_TASK_KERNEL_CREDIT_SCALE_MIN = 0.001F; // 0.001(us) = 1ns
+static constexpr uint32_t RT_ARCH_9201_AICORE_NUM_PER_DIE = 35U;
 static constexpr uint32_t RT_SIMT_UB_SIZE_920X = 384U * 1024U;             // UBSize 384KB
 
 static const DevProperties CHIP_CLOUD_V5_PROPERTIES = {
@@ -157,10 +158,10 @@ static const DevProperties CHIP_CLOUD_V5_PROPERTIES = {
     .maxCustomerStackSize = 146U * 1024U, // 146 KB
     .ioDieNum = 0U,
     .defaultTaskRatio = TASK_RATION,
-    .aicNum = RT_DAVID_AICORE_NUM_PER_DIE * RT_DAVID_DIE_MAX_NUM,
-    .aivNum = RT_DAVID_AIVECTOR_NUM_PER_DIE * RT_DAVID_DIE_MAX_NUM,
-    .aicNumPerDie = RT_DAVID_AICORE_NUM_PER_DIE,
-    .aivNumPerDie = RT_DAVID_AIVECTOR_NUM_PER_DIE,
+    .aicNum = RT_ARCH_9201_AICORE_NUM_PER_DIE * RT_DAVID_DIE_MAX_NUM,
+    .aivNum = RT_ARCH_9201_AICORE_NUM_PER_DIE * RT_DAVID_DIE_MAX_NUM,
+    .aicNumPerDie = RT_ARCH_9201_AICORE_NUM_PER_DIE,
+    .aivNumPerDie = RT_ARCH_9201_AICORE_NUM_PER_DIE,
     .ringbufSize = DEVICE_RINGBUFFER_SIZE_ON_95_96,
     .hugeManagedFlag = SVM_HOST_AGENT,
     .memInfoType = RT_MEM_INFO_TYPE_HBM_SIZE,

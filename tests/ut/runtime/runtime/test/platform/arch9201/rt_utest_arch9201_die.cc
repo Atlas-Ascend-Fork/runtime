@@ -59,15 +59,15 @@ TEST_F(Arch9201DieTest, RegisteredCoreNumPerDie)
 {
     DevProperties props = {};
     ASSERT_EQ(GET_DEV_PROPERTIES(CHIP_CLOUD_V5, props), RT_ERROR_NONE);
-    EXPECT_EQ(props.aicNumPerDie, 18U); // 18 AICs per die
-    EXPECT_EQ(props.aivNumPerDie, 36U); // 36 AIVs per die
-    EXPECT_EQ(props.aicNum, 36U);       // 2 dies
-    EXPECT_EQ(props.aivNum, 72U);       // 2 dies
+    EXPECT_EQ(props.aicNumPerDie, 35U); // 35 AICs per die
+    EXPECT_EQ(props.aivNumPerDie, 35U); // 35 AIVs per die
+    EXPECT_EQ(props.aicNum, 70U);       // 2 dies
+    EXPECT_EQ(props.aivNum, 70U);       // 2 dies
 }
 
-TEST_F(Arch9201DieTest, AllocStackPhyBaseForSingleDie) { CheckStackAllocSize(1U, 32ULL * 1024ULL * (18ULL + 36ULL)); }
+TEST_F(Arch9201DieTest, AllocStackPhyBaseForSingleDie) { CheckStackAllocSize(1U, 32ULL * 1024ULL * (35ULL + 35ULL)); }
 
 TEST_F(Arch9201DieTest, AllocStackPhyBaseForDualDie)
 {
-    CheckStackAllocSize(2U, 32ULL * 1024ULL * 2ULL * (18ULL + 36ULL));
+    CheckStackAllocSize(2U, 32ULL * 1024ULL * 2ULL * (35ULL + 35ULL));
 }
