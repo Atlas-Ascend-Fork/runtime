@@ -1188,8 +1188,12 @@ aclError aclrtMallocPhysicalImpl(
 
     ACL_REQUIRES_POSITIVE_REPORT(size);
     ACL_CHECK_RESERVED_PARAM_REPORT_RET(flags, 0, ACL_ERROR_INVALID_PARAM);
-    ACL_REQUIRES_PARAM_EQUAL_REPORT(prop->handleType, ACL_MEM_HANDLE_TYPE_NONE);
-    ACL_REQUIRES_PARAM_EQUAL_REPORT(prop->allocationType, ACL_MEM_ALLOCATION_TYPE_PINNED);
+    ACL_CHECK_INVALID_VALUE_WITH_DESC(
+        prop->handleType == ACL_MEM_HANDLE_TYPE_NONE, acl::GetMemHandleTypeDesc(prop->handleType), "prop->handleType",
+        "ACL_MEM_HANDLE_TYPE_NONE(0)", ACL_ERROR_INVALID_PARAM);
+    ACL_CHECK_INVALID_VALUE_WITH_DESC(
+        prop->allocationType == ACL_MEM_ALLOCATION_TYPE_PINNED, acl::GetMemAllocationTypeDesc(prop->allocationType),
+        "prop->allocationType", "ACL_MEM_ALLOCATION_TYPE_PINNED(0)", ACL_ERROR_INVALID_PARAM);
     if (prop->location.type == ACL_MEM_LOCATION_TYPE_UNREGISTERED ||
         prop->location.type == ACL_MEM_LOCATION_TYPE_MANAGED) {
         ACL_LOG_ERROR(
@@ -1325,7 +1329,9 @@ aclError aclrtMemExportToShareableHandleImpl(
     ACL_PROFILING_REG(acl::AclProfType::AclrtMemExportToShareableHandle);
     ACL_LOG_DEBUG("start to execute aclrtMemExportToShareableHandle");
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(handle);
-    ACL_REQUIRES_PARAM_EQUAL_REPORT(handleType, ACL_MEM_HANDLE_TYPE_NONE);
+    ACL_CHECK_INVALID_VALUE_WITH_DESC(
+        handleType == ACL_MEM_HANDLE_TYPE_NONE, acl::GetMemHandleTypeDesc(handleType), "handleType",
+        "ACL_MEM_HANDLE_TYPE_NONE(0)", ACL_ERROR_INVALID_PARAM);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(shareableHandle);
 
     ACL_REQUIRES_RTS_OK(rtsMemExportToShareableHandle(
@@ -1886,7 +1892,8 @@ aclError aclrtIpcMemGetExportKeyImpl(void* devPtr, size_t size, char* key, size_
         "start to execute aclrtIpcMemGetExportKey, size is [%zu], len is [%zu], flags is [%lu]", size, len, flags);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(devPtr);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(key);
-    ACL_REQUIRES_LE(len, static_cast<size_t>(UINT32_MAX));
+    ACL_CHECK_INVALID_VALUE_WITH_EXPECT_RET(
+        len <= static_cast<size_t>(UINT32_MAX), len, "(0, UINT32_MAX]", ACL_ERROR_INVALID_PARAM);
     ACL_REQUIRES_RTS_OK(rtsIpcMemGetExportKey(devPtr, size, key, static_cast<uint32_t>(len), flags));
     return ACL_SUCCESS;
 }
@@ -2137,9 +2144,9 @@ aclError aclrtMemGetAllocationPropertiesFromHandleImpl(aclrtDrvMemHandle handle,
     if (it != std::end(mapping)) {
         prop->memAttr = it->memAttr;
     } else {
-        ACL_LOG_ERROR(
-            "memAttr not found for pg_type=%u, mem_type=%u, isHostAlloc=%u", rtProp.pg_type, rtProp.mem_type,
-            isHostAlloc);
+        ACL_LOG_INNER_ERROR(
+            "Failed to map the physical memory attributes, pg_type=%u, mem_type=%u, isHostAlloc=%u.", rtProp.pg_type,
+            rtProp.mem_type, isHostAlloc);
         return ACL_ERROR_INVALID_PARAM;
     }
     return ACL_SUCCESS;
@@ -2569,21 +2576,10 @@ aclError aclrtMemMapSelectedLinkImpl(void* virPtrDst, size_t size, void* virPtrS
     ACL_LOG_INFO("start to execute aclrtMemMapSelectedLink.");
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(virPtrDst);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(virPtrSrc);
-    if (size == 0UL) {
-        ACL_LOG_ERROR("size is [%zu], size must be greater than 0", size);
-        acl::AclErrorLogManager::ReportInputError(
-            acl::INVALID_PARAM_MSG, std::vector<const char*>({"param", "value", "reason"}),
-            std::vector<const char*>({"size", std::to_string(size).c_str(), "size must be greater than 0"}));
-        return ACL_ERROR_INVALID_PARAM;
-    }
-    if (linkIdx > ACL_RT_MEM_LINK_IDX_1) {
-        ACL_LOG_ERROR("linkIdx is [%u], linkIdx in aclrtMemMapSelectedLink must be 0 or 1", linkIdx);
-        acl::AclErrorLogManager::ReportInputError(
-            acl::INVALID_PARAM_MSG, std::vector<const char*>({"param", "value", "reason"}),
-            std::vector<const char*>(
-                {"linkIdx", std::to_string(linkIdx).c_str(), "linkIdx in aclrtMemMapSelectedLink must be 0 or 1"}));
-        return ACL_ERROR_INVALID_PARAM;
-    }
+    ACL_REQUIRES_POSITIVE_REPORT(size);
+    ACL_CHECK_INVALID_VALUE_WITH_EXPECT_RET(
+        linkIdx <= ACL_RT_MEM_LINK_IDX_1, linkIdx, "ACL_RT_MEM_LINK_IDX_0(0) or ACL_RT_MEM_LINK_IDX_1(1)",
+        ACL_ERROR_INVALID_PARAM);
 
     ACL_REQUIRES_RTS_OK_WARN_NOT_SUPPORT(
         rtMemMapSelectedLink(virPtrDst, size, virPtrSrc, linkIdx), rtMemMapSelectedLink);

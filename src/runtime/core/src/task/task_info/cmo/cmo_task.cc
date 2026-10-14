@@ -56,11 +56,9 @@ rtError_t CmoTaskInit(
             return RT_ERROR_FEATURE_NOT_SUPPORT;
         }
     } else if (cmoModel == nullptr) {
-        RT_LOG_INNER_MSG(
-            RT_LOG_ERROR,
-            "The stream that delivers the CMO task is not in the model,"
-            " device_id=%u, stream_id=%d.",
-            taskInfo->stream->Device_()->Id_(), taskInfo->stream->Id_());
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1017, "Operating the cache memory on the device", "stream",
+            "The stream must be bound to a model by aclmdlRIBindStream before the cache memory operation");
         return RT_ERROR_MODEL_NULL;
     } else {
         // no operation

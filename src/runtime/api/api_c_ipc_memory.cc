@@ -117,7 +117,9 @@ rtError_t rtsIpcMemGetExportKey(const void* ptr, size_t size, char_t* key, uint3
     ApiIpcMemory* const apiInstance = ApiIpcMemory::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->IpcSetMemoryName(ptr, static_cast<uint64_t>(size), key, len, flags);
-    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(
+        (error == RT_ERROR_FEATURE_NOT_SUPPORT) || (error == RT_ERROR_DRV_NOT_SUPPORT),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }

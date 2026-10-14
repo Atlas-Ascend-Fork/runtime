@@ -2489,10 +2489,9 @@ rtError_t ApiErrorDecorator::SetMemcpyDesc(
         error != RT_ERROR_NONE, error, ErrorCode::EE1017, "Setting the memory copy descriptor", "srcAddr",
         "Failed to get srcAddr pointer memory attributes");
 
-    COND_RETURN_ERROR_MSG_INNER(
-        descAttributes.location.type != RT_MEMORY_LOC_DEVICE, RT_ERROR_INVALID_VALUE,
-        "rtsSetMemcpyDesc failed, desc addr type=%s is invalid!",
-        MemLocationTypeToString(descAttributes.location.type).c_str());
+    COND_RETURN_AND_MSG_OUTER(
+        descAttributes.location.type != RT_MEMORY_LOC_DEVICE, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+        "Setting the memory copy descriptor", "desc", "The address must point to device memory");
 
     COND_RETURN_AND_MSG_OUTER(
         ((destAttributes.location.id != srcAttributes.location.id) ||
@@ -2501,13 +2500,13 @@ rtError_t ApiErrorDecorator::SetMemcpyDesc(
         RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Setting the memory copy descriptor", "dstAddr or srcAddr",
         RtFmtMsg(
             "DstAddr and srcAddr do not match with the kind RT_MEMCPY_KIND_INNER_DEVICE_TO_DEVICE, "
-            "dstAddr DeviceId=%d, srcAddr DeviceId=%d, dstAddr type=%s, srcAddr type=%s",
+            "dstAddr device_id=%d, srcAddr device_id=%d, dstAddr type=%s, srcAddr type=%s",
             destAttributes.location.id, srcAttributes.location.id,
             MemLocationTypeToString(destAttributes.location.type).c_str(),
             MemLocationTypeToString(srcAttributes.location.type).c_str()));
 
     error = impl_->SetMemcpyDesc(desc, srcAddr, dstAddr, count, kind, config);
-    ERROR_RETURN_MSG_INNER(error, "Failed to set memcpy desc, retCode=%#x.", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Failed to set memcpy desc, retCode=%#x.", static_cast<uint32_t>(error));
     return error;
 }
 
@@ -3204,7 +3203,7 @@ rtError_t ApiErrorDecorator::MemPrefetchToDevice(const void* const devPtr, const
     NULL_PTR_RETURN_MSG(Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER), RT_ERROR_INVALID_VALUE);
     int32_t cnt = 1;
     rtError_t error = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER)->GetDeviceCount(&cnt);
-    ERROR_RETURN_MSG_INNER(error, "GetDeviceCount failed, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "GetDeviceCount failed, retCode=%#x", static_cast<uint32_t>(error));
 
     error = impl_->MemPrefetchToDevice(devPtr, len, devId);
     ERROR_RETURN(error, "Memory prefetch to device failed, len=%" PRIu64 "(bytes), devId=%d.", len, devId);
@@ -4619,7 +4618,7 @@ rtError_t ApiErrorDecorator::GetMemUceInfo(const uint32_t deviceId, rtMemUceInfo
     const driverType_t rawDrvType = rtInstance->GetDriverType();
     Driver* const rawDrv = rtInstance->driverFactory_.GetDriver(rawDrvType);
     error = rawDrv->GetDeviceCount(&deviceCnt);
-    ERROR_RETURN_MSG_CALL(ERR_MODULE_DRV, error, "Get device cnt failed, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Get device cnt failed, retCode=%#x", static_cast<uint32_t>(error));
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         ((realDeviceId < 0) || (realDeviceId >= deviceCnt)), RT_ERROR_DEVICE_ID,
         "Obtaining the virtual address of the memory Uncorrectable Error (UCE)", realDeviceId,
@@ -4654,7 +4653,7 @@ rtError_t ApiErrorDecorator::MemUceRepair(const uint32_t deviceId, rtMemUceInfo*
     const driverType_t rawDrvType = rtInstance->GetDriverType();
     Driver* const rawDrv = rtInstance->driverFactory_.GetDriver(rawDrvType);
     error = rawDrv->GetDeviceCount(&deviceCnt);
-    ERROR_RETURN_MSG_CALL(ERR_MODULE_DRV, error, "Get device cnt failed, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Get device cnt failed, retCode=%#x", static_cast<uint32_t>(error));
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         ((realDeviceId < 0) || (realDeviceId >= deviceCnt)), RT_ERROR_DEVICE_ID,
         "Rectifying the memory Uncorrectable Error (UCE)", realDeviceId, "[0, " + std::to_string(deviceCnt) + ")");
@@ -6403,7 +6402,7 @@ rtError_t ApiErrorDecorator::GetMemUsageInfo(
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %u to driver device ID.", deviceId);
     error = CheckDeviceIdIsValid(realDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Device ID is invalid, drv devId=%u, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
     return impl_->GetMemUsageInfo(realDeviceId, memUsageInfo, inputNum, outputNum);

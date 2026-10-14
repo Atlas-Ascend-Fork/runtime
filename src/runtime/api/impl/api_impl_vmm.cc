@@ -146,7 +146,7 @@ rtError_t ApiImplVmm::MallocPhysical(rtDrvMemHandle* handle, size_t size, rtDrvM
             error != RT_ERROR_NONE, RT_ERROR_DEVICE_ID, "Failed to convert the user device ID %u to driver device ID.",
             userDeviceId);
         error = Runtime::Instance()->CheckDeviceIdIsValid(static_cast<int32_t>(prop->devid));
-        COND_RETURN_ERROR_MSG_INNER(
+        COND_RETURN_ERROR(
             error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%u, retCode=%#x", prop->devid,
             static_cast<uint32_t>(error));
     }
@@ -163,7 +163,7 @@ rtError_t ApiImplVmm::MallocPhysical(rtDrvMemHandle* handle, size_t size, rtDrvM
     }
     if (prop->pg_type == HUGE1G_PAGE) {
         error = NpuDriver::CheckIfSupport1GHugePage();
-        COND_RETURN_ERROR_MSG_INNER(
+        COND_RETURN_ERROR(
             error != RT_ERROR_NONE, error, "pageType does not support, pageType[%u], retCode=%#x", prop->pg_type,
             static_cast<uint32_t>(error));
     }
@@ -332,10 +332,13 @@ rtError_t ApiImplVmm::ExportToShareableHandleV2(
         const uint32_t devId = static_cast<uint32_t>(curCtx->Device_()->Id_());
         int64_t localServerId = 0;
         error = NpuDriver::GetServerId(devId, &localServerId);
-        COND_RETURN_ERROR_MSG_INNER(
-            error != RT_ERROR_NONE, error,
-            "This device does not support cross-server communication drv devId=%u localServerId=%" PRId64 " err:%#x",
-            devId, localServerId, static_cast<uint32_t>(error));
+        COND_RETURN_AND_MSG_OUTER(
+            error == RT_ERROR_DRV_NOT_SUPPORT, error, ErrorCode::EE1016,
+            "Exporting a cross-server shareable physical memory handle",
+            "The current device does not support cross-server communication");
+        ERROR_RETURN(
+            error, "Failed to get the local server ID, drvDevId=%u, localServerId=%" PRId64 ", retCode=%#x.", devId,
+            localServerId, static_cast<uint32_t>(error));
     }
     constexpr uint64_t drvFlags = 0UL;
     error = NpuDriver::ExportToShareableHandleV2(handle, handleType, drvFlags, shareableHandle);
@@ -362,7 +365,7 @@ rtError_t ApiImplVmm::ImportFromShareableHandle(uint64_t shareableHandle, int32_
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %d to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(realDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%d, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
     /* 输出参数handle在上下文中作为一个整体使用, 内部的devid不用进行转换 */
@@ -410,7 +413,7 @@ rtError_t ApiImplVmm::ImportFromShareableHandleV2(
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %d to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(realDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Device id is invalid, drv deviceId=%d, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
     UNUSED(flags);
@@ -420,9 +423,12 @@ rtError_t ApiImplVmm::ImportFromShareableHandleV2(
     int64_t localServerId = 0;
     if (handleType == RT_MEM_SHARE_HANDLE_TYPE_FABRIC) {
         error = NpuDriver::GetServerId(realDeviceId, &localServerId);
-        COND_RETURN_ERROR_MSG_INNER(
-            error != RT_ERROR_NONE, error,
-            "This device does not support cross-server communication devId:%d ServerId:%" PRId64 " err:%#x",
+        COND_RETURN_AND_MSG_OUTER(
+            error == RT_ERROR_DRV_NOT_SUPPORT, error, ErrorCode::EE1016,
+            "Importing a cross-server shareable physical memory handle",
+            "The current device does not support cross-server communication");
+        ERROR_RETURN(
+            error, "Failed to get the local server ID, drvDevId=%d, localServerId=%" PRId64 ", retCode=%#x.",
             realDeviceId, localServerId, static_cast<uint32_t>(error));
     }
     uint32_t peerServerId = 0U;
@@ -486,7 +492,7 @@ rtError_t ApiImplVmm::GetAllocationGranularity(
             error != RT_ERROR_NONE, RT_ERROR_DEVICE_ID, "Failed to convert the user device ID %u to driver device ID.",
             userDeviceId);
         error = Runtime::Instance()->CheckDeviceIdIsValid(static_cast<int32_t>(prop->devid));
-        COND_RETURN_ERROR_MSG_INNER(
+        COND_RETURN_ERROR(
             error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%u, retCode=%#x", prop->devid,
             static_cast<uint32_t>(error));
     }
@@ -658,11 +664,12 @@ rtError_t ApiImplVmm::MemMapSelectedLink(void* virPtrDst, size_t size, void* vir
         std::unique_lock<std::mutex> lock(rt->GetMemMapSelectedLinkMutex_());
         error = DoMemGetAddressRange(virPtrOld, &base, &baseSize);
         ERROR_RETURN(error, "Call MemGetAddressRange failed, virPtrOld=%p", virPtrOld);
-        COND_RETURN_ERROR(
-            virPtrOld != base, RT_ERROR_INVALID_VALUE,
-            "The address virPtrOld is not the starting address of its corresponding memory block. virPtrOld=%p, "
-            "base=%p",
-            virPtrOld, base);
+        COND_RETURN_AND_MSG_OUTER(
+            virPtrOld != base, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
+            "Mapping the target virtual address to the physical address corresponding to the source virtual address",
+            RtFmtMsg("%p", virPtrOld), "virPtrSrc",
+            RtFmtMsg(
+                "The address is not the starting address of its corresponding memory block. The base is %p", base));
         error = DoMemRetainAllocationHandle(base, &handle);
         ERROR_RETURN(error, "Failed to obtain the handle from virtual pointer, ptr=%p, handle=%p.", base, handle);
         COND_RETURN_ERROR(

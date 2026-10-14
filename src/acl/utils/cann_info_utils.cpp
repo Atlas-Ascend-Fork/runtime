@@ -420,6 +420,22 @@ const char* GetMemAttrDesc(aclrtMemAttr attr)
     return enumBuf;
 }
 
+const char* GetMemHandleTypeDesc(aclrtMemHandleType type)
+{
+    switch (type) {
+        case ACL_MEM_HANDLE_TYPE_NONE:
+            return "ACL_MEM_HANDLE_TYPE_NONE(0)";
+        case ACL_MEM_HANDLE_TYPE_POSIX:
+            return "ACL_MEM_HANDLE_TYPE_POSIX(2)";
+        default:
+            break;
+    }
+    static thread_local char enumBuf[32];
+    (void)snprintf_s(enumBuf, sizeof(enumBuf), sizeof(enumBuf) - 1, "UNKNOWN(%d)", static_cast<int32_t>(type));
+    enumBuf[sizeof(enumBuf) - 1U] = '\0';
+    return enumBuf;
+}
+
 const char* GetCannAttrDesc(aclCannAttr attr)
 {
     switch (attr) {

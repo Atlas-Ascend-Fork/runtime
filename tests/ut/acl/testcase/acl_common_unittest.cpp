@@ -2992,6 +2992,7 @@ TEST_F(UTEST_ACL_Common, EnumDescUsesNameWithoutAclPrefixAndNumericValue)
     EXPECT_STREQ(GetCaptureModeDesc(ACL_MODEL_RI_CAPTURE_MODE_GLOBAL), "MODEL_RI_CAPTURE_MODE_GLOBAL(0)");
     EXPECT_STREQ(GetSysParamOptDesc(ACL_OPT_DETERMINISTIC), "OPT_DETERMINISTIC(0)");
     EXPECT_STREQ(GetMemLocationTypeDesc(ACL_MEM_LOCATION_TYPE_DEVICE), "MEM_LOCATION_TYPE_DEVICE(1)");
+    EXPECT_STREQ(GetMemAllocationTypeDesc(ACL_MEM_ALLOCATION_TYPE_PINNED), "MEM_ALLOCATION_TYPE_PINNED(0)");
     EXPECT_STREQ(GetDeviceInfoDesc(ACL_DEVICE_INFO_UNDEFINED), "DEVICE_INFO_UNDEFINED(-1)");
 
     EXPECT_STREQ(GetDataTypeDesc(ACL_DT_UNDEFINED), "DT_UNDEFINED(-1)");
@@ -3122,4 +3123,11 @@ TEST_F(UTEST_ACL_Common, EnumDescPreservesUnknownNumericValue)
     EXPECT_STREQ(GetFloatOverflowModeDesc(static_cast<aclrtFloatOverflowMode>(101)), "UNKNOWN(101)");
     EXPECT_STREQ(GetCmoTypeDesc(static_cast<aclrtCmoType>(102)), "UNKNOWN(102)");
     EXPECT_STREQ(GetDeviceLimitDesc(static_cast<aclrtDeviceLimit>(103)), "UNKNOWN(103)");
+}
+
+TEST_F(UTEST_ACL_Common, MemHandleTypeDescUsesPublicNameAndNumericValue)
+{
+    EXPECT_STREQ(GetMemHandleTypeDesc(ACL_MEM_HANDLE_TYPE_NONE), "ACL_MEM_HANDLE_TYPE_NONE(0)");
+    EXPECT_STREQ(GetMemHandleTypeDesc(ACL_MEM_HANDLE_TYPE_POSIX), "ACL_MEM_HANDLE_TYPE_POSIX(2)");
+    EXPECT_STREQ(GetMemHandleTypeDesc(static_cast<aclrtMemHandleType>(89)), "UNKNOWN(89)");
 }

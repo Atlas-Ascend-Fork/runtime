@@ -7465,6 +7465,12 @@ TEST_F(UTEST_ACL_Runtime, aclrtCmoWaitBarrier_failed_with_invalid_args)
     ret = aclrtCmoWaitBarrier(&taskInfo, stream, flag);
     EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
 
+    taskInfo.barrierNum = 1U;
+    flag = 1U;
+    ret = aclrtCmoWaitBarrier(&taskInfo, stream, flag);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+    flag = 0U;
+
     EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtsLaunchBarrierTask(_, _, _))
         .WillOnce(Return(ACL_ERROR_RT_PARAM_INVALID));
 

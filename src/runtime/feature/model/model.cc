@@ -2254,7 +2254,12 @@ rtError_t Model::GetCmoId(const uint32_t logicId, uint16_t& cmoId)
     const std::unique_lock<std::mutex> lk(cmoIdMapMutex_);
     const auto iter = logicIdToCMOIdMap_.find(logicId);
     if (iter == logicIdToCMOIdMap_.end()) {
-        RT_LOG_INNER_MSG(RT_LOG_ERROR, "Cannot find cmo id map by logicId=%u.", logicId);
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1018, "Waiting for cache memory operations to complete",
+            RtFmtMsg(
+                "Call aclrtCmoAsyncWithBarrier with the same barrier ID before waiting for the barrier. "
+                "The CMO ID mapping does not exist for model (model_id=%u), logicId=%u",
+                Id_(), logicId));
         return RT_ERROR_MODEL_EXIT_ID;
     }
     cmoId = iter->second;

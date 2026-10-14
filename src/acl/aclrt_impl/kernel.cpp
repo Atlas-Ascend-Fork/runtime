@@ -477,6 +477,7 @@ aclError aclrtCmoWaitBarrierImpl(aclrtBarrierTaskInfo* taskInfo, aclrtStream str
     ACL_PROFILING_REG(acl::AclProfType::AclrtCmoWaitBarrier);
     ACL_LOG_DEBUG("start to execute aclrtCmoWaitBarrier, flag is [%u]", flag);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(taskInfo);
+    ACL_CHECK_INVALID_VALUE_WITH_EXPECT_RET(flag == 0U, flag, "0", ACL_ERROR_INVALID_PARAM);
     if ((taskInfo->barrierNum == 0U) || (taskInfo->barrierNum > ACL_RT_CMO_MAX_BARRIER_NUM)) {
         ACL_LOG_ERROR(
             "[Check][taskInfo]param taskInfo is invalid, taskInfo->barrierNum must be in range (0, %d]",

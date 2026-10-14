@@ -219,7 +219,7 @@ TEST_F(ApiIpcMemoryRouteTest, RoutesAllApisToApiIpcMemory)
     EXPECT_EQ(ThreadLocalContainer::GetEnvFlags(), API_ENV_FLAGS_NO_TSD);
 }
 
-TEST_F(ApiIpcMemoryRouteTest, MapsFeatureNotSupportForRtsApis)
+TEST_F(ApiIpcMemoryRouteTest, MapsNotSupportForRtsApis)
 {
     char_t name[] = "ipc_key";
     char_t exportKey[] = "export_key";
@@ -233,6 +233,12 @@ TEST_F(ApiIpcMemoryRouteTest, MapsFeatureNotSupportForRtsApis)
         rtsIpcMemGetExportKey(ptr, 128U, exportKey, sizeof(exportKey), RT_IPC_MEM_EXPORT_FLAG_DISABLE_PID_VALIDATION),
         ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(apiIpcMemory_.setNameCount_, 1U);
+
+    apiIpcMemory_.setNameRet_ = RT_ERROR_DRV_NOT_SUPPORT;
+    EXPECT_EQ(
+        rtsIpcMemGetExportKey(ptr, 128U, exportKey, sizeof(exportKey), RT_IPC_MEM_EXPORT_FLAG_DISABLE_PID_VALIDATION),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiIpcMemory_.setNameCount_, 2U);
 
     apiIpcMemory_.openRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
     EXPECT_EQ(

@@ -27,17 +27,17 @@ rtError_t BarrierTaskInit(
 
     Model* barrierModel = stm->Model_();
     rtError_t error;
-    COND_RETURN_ERROR_MSG_INNER(
-        (barrierModel == nullptr), RT_ERROR_MODEL_NULL,
-        "The stream that delivers the barrier task is not in the model, deviceId=%u, streamId=%d, taskId=%u.",
-        taskInfo->stream->Device_()->Id_(), taskInfo->stream->Id_(), taskInfo->id);
+    COND_RETURN_AND_MSG_OUTER(
+        (barrierModel == nullptr), RT_ERROR_MODEL_NULL, ErrorCode::EE1017,
+        "Waiting for cache memory operations to complete", "stream",
+        "The stream must be bound to a model before the barrier task is delivered");
 
     // sqe info copy
     taskInfo->u.barrierTask.barrierMsg.cmoIdNum = 0U;
     uint16_t tmpCmoId = 0U;
     for (uint8_t i = 0U; i < barrierTaskInfo->logicIdNum; i++) {
         error = barrierModel->GetCmoId(barrierTaskInfo->cmoInfo[i].logicId, tmpCmoId);
-        ERROR_RETURN_MSG_INNER(
+        ERROR_RETURN(
             error, "Failed to get CmoId, deviceId=%u, streamId=%d, taskId=%u.", taskInfo->stream->Device_()->Id_(),
             taskInfo->stream->Id_(), taskInfo->id);
         taskInfo->u.barrierTask.barrierMsg.cmoInfo[i].cmoId = tmpCmoId;

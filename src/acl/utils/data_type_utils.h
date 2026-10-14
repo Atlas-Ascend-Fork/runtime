@@ -395,6 +395,7 @@ const char* GetConditionDesc(aclrtCondition condition);
 const char* GetCompareDataTypeDesc(aclrtCompareDataType type);
 
 const char* GetMemAttrDesc(aclrtMemAttr attr);
+const char* GetMemHandleTypeDesc(aclrtMemHandleType type);
 
 const char* GetIpcMemAttrTypeDesc(aclrtIpcMemAttrType type);
 const char* GetFloatOverflowModeDesc(aclrtFloatOverflowMode mode);

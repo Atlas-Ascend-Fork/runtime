@@ -118,7 +118,9 @@ rtError_t rtMemExportToShareableHandle(
     ApiVmm* apiInstance = ApiVmm::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->ExportToShareableHandle(handle, handleType, flags, shareableHandle);
-    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(
+        (error == RT_ERROR_FEATURE_NOT_SUPPORT) || (error == RT_ERROR_DRV_NOT_SUPPORT),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -197,7 +199,9 @@ rtError_t rtMemExportToShareableHandleV2(
     ApiVmm* apiInstance = ApiVmm::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->ExportToShareableHandleV2(handle, handleType, flags, shareableHandle);
-    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(
+        (error == RT_ERROR_FEATURE_NOT_SUPPORT) || (error == RT_ERROR_DRV_NOT_SUPPORT),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -211,7 +215,9 @@ rtError_t rtMemImportFromShareableHandleV2(
     ApiVmm* apiInstance = ApiVmm::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->ImportFromShareableHandleV2(shareableHandle, handleType, flags, devId, handle);
-    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(
+        (error == RT_ERROR_FEATURE_NOT_SUPPORT) || (error == RT_ERROR_DRV_NOT_SUPPORT),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -347,6 +353,7 @@ RTS_API rtError_t rtMemMapSelectedLink(void* virPtrDst, size_t size, void* virPt
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->MemMapSelectedLink(virPtrDst, size, virPtrSrc, linkIdx);
     COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_LINK_TYPE_NOT_SUPPORTED, ACL_ERROR_RT_LINK_TYPE_NOT_SUPPORTED);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }

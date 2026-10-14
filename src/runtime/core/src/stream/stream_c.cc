@@ -158,15 +158,15 @@ rtError_t StreamCmoAddrTaskLaunch(
     Device* dev = stm->Device_();
     rtDavidCmoAddrInfo* const davidCmoAddrInfo = static_cast<rtDavidCmoAddrInfo*>(cmoAddrInfo);
 
-    COND_RETURN_ERROR(
-        (stm->Model_() == nullptr), RT_ERROR_MODEL_NULL,
-        "CMO Addr task stream is not in model. device_id=%d, stream_id=%d.",
-        static_cast<int32_t>(stm->Device_()->Id_()), stm->Id_());
+    COND_RETURN_AND_MSG_OUTER(
+        (stm->Model_() == nullptr), RT_ERROR_MODEL_NULL, ErrorCode::EE1017,
+        "Using the memory descriptor to operate the cache memory on the device", "stream",
+        "The stream must be bound to a model before the CMO address task is delivered");
 
     TaskInfo* cmoAddrTask = nullptr;
     error = CheckTaskCanSend(stm);
     ERROR_RETURN_MSG_INNER(
-        error, "Failed to check stream, stream_id=%d, retCode=%#x.", streamId, static_cast<uint32_t>(error));
+        error, "Failed to check stream (stream_id=%d), retCode=%#x.", streamId, static_cast<uint32_t>(error));
     uint32_t pos = 0xFFFFU;
     Stream* dstStm = stm;
     std::function<void()> const errRecycle = [&cmoAddrTask, &stm, &pos, &dstStm]() {

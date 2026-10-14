@@ -1496,7 +1496,13 @@ rtError_t NpuDriver::GetServerId(const uint32_t deviceId, int64_t* const serverI
     if (drvRet == DRV_ERROR_NOT_SUPPORT || *serverId == 0x3FF) {
         return RT_ERROR_DRV_NOT_SUPPORT;
     }
-    return RT_GET_DRV_ERRCODE(drvRet);
+    if (drvRet != DRV_ERROR_NONE) {
+        DRV_ERROR_PROCESS(
+            drvRet, "halGetDeviceInfo call failed, drvRetCode=%d, drvDevId=%d.", static_cast<int32_t>(drvRet),
+            static_cast<int32_t>(deviceId));
+        return RT_GET_DRV_ERRCODE(drvRet);
+    }
+    return RT_ERROR_NONE;
 }
 
 rtError_t NpuDriver::GetHostID(uint32_t* hostId)

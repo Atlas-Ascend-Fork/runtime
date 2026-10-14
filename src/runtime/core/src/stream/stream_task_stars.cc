@@ -81,12 +81,10 @@ rtError_t StreamCmoAddrTaskLaunch(
     const int32_t streamId = stm->Id_();
     Device* const device = stm->Device_();
     rtCmoAddrInfo* const starsCmoAddrInfo = static_cast<rtCmoAddrInfo*>(cmoAddrInfo);
-    if (stm->Model_() == nullptr) {
-        RT_LOG(
-            RT_LOG_ERROR, "CMO Addr task stream is not in model. device_id=%d, stream_id=%d.",
-            static_cast<int32_t>(stm->Device_()->Id_()), streamId);
-        return RT_ERROR_MODEL_NULL;
-    }
+    COND_RETURN_AND_MSG_OUTER(
+        (stm->Model_() == nullptr), RT_ERROR_MODEL_NULL, ErrorCode::EE1017,
+        "Using the memory descriptor to operate the cache memory on the device", "stream",
+        "The stream must be bound to a model before the CMO address task is delivered");
     TaskInfo submitTask = {};
     rtError_t errorReason;
     TaskInfo* cmoAddrTask = stm->AllocTask(&submitTask, TS_TASK_TYPE_CMO, errorReason);

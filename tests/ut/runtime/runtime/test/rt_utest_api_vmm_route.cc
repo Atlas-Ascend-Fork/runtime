@@ -521,3 +521,25 @@ TEST_F(ApiVmmRouteTest, ConvertsVmmSpecialErrors)
     EXPECT_EQ(rtMemMapSetLink(kHandle, RT_MEM_ACCESS_LINK_HCCS), ACL_ERROR_RT_LINK_TYPE_NOT_SUPPORTED);
     EXPECT_EQ(apiVmm_.setLinkCount_, 1U);
 }
+
+TEST_F(ApiVmmRouteTest, MapsDriverNotSupportErrorsWithoutApiFallback)
+{
+    uint64_t shareableHandle = 0U;
+    rtDrvMemFabricHandle fabricHandle = {};
+    rtDrvMemHandle drvHandle = nullptr;
+
+    apiVmm_.result_ = RT_ERROR_DRV_NOT_SUPPORT;
+    EXPECT_EQ(
+        rtMemExportToShareableHandle(kHandle, RT_MEM_HANDLE_TYPE_NONE, 0U, &shareableHandle),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(
+        rtMemExportToShareableHandleV2(kHandle, RT_MEM_SHARE_HANDLE_TYPE_FABRIC, 0U, &fabricHandle),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(
+        rtMemImportFromShareableHandleV2(&fabricHandle, RT_MEM_SHARE_HANDLE_TYPE_FABRIC, 0U, 0, &drvHandle),
+        ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+
+    apiVmm_.result_ = RT_ERROR_DRV_LINK_TYPE_NOT_SUPPORTED;
+    EXPECT_EQ(
+        rtMemMapSelectedLink(kVirAddrOut, 4096U, kVirAddr, RT_MEM_LINK_IDX_1), ACL_ERROR_RT_LINK_TYPE_NOT_SUPPORTED);
+}
