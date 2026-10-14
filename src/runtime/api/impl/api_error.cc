@@ -6170,7 +6170,7 @@ rtError_t ApiErrorDecorator::MemWriteValue(
         ERR_MODULE_GE, error != RT_ERROR_NONE, error,
         "mem write value failed, get devAddr attributes failed, retCode=%#x", static_cast<uint32_t>(error));
 
-    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
         (attributes.location.type != RT_MEMORY_LOC_DEVICE), RT_ERROR_INVALID_VALUE,
         "Writing data to the specified memory", MemLocationTypeToString(attributes.location.type),
         "attributes.location.type", MemLocationTypeToString(RT_MEMORY_LOC_DEVICE));
@@ -6196,7 +6196,7 @@ rtError_t ApiErrorDecorator::MemWaitValue(
         ERR_MODULE_GE, error != RT_ERROR_NONE, error,
         "mem wait value failed, get devAddr attributes failed, retCode=%#x", static_cast<uint32_t>(error));
 
-    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
         (attributes.location.type != RT_MEMORY_LOC_DEVICE), RT_ERROR_INVALID_VALUE,
         "Unblocking the data in the specified memory when the data meets certain conditions",
         MemLocationTypeToString(attributes.location.type), "attributes.location.type",
