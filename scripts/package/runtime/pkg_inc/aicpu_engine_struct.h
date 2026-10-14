@@ -11,10 +11,18 @@
 #ifndef AICPU_ENGINE_STRUCT_COMPAT_H
 #define AICPU_ENGINE_STRUCT_COMPAT_H
 
+#ifndef AICPU_ENGINE_STRUCT_COMPAT_WARN_SHOWN
+#define AICPU_ENGINE_STRUCT_COMPAT_WARN_SHOWN
+#pragma message( \
+        "aicpu_engine_struct.h is scheduled to be removed on 2027-07-25 (one-year compatibility period since 2026-07-25), \
+and will be replaced by aicpu/aicpu_engine_struct.h. Please migrate to the new include path in time.")
+#endif // AICPU_ENGINE_STRUCT_COMPAT_WARN_SHOWN
+
 /*
  * Compatibility header for legacy include path.
- * Deprecated: use "aicpu/aicpu_engine_struct.h" instead.
- * This header will be removed in a future release.
+ * Deprecated since 2026-07-25, use "aicpu/aicpu_engine_struct.h" instead.
+ * This header will be removed on 2027-07-25 (one-year compatibility period), and cannot be used anymore after that
+ * date.
  */
 #include "aicpu/aicpu_engine_struct.h"
 
