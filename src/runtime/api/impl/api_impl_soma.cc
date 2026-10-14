@@ -27,6 +27,8 @@ rtError_t ApiImplSoma::StreamMemPoolCreate(rtMemPool_t* memPool, const rtMemPool
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(memPool, RT_ERROR_INVALID_VALUE, "Memory pool creation");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(poolProps, RT_ERROR_INVALID_VALUE, "Memory pool creation");
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     RT_LOG(RT_LOG_DEBUG, "Stream memory pool create.");
     return SomaApi::StreamMemPoolCreate(memPool, poolProps);
 }
@@ -34,6 +36,8 @@ rtError_t ApiImplSoma::StreamMemPoolCreate(rtMemPool_t* memPool, const rtMemPool
 rtError_t ApiImplSoma::StreamMemPoolDestroy(rtMemPool_t const memPool)
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(memPool, RT_ERROR_INVALID_VALUE, "Memory pool destruction");
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     RT_LOG(RT_LOG_DEBUG, "Stream memory pool destroy, poolId=%#" PRIx64 ".", RtPtrToValue(memPool));
     return SomaApi::StreamMemPoolDestroy(memPool);
 }
@@ -44,6 +48,8 @@ rtError_t ApiImplSoma::StreamMemPoolSetAttr(rtMemPool_t memPool, rtMemPoolAttr a
         memPool, RT_ERROR_INVALID_VALUE, "Setting the attribute value of a memory pool");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
         value, RT_ERROR_INVALID_VALUE, "Setting the attribute value of a memory pool");
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     RT_LOG(
         RT_LOG_DEBUG, "Stream memory pool set attribute, poolId=%#" PRIx64 ", attr=%s.", RtPtrToValue(memPool),
         MemPoolAttrToString(attr).c_str());
@@ -56,6 +62,8 @@ rtError_t ApiImplSoma::StreamMemPoolGetAttr(rtMemPool_t memPool, rtMemPoolAttr a
         memPool, RT_ERROR_INVALID_VALUE, "Obtaining the specified attribute value of a memory pool");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
         value, RT_ERROR_INVALID_VALUE, "Obtaining the specified attribute value of a memory pool");
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     RT_LOG(
         RT_LOG_DEBUG, "Stream memory pool get attribute, poolId=%#" PRIx64 ", attr=%s.", RtPtrToValue(memPool),
         MemPoolAttrToString(attr).c_str());
@@ -273,6 +281,8 @@ rtError_t ApiImplSoma::SomaAicpuKernelLaunch(
 
 rtError_t ApiImplSoma::MemPoolTrimTo(rtMemPool_t memPool, uint64_t minBytesToKeep)
 {
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     return SomaApi::MemPoolTrimTo(memPool, minBytesToKeep);
 }
 

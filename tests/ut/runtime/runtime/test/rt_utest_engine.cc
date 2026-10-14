@@ -144,6 +144,36 @@ public:
     }
 };
 
+struct ThreadLifecycleState {
+    bool joinCalled = false;
+    bool destroyed = false;
+    bool joinedBeforeDestroy = false;
+};
+
+class StartResultThread : public Thread {
+public:
+    StartResultThread(const int32_t startResult, ThreadLifecycleState& state) : startResult_(startResult), state_(state)
+    {}
+
+    ~StartResultThread() override
+    {
+        state_.joinedBeforeDestroy = state_.joinCalled;
+        state_.destroyed = true;
+    }
+
+    int32_t Start() override { return startResult_; }
+
+    void Join() override { state_.joinCalled = true; }
+
+    bool IsAlive() override { return true; }
+
+    uint64_t GetThreadId() override { return 0U; }
+
+private:
+    int32_t startResult_;
+    ThreadLifecycleState& state_;
+};
+
 extern rtCommand_t g_command[2];
 
 drvError_t halSqMemGet_stub1(
@@ -1196,6 +1226,25 @@ TEST_F(EngineTest, Start_engine)
 
     error = engine->Start();
     EXPECT_NE(error, RT_ERROR_NONE);
+}
+
+TEST_F(EngineTest, Start_engine_receive_thread_start_failed)
+{
+    ThreadLifecycleState sendState;
+    ThreadLifecycleState receiveState;
+    Thread* const sendThread = new StartResultThread(EN_OK, sendState);
+    Thread* const receiveThread = new StartResultThread(EN_ERROR, receiveState);
+    MOCKER(OsalFactory::CreateThread).stubs().will(returnValue(sendThread)).then(returnValue(receiveThread));
+
+    std::unique_ptr<Engine> engine = std::make_unique<AsyncHwtsEngine>(device_);
+    ASSERT_EQ(engine->Init(), RT_ERROR_NONE);
+
+    EXPECT_EQ(engine->Start(), RT_ERROR_MEMORY_ALLOCATION);
+    EXPECT_TRUE(sendState.joinCalled);
+    EXPECT_TRUE(sendState.destroyed);
+    EXPECT_TRUE(sendState.joinedBeforeDestroy);
+    EXPECT_FALSE(receiveState.joinCalled);
+    EXPECT_TRUE(receiveState.destroyed);
 }
 
 TEST_F(EngineTest, WaitCompletion_test_break)

@@ -7,6 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <thread>
+
 #include "../../rt_utest_api.hpp"
 #include "platform_manager_v2.h"
 #include "rt_unwrap.h"
@@ -53,6 +55,55 @@ protected:
         GlobalMockObject::verify();
     }
 };
+
+TEST_F(ApiTestSoma950, MemPoolApisWithoutCurrentContext)
+{
+    RawDevice* device = new RawDevice(0);
+    device->Init();
+    size_t totalSize = (16UL * 1024 * 1024 * 1024);
+    MOCKER_CPP_VIRTUAL(*device->driver_, &Driver::MemGetInfoEx)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), outBoundP(&totalSize, sizeof(totalSize)))
+        .will(returnValue(RT_ERROR_NONE));
+
+    rtMemPool_t memPool = nullptr;
+    rtMemPoolProps poolProps = {
+        .side = 1, .devId = 0, .handleType = RT_MEM_HANDLE_TYPE_POSIX, .maxSize = (10UL << 30), .reserve = 0};
+    uint64_t fakeVa = (1ULL << 32);
+    MOCKER_CPP_VIRTUAL(*device->driver_, &Driver::StreamMemPoolCreate)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), outBound(fakeVa))
+        .will(returnValue(RT_ERROR_NONE));
+    ASSERT_EQ(rtMemPoolCreate(&memPool, &poolProps), RT_ERROR_NONE);
+
+    rtError_t createRet = RT_ERROR_NONE;
+    rtError_t destroyRet = RT_ERROR_NONE;
+    rtError_t setAttrRet = RT_ERROR_NONE;
+    rtError_t getAttrRet = RT_ERROR_NONE;
+    rtError_t trimRet = RT_ERROR_NONE;
+    bool hasNoCurrentContext = false;
+    std::thread worker([&]() {
+        hasNoCurrentContext = (Runtime::Instance()->CurrentContext() == nullptr);
+        rtMemPool_t workerMemPool = nullptr;
+        uint64_t releaseThreshold = 0;
+        createRet = rtMemPoolCreate(&workerMemPool, &poolProps);
+        destroyRet = rtMemPoolDestroy(memPool);
+        setAttrRet = rtMemPoolSetAttr(memPool, rtMemPoolAttrReleaseThreshold, &releaseThreshold);
+        getAttrRet = rtMemPoolGetAttr(memPool, rtMemPoolAttrReleaseThreshold, &releaseThreshold);
+        trimRet = rtMemPoolTrimTo(memPool, 0);
+    });
+    worker.join();
+
+    EXPECT_TRUE(hasNoCurrentContext);
+    EXPECT_EQ(createRet, ACL_ERROR_RT_CONTEXT_NULL);
+    EXPECT_EQ(destroyRet, ACL_ERROR_RT_CONTEXT_NULL);
+    EXPECT_EQ(setAttrRet, ACL_ERROR_RT_CONTEXT_NULL);
+    EXPECT_EQ(getAttrRet, ACL_ERROR_RT_CONTEXT_NULL);
+    EXPECT_EQ(trimRet, ACL_ERROR_RT_CONTEXT_NULL);
+
+    EXPECT_EQ(rtMemPoolDestroy(memPool), RT_ERROR_NONE);
+    delete device;
+}
 
 TEST_F(ApiTestSoma950, MallocFromPoolAsyncSuccess)
 {

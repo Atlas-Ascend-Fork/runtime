@@ -77,6 +77,7 @@ rtError_t AsyncHwtsEngine::Start()
 
     rtError_t error;
     int32_t err = EN_OK;
+    bool sendThreadStarted = false;
     void* send = nullptr;
     void* recv = nullptr;
     notifier_ = OsalFactory::CreateNotifier();
@@ -101,6 +102,7 @@ rtError_t AsyncHwtsEngine::Start()
     err = sendThread_->Start();
     COND_PROC_GOTO_MSG_INNER(err != EN_OK, ERROR_RETURN, error = RT_ERROR_MEMORY_ALLOCATION;
                              , "Failed to start send thread.");
+    sendThreadStarted = true;
 
     err = receiveThread_->Start();
     COND_PROC_GOTO_MSG_INNER(err != EN_OK, ERROR_RETURN, error = RT_ERROR_MEMORY_ALLOCATION;
@@ -111,6 +113,12 @@ rtError_t AsyncHwtsEngine::Start()
 ERROR_RETURN:
     receiveRunFlag_ = false;
     sendRunFlag_ = false;
+    if (sendThreadStarted) {
+        if (scheduler_ != nullptr) {
+            (void)scheduler_->PushTask(nullptr);
+        }
+        sendThread_->Join();
+    }
     DELETE_O(sendThread_);
     DELETE_O(receiveThread_);
     DELETE_O(notifier_);
