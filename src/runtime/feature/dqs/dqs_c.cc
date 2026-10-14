@@ -201,6 +201,8 @@ static rtError_t DqsNotifyWait(Stream* const stm)
         return RT_ERROR_INVALID_VALUE;
     }
 
+    CountNotify* cntNotify = nullptr;
+    Notify* notify = nullptr;
     uint32_t notifyId = 0U;
     bool isCntNotify = false;
     bool createdFlag = false;
@@ -209,19 +211,25 @@ static rtError_t DqsNotifyWait(Stream* const stm)
         isCntNotify = true;
         error = DqsCountNotifyWaitCreate(streamWithDqs, createdFlag);
         ERROR_RETURN_MSG_INNER(error, "Dqs cnt notify wait failed, retCode=%#x.", static_cast<uint32_t>(error));
-        CountNotify* cntNotify = RtPtrToUnConstPtr<CountNotify*>(streamWithDqs->GetDqsCountNotify());
+        cntNotify = RtPtrToUnConstPtr<CountNotify*>(streamWithDqs->GetDqsCountNotify());
         notifyId = cntNotify->GetCntNotifyId();
     } else {
         error = DqsNotifyWaitCreate(streamWithDqs, createdFlag);
         ERROR_RETURN_MSG_INNER(error, "Dqs notify wait failed, retCode=%#x.", static_cast<uint32_t>(error));
-        Notify* notify = RtPtrToUnConstPtr<Notify*>(streamWithDqs->GetDqsNotify());
+        notify = RtPtrToUnConstPtr<Notify*>(streamWithDqs->GetDqsNotify());
         notifyId = notify->GetNotifyId();
     }
 
     if (createdFlag == false) {
         // send notifyId and queId to kernel space
         error = SendAccSubscribeInfo(streamWithDqs, queNum, notifyId, ctrlSpacePtr->input_queue_ids, isCntNotify);
-        ERROR_RETURN_MSG_INNER(error, "Send stars ioctl failed, retCode=%#x.", static_cast<uint32_t>(error));
+        if (isCntNotify) {
+            ERROR_PROC_RETURN_MSG_INNER(error, DELETE_O(cntNotify); streamWithDqs->SetDqsCountNotify(nullptr);
+                                        , "Send stars ioctl failed, retCode=%#x.", static_cast<uint32_t>(error));
+        } else {
+            ERROR_PROC_RETURN_MSG_INNER(error, DELETE_O(notify); streamWithDqs->SetDqsNotify(nullptr);
+                                        , "Send stars ioctl failed, retCode=%#x.", static_cast<uint32_t>(error));
+        }
     }
 
     return RT_ERROR_NONE;

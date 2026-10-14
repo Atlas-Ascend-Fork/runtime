@@ -619,10 +619,17 @@ void PrintErrorInfoForDqsBatchDequeueTask(TaskInfo* taskInfo, const uint32_t dev
         ctrlSpace == nullptr, "dqs control space is nullptr, stream_id=%d, deviceId=%u", streamWithDqs->Id_(), devId);
 
     /* todo:如果写cqe_status，这个地方应该就不需要了吧 */
-    uint32_t dfx[2U];
+    uint32_t dfx[2U] = {0U};
     const auto dev = taskInfo->stream->Device_();
-    (void)dev->Driver_()->MemCopySync(
+    const rtError_t ret = dev->Driver_()->MemCopySync(
         dfx, sizeof(dfx), taskInfo->u.dqsBatchDequeueTask.dfxPtr, sizeof(dfx), RT_MEMCPY_DEVICE_TO_HOST);
+    if (ret != RT_ERROR_NONE) {
+        RT_LOG(
+            RT_LOG_ERROR,
+            "MemCopySync for dqs batch dequeue task failed, device_id=%u, stream_id=%d, task_id=%u, retCode=%#x.",
+            devId, taskInfo->stream->Id_(), taskInfo->id, static_cast<uint32_t>(ret));
+        return;
+    }
     RT_LOG(
         RT_LOG_ERROR,
         "dqs dqsBatchDequeueTask error, device_id=%u, stream_id=%d, task_id=%u, pop_result=%u, handle_value=%u", devId,
@@ -1587,8 +1594,15 @@ void PrintErrorInfoForDqsPrepareTask(TaskInfo* taskInfo, const uint32_t devId)
     DqsCommonTaskInfo* dqsPrepareTask = &(taskInfo->u.dqsPrepareTask);
     uint32_t dfx[2U] = {0U}; // 0: pool_idx, 1: alloc result
     const auto dev = taskInfo->stream->Device_();
-    (void)dev->Driver_()->MemCopySync(
-        dfx, sizeof(dfx), dqsPrepareTask->dfxPtr, sizeof(dfx), RT_MEMCPY_DEVICE_TO_DEVICE);
+    const rtError_t ret =
+        dev->Driver_()->MemCopySync(dfx, sizeof(dfx), dqsPrepareTask->dfxPtr, sizeof(dfx), RT_MEMCPY_DEVICE_TO_HOST);
+    if (ret != RT_ERROR_NONE) {
+        RT_LOG(
+            RT_LOG_ERROR,
+            "MemCopySync for dqs prepare task failed, device_id=%u, stream_id=%d, task_id=%u, retCode=%#x.", devId,
+            taskInfo->stream->Id_(), taskInfo->id, static_cast<uint32_t>(ret));
+        return;
+    }
     const uint32_t failPoolIdx = dfx[0U];
     if (failPoolIdx >= STARS_DQS_MAX_OUTPUT_QUEUE_NUM) {
         RT_LOG(
@@ -1893,10 +1907,16 @@ void DqsAdspcTaskUnInit(TaskInfo* const taskInfo)
 
 void PrintErrorInfoForDqsAdspcTask(TaskInfo* taskInfo, const uint32_t devId)
 {
-    uint32_t dfx[3U]; // 0: cqHead, 1: cqTail, 2: qmngr ow value
+    uint32_t dfx[3U] = {0U}; // 0: cqHead, 1: cqTail, 2: qmngr ow value
     const auto dev = taskInfo->stream->Device_();
-    (void)dev->Driver_()->MemCopySync(
+    const rtError_t ret = dev->Driver_()->MemCopySync(
         dfx, sizeof(dfx), taskInfo->u.dqsAdspcTaskInfo.commonTaskInfo.dfxPtr, sizeof(dfx), RT_MEMCPY_DEVICE_TO_HOST);
+    if (ret != RT_ERROR_NONE) {
+        RT_LOG(
+            RT_LOG_ERROR, "MemCopySync for dqs adspc task failed, device_id=%u, stream_id=%d, task_id=%u, retCode=%#x.",
+            devId, taskInfo->stream->Id_(), taskInfo->id, static_cast<uint32_t>(ret));
+        return;
+    }
     RT_LOG(
         RT_LOG_ERROR,
         "dqs adspc task error, device_id=%u, stream_id=%d, task_id=%u, cqHead=%u, cqTail=%u, "
