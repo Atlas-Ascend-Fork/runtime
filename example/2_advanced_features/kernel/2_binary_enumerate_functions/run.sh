@@ -33,8 +33,8 @@ if [[ -z "${SOC_VERSION:-}" || -z "${ASCENDC_CMAKE_DIR:-}" ]]; then
     source "${EXAMPLE_DIR}/set_sample_env.sh" || die "Failed to auto detect SOC_VERSION/ASCENDC_CMAKE_DIR.
         Please export SOC_VERSION (e.g. SOC_VERSION=Ascend910B1) and ASCENDC_CMAKE_DIR."
 fi
-[[ -f "${ASCENDC_CMAKE_DIR:-}/ascendc.cmake" ]] || \
-    die "ascendc.cmake was not found; install or source the CANN Toolkit first."
+[[ -f "${ASCENDC_CMAKE_DIR:-}/asc_modules/FindASC.cmake" ]] || \
+    die "asc_modules/FindASC.cmake was not found; install or source the CANN Toolkit first."
 
 echo "[INFO] ASCEND_HOME_PATH=${ASCEND_HOME_PATH}"
 echo "[INFO] SOC_VERSION=${SOC_VERSION}"

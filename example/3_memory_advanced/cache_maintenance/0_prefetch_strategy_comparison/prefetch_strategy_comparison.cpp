@@ -17,7 +17,7 @@
 #include "acl/acl.h"
 #include "utils.h"
 
-int32_t TransformWorksetDo(
+void TransformWorksetDo(
     uint32_t blockDim, void* stream, uint32_t* input, uint32_t* output, uint32_t elementCount, uint32_t scale,
     uint32_t offset);
 
@@ -107,24 +107,14 @@ int PrefetchWorkflow::ExecuteStrategies()
     }
 
     CHECK_ERROR(aclrtCmoAsync(inputDevice_[0], kBufferBytes, ACL_RT_CMO_TYPE_PREFETCH, directStream_));
-    int32_t launchResult =
-        TransformWorksetDo(kBlockDim, directStream_, inputDevice_[0], outputDevice_[0], kElementCount, kScale, kOffset);
-    if (launchResult != ACL_SUCCESS) {
-        ERROR_LOG("TransformWorksetDo returned error code %d", launchResult);
-        return -1;
-    }
+    TransformWorksetDo(kBlockDim, directStream_, inputDevice_[0], outputDevice_[0], kElementCount, kScale, kOffset);
     CHECK_ERROR(aclrtSynchronizeStream(directStream_));
 
     CHECK_ERROR(aclmdlRIBuildBegin(&modelRI_, 0U));
     CHECK_ERROR(aclmdlRIBindStream(modelRI_, descriptorStream_, ACL_MODEL_STREAM_FLAG_HEAD));
     streamBound_ = true;
     CHECK_ERROR(aclrtCmoAsyncWithDesc(cmoDescDevice_, ACL_RT_CMO_TYPE_PREFETCH, descriptorStream_, nullptr));
-    launchResult = TransformWorksetDo(
-        kBlockDim, descriptorStream_, inputDevice_[1], outputDevice_[1], kElementCount, kScale, kOffset);
-    if (launchResult != ACL_SUCCESS) {
-        ERROR_LOG("TransformWorksetDo returned error code %d", launchResult);
-        return -1;
-    }
+    TransformWorksetDo(kBlockDim, descriptorStream_, inputDevice_[1], outputDevice_[1], kElementCount, kScale, kOffset);
     CHECK_ERROR(aclmdlRIEndTask(modelRI_, descriptorStream_));
     CHECK_ERROR(aclmdlRIBuildEnd(modelRI_, nullptr));
     CHECK_ERROR(aclmdlRIExecute(modelRI_, kModelTimeoutMs));

@@ -15,7 +15,7 @@
 #include "kernel_operator.h"
 #include "kernel_ops.h"
 
-extern "C" __global__ __aicore__ void DeviceWrite(__gm__ int* devPtr, int value)
+extern "C" __global__ __vector__ void DeviceWrite(__gm__ int* devPtr, int value)
 {
     int32_t idx = block_idx;
     devPtr[idx] = value;
@@ -27,7 +27,7 @@ void WriteDo(uint32_t blockDim, void* stream, int* devPtr, int value)
     DeviceWrite<<<blockDim, nullptr, stream>>>(devPtr, value);
 }
 
-extern "C" __global__ __aicore__ void DeviceRead(__gm__ int* devPtr)
+extern "C" __global__ __vector__ void DeviceRead(__gm__ int* devPtr)
 {
     int32_t idx = block_idx;
     int value = devPtr[idx];

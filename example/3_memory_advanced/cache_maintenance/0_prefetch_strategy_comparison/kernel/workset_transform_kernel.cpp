@@ -12,7 +12,7 @@
 
 #include "kernel_operator.h"
 
-extern "C" __global__ __aicore__ void TransformWorksetKernel(
+extern "C" __global__ __vector__ void TransformWorksetKernel(
     __gm__ uint32_t* input, __gm__ uint32_t* output, uint32_t elementCount, uint32_t scale, uint32_t offset)
 {
     for (uint32_t index = 0; index < elementCount; ++index) {
@@ -24,10 +24,9 @@ extern "C" __global__ __aicore__ void TransformWorksetKernel(
 #endif
 }
 
-int32_t TransformWorksetDo(
+void TransformWorksetDo(
     uint32_t blockDim, void* stream, uint32_t* input, uint32_t* output, uint32_t elementCount, uint32_t scale,
     uint32_t offset)
 {
-    return static_cast<int32_t>(
-        TransformWorksetKernel<<<blockDim, nullptr, stream>>>(input, output, elementCount, scale, offset));
+    TransformWorksetKernel<<<blockDim, nullptr, stream>>>(input, output, elementCount, scale, offset);
 }

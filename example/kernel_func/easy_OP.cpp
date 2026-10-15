@@ -12,7 +12,7 @@
 #include "kernel_ops.h"
 
 // 简单核函数，让x自增1
-extern "C" __global__ __aicore__ void EasyOPf(__gm__ uint32_t* x)
+extern "C" __global__ __vector__ void EasyOPf(__gm__ uint32_t* x)
 {
     int32_t idx = block_idx;
     x[idx] += 1;

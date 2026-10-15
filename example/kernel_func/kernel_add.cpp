@@ -100,7 +100,7 @@ private:
 };
 } // namespace
 
-extern "C" __global__ __aicore__ void AddKernel(
+extern "C" __global__ __vector__ void AddKernel(
     __gm__ float* srcA, __gm__ float* srcB, __gm__ float* dst, uint32_t totalSize)
 {
     KernelAdd op;

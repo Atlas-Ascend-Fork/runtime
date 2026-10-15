@@ -16,7 +16,7 @@ constexpr int32_t kMainBias = 10;
 constexpr int32_t kPostScale = 2;
 } // namespace
 
-extern "C" __global__ __aicore__ void fallback_main(__gm__ int32_t* input, __gm__ int32_t* output)
+extern "C" __global__ __vector__ void fallback_main(__gm__ int32_t* input, __gm__ int32_t* output)
 {
     for (uint32_t i = 0; i < kElementCount; ++i) {
         output[i] = input[i] + kMainBias;
@@ -26,7 +26,7 @@ extern "C" __global__ __aicore__ void fallback_main(__gm__ int32_t* input, __gm_
 #endif
 }
 
-extern "C" __global__ __aicore__ void fallback_postprocess(__gm__ int32_t* input, __gm__ int32_t* output)
+extern "C" __global__ __vector__ void fallback_postprocess(__gm__ int32_t* input, __gm__ int32_t* output)
 {
     for (uint32_t i = 0; i < kElementCount; ++i) {
         output[i] = input[i] * kPostScale;

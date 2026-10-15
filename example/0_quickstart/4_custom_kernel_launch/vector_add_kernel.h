@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-int32_t VectorAddDo(
+void VectorAddDo(
     uint32_t blockDim, void* stream, float* srcA, float* srcB, float* dst, float alpha, uint32_t elementCount);
 
 #endif // EXAMPLE_0_QUICKSTART_4_CUSTOM_KERNEL_LAUNCH_VECTOR_ADD_KERNEL_H_

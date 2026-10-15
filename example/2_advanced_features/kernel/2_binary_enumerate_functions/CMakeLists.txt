@@ -10,26 +10,34 @@
 
 cmake_minimum_required(VERSION 3.16.0)
 
-project(Binary_Enumerate_Functions_Sample LANGUAGES C CXX)
-
-include(GNUInstallDirs)
-
 set(ASCENDC_CMAKE_DIR $ENV{ASCENDC_CMAKE_DIR} CACHE PATH "AscendC CMake directory")
 set(RUN_MODE "npu" CACHE STRING "cpu/sim/npu")
 set(SOC_VERSION $ENV{SOC_VERSION} CACHE STRING "Ascend SoC version")
 set(ASCEND_CANN_PACKAGE_PATH $ENV{ASCEND_HOME_PATH} CACHE PATH "CANN installation path")
+string(TOLOWER "${SOC_VERSION}" SOC_VERSION_LOWER)
+if(SOC_VERSION_LOWER MATCHES "^ascend(950|350)")
+    set(CMAKE_ASC_ARCHITECTURES dav-3510)
+elseif(SOC_VERSION_LOWER MATCHES "^ascend910(b|_93)")
+    set(CMAKE_ASC_ARCHITECTURES dav-2201)
+else()
+    message(FATAL_ERROR "Unsupported SOC_VERSION: ${SOC_VERSION}")
+endif()
+
+list(APPEND CMAKE_MODULE_PATH "${ASCENDC_CMAKE_DIR}/asc_modules")
+find_package(ASC REQUIRED)
+project(Binary_Enumerate_Functions_Sample LANGUAGES ASC C CXX)
+
+include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type Release/Debug" FORCE)
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/out" CACHE PATH "Install path" FORCE)
 
-if(NOT EXISTS "${ASCENDC_CMAKE_DIR}/ascendc.cmake")
-    message(FATAL_ERROR "Cannot find ${ASCENDC_CMAKE_DIR}/ascendc.cmake")
-endif()
-
-include("${ASCENDC_CMAKE_DIR}/ascendc.cmake")
 ascendc_fatbin_library(custom_kernels kernel/custom.cpp)
+target_compile_options(custom_kernels PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
+)
 
 set(CANN_SEARCH_ROOTS
     "${ASCEND_CANN_PACKAGE_PATH}"
@@ -76,3 +84,4 @@ target_link_libraries(binary_enumerate_functions PRIVATE
 install(TARGETS binary_enumerate_functions
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
+install(TARGETS custom_kernels LIBRARY DESTINATION "fatbin/custom_kernels")

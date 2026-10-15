@@ -87,7 +87,7 @@ private:
     GlobalTensor<uint64_t> loopGm_;
 };
 
-extern "C" __global__ __aicore__ void launch_blocking_kernel(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR loop)
+extern "C" __global__ __vector__ void launch_blocking_kernel(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR loop)
 {
     LaunchBlockingKernel kernel;
     kernel.Init(x, y, z, loop);

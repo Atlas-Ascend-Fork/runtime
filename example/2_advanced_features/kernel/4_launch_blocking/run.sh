@@ -39,7 +39,7 @@ if ! detect_sample_env; then
     echo "[ERROR] Failed to detect SOC_VERSION or ASCENDC_CMAKE_DIR. Source ${EXAMPLE_DIR}/set_sample_env.sh first."
     exit 1
 fi
-if [ -z "${ASCENDC_CMAKE_DIR:-}" ] || [ ! -f "${ASCENDC_CMAKE_DIR}/ascendc.cmake" ]; then
+if [ -z "${ASCENDC_CMAKE_DIR:-}" ] || [ ! -f "${ASCENDC_CMAKE_DIR}/asc_modules/FindASC.cmake" ]; then
     echo "[ERROR] ASCENDC_CMAKE_DIR is invalid."
     exit 1
 fi

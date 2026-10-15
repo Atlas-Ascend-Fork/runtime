@@ -82,7 +82,7 @@ private:
     AscendC::GlobalTensor<half> zGm;
 };
 
-extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
+extern "C" __global__ __vector__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
     KernelAdd op;
     op.Init(x, y, z);

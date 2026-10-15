@@ -15,7 +15,7 @@ constexpr uint32_t kPixelCount = 64;
 constexpr uint32_t kBufferBytes = kPixelCount * sizeof(uint8_t);
 } // namespace
 
-extern "C" __global__ __aicore__ void segmentation_tree(GM_ADDR pixels, GM_ADDR fine, GM_ADDR coarse)
+extern "C" __global__ __vector__ void segmentation_tree(GM_ADDR pixels, GM_ADDR fine, GM_ADDR coarse)
 {
     AscendC::GlobalTensor<uint8_t> pixelTensor;
     AscendC::GlobalTensor<uint8_t> fineTensor;

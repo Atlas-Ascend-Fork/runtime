@@ -39,6 +39,7 @@ int32_t main()
     constexpr uint32_t blockDim = 1;
     int writeValue = 123;
     WriteDo(blockDim, stream, devPtrA, writeValue);
+    CHECK_ERROR(aclrtSynchronizeStream(stream));
     INFO_LOG("Write the data %d to the virtual memory %p", writeValue, devPtrA);
 
     // Copy memory from address devPtrA to address devPtrB synchronously
@@ -47,6 +48,7 @@ int32_t main()
 
     // Read the value at address devPtrB
     ReadDo(blockDim, stream, devPtrB);
+    CHECK_ERROR(aclrtSynchronizeStream(stream));
 
     // Release resource of the device
     aclrtDestroyStreamForce(stream);

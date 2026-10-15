@@ -12,7 +12,7 @@
 #include "kernel_ops.h"
 
 // 核函数，长时间任务
-extern "C" __global__ __aicore__ void LongOPf(__gm__ uint32_t* x)
+extern "C" __global__ __vector__ void LongOPf(__gm__ uint32_t* x)
 {
     float temp = 0.0f;
     int idx = block_idx;

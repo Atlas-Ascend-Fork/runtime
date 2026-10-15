@@ -159,12 +159,7 @@ int ExecuteAndVerify(Session& session, const Plan& plan)
         return -1;
     }
     CHECK_ERROR(aclrtCreateStream(&session.stream));
-    const int32_t launchResult =
-        AggregateCountersDo(plan.blocks, session.stream, session.input, kernelOutput, plan.hostAtomic);
-    if (launchResult != 0) {
-        ERROR_LOG("AggregateCounters launch failed: %d", launchResult);
-        return -1;
-    }
+    AggregateCountersDo(plan.blocks, session.stream, session.input, kernelOutput, plan.hostAtomic);
     session.pending = true;
     CHECK_ERROR(aclrtSynchronizeStream(session.stream));
     session.pending = false;

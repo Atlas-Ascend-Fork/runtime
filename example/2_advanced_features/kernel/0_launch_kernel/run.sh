@@ -48,8 +48,8 @@ if [ -z "${SOC_VERSION:-}" ]; then
     exit 1
 fi
 
-if [ ! -f "${ASCENDC_CMAKE_DIR}/ascendc.cmake" ]; then
-    echo "[ERROR]: ${ASCENDC_CMAKE_DIR}/ascendc.cmake does not exist."
+if [ ! -f "${ASCENDC_CMAKE_DIR}/asc_modules/FindASC.cmake" ]; then
+    echo "[ERROR]: ${ASCENDC_CMAKE_DIR}/asc_modules/FindASC.cmake does not exist."
     exit 1
 fi
 

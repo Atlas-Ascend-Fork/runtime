@@ -55,15 +55,15 @@ if [[ -z "${ASCENDC_CMAKE_DIR:-}" ]]; then
         "${ASCEND_INSTALL_PATH}/tikcpp/ascendc_kernel_cmake"
     )
     for candidate in "${ASCENDC_CANDIDATES[@]}"; do
-        if [[ -f "${candidate}/ascendc.cmake" ]]; then
+        if [[ -f "${candidate}/asc_modules/FindASC.cmake" ]]; then
             export ASCENDC_CMAKE_DIR="${candidate}"
             break
         fi
     done
 fi
 
-if [[ ! -f "${ASCENDC_CMAKE_DIR:-}/ascendc.cmake" ]]; then
-    echo "[ERROR] ascendc.cmake was not found; install or source the CANN Toolkit first."
+if [[ ! -f "${ASCENDC_CMAKE_DIR:-}/asc_modules/FindASC.cmake" ]]; then
+    echo "[ERROR] asc_modules/FindASC.cmake was not found; install or source the CANN Toolkit first."
     exit 1
 fi
 

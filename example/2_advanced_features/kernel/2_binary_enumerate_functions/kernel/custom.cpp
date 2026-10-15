@@ -95,21 +95,21 @@ private:
     AscendC::GlobalTensor<half> zGm;
 };
 
-extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
+extern "C" __global__ __vector__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
     KernelBinary<BinaryOperation::ADD> op;
     op.Init(x, y, z);
     op.Process();
 }
 
-extern "C" __global__ __aicore__ void sub_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
+extern "C" __global__ __vector__ void sub_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
     KernelBinary<BinaryOperation::SUB> op;
     op.Init(x, y, z);
     op.Process();
 }
 
-extern "C" __global__ __aicore__ void mul_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
+extern "C" __global__ __vector__ void mul_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
     KernelBinary<BinaryOperation::MUL> op;
     op.Init(x, y, z);

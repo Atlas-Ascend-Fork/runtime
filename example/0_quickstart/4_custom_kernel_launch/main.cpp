@@ -68,7 +68,7 @@ int main()
     printf("  alpha:  %.1f\n", alpha);
 
     // Launch the custom AscendC kernel through the <<<>>> call path.
-    CHECK_ERROR(VectorAddDo(blockDim, stream, srcADevice, srcBDevice, dstDevice, alpha, kElementCount));
+    VectorAddDo(blockDim, stream, srcADevice, srcBDevice, dstDevice, alpha, kElementCount);
     INFO_LOG("Custom AscendC kernel <<<>>> call successfully");
 
     CHECK_ERROR(aclrtSynchronizeStream(stream));

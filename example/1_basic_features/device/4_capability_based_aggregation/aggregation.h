@@ -17,6 +17,6 @@ constexpr uint32_t kRecordCount = 1024;
 constexpr uint32_t kCategoryCount = 8;
 constexpr uint32_t kMaxBlocks = 8;
 
-int32_t AggregateCountersDo(uint32_t blockDim, void* stream, void* input, void* output, bool hostAtomic);
+void AggregateCountersDo(uint32_t blockDim, void* stream, void* input, void* output, bool hostAtomic);
 
 #endif

@@ -13,7 +13,7 @@
 #include "kernel_operator.h"
 #include "vector_add_kernel.h"
 
-extern "C" __global__ __aicore__ void VectorAddKernel(
+extern "C" __global__ __vector__ void VectorAddKernel(
     __gm__ float* srcA, __gm__ float* srcB, __gm__ float* dst, float alpha, uint32_t elementCount)
 {
     for (uint32_t idx = 0; idx < elementCount; ++idx) {
@@ -27,8 +27,8 @@ extern "C" __global__ __aicore__ void VectorAddKernel(
 #endif
 }
 
-int32_t VectorAddDo(
+void VectorAddDo(
     uint32_t blockDim, void* stream, float* srcA, float* srcB, float* dst, float alpha, uint32_t elementCount)
 {
-    return static_cast<int32_t>(VectorAddKernel<<<blockDim, nullptr, stream>>>(srcA, srcB, dst, alpha, elementCount));
+    VectorAddKernel<<<blockDim, nullptr, stream>>>(srcA, srcB, dst, alpha, elementCount);
 }

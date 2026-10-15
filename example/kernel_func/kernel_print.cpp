@@ -15,6 +15,6 @@
 #include "kernel_operator.h"
 #include "kernel_ops.h"
 
-extern "C" __global__ __aicore__ void KernelPrint() { AscendC::printf("Hello World\n"); }
+extern "C" __global__ __vector__ void KernelPrint() { AscendC::printf("Hello World\n"); }
 
 void PrintDo(uint32_t blockDim, void* stream) { KernelPrint<<<blockDim, nullptr, stream>>>(); }

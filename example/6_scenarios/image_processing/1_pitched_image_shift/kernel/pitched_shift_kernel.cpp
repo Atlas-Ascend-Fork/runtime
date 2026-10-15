@@ -18,7 +18,7 @@ constexpr uint32_t kBufferElements = kDevicePitchElements * kHeight;
 constexpr uint32_t kBufferBytes = kBufferElements * sizeof(uint16_t);
 } // namespace
 
-extern "C" __global__ __aicore__ void pitched_shift(GM_ADDR input, GM_ADDR output)
+extern "C" __global__ __vector__ void pitched_shift(GM_ADDR input, GM_ADDR output)
 {
     AscendC::GlobalTensor<uint16_t> inputTensor;
     AscendC::GlobalTensor<uint16_t> outputTensor;

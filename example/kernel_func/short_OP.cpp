@@ -11,7 +11,7 @@
 #include "kernel_operator.h"
 #include "kernel_ops.h"
 // 核函数，自乘2
-extern "C" __global__ __aicore__ void ShortOPf(__gm__ uint32_t* x)
+extern "C" __global__ __vector__ void ShortOPf(__gm__ uint32_t* x)
 {
     int idx = block_idx;
     x[idx] *= 2;

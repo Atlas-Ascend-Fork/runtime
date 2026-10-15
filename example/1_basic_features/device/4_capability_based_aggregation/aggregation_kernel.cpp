@@ -11,7 +11,7 @@
 #include "aggregation.h"
 #include "kernel_operator.h"
 
-extern "C" __global__ __aicore__ void AggregateCounters(GM_ADDR input, GM_ADDR output, uint32_t hostAtomic)
+extern "C" __global__ __vector__ void AggregateCounters(GM_ADDR input, GM_ADDR output, uint32_t hostAtomic)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     AscendC::TPipe pipe;
@@ -44,8 +44,8 @@ extern "C" __global__ __aicore__ void AggregateCounters(GM_ADDR input, GM_ADDR o
     AscendC::PipeBarrier<PIPE_ALL>();
 }
 
-int32_t AggregateCountersDo(uint32_t blockDim, void* stream, void* input, void* output, bool hostAtomic)
+void AggregateCountersDo(uint32_t blockDim, void* stream, void* input, void* output, bool hostAtomic)
 {
-    return static_cast<int32_t>(AggregateCounters<<<blockDim, nullptr, stream>>>(
-        static_cast<uint8_t*>(input), static_cast<uint8_t*>(output), static_cast<uint32_t>(hostAtomic)));
+    AggregateCounters<<<blockDim, nullptr, stream>>>(
+        static_cast<uint8_t*>(input), static_cast<uint8_t*>(output), static_cast<uint32_t>(hostAtomic));
 }

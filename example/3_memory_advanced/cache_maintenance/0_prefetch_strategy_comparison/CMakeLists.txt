@@ -9,16 +9,31 @@
 # -----------------------------------------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.16.0)
-project(Runtime_Sample)
+set(ASCENDC_CMAKE_DIR $ENV{ASCENDC_CMAKE_DIR} CACHE PATH "AscendC CMake directory")
+set(SOC_VERSION $ENV{SOC_VERSION} CACHE STRING "Ascend SoC version")
+set(ASCEND_CANN_PACKAGE_PATH $ENV{ASCEND_HOME_PATH} CACHE PATH "CANN installation path")
+string(TOLOWER "${SOC_VERSION}" SOC_VERSION_LOWER)
+if(SOC_VERSION_LOWER MATCHES "^ascend(950|350)")
+    set(CMAKE_ASC_ARCHITECTURES dav-3510)
+elseif(SOC_VERSION_LOWER MATCHES "^ascend910(b|_93)")
+    set(CMAKE_ASC_ARCHITECTURES dav-2201)
+else()
+    message(FATAL_ERROR "Unsupported SOC_VERSION: ${SOC_VERSION}")
+endif()
 
-set(ASCENDC_CMAKE_DIR $ENV{ASCENDC_CMAKE_DIR})
-set(SOC_VERSION $ENV{SOC_VERSION})
+list(APPEND CMAKE_MODULE_PATH "${ASCENDC_CMAKE_DIR}/asc_modules")
+find_package(ASC REQUIRED)
+project(Runtime_Sample LANGUAGES ASC CXX)
+
+
 set(RUN_MODE "npu" CACHE STRING "cpu/sim/npu")
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/out" CACHE STRING "Install path" FORCE)
 
-include(${ASCENDC_CMAKE_DIR}/ascendc.cmake)
 ascendc_library(workset_transform_kernel STATIC kernel/workset_transform_kernel.cpp)
+target_compile_options(workset_transform_kernel PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
+)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 include_directories(${ASCEND_CANN_PACKAGE_PATH}/include)
