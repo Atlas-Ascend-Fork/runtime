@@ -2502,7 +2502,7 @@ rtError_t Model::ModelGetTasks(void** tasks, uint32_t* numTasks) const
     return RT_ERROR_NONE;
 }
 
-rtError_t Model::ModelDestroyRegisterCallback(const rtCallback_t fn, const void* ptr)
+rtError_t Model::ModelDestroyRegisterCallback(rtCallback_t const fn, const void* ptr)
 {
     const std::unique_lock<std::mutex> mdlDestroyCallbackLock(mdlDestroyCallbackMutex_);
     MdlDestroyCallbackInfo info{fn, RtPtrToUnConstPtr<void*>(ptr)};
