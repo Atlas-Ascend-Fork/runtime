@@ -33,7 +33,7 @@
 - **C函数原型**
 
     ```c
-    size_t aclGetDataBufferSize(const aclDataBuffer *dataBuffer)
+    uint32_t aclGetDataBufferSize(const aclDataBuffer *dataBuffer)
     ```
 
 - **python函数**
