@@ -30,7 +30,7 @@
 - **C函数原型**
 
     ```c
-    aclError aclrtGetStreamOverflowSwitch(aclrtStream stream, uint32_t flag)
+    aclError aclrtGetStreamOverflowSwitch(aclrtStream stream, uint32_t *flag)
     ```
 
 - **python函数**
