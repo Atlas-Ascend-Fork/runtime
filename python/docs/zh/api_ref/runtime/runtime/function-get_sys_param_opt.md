@@ -32,7 +32,7 @@
 - **C函数原型**
 
     ```c
-    aclError aclrtGetSysParamOpt(aclrtSysParamOpt opt, int64_t *value)
+    aclError aclrtGetSysParamOpt(aclSysParamOpt opt, int64_t *value)
     ```
 
 - **python函数**
