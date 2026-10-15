@@ -2713,3 +2713,21 @@ TEST_F(DeviceTest, CreateAndDestroyDeviceSnapshot)
     DestroyDeviceSnapshot(nullptr);
     delete device;
 }
+
+TEST_F(DeviceTest, GetAllGroupInfoWithinSpecifiedCount)
+{
+    RawDevice device(0);
+    rtGroupInfo_t groupInfo0 = {};
+    groupInfo0.groupId = 0;
+    rtGroupInfo_t groupInfo1 = {};
+    groupInfo1.groupId = 1;
+    device.groupInfoCache_.emplace(groupInfo0.groupId, groupInfo0);
+    device.groupInfoCache_.emplace(groupInfo1.groupId, groupInfo1);
+
+    rtGroupInfo_t output[2] = {};
+    output[0].groupId = -1;
+    output[1].groupId = -1;
+    EXPECT_EQ(device.GetGroupInfo(-1, output, 1U), RT_ERROR_NONE);
+    EXPECT_EQ(output[0].groupId, 0);
+    EXPECT_EQ(output[1].groupId, -1);
+}

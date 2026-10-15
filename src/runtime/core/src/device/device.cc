@@ -161,6 +161,9 @@ rtError_t GroupDevice::GetGroupInfo(const int32_t grpId, rtGroupInfo_t* const in
     if (grpId == -1) {
         uint32_t i = 0U;
         for (const auto& it : groupInfoCache_) {
+            if (i >= cnt) {
+                break;
+            }
             info[i] = it.second;
             i++;
         }
