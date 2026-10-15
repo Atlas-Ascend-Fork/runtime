@@ -84,9 +84,9 @@ rtError_t CondHandle::Setup(Context* ctx)
         return RT_ERROR_DRV_NULL;
     }
 
+    void* devAddr = nullptr;
     rtError_t error = driver->DevMemAllocWithBackupFlag(
-        (void**)(&devAddr_), sizeof(uint64_t), RT_MEMORY_DEFAULT, dev->Id_(),
-        DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
+        &devAddr, sizeof(uint64_t), RT_MEMORY_DEFAULT, dev->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
     if (error != RT_ERROR_NONE) {
         RT_LOG_INNER_MSG(
             RT_LOG_ERROR, "DevMemAlloc failed for cond handle, device_id=%u, size=%zu, retCode=%#x.", dev->Id_(),
@@ -94,6 +94,7 @@ rtError_t CondHandle::Setup(Context* ctx)
         return error;
     }
 
+    devAddr_ = static_cast<uint64_t*>(devAddr);
     error = driver->MemSetSync(devAddr_, sizeof(uint64_t), 0U, sizeof(uint64_t));
     ERROR_RETURN(error, "Failed to memset devAddr, retCode=%#x.", static_cast<uint32_t>(error));
 

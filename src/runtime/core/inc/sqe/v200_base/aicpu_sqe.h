@@ -11,7 +11,6 @@
 #ifndef CCE_RUNTIME_DAVID_AICPU_SQE_H
 #define CCE_RUNTIME_DAVID_AICPU_SQE_H
 
-#include <cstddef>
 #include "base.h"
 #include "task_info_base.hpp"
 #include "driver/ascend_hal_define.h"

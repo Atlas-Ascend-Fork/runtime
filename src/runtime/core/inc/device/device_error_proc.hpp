@@ -39,7 +39,7 @@ struct RasEventMatch {
 };
 
 bool HasMteErr(const Device* const dev);
-const char_t* GetNoCoreTimeoutAccTypeName(uint16_t accType);
+const char_t* GetNoCoreTimeoutAccTypeName(const uint16_t accType);
 bool IsRasFaultEventId(uint32_t eventId);
 bool HasMemUceErr(const Device* const dev, const std::map<uint32_t, std::string>& eventIdBlkList = g_mulBitEccEventId);
 void SetTaskMteErr(
