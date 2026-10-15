@@ -292,7 +292,10 @@ ACL_FUNC_VISIBILITY aclError acltdtCleanChannel(acltdtChannelHandle* handle);
  *
  * @param handle [IN]  pointer to the channel handle
  * @param dataset [IN] pointer to the dataset
- * @param timeout [IN] timeout/ms
+ * @param timeout [IN] timeout in milliseconds. For channels created by acltdtCreateChannel, only -1
+ *                     (infinite wait) is supported; other values return ACL_ERROR_INVALID_PARAM.
+ *                     For channels created by acltdtCreateChannelWithCapacity, -1 means infinite wait,
+ *                     0 means non-blocking, and a positive value specifies the timeout in milliseconds.
  *
  * @retval ACL_SUCCESS  The function is successfully executed.
  * @retval OtherValues Failure
@@ -308,7 +311,10 @@ ACL_FUNC_VISIBILITY aclError acltdtSendTensor(
  *
  * @param handle [IN]      pointer to the channel handle
  * @param dataset [OUT]    pointer to the dataset
- * @param timeout [IN]     timeout/ms
+ * @param timeout [IN]     timeout in milliseconds. For channels created by acltdtCreateChannel, only -1
+ *                     (infinite wait) is supported; other values return ACL_ERROR_INVALID_PARAM.
+ *                     For channels created by acltdtCreateChannelWithCapacity, -1 means infinite wait,
+ *                     0 means non-blocking, and a positive value specifies the timeout in milliseconds.
  *
  * @retval ACL_SUCCESS  The function is successfully executed.
  * @retval OtherValues Failure
