@@ -518,48 +518,54 @@ rtError_t CbSubscribe::GetThreadIdByStreamId(const uint32_t devId, const int32_t
 
 void CbSubscribe::DeleteAll()
 {
-    rtError_t ret;
-    using SqCqResource = std::tuple<uint64_t, uint32_t, uint32_t>;
-    std::set<SqCqResource> freedSqCqResources;
-    subscribeLock_.lock();
-    for (auto& it : subscribeMapByStreamId_) {
-        const rtChipType_t chipType = Runtime::Instance()->GetChipType();
-        if (IS_SUPPORT_CHIP_FEATURE(chipType, RtOptionalFeatureType::RT_FEATURE_DEVICE_NOTIFY_ONLY)) {
-            Notify* const notify = it.second.u.notify;
-            if (notify != nullptr) {
-                delete notify;
-            }
-        } else {
-            Event* const event = it.second.u.event;
-            if (event != nullptr) {
-                const rtError_t error = event->WaitForBusy();
-                if (error != RT_ERROR_NONE) {
-                    subscribeLock_.unlock();
-                    RT_LOG(RT_LOG_ERROR, "Stream is aborted");
-                    return;
+    try {
+        rtError_t ret;
+        using SqCqResource = std::tuple<uint64_t, uint32_t, uint32_t>;
+        std::set<SqCqResource> freedSqCqResources;
+        std::unique_lock<std::mutex> lock(subscribeLock_);
+        for (auto& it : subscribeMapByStreamId_) {
+            const rtChipType_t chipType = Runtime::Instance()->GetChipType();
+            if (IS_SUPPORT_CHIP_FEATURE(chipType, RtOptionalFeatureType::RT_FEATURE_DEVICE_NOTIFY_ONLY)) {
+                Notify* const notify = it.second.u.notify;
+                if (notify != nullptr) {
+                    delete notify;
                 }
-                delete event;
+            } else {
+                Event* const event = it.second.u.event;
+                if (event != nullptr) {
+                    const rtError_t error = event->WaitForBusy();
+                    if (error != RT_ERROR_NONE) {
+                        lock.unlock();
+                        RT_LOG(RT_LOG_ERROR, "Stream is aborted");
+                        return;
+                    }
+                    delete event;
+                }
+            }
+            const auto devDriver = it.second.stream->Device_()->Driver_();
+            const uint32_t devId = it.second.stream->Device_()->Id_();
+            const uint32_t tsId = it.second.stream->Device_()->DevGetTsId();
+            const SqCqResource resource = std::make_tuple(it.second.threadId, devId, tsId);
+            if (!freedSqCqResources.insert(resource).second) {
+                continue;
+            }
+            ret = devDriver->SqCqFree(it.second.sqId, it.second.cqId, devId, tsId);
+            if (ret != RT_ERROR_NONE) {
+                RT_LOG(
+                    RT_LOG_ERROR,
+                    "Failed to free SQ/CQ, thread_id=%" PRIu64
+                    ", device_id=%u, ts_id=%u, sq_id=%u, cq_id=%u, retCode=%#x.",
+                    it.second.threadId, devId, tsId, it.second.sqId, it.second.cqId, static_cast<uint32_t>(ret));
             }
         }
-        const auto devDriver = it.second.stream->Device_()->Driver_();
-        const uint32_t devId = it.second.stream->Device_()->Id_();
-        const uint32_t tsId = it.second.stream->Device_()->DevGetTsId();
-        const SqCqResource resource = std::make_tuple(it.second.threadId, devId, tsId);
-        if (!freedSqCqResources.insert(resource).second) {
-            continue;
-        }
-        ret = devDriver->SqCqFree(it.second.sqId, it.second.cqId, devId, tsId);
-        if (ret != RT_ERROR_NONE) {
-            RT_LOG(
-                RT_LOG_ERROR,
-                "Failed to free SQ/CQ, thread_id=%" PRIu64 ", device_id=%u, ts_id=%u, sq_id=%u, cq_id=%u, retCode=%#x.",
-                it.second.threadId, devId, tsId, it.second.sqId, it.second.cqId, static_cast<uint32_t>(ret));
-        }
-    }
 
-    subscribeMapByThreadId_.clear();
-    subscribeMapByStreamId_.clear();
-    subscribeLock_.unlock();
+        subscribeMapByThreadId_.clear();
+        subscribeMapByStreamId_.clear();
+    } catch (const std::exception& e) {
+        RT_LOG(RT_LOG_ERROR, "Exception caught while deleting callback subscriptions, reason=%s.", e.what());
+    } catch (...) {
+        RT_LOG(RT_LOG_ERROR, "Unknown exception caught while deleting callback subscriptions.");
+    }
 }
 
 void CbSubscribe::DeleteAllHostOnly()
