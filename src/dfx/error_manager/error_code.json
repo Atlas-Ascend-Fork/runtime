@@ -5,7 +5,7 @@
       "errTitle": "Compilation_Error",
       "ErrCode": "E20001",
       "ErrMessage": "Operator %s compilation failed. Optype is %s.",
-      "Arglist": "pass_name,pass_type",
+      "Arglist": "opname,optype",
       "suggestion": {
         "Possible Cause": "1. The operator has an invalid argument.  2. The operator implementation logic is abnormal.",
         "Solution": "For a custom operator, check the operator implementation and arguments based on the error log. For a Huawei built-in operator, obtain the host log and contact technical support at https://www.hiascend.com/support."
@@ -320,7 +320,7 @@
       }
     },
     {
-      "errClass": "TE Fusion Errors",
+      "errClass": "TEFusion Errors",
       "errTitle": "Config_Error_Invalid_Environment_Variable",
       "ErrCode": "E40001",
       "ErrMessage": "Value %s for environment variable %s is invalid when %s. Reason: %s.",
@@ -331,7 +331,7 @@
       }
     },
     {
-      "errClass": "TE Fusion Errors",
+      "errClass": "TEFusion Errors",
       "errTitle": "Environment_Error_Incorrect_Python_Version",
       "ErrCode": "E40002",
       "ErrMessage": "Unsupported Python version: %s. Expected: %s or later.",
@@ -342,7 +342,7 @@
       }
     },
     {
-      "errClass": "TE Fusion Errors",
+      "errClass": "TEFusion Errors",
       "errTitle": "File_Operation_Error_Open",
       "ErrCode": "E40003",
       "ErrMessage": "Failed to open the JSON file: %s.",
@@ -357,7 +357,7 @@
       "errTitle": "Environment_Error_Import_Python_Module_Failed",
       "ErrCode": "E40020",
       "ErrMessage": "Failed to import Python module %s. Reason: %s.",
-      "Arglist": "result, reason",
+      "Arglist": "result,reason",
       "suggestion": {
         "Possible Cause": "Some required Python modules are not installed.",
         "Solution": "Check that all required components are properly installed and the specified Python path matches the Python installation directory. If the path does not match the directory, run set_env.sh in the installation package."
@@ -401,7 +401,7 @@
       "errTitle": "Environment_Error_Call_Python_Function_Failed",
       "ErrCode": "E40024",
       "ErrMessage": "Failed to call Python Method %s. Reason: %s.",
-      "Arglist": "func_name, reason",
+      "Arglist": "func_name,reason",
       "suggestion": {
         "Possible Cause": "The Python Method does not exist.",
         "Solution": "1.Check that the called function is correct or the Python dependency library is installed.\n2.Check the CANN environment variable settings.\n3.Reinstall the CANN package."
