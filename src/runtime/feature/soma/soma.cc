@@ -158,7 +158,7 @@ rtError_t SomaApi::StreamMemPoolSetAttr(rtMemPool_t memPool, rtMemPoolAttr attr,
     COND_RETURN_AND_MSG_OUTER(
         (attr == rtMemPoolAttrReservedMemCurrent) || (attr == rtMemPoolAttrUsedMemCurrent), RT_ERROR_INVALID_VALUE,
         ErrorCode::EE1011, "Setting memory pool attribute",
-        RtFmtMsg("%s(%u)", MemPoolAttrToName(attr), static_cast<uint32_t>(attr)),
+        RtFmtMsg("%s(%u)", MemPoolAttrToName(attr), static_cast<uint32_t>(attr)), "attr",
         "This attribute is read-only and does not support setting");
 
     if ((attr == rtMemPoolReuseFollowEventDependencies) || (attr == rtMemPoolReuseAllowOpportunistic) ||
