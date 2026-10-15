@@ -235,11 +235,13 @@ sequenceDiagram
 ```cpp
 aclError aclrtMemcpyBatch(void **dsts, size_t *destMaxs, void **srcs, 
                           size_t *sizes, size_t numBatches,
-                          aclrtMemcpyBatchAttr *attrs, size_t *failIdx);
+                          aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes,
+                          size_t numAttrs, size_t *failIdx);
 
 aclError aclrtMemcpyBatchAsync(void **dsts, size_t *destMaxs, void **srcs,
                                size_t *sizes, size_t numBatches,
-                               aclrtMemcpyBatchAttr *attrs, size_t *failIdx,
+                               aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes,
+                          size_t numAttrs, size_t *failIdx,
                                aclrtStream stream);
 ```
 
@@ -252,7 +254,9 @@ aclError aclrtMemcpyBatchAsync(void **dsts, size_t *destMaxs, void **srcs,
 | `sizes` | IN `size_t*` | 拷贝大小数组 |
 | `numBatches` | IN `size_t` | 批量拷贝任务数量 |
 | `attrs` | IN `aclrtMemcpyBatchAttr*` | 拷贝属性数组（可指定每个任务的拷贝方向） |
-| `failIdx` | OUT `size_t*` | 失败任务索引（同步拷贝时返回） |
+| `attrsIndexes` | IN `size_t*` | 属性数组每项的起始任务索引；第n项属性应用于[attrsIndexes[n], attrsIndexes[n+1])区间，最后一项至numBatches结束 |
+| `numAttrs` | IN `size_t` | attrs与attrsIndexes的元素数量 |
+| `failIdx` | OUT `size_t*` | 失败任务索引；全部成功或错误与单项拷贝无关时为SIZE_MAX |
 | `stream` | IN `aclrtStream` | 异步拷贝使用的流 |
 
 
