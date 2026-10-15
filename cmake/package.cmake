@@ -472,6 +472,7 @@ install(FILES
     ${CMAKE_BINARY_DIR}/lib_acl/libascend_kms.so
     ${CMAKE_BINARY_DIR}/lib_acl/dump_stat_op_ascend910B.o
     ${CMAKE_BINARY_DIR}/lib_acl/dump_stat_op_ascend950.o
+    ${CMAKE_BINARY_DIR}/lib_acl/dump_stat_op_ascend960.o
     DESTINATION ${INSTALL_DIR}
     OPTIONAL
     COMPONENT npu-runtime

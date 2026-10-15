@@ -137,3 +137,78 @@ add_custom_target(dump_stat_op_ascend950 ALL
 install(FILES ${LINK_OBJ_ASCEND950}
     DESTINATION ${INSTALL_LIBRARY_DIR} RENAME dump_stat_op_ascend950.o OPTIONAL
 )
+
+####### dump_stat_op_ascend960.o ########
+set(OBJ_ASCEND960_O "${CMAKE_CURRENT_BINARY_DIR}/dump_stat_op_ascend960_o.o")
+set(LINK_OBJ_FATBIN_ASCEND960 "${CMAKE_CURRENT_BINARY_DIR}/dump_stat_op_ascend960_fatbin.o")
+set(LINK_OBJ_ASCEND960 "${CMAKE_CURRENT_BINARY_DIR}/dump_stat_op_ascend960.o")
+
+add_custom_command(OUTPUT ${OBJ_ASCEND960_O}
+    COMMAND ${CCEC_PATH}/ccec -x cce -O2
+            --cce-aicore-arch=dav-920r1-vec
+            --cce-aicore-input-parameter-size=3072
+            --cce-aicore-only
+            -Xclang -fcce-vf-vl=256
+            --cce-auto-sync=off
+            -ferror-limit=0
+            -w
+            --cce-simd-vf-fusion=false
+            -std=c++17 -fstack-protector-all
+            -DENABLE_MOVVP
+            -DPERF_API_NORM
+            -mllvm -cce-aicore-function-stack-size=0x8000
+            -mllvm -cce-aicore-addr-transform
+            -mllvm -cce-aicore-or-combine=false
+            -mllvm -instcombine-code-sinking=false
+            -mllvm -cce-aicore-mask-opt=false
+            -mllvm --cce-aicore-jump-expand=true
+            -mllvm -cce-aicore-dcci-before-kernel-end=false
+            -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            -mllvm -api-deps-filter
+            -mllvm -cce-aicore-stack-size=0x8000
+            -mllvm -cce-aicore-record-overflow=false
+            -mllvm -cce-aicore-long-call
+            -I${CMAKE_CURRENT_SOURCE_DIR}
+            "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
+            -I${TILING_GEN_DIR}
+            -o ${OBJ_ASCEND960_O}
+            ${DUMP_STAT_OP_SRC}
+    DEPENDS asc_kernel_headers ${DUMP_STAT_OP_SRC} ${DUMP_STAT_OP_HEADERS} ${tiling_gen_file}
+    COMMENT "CompileStage dump_stat_op_ascend960_o"
+    COMMAND_EXPAND_LISTS VERBATIM
+)
+
+add_custom_command(OUTPUT ${LINK_OBJ_FATBIN_ASCEND960}
+    COMMAND ${CCEC_PATH}/ld.lld
+            -m aicorelinux
+            -r
+            -Ttext=0
+            -q
+            ${OBJ_ASCEND960_O}
+            -static
+            -o ${LINK_OBJ_FATBIN_ASCEND960}
+    DEPENDS ${OBJ_ASCEND960_O}
+    COMMENT "CompileStage FATBIN"
+    VERBATIM
+)
+
+add_custom_command(OUTPUT ${LINK_OBJ_ASCEND960}
+    COMMAND ${CCEC_PATH}/ld.lld
+            -m aicorelinux
+            -Ttext=0
+            ${LINK_OBJ_FATBIN_ASCEND960}
+            -static
+            -o ${LINK_OBJ_ASCEND960}
+            -q
+    DEPENDS ${LINK_OBJ_FATBIN_ASCEND960}
+    COMMENT "CompileStage LINKRELOCATE"
+    VERBATIM
+)
+
+add_custom_target(dump_stat_op_ascend960 ALL
+    DEPENDS ${LINK_OBJ_ASCEND960}
+)
+
+install(FILES ${LINK_OBJ_ASCEND960}
+    DESTINATION ${INSTALL_LIBRARY_DIR} RENAME dump_stat_op_ascend960.o OPTIONAL
+)
