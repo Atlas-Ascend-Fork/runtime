@@ -150,6 +150,7 @@ typedef int aclError;
 | #define  ACL_ERROR_RT_SYMBOL_NOT_FOUND  107042 | 符号未找到。 | 请检查全局变量名称是否与算子二进制中的全局变量名称一致。 |
 | #define  ACL_ERROR_RT_INVALID_SYMBOL  107043 | 无效的符号。 | 请检查变量名是否在Device代码中声明 |
 | #define  ACL_ERROR_RT_INVALID_DEVICE_FUNCTION  107044 | 无效的核函数符号。 | 请检查核函数是否在Device代码中声明。 |
+| #define  ACL_ERROR_RT_SUB_ACLGRAPH_IS_CAPTURING  107045 | 结束当前Stream捕获时，关联的子图仍处于捕获状态。 | 先调用aclmdlRICaptureEnd接口结束子图捕获，再执行对应的操作。 |
 | #define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT  207000 | 特性不支持。 | 您可以获取日志后提交ISSUE。 |
 | #define  ACL_ERROR_RT_MEMORY_ALLOCATION  207001 | 内存申请失败。 | 请检查硬件环境上的存储剩余情况。 |
 | #define  ACL_ERROR_RT_MEMORY_FREE  207002 | 内存释放失败。 | 您可以获取日志后提交ISSUE。 |
@@ -166,6 +167,8 @@ typedef int aclError;
 | #define  ACL_ERROR_RT_QUEUE_EMPTY  207013 | 队列为空。 | 不能从空队列中获取数据，请先向队列中添加数据，再获取。 |
 | #define  ACL_ERROR_RT_QUEUE_FULL  207014 | 队列已满。 | 不能向已满的队列中添加数据，请先从队列中获取数据，再添加。 |
 | #define  ACL_ERROR_RT_REPEATED_INIT  207015 | 队列重复初始化。 | 建议初始化一次队列即可，不要重复初始化。 |
+| #define  ACL_ERROR_RT_AIVEC_OVER_FLOW  207016 | AI Vector算子运算溢出。 | 您可以获取日志后提交ISSUE。 |
+| #define  ACL_ERROR_RT_OVER_FLOW  207017 | AI CPU或SDMA任务执行时发生溢出。 | 您可以获取日志后提交ISSUE。 |
 | #define  ACL_ERROR_RT_DEVICE_OOM  207018 | Device侧内存耗尽。 | 排查Device上的内存使用情况，并根据Device上的内存规格合理规划内存的使用。 |
 | #define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP  207019 | 当前驱动版本不支持更新该算子。 | 请检查驱动版本。<br>您可以单击[Link](https://www.hiascend.com/hardware/firmware-drivers/commercial)，在“固件与驱动”页面下载Ascend HDK 25.0.RC1或更高版本的驱动安装包，并参考相应版本的文档进行安装、升级。 |
 | #define  ACL_ERROR_RT_TIMEOUT  207020 | Driver执行超时。 | 您可以获取日志后提交ISSUE。 |
