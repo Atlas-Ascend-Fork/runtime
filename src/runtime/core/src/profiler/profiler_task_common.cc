@@ -39,7 +39,11 @@ rtError_t StartOnlineProf(Stream* const stm, const uint32_t sampleNum)
     (void)device->DevSetOnlineProfStart(true);
 
     error = OnlineProf::OnlineProfMalloc(stm);
-    ERROR_RETURN_MSG_INNER(error, "Failed to allocate online profiling memory, retCode=%#x.", error);
+    if (error != RT_ERROR_NONE) {
+        (void)device->DevSetOnlineProfStart(false);
+        RT_LOG_INNER_MSG(RT_LOG_ERROR, "Failed to allocate online profiling memory, retCode=%#x.", error);
+        return error;
+    }
 
     TaskInfo submitTask = {};
     rtError_t errorReason;
@@ -64,6 +68,7 @@ ERROR_RECYCLE:
     (void)device->GetTaskFactory()->Recycle(rtOlProfEnableTask);
 ERROR_FREE:
     freeErr = OnlineProf::OnlineProfFree(stm);
+    (void)device->DevSetOnlineProfStart(false);
     ERROR_RETURN_MSG_INNER(freeErr, "Failed to free online profiling memory, retCode=%#x.", freeErr);
     return error;
 }

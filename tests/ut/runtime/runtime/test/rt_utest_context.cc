@@ -4182,6 +4182,29 @@ TEST_F(ContextTest, StartOnlineProf_test)
     GlobalMockObject::verify();
 }
 
+TEST_F(ContextTest, StartOnlineProfMallocFailResetState_test)
+{
+    GlobalMockObject::verify();
+    RawDevice* device = new RawDevice(0);
+    EXPECT_NE(device, nullptr);
+    device->Init();
+    Stream* stream = new Stream(device, 0);
+    EXPECT_NE(stream, nullptr);
+
+    EXPECT_FALSE(device->DevGetOnlineProfStart());
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
+
+    const rtError_t error = StartOnlineProf(stream, 1U);
+    EXPECT_EQ(error, RT_ERROR_MEMORY_ALLOCATION);
+    EXPECT_FALSE(device->DevGetOnlineProfStart());
+
+    delete stream;
+    delete device;
+    GlobalMockObject::verify();
+}
+
 TEST_F(ContextTest, ProfilerTraceEx_test)
 {
     GlobalMockObject::verify();
