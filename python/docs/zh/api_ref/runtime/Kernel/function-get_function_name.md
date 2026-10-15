@@ -23,14 +23,14 @@
 
 ## 功能说明
 
-根据核函数句柄获取核函数名称。
+根据核函数句柄或核函数符号地址获取核函数名称。
 
 ## 函数原型
 
 - **C函数原型**
 
     ```c
-    aclError aclrtGetFunctionName(aclrtFuncHandle funcHandle, uint32_t maxLen, char *name)
+    aclError aclrtGetFunctionName(const void *func, uint32_t maxLen, char *name)
     ```
 
 - **python函数**
@@ -43,7 +43,7 @@
 
 | 参数名 | 说明 |
 | --- | --- |
-| func_handle | int，核函数句柄。 |
+| func_handle | int，核函数句柄或核函数符号地址。C接口的func参数接受这两种形式。 |
 | max_len | int，用户申请用于存储核函数名称的最大内存大小，单位Byte。取值范围：[0, 1024)。 |
 
 ## 返回值说明

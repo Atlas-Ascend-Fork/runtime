@@ -23,7 +23,7 @@
 
 ## 功能说明
 
-根据核函数句柄获取Device侧算子起始地址。对于包含矩阵计算和矢量计算的算子，一个算子有两个起始地址，分别在Cube（矩阵）计算单元、Vector（向量）计算单元上执行，通过本接口可获取Cube计算单元、Vector计算单元上的算子起始地址。若通过本接口获取到aivAddr为空，则表示该算子只在Cube计算单元上执行。
+根据核函数句柄或核函数符号地址获取Device侧算子起始地址。对于包含矩阵计算和矢量计算的算子，一个算子有两个起始地址，分别在Cube（矩阵）计算单元、Vector（向量）计算单元上执行，通过本接口可获取Cube计算单元、Vector计算单元上的算子起始地址。若通过本接口获取到aivAddr为空，则表示该算子只在Cube计算单元上执行。
 
 不同产品上的AI数据处理核心单元不同。
 
@@ -64,7 +64,7 @@
 - **C函数原型**
 
     ```c
-    aclError aclrtGetFunctionAddr(aclrtFuncHandle funcHandle, void **aicAddr, void **aivAddr)
+    aclError aclrtGetFunctionAddr(const void *func, void **aicAddr, void **aivAddr)
     ```
 
 - **python函数**
@@ -77,7 +77,7 @@
 
 | 参数名 | 说明 |
 | --- | --- |
-| func_handle | int，核函数句柄。 |
+| func_handle | int，核函数句柄或核函数符号地址。C接口的func参数接受这两种形式。 |
 
 ## 返回值说明
 
