@@ -35,7 +35,7 @@
 - **python函数**
 
     ```python
-    ptr_device, ret = acl.rt.host_get_device_pointer（ptr_host，flag）
+    ptr_device, ret = acl.rt.host_get_device_pointer(ptr_host,flag)
     ```
 
 ## 参数说明

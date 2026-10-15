@@ -38,7 +38,7 @@
 - **python函数**
 
     ```python
-    ret = acl.rt.host_register_v2(ptr，size，flag)
+    ret = acl.rt.host_register_v2(ptr,size,flag)
     ```
 
 ## 参数说明
