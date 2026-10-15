@@ -244,8 +244,10 @@ TEST_F(ApiParmaSqeTest, TaskPrefetchSqeBuild)
     EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
 
     taskInput.compilerInfo.u.nanoHostFuncTask.u.paramBufDesc.bufSize = bufferLen;
+    taskLen = 0U;
     error = rtTaskBuild(&taskInput, &taskLen);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(taskLen, bufferLen);
 
     free(dataBuffer);
     free(bufInfo);
