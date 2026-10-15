@@ -7,7 +7,7 @@
 ## 定义
 
 ```python
-cfg= [{"id": attr_id, "value": attr_value}]
+cfg= [{"id": attr_id, "value": attr_value}]
 ```
 
 说明：cfg中可同时包含多个dict，每个dict中包含一对id和value。

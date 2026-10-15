@@ -7,7 +7,7 @@
 ## 定义
 
 ```python
-options = [{"type": option_type, "value": option_value}]
+options = [{"type": option_type, "value": option_value}]
 ```
 
 说明：options中可同时包含多个dict，每个dict中包含一对type和value。
