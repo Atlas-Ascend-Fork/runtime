@@ -113,6 +113,8 @@ static void* MallocStub(size_t size)
 TEST_F(EP_SLOGD_FILE_MGR_LOG_EXCP_UTEST, LogAgentInitDeviceMallocFailed)
 {
     system("cp " CONF_PATH " " SLOG_CONF_FILE_PATH);
+    // Configuration initialization creates debug/run directories under this parent.
+    ASSERT_EQ(0, system("mkdir -p " LOG_FILE_PATH));
     SlogdConfigMgrInit();
     StLogFileList logList = {0};
     LogAgentGetCfg(&logList);

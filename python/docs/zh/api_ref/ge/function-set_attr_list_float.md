@@ -36,7 +36,7 @@
 - **python函数**
 
     ```python
-    ret = acl.op.set_attr_list_float(attr, attr_name, num_values, attr_value)
+    ret = acl.op.set_attr_list_float(attr, attr_name, attr_value)
     ```
 
 ## 参数说明
@@ -45,7 +45,7 @@
 | --- | --- |
 | attr | int，aclopAttr类型数据的指针地址。需提前调用[acl.op.create_attr](function-create_attr.md)接口创建aclopAttr类型数据。 |
 | attr_name | str，属性名。 |
-| attr_value | 同时支持两种数据类型作为输入。<br> list，list中每个元素的数据类型为float。<br> numpy，一维数组numpy对象，类型为float32。 |
+| attr_value | 元素数量由该列表或数组的长度确定。<br>同时支持两种数据类型作为输入。<br> list，list中每个元素的数据类型为float。<br> numpy，一维数组numpy对象，类型为float32。 |
 
 ## 返回值说明
 
