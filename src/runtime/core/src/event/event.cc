@@ -1026,8 +1026,8 @@ void Event::UpdateTimeline()
     TaskInfo* const tsk =
         device_->GetTaskFactory()->GetTask(stm->Id_(), static_cast<uint16_t>(latestRecordInfo.taskId));
     if (tsk == nullptr) {
-        stm.reset();
         RT_LOG(RT_LOG_WARNING, "Find task error, stream_id=%d, task_id=%hu.", stm->Id_(), latestRecordInfo.taskId);
+        stm.reset();
         return;
     }
 
