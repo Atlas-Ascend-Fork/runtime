@@ -119,6 +119,7 @@ const std::unordered_set<RtOptionalFeatureType> CHIP_DAVID_LITE_FEATURE{
     RtOptionalFeatureType::RT_FEATURE_DEVICE_CTRL_SQ,
     RtOptionalFeatureType::RT_FEATURE_MODEL_PERSISTENT_STREAM_UNLIMITED_DEPTH,
     RtOptionalFeatureType::RT_FEATURE_TASK_EXEC_TIMEOUT_SCALE_MODIFY,
+    RtOptionalFeatureType::RT_FEATURE_MEM_WAIT_PROF,
     RtOptionalFeatureType::RT_FEATURE_DFX_PROCESS_SNAPSHOT,
     RtOptionalFeatureType::RT_FEATURE_STARS_MONITOR_AICPU_TIMEOUT};
 
@@ -302,9 +303,9 @@ static const DevProperties CHIP_DAVID_LITE_PROPERTIES = {
     .npuArch = 0,
     .sqDisableStatPollingCycleNum = SQ_DISABLE_POLLING_CYCLE_COMMON_CNT,
     .swapBufferBaseAddr = 0UL,
-    .swapBufferUpdateRegOffset = 0UL,
-    .sqSwapShift = 0U,
-    .swapBufferProfCfgOffset = 0U,
+    .swapBufferUpdateRegOffset = DAVID_SWAPBUFF_INFO_UPDATE_REG_OFFSET,
+    .sqSwapShift = 6U,
+    .swapBufferProfCfgOffset = 32U,
     .simtUbSize = RT_SIMT_UB_SIZE_DEFAULT,
 };
 
