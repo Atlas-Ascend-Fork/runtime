@@ -30,7 +30,7 @@
 - **C函数原型**
 
     ```c
-    aclError aclrtGetCurrentContext(aclrtContext context)
+    aclError aclrtGetCurrentContext(aclrtContext *context)
     ```
 
 - **python函数**
