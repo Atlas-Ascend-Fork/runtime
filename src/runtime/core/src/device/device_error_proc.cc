@@ -1027,7 +1027,6 @@ bool DeviceErrorProc::IsPrintStreamTimeoutSnapshot()
     if (device_ == nullptr) {
         return false;
     }
-    NULL_PTR_RETURN(deviceRingBufferAddr_, false);
     const std::unique_lock<std::mutex> lk(device_->GetErrProLock());
     if (!JudgeChipTypeforSnapshot(device_->GetDevProperties(), device_->GetTschVersion()) ||
         !device_->GetSnapshotFlag()) {
@@ -1122,9 +1121,16 @@ rtError_t DeviceErrorProc::PrintStreamTimeoutSnapshotInfo()
     std::unique_ptr<char[]> hostAddr(new (std::nothrow) char[sizeof(RtsTimeoutStreamSnapshot)]);
     COND_RETURN_AND_MSG_OUTER(
         hostAddr == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, sizeof(RtsTimeoutStreamSnapshot), "new");
-    error = devDrv->MemCopySync(
-        hostAddr.get(), static_cast<uint64_t>(snapshotLen_), device_->GetSnapshotAddr(),
-        static_cast<uint64_t>(snapshotLen_), RT_MEMCPY_DEVICE_TO_HOST, false);
+    {
+        const std::lock_guard<std::mutex> addrLock(mutex_);
+        if (deviceRingBufferAddr_ == nullptr) {
+            RT_LOG(RT_LOG_INFO, "ring buffer already destroyed, skip print stream timeout snapshot.");
+            return RT_ERROR_NONE;
+        }
+        error = devDrv->MemCopySync(
+            hostAddr.get(), static_cast<uint64_t>(snapshotLen_), device_->GetSnapshotAddr(),
+            static_cast<uint64_t>(snapshotLen_), RT_MEMCPY_DEVICE_TO_HOST, false);
+    }
     ERROR_RETURN(error, "Failed to Memcpy snapshot from dev to host");
     RtsTimeoutStreamSnapshot* streamTaskInfo = RtPtrToPtr<RtsTimeoutStreamSnapshot*, char_t*>(hostAddr.get());
     if ((streamTaskInfo->stream_num == 0U) || (streamTaskInfo->stream_num > MAX_STREAM_NUM_CLOUD)) {
