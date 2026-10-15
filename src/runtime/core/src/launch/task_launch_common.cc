@@ -39,7 +39,7 @@ rtError_t LaunchRandomNumTask(const rtRandomNumTaskInfo_t* const taskInfo, Strea
 
     rtStarsDsaSqe_t sqe = {};
     error = GetDsaSqeByRandomNumTask(taskInfo, rtStarsCommonTask, sqe);
-    ERROR_RETURN_MSG_INNER(error, "Failed to get DSA SQE by random number task info, retCode=%#x.", error);
+    ERROR_GOTO_MSG_INNER(error, ERROR_RECYCLE, "Failed to get DSA SQE by random number task info, retCode=%#x.", error);
 
     error = StarsCommonTaskInit(rtStarsCommonTask, sqe, RT_KERNEL_DEFAULT);
     ERROR_GOTO_MSG_INNER(

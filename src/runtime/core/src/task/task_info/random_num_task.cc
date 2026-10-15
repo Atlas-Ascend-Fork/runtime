@@ -387,9 +387,9 @@ rtError_t GetDsaSqeByRandomNumTask(const rtRandomNumTaskInfo_t* taskInfo, TaskIn
     return RT_ERROR_NONE;
 
 ERROR_FREE:
-    if (devMem != nullptr) {
-        (void)dev->Driver_()->DevMemFree(devMem, dev->Id_());
-        devMem = nullptr;
+    if (starsCommonTask->randomDevAddr != nullptr) {
+        (void)dev->Driver_()->DevMemFree(starsCommonTask->randomDevAddr, dev->Id_());
+        starsCommonTask->randomDevAddr = nullptr;
     }
 
     return error;
