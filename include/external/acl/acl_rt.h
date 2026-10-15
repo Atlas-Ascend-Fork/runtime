@@ -1284,7 +1284,7 @@ ACL_FUNC_VISIBILITY uint32_t aclrtGetThreadIdFromExceptionInfo(const aclrtExcept
  *
  * @param info [IN]   pointer of exception information
  *
- * @retval The thread id of fail task
+ * @retval The device id from exception information
  * @retval 0xFFFFFFFF if info is null
  */
 ACL_FUNC_VISIBILITY uint32_t aclrtGetDeviceIdFromExceptionInfo(const aclrtExceptionInfo* info);
@@ -1305,8 +1305,8 @@ ACL_FUNC_VISIBILITY uint32_t aclrtGetErrorCodeFromExceptionInfo(const aclrtExcep
  * @brief Get args from exception information
  *
  * @param info [IN]   pointer of exception information
- * @param info [OUT]   dev args of exception information
- * @param info [OUT]   dev args len of exception information
+ * @param devArgsPtr [OUT]   dev args of exception information
+ * @param devArgsLen [OUT]   dev args len of exception information
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval ACL_ERROR_INVALID_EXCEPTION_INFO The info pointer is NULL or the exception type is invalid.
@@ -1320,7 +1320,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetArgsFromExceptionInfo(
  * @brief Get func handle from exception information
  *
  * @param info [IN]   pointer of exception information
- * @param info [OUT]   kernel func of exception information
+ * @param func [OUT]   kernel func of exception information
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval ACL_ERROR_INVALID_EXCEPTION_INFO The info pointer is NULL.
