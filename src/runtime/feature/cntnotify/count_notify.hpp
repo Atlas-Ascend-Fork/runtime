@@ -39,6 +39,7 @@ private:
     rtInnerObject handle_{};
     uint32_t notifyid_{MAX_UINT32_NUM};
     uint32_t phyId_{0U};
+    Device* device_{nullptr};
     Driver* driver_{nullptr};
     uint32_t tsId_;
     uint32_t deviceId_;

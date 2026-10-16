@@ -31,13 +31,9 @@ CountNotify::CountNotify(const uint32_t devId, const uint32_t taskSchId) : NoCop
 
 CountNotify::~CountNotify() noexcept
 {
-    Runtime* runtime = Runtime::Instance();
-    if (runtime != nullptr) {
-        Context* const curCtx = runtime->CurrentContext();
-        if (curCtx != nullptr) {
-            Device* const dev = curCtx->Device_();
-            COND_PROC(dev != nullptr, dev->RemoveCntNotify(this));
-        }
+    if (device_ != nullptr) {
+        device_->RemoveCntNotify(this);
+        device_ = nullptr;
     }
 
     ResetEmbeddedInnerHandle<CountNotify>(this);
@@ -60,6 +56,7 @@ rtError_t CountNotify::Setup()
     Context* const curCtx = runtime->CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     Device* const dev = curCtx->Device_();
+    device_ = dev;
     driver_ = dev->Driver_();
 
     rtError_t error = driver_->GetDevicePhyIdByIndex(deviceId_, &phyId_);
