@@ -53,6 +53,7 @@ rtError_t ApiErrorDecorator::GetXpuDevCount(const rtXpuDevType devType, uint32_t
     COND_RETURN_ERROR_MSG_INNER(
         devType != RT_DEV_TYPE_DPU, RT_ERROR_INVALID_VALUE, "devType=UNKNOWN(%d) is invalid, retCode=%#x", devType,
         static_cast<uint32_t>(RT_ERROR_INVALID_VALUE));
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(devCount, RT_ERROR_INVALID_VALUE, "Getting the extended device count");
     return impl_->GetXpuDevCount(devType, devCount);
 }
 

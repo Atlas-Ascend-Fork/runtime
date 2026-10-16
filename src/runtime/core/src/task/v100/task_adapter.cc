@@ -60,7 +60,7 @@ void ConstructSqeBase(TaskInfo* const taskInfo, void* const sqeBuffer, const Tas
     command->phSqe.kernel_credit = RT_STARS_DEFAULT_KERNEL_CREDIT;
 
     RT_LOG(
-        RT_LOG_WARNING, "No need to construct sqe. type:%u, task_id:%u, stream_id:%u", taskInfo->type,
+        RT_LOG_INFO, "No need to construct sqe. type:%u, task_id:%u, stream_id:%u", taskInfo->type,
         static_cast<uint32_t>(taskInfo->id), taskInfo->stream->Id_());
 }
 } // namespace runtime

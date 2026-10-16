@@ -337,6 +337,15 @@ TEST_F(XpuDeviceTest, GetXpuDevCount_devType_error)
     EXPECT_EQ(devCount, 0U);
 }
 
+TEST_F(XpuDeviceTest, GetXpuDevCount_devCount_null)
+{
+    ApiImplDavid impl;
+    MOCKER_CPP_VIRTUAL(impl, &ApiImplDavid::GetXpuDevCount).expects(never());
+
+    const rtError_t error = rtGetXpuDevCount(RT_DEV_TYPE_DPU, nullptr);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+}
+
 TEST_F(XpuDeviceTest, Impl_GetXpuDevCount_devType_error)
 {
     ApiImplDavid impl;
