@@ -53,7 +53,6 @@ extern "C" {
 #define ACL_ERROR_STREAM_CAPTURE_CONFLICT 107032        // interdependent stream cannot begin capture together
 #define ACL_ERROR_STREAM_TASK_GROUP_STATUS 107033       // task group status error
 #define ACL_ERROR_STREAM_TASK_GROUP_INTR 107034         // task group interrupted
-#define ACL_ERROR_RT_TASK_ABORT_STOP 107035             // device task aborting stop before post process
 #define ACL_ERROR_RT_STREAM_CAPTURE_UNMATCHED 107036    // the capture was not initiated in this stream
 #define ACL_ERROR_RT_MODEL_RUNNING 107037               // the model is still running
 #define ACL_ERROR_RT_STREAM_CAPTURE_WRONG_THREAD 107038 // the thread of end capture and begin capture is not same

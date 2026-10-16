@@ -501,7 +501,8 @@ void ErrorcodeManage::InitRtErrCodeMap()
     rtErrMap_[RT_ERROR_TSFW_FFTS_PLUS_TRAP_EXCEPTION] = {
         ACL_ERROR_RT_FFTS_PLUS_TRAP_EXCEPTION, "fftsplus trap exception"};
     rtErrMap_[RT_ERROR_TSFW_TS_CLOSED] = {ACL_ERROR_RT_TS_ERROR, "In sentinel mode, tsfw is closed"};
-    rtErrMap_[RT_ERROR_TSFW_TASK_ABORT_STOP] = {ACL_ERROR_RT_TASK_ABORT_STOP, "stream abort stop before post process"};
+    rtErrMap_[RT_ERROR_TSFW_TASK_ABORT_STOP] = {
+        ACL_ERROR_RT_MODEL_ABORT_NORMAL, "stream abort stop before post process"};
     // subscribe error
     rtErrMap_[RT_ERROR_SUBSCRIBE_BASE] = {ACL_ERROR_RT_INTERNAL_ERROR, "subscribe base error"};
     rtErrMap_[RT_ERROR_SUBSCRIBE_NULL] = {ACL_ERROR_RT_INTERNAL_ERROR, "subscribe pointer null"};
