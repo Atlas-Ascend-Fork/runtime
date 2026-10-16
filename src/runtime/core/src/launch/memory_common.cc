@@ -14,9 +14,12 @@
 #include "enum_desc.hpp"
 #include "inner_thread_local.hpp"
 #include "context.hpp"
+#include "context_manage.hpp"
 #include "device.hpp"
 #include "reduce_task.h"
+#include "runtime.hpp"
 #include "task.hpp"
+#include "dev_info_manage.h"
 
 namespace cce {
 namespace runtime {
@@ -49,6 +52,67 @@ rtError_t CheckMemAlign(const void* const addr, const rtDataType_t type)
     } else {
         return RT_ERROR_NONE;
     }
+}
+
+rtError_t GetPtrAttributes(const void* const ptr, rtPtrAttributes_t* const attributes)
+{
+    RT_LOG(RT_LOG_DEBUG, "get memory attribute.");
+    Context* const curCtx = Runtime::Instance()->CurrentContext();
+    Driver* curDrv = nullptr;
+    if (!ContextManage::CheckContextIsValid(curCtx)) {
+        curDrv = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
+    } else {
+        curDrv = curCtx->Device_()->Driver_();
+    }
+    rtError_t error = curDrv->PtrGetAttributes(ptr, attributes);
+    ERROR_RETURN(error, "failed to PtrGetAttributes, err:%#x", static_cast<uint32_t>(error));
+    const rtMemLocationType locationType = attributes->location.type;
+    if ((locationType == RT_MEMORY_LOC_DEVICE) || (locationType == RT_MEMORY_LOC_MANAGED)) {
+        const uint32_t drvDeviceId = attributes->location.id;
+        error = Runtime::Instance()->GetUserDevIdByDeviceId(drvDeviceId, &attributes->location.id);
+        COND_RETURN_ERROR_MSG_INNER(
+            error != RT_ERROR_NONE, error, "Failed to convert the driver device ID %u to user device ID, retCode=%#x",
+            drvDeviceId, static_cast<uint32_t>(error));
+    }
+    return RT_ERROR_NONE;
+}
+
+rtError_t CheckMemCpyAttr(
+    const void* const dst, const void* const src, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
+    rtPtrAttributes_t& srcAttr)
+{
+    rtMemLocationType memType;
+    rtError_t error = GetPtrAttributes(dst, &dstAttr);
+    ERROR_RETURN(error, "get dst attribute failed, error=%#x", error);
+    memType = (dstAttr.location.type == RT_MEMORY_LOC_UNREGISTERED) ? RT_MEMORY_LOC_HOST : dstAttr.location.type;
+    const rtMemLocationType inputDstType =
+        (memAttr.dstLoc.type == RT_MEMORY_LOC_HOST_NUMA) ? RT_MEMORY_LOC_HOST : memAttr.dstLoc.type;
+    COND_RETURN_AND_MSG_OUTER(
+        ((memType != inputDstType) ||
+         ((memType == RT_MEMORY_LOC_DEVICE) && (dstAttr.location.id != memAttr.dstLoc.id))),
+        RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Checking memory copy attributes", "dst",
+        RtFmtMsg(
+            "The input memory type %s and the actual memory type %s do not match,"
+            " or the input device ID (device_id=%d) and the actual device ID (device_id=%d) do not match",
+            MemLocationTypeToString(memAttr.dstLoc.type).c_str(),
+            MemLocationTypeToString(dstAttr.location.type).c_str(), memAttr.dstLoc.id, dstAttr.location.id));
+
+    error = GetPtrAttributes(src, &srcAttr);
+    ERROR_RETURN(error, "get src attribute failed, error=%#x.", error);
+    memType = (srcAttr.location.type == RT_MEMORY_LOC_UNREGISTERED) ? RT_MEMORY_LOC_HOST : srcAttr.location.type;
+    const rtMemLocationType inputSrcType =
+        (memAttr.srcLoc.type == RT_MEMORY_LOC_HOST_NUMA) ? RT_MEMORY_LOC_HOST : memAttr.srcLoc.type;
+    COND_RETURN_AND_MSG_OUTER(
+        ((memType != inputSrcType) ||
+         ((memType == RT_MEMORY_LOC_DEVICE) && (srcAttr.location.id != memAttr.srcLoc.id))),
+        RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Checking memory copy attributes", "src",
+        RtFmtMsg(
+            "The input memory type %s and the actual memory type %s do not match,"
+            " or the input device ID (device_id=%d) and the actual device ID (device_id=%d) do not match",
+            MemLocationTypeToString(memAttr.srcLoc.type).c_str(),
+            MemLocationTypeToString(srcAttr.location.type).c_str(), memAttr.srcLoc.id, srcAttr.location.id));
+
+    return RT_ERROR_NONE;
 }
 
 rtError_t ReduceAsyncV2(
@@ -159,6 +223,12 @@ rtError_t MemSetAsync(
 rtError_t DevMemSetAsyncByMemcpy(
     Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
 {
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.devMemsetAsync != nullptr)) {
+        const rtError_t callbackError = func.memProcFunc.devMemsetAsync(stm, ptr, destMax, fillVal, fillCount);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
     void* hostPtr = nullptr;
     std::shared_ptr<void> hostPtrGuard;
     const uint64_t setSize = (fillCount < MEM_BLOCK_SIZE) ? fillCount : MEM_BLOCK_SIZE;

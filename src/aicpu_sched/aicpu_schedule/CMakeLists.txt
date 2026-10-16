@@ -28,7 +28,7 @@ set(statistic_src_file
 )
 
 # TRANSFER_DUMP_INFO
-set(TRANSFER_DUMP_INFO false)  
+set(TRANSFER_DUMP_INFO false)
 if (PRODUCT_SIDE STREQUAL "device")
     set(TRANSFER_DUMP_INFO true)
 endif()
@@ -215,7 +215,7 @@ set(commom_src_file
     $<$<STREQUAL:${dp_depend},false>:${CMAKE_CURRENT_SOURCE_DIR}/stub/stub_dp.cpp>
     $<$<STREQUAL:${shard_depend},false>:${CMAKE_CURRENT_SOURCE_DIR}/stub/stub_shard.cpp>
     $<$<STREQUAL:${proc_mgr_depend},false>:${CMAKE_CURRENT_SOURCE_DIR}/stub/proc_mgr/proc_mgr_sys_operator_agent.cpp>
-    
+
     $<$<STREQUAL:${stub_monitor},true>:${CMAKE_CURRENT_SOURCE_DIR}/stub/aicpusd_monitor.cpp>
     $<$<STREQUAL:${stub_monitor},false>:${CMAKE_CURRENT_SOURCE_DIR}/core/dfx/aicpusd_monitor.cpp>
     #stub_meminfo
@@ -484,14 +484,14 @@ else()
         unified_dlog
         aicpu_scheduler_so
         ascend_hal_stub
-        aicpu_processer 
+        aicpu_processer
         dp_stub
         aicpu_prof
         aicpu_sharder
         $<$<STREQUAL:${tdt_server_depend},true>:tdtserver>
-        tsd_eventclient_stub 
+        tsd_eventclient_stub
         adump_stub
-        stackcore_stub 
+        stackcore_stub
         Eigen3::Eigen
         -ldl
         $<BUILD_INTERFACE:c_sec_headers>
@@ -506,7 +506,7 @@ else()
         EXPORT aicpu_scheduler_so-targets
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
    )
-   
+
    install(TARGETS aicpu_scheduler OPTIONAL
        EXPORT aicpu_scheduler-targets
        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}

@@ -297,6 +297,14 @@ public:
         const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, DevMemAllocConfig config = {},
         const bool isNewApi = false) override;
 
+    static uint64_t BuildDevMemAllocFlag(
+        const uint32_t deviceId, const uint16_t moduleId, const bool readOnlyFlag = false,
+        const bool cpOnlyFlag = false, const bool privateFlag = false);
+
+    rtError_t DevMemAllocWithFlag(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+        const bool isLogError = true, const bool starsTillingFlag = false) override;
+
     // Alloc contiguous memory.
     rtError_t DevMemAllocConPhy(
         void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId) override;
@@ -713,6 +721,7 @@ public:
         const uint32_t deviceId, const rtDevResInfo* const resInfo, uint64_t* resAddr, uint32_t* resLen);
     static rtError_t ReleaseDevResAddress(const uint32_t deviceId, const rtDevResInfo* const resInfo);
     static rtError_t MemcpyBatch(uint64_t dsts[], uint64_t srcs[], size_t sizes[], size_t count);
+    static rtError_t QueryDeviceCcStatus(uint32_t deviceId, bool& ccOn);
     static rtError_t GetDevicePCIBusId(const uint32_t deviceId, char* const pciBusId, const int32_t len);
     static rtError_t GetDeviceInfoByBuff(
         const uint32_t deviceId, const int32_t moduleType, const int32_t infoType, void* const buf,
@@ -802,6 +811,26 @@ private:
         void** const dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId,
         const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, const DevMemAllocConfig config = {},
         const bool isNewApi = false);
+    rtError_t DevUserMemAllocNormalPage(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
+        const bool starsTillingFlag) const;
+    rtError_t DevUserMemAllocHugePage(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+        const bool isLogError) const;
+    rtError_t DevUserMemAlloc1GHugePage(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+        const bool isLogError) const;
+    rtError_t DevUserMemAllocOnline(
+        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError,
+        const bool starsTillingFlag);
+    rtError_t DevUserMemAllocHugePolicyPageOffline(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+        const bool isLogError) const;
+    rtError_t DevUserMemAllocPolicyOffline(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+        const bool isLogError) const;
+    rtError_t DevUserMemAllocOffline(
+        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError) const;
     rtError_t DevMemAllocOffline(
         void** dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId,
         const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true,

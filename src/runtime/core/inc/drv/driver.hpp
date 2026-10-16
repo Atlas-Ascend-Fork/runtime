@@ -347,6 +347,9 @@ public:
         const DevMemBackupType type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP,
         const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, DevMemAllocConfig config = {},
         const bool isNewApi = false) = 0;
+    virtual rtError_t DevMemAllocWithFlag(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+        const bool isLogError = true, const bool starsTillingFlag = false) = 0;
 
     // Alloc contiguous memory
     virtual rtError_t DevMemAllocConPhy(

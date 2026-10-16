@@ -147,6 +147,12 @@ RawDevice::~RawDevice() noexcept
         return;
     }
 
+    DevDynInfoProcFunc devInfoProcFunc{};
+    if ((GET_DEV_INFO_PROC_FUNC(chipType_, devInfoProcFunc) == RT_ERROR_NONE) &&
+        (devInfoProcFunc.ccProcFunc.devResourceRelease != nullptr)) {
+        devInfoProcFunc.ccProcFunc.devResourceRelease(deviceId_);
+    }
+
     ReleaseOwnedObjectsOnDestroy();
     ReleaseDriverResourcesOnDestroy();
     dCacheLockFlag_ = false;

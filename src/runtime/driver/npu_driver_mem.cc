@@ -1374,6 +1374,382 @@ rtError_t NpuDriver::DevMemAlloc(
     return temptRet;
 }
 
+uint64_t NpuDriver::BuildDevMemAllocFlag(
+    const uint32_t deviceId, const uint16_t moduleId, const bool readOnlyFlag, const bool cpOnlyFlag,
+    const bool privateFlag)
+{
+    uint64_t drvFlag = static_cast<uint64_t>(NODE_TO_DEVICE(deviceId));
+
+    if (privateFlag) {
+        drvFlag |= MEM_DEV_PRIVATE;
+    }
+
+    if (readOnlyFlag) {
+        drvFlag |= (1ULL << MEM_HOST_RW_DEV_RO_BIT);
+    }
+    if (cpOnlyFlag) {
+        drvFlag |= (1ULL << MEM_DEV_CP_ONLY_BIT);
+    }
+
+    return FlagAddModuleId(drvFlag, moduleId);
+}
+
+static uint16_t GetMemAllocModuleId(const uint64_t flag)
+{
+    return static_cast<uint16_t>((flag >> MEM_MODULE_ID_BIT) & MEM_MODULE_ID_MASK);
+}
+
+static uint32_t GetMemAllocDeviceId(const uint64_t flag)
+{
+    const uint64_t nodeId = flag & static_cast<uint64_t>(MEM_DEVID_MASK);
+    return static_cast<uint32_t>(DEVICE_TO_NODE(nodeId));
+}
+
+static rtError_t DevUserMemAllocByFlag(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t drvFlag, const bool isLogError)
+{
+    const drvError_t drvRet = halMemAlloc(dptr, static_cast<UINT64>(size), static_cast<UINT64>(drvFlag));
+    if (drvRet == DRV_ERROR_NONE) {
+        return RT_ERROR_NONE;
+    }
+
+    const rtError_t rtErrorCode = RT_GET_DRV_ERRCODE(drvRet);
+    if (isLogError) {
+        const std::string errorStr = RT_GET_ERRDESC(rtErrorCode);
+        DRV_MALLOC_ERROR_PROCESS(
+            drvRet, GetMemAllocModuleId(drvFlag),
+            "Call driver api halMemAlloc failed, drvRetCode=%d, size=%" PRIu64 "(bytes), type=%u, drvFlag=%#" PRIx64
+            ", %s.",
+            static_cast<int32_t>(drvRet), size, type, drvFlag, errorStr.c_str());
+    } else {
+        RT_LOG(
+            RT_LOG_WARNING,
+            "[drv api] halMemAlloc failed:size=%" PRIu64 "(bytes), type=%u, drvFlag=%#" PRIx64 ", drvRetCode=%d.", size,
+            type, drvFlag, static_cast<int32_t>(drvRet));
+    }
+    return rtErrorCode;
+}
+
+rtError_t NpuDriver::DevUserMemAllocHugePage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError) const
+{
+    uint64_t drvFlag = 0;
+
+    if (type == RT_MEMORY_P2P_DDR) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_DDR) |
+                  static_cast<uint64_t>(MEM_ADVISE_P2P) | static_cast<uint64_t>(MEM_PAGE_HUGE) |
+                  static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (type == RT_MEMORY_P2P_HBM) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_HBM) |
+                  static_cast<uint64_t>(MEM_PAGE_HUGE) | static_cast<uint64_t>(MEM_ADVISE_P2P) |
+                  static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (type == RT_MEMORY_DDR) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_DDR) |
+                  static_cast<uint64_t>(MEM_PAGE_HUGE) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if ((type == RT_MEMORY_TS) && ((GetDevProperties().hugeManagedFlag & TS_4G_CONTIGUOUS_PHY) != 0)) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_ADVISE_TS) |
+                  static_cast<uint64_t>(MEM_ADVISE_4G) | static_cast<uint64_t>(MEM_CONTIGUOUS_PHY) | flag;
+    } else if ((type == RT_MEMORY_TS) && ((GetDevProperties().hugeManagedFlag & TS_PAGE_HUGE_ALIGNED) != 0)) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_ADVISE_TS) |
+                  static_cast<uint64_t>(MEM_PAGE_HUGE) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+        if ((GetDevProperties().hugeManagedFlag & TS_WITH_HBM) != 0) {
+            drvFlag = drvFlag | static_cast<uint64_t>(MEM_TYPE_HBM);
+        }
+    } else if ((type == RT_MEMORY_HOST_SVM) && ((GetDevProperties().hugeManagedFlag & SVM_HOST_AGENT) != 0)) {
+        drvFlag = static_cast<uint64_t>(MEM_HOST_AGENT) | flag;
+    } else {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_HBM) |
+                  static_cast<uint64_t>(MEM_PAGE_HUGE) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    }
+
+    return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAllocNormalPage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
+    const bool starsTillingFlag) const
+{
+    uint64_t drvFlag = 0;
+
+    if (type == RT_MEMORY_P2P_DDR) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_DDR) |
+                  static_cast<uint64_t>(MEM_ADVISE_P2P) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (type == RT_MEMORY_P2P_HBM) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_HBM) |
+                  static_cast<uint64_t>(MEM_ADVISE_P2P) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (type == RT_MEMORY_DDR) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_DDR) |
+                  static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (
+        (type == RT_MEMORY_TS) &&
+        (GetDevProperties().allocManagedFlag == AllocManagedFlag::ALLOC_MANAGED_MEM_ADVISE_4G)) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_ADVISE_TS) |
+                  static_cast<uint64_t>(MEM_ADVISE_4G) | static_cast<uint64_t>(MEM_CONTIGUOUS_PHY) | flag;
+    } else if (
+        (type == RT_MEMORY_TS) &&
+        (GetDevProperties().allocManagedFlag == AllocManagedFlag::ALLOC_MANAGED_MEM_SET_ALIGN_SIZE)) {
+        drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_ADVISE_TS) |
+                  static_cast<uint64_t>(MEM_CONTIGUOUS_PHY) | static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+    } else if (
+        (type == RT_MEMORY_HOST_SVM) &&
+        (GetDevProperties().allocManagedFlag == AllocManagedFlag::ALLOC_MANAGED_MEM_HOST_AGENT)) {
+        drvFlag = static_cast<uint64_t>(MEM_HOST_AGENT) | flag;
+    } else {
+        if (starsTillingFlag) {
+            drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_CONTIGUOUS_PHY) |
+                      static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_ADVISE_TS) | flag;
+        } else {
+            drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_TYPE_HBM) |
+                      static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+        }
+    }
+
+    return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAlloc1GHugePage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+    const bool isLogError) const
+{
+    const rtError_t ret = CheckIfSupport1GHugePage();
+    if (ret != RT_ERROR_NONE) {
+        RtLogErrorLevelControl(isLogError, "1G hugePage is not supported on current version");
+        return ret;
+    }
+
+    rtMemType_t tempType = type;
+    tempType = tempType & MEM_ALLOC_TYPE_BIT;
+    if (tempType != RT_MEMORY_DEFAULT) {
+        if (((tempType & RT_MEMORY_HBM) != RT_MEMORY_HBM) && ((tempType & RT_MEMORY_P2P_HBM) != RT_MEMORY_P2P_HBM) &&
+            ((tempType & RT_MEMORY_DDR)) != RT_MEMORY_DDR && ((tempType & RT_MEMORY_P2P_DDR) != RT_MEMORY_P2P_DDR)) {
+            RtLogErrorLevelControl(isLogError, "Only support hbm or ddr memory, type=%d.", type);
+            return RT_ERROR_INVALID_VALUE;
+        }
+    }
+
+    uint64_t drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_PAGE_GIANT) |
+                       static_cast<uint64_t>(MEM_TYPE_HBM) | flag;
+    if (memPolicy == RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY_P2P) {
+        drvFlag |= static_cast<uint64_t>(MEM_ADVISE_P2P);
+    }
+
+    return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAllocHugePolicyPageOffline(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError) const
+{
+    if ((type == RT_MEMORY_TS) && ((GetDevProperties().hugePolicyFlag & TS_4G_CONTIGUOUS_PHY) != 0)) {
+        const uint64_t drvFlag = static_cast<uint64_t>(MEM_DEV) | static_cast<uint64_t>(MEM_ADVISE_TS) |
+                                 static_cast<uint64_t>(MEM_ADVISE_4G) | flag;
+        return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+    }
+
+    if ((type == RT_MEMORY_P2P_DDR) && ((GetDevProperties().hugePolicyFlag & P2P_ALIGNED) != 0)) {
+        const uint64_t nonHugeDrvFlag = static_cast<uint64_t>(MEM_SVM) | static_cast<uint64_t>(MEM_TYPE_DDR) |
+                                        static_cast<uint64_t>(MEM_ADVISE_P2P) |
+                                        static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | flag;
+        if (size > HUGE_PAGE_MEM_CRITICAL_VALUE) {
+            const uint64_t drvFlag = nonHugeDrvFlag | static_cast<uint64_t>(MEM_PAGE_HUGE);
+            if (halMemAlloc(dptr, static_cast<UINT64>(size), static_cast<UINT64>(drvFlag)) == DRV_ERROR_NONE) {
+                return RT_ERROR_NONE;
+            }
+        }
+        return DevUserMemAllocByFlag(dptr, size, type, nonHugeDrvFlag, isLogError);
+    }
+
+    if (size > HUGE_PAGE_MEM_CRITICAL_VALUE) {
+        const uint64_t drvFlag =
+            static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_SVM_HUGE) | flag;
+        if (halMemAlloc(dptr, static_cast<UINT64>(size), static_cast<UINT64>(drvFlag)) == DRV_ERROR_NONE) {
+            return RT_ERROR_NONE;
+        }
+    }
+
+    const uint64_t drvFlag =
+        static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_SVM_NORMAL) | flag;
+    return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAllocPolicyOffline(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+    const bool isLogError) const
+{
+    if ((memPolicy == RT_MEMORY_POLICY_NONE) || (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_FIRST) ||
+        (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_FIRST_P2P)) {
+        return DevUserMemAllocHugePolicyPageOffline(dptr, size, type, flag, isLogError);
+    }
+
+    if (memPolicy == RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY) {
+        return RT_ERROR_FEATURE_NOT_SUPPORT;
+    }
+
+    uint64_t drvFlag = 0U;
+    if ((memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_ONLY) || (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_ONLY_P2P)) {
+        drvFlag = static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_SVM_HUGE) | flag;
+    } else {
+        drvFlag = static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_SVM_NORMAL) | flag;
+    }
+
+    return DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAllocOffline(
+    void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError) const
+{
+    const uint32_t memPolicy = static_cast<uint32_t>(type) & (~(static_cast<uint32_t>(MEM_ALLOC_TYPE_BIT)));
+    type = type & MEM_ALLOC_TYPE_BIT;
+    rtError_t ret = transMemAttribute(memPolicy, &type);
+    if (ret != RT_ERROR_NONE) {
+        return ret;
+    }
+    if (type == RT_MEMORY_TS) {
+        type = Runtime::Instance()->GetTsMemType(MEM_REQUEST_FEATURE_DEFAULT, size);
+    }
+    const uint32_t deviceId = GetMemAllocDeviceId(flag);
+    RT_LOG(
+        RT_LOG_DEBUG, "offline alloc size=%" PRIu64 ", type=%u, device_id=%u, chipType=%d.", size, type, deviceId,
+        chipType_);
+
+    if (IsOfflineNotSupportMemType(type)) {
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1006, "Allocating device memory in offline mode",
+            "Parameter type value " + MemTypeToString(type), "The current SoC does not support P2P memory allocation");
+        return RT_ERROR_FEATURE_NOT_SUPPORT;
+    }
+
+    if (memPolicy == RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY) {
+        ret = CheckIfSupport1GHugePage();
+        if (ret != RT_ERROR_NONE) {
+            RT_LOG(
+                RT_LOG_ERROR, "this feature is not supported, size=%" PRIu64 ", type=%u, policy=%u, flag=%#" PRIx64 ".",
+                size, type, memPolicy, flag);
+            return ret;
+        }
+    }
+
+    if (IS_SUPPORT_CHIP_FEATURE(chipType_, RtOptionalFeatureType::RT_FEATURE_DRIVER_DFX_RECORD_MODULE_ID)) {
+        const uint64_t drvFlag =
+            static_cast<uint64_t>(MEM_SET_ALIGN_SIZE(9ULL)) | static_cast<uint64_t>(MEM_SVM_NORMAL) | flag;
+        ret = DevUserMemAllocByFlag(dptr, size, type, drvFlag, isLogError);
+        if (ret != RT_ERROR_NONE) {
+            return ret;
+        }
+
+        RT_LOG(RT_LOG_INFO, "Device MbindHbm begin.");
+        COND_RETURN_WARN(
+            &drvMbindHbm == nullptr, RT_ERROR_FEATURE_NOT_SUPPORT, "[drv api] drvMbindHbm does not support.");
+        // envType_: 0:FPGA 1:EMU 2:ESL 3:ASIC
+        const uint32_t mbindType = ((envType_ == 3) && (type != RT_MEMORY_P2P_HBM)) ? 2U : 4U;
+        const drvError_t drvRet = drvMbindHbm(RtPtrToPtr<DVdeviceptr>(*dptr), size, mbindType, deviceId);
+        if (drvRet != DRV_ERROR_NONE) {
+            DRV_ERROR_PROCESS(
+                drvRet, "[drv api] drvMbindHbm failed: device_id=%u, size=%" PRIu64 "(bytes), type=%u, drvRetCode=%d",
+                deviceId, size, type, static_cast<int32_t>(drvRet));
+            (void)halMemFree(*dptr);
+            return RT_GET_DRV_ERRCODE(drvRet);
+        }
+        return RT_ERROR_NONE;
+    }
+
+    return DevUserMemAllocPolicyOffline(dptr, size, type, flag, memPolicy, isLogError);
+}
+
+rtError_t NpuDriver::DevUserMemAllocOnline(
+    void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError,
+    const bool starsTillingFlag)
+{
+    const uint32_t memPolicy = static_cast<uint32_t>(type) & (~(static_cast<uint32_t>(MEM_ALLOC_TYPE_BIT)));
+    type = type & MEM_ALLOC_TYPE_BIT;
+    rtError_t ret = transMemAttribute(memPolicy, &type);
+    if (ret != RT_ERROR_NONE) {
+        return ret;
+    }
+    if (type == RT_MEMORY_TS) {
+        type = Runtime::Instance()->GetTsMemType(MEM_REQUEST_FEATURE_DEFAULT, size);
+    }
+    RT_LOG(
+        RT_LOG_DEBUG, "type=%u, size=%" PRIu64 ", chip type=%d, policy=0x%x, flag=%#" PRIx64 ".", type, size, chipType_,
+        memPolicy, flag);
+
+    if ((memPolicy == RT_MEMORY_POLICY_NONE) || (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_FIRST) ||
+        (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_FIRST_P2P)) {
+        if (size > HUGE_PAGE_MEM_CRITICAL_VALUE) {
+            ret = DevUserMemAllocHugePage(dptr, size, type, flag, isLogError);
+            if (ret == RT_ERROR_NONE) {
+                return RT_ERROR_NONE;
+            }
+            RT_LOG(
+                RT_LOG_WARNING, "Malloc hugePage failed, type=%u, size=%" PRIu64 ", ret=%d, try malloc normalPage",
+                type, size, ret);
+        }
+
+        ret = DevUserMemAllocNormalPage(dptr, size, type, flag, isLogError, starsTillingFlag);
+        if (ret != RT_ERROR_NONE) {
+            RtLogErrorLevelControl(
+                isLogError,
+                "Malloc normalPage failed, type=%u, size=%" PRIu64 "(bytes), memPolicy=%u, flag=%#" PRIx64
+                ", drvRetCode=%d!",
+                type, size, memPolicy, flag, ret);
+            return ret;
+        }
+        return RT_ERROR_NONE;
+    }
+
+    if ((memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_ONLY) || (memPolicy == RT_MEMORY_POLICY_HUGE_PAGE_ONLY_P2P)) {
+        ret = DevUserMemAllocHugePage(dptr, size, type, flag, isLogError);
+        if (ret != RT_ERROR_NONE) {
+            RtLogErrorLevelControl(
+                isLogError,
+                "Malloc hugePage failed, type=%u, size=%" PRIu64 "(bytes), memPolicy=%u, flag=%#" PRIx64
+                ", drvRetCode=%d!",
+                type, size, memPolicy, flag, ret);
+            return ret;
+        }
+        return RT_ERROR_NONE;
+    }
+
+    if ((memPolicy == RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY) || (memPolicy == RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY_P2P)) {
+        ret = DevUserMemAlloc1GHugePage(dptr, size, type, flag, memPolicy, isLogError);
+        if (ret != RT_ERROR_NONE) {
+            RtLogErrorLevelControl(
+                isLogError,
+                "Malloc 1G hugePage failed, type=%u, size=%" PRIu64 "(bytes), memPolicy=%u, flag=%#" PRIx64
+                ", drvRetCode=%d!",
+                type, size, memPolicy, flag, ret);
+            return ret;
+        }
+        return RT_ERROR_NONE;
+    }
+
+    ret = DevUserMemAllocNormalPage(dptr, size, type, flag, isLogError, starsTillingFlag);
+    if (ret != RT_ERROR_NONE) {
+        RtLogErrorLevelControl(
+            isLogError,
+            "Malloc normalPage failed, type=%u, size=%" PRIu64 "(bytes), memPolicy=%u, flag=%#" PRIx64
+            ", drvRetCode=%d!",
+            type, size, memPolicy, flag, ret);
+        return ret;
+    }
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocWithFlag(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
+    const bool starsTillingFlag)
+{
+    const uint32_t devRunMode = GetRunMode();
+    if (devRunMode == static_cast<uint32_t>(RT_RUN_MODE_ONLINE)) {
+        return DevUserMemAllocOnline(dptr, size, type, flag, isLogError, starsTillingFlag);
+    }
+
+    if ((devRunMode == static_cast<uint32_t>(RT_RUN_MODE_OFFLINE)) ||
+        (devRunMode == static_cast<uint32_t>(RT_RUN_MODE_AICPU_SCHED))) {
+        return DevUserMemAllocOffline(dptr, size, type, flag, isLogError);
+    }
+    return RT_ERROR_DRV_ERR;
+}
+
 rtError_t NpuDriver::DevMemAllocConPhy(
     void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId)
 {
@@ -2231,6 +2607,20 @@ rtError_t NpuDriver::PtrGetRealLocation(
 /* ========================================================
  * Subcategory: Memory Copy
  * ======================================================== */
+
+rtError_t NpuDriver::QueryDeviceCcStatus(const uint32_t deviceId, bool& ccOn)
+{
+    ccOn = false;
+    HAL_CC_INFO ccInfo{};
+    int32_t infoSize = static_cast<int32_t>(sizeof(ccInfo));
+    const rtError_t error =
+        GetDeviceInfoByBuff(deviceId, MODULE_TYPE_CC, INFO_TYPE_CC, static_cast<void*>(&ccInfo), &infoSize);
+    COND_RETURN_WITH_NOLOG(error != RT_ERROR_NONE, error);
+
+    const enum hal_cc_mode_type ccMode = ccInfo.cc_running_info.cc_mode;
+    ccOn = (ccMode == HAL_CC_MODE_NORMAL) || (ccMode == HAL_CC_MODE_ADDITIONAL);
+    return RT_ERROR_NONE;
+}
 
 drvError_t NpuDriver::MemCopySyncAdapter(
     void* const dst, const uint64_t destMax, const void* const src, const uint64_t size, const rtMemcpyKind_t kind,

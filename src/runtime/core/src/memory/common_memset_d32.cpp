@@ -19,6 +19,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include "dev_info_manage.h"
 
 namespace cce {
 namespace runtime {
@@ -206,6 +207,13 @@ rtError_t MemsetD32OnDevice(
         if (IsSupportMemsetTask(memDevId, device->Id_(), props)) {
             return DevMemSetAsyncByMemset(stm, dst, destMax, value, totalBytes);
         }
+    }
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.devMemset32 != nullptr)) {
+        const rtError_t callbackError = func.memProcFunc.devMemset32(dst, destMax, value, count, stm, isAsync);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
     }
 
     // Sync path: >= 2MB goes ByBatch, < 2MB goes ByMemcpy

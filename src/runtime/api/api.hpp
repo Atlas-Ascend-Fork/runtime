@@ -431,6 +431,7 @@ public:
     virtual rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) = 0;
     virtual rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) = 0;
     virtual rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) = 0;
+    virtual rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) = 0;
 
     // context
     virtual rtError_t ContextCreate(Context** const inCtx, const int32_t devId) = 0;

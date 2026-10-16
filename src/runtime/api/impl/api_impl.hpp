@@ -15,6 +15,7 @@
 
 namespace cce {
 namespace runtime {
+
 // RT split mode
 enum SplitMode {
     RT_NO_SPLIT_MODE = 0,
@@ -347,6 +348,7 @@ public:
     rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
     rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
     rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) override;
+    rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) override;
 
     // context
     rtError_t ContextCreate(Context** const inCtx, const int32_t devId) override;
@@ -768,9 +770,6 @@ private:
         const uint64_t threadId);
     rtError_t CallbackLaunchWithoutEvent(
         const rtCallback_t callBackFunc, void* const fnData, Stream* const stm, const bool isBlock) const;
-    rtError_t CheckMemCpyAttr(
-        const void* const dst, const void* const src, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
-        rtPtrAttributes_t& srcAttr);
     rtError_t ValidateAndCheckMemCpyBatchAsync(
         void* dst, size_t destMax, void* src, size_t size, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
         rtPtrAttributes_t& srcAttr, rtMemcpyKind_t& kind);

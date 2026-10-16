@@ -101,6 +101,16 @@ RTS_API rtError_t rtDeviceGetLimit(rtLimitType_t type, uint32_t* val);
  */
 RTS_API rtError_t rtDeviceL2CacheFlush(void* rsv);
 
+/**
+ * @ingroup dvrt_dev
+ * @brief get device confidential computing mode
+ * @param [in] deviceId   device id
+ * @param [out] mode   cc mode (0=off, 1=on, 2=devtools)
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_FEATURE_NOT_SUPPORT driver does not support this feature
+ */
+RTS_API rtError_t rtDeviceGetCcMode(int32_t deviceId, int32_t* mode);
+
 #if defined(__cplusplus)
 }
 #endif

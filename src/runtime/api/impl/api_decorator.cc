@@ -1439,6 +1439,11 @@ rtError_t ApiDecorator::GetVisibleDeviceIdByLogicDeviceId(const int32_t logicDev
     return impl_->GetVisibleDeviceIdByLogicDeviceId(logicDeviceId, visibleDeviceId);
 }
 
+rtError_t ApiDecorator::DeviceGetCcMode(int32_t deviceId, int32_t* mode)
+{
+    return impl_->DeviceGetCcMode(deviceId, mode);
+}
+
 rtError_t ApiDecorator::CtxGetOverflowAddr(void** const overflowAddr)
 {
     return impl_->CtxGetOverflowAddr(overflowAddr);

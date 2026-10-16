@@ -24,14 +24,62 @@ struct RtIniAttributes {
     uint32_t modelScheduleSoftware = 0U; // ini SoCInfo.model_schedule_software, only 1 means enabled
 };
 
+class Stream;
+class Device;
 struct DevProperties;
+struct rtD2DAddrCfgInfo_t;
+
+rtError_t RegCCManagerProcFunc(rtChipType_t chipType);
+
 using DEV_PROPS_UPDATE_FUNC = void (*)(DevProperties&);
 using DEV_RAS_PRE_CHECK_FUNC = bool (*)(uint32_t devId);
+using REG_CC_FEATURE_PROC_FUNC = rtError_t (*)(rtChipType_t);
+using MEMCPY_ASYNC_FUNC = rtError_t (*)(
+    void*, uint64_t, const void*, uint64_t, rtMemcpyKind_t, Stream*, const rtTaskCfgInfo_t*, const rtD2DAddrCfgInfo_t*,
+    bool, const rtMemcpyConfig_t*);
+using MEM_COPY_SYNC_FUNC = rtError_t (*)(void*, uint64_t, const void*, uint64_t, rtMemcpyKind_t);
+using MEM_COPY_2D_ASYNC_FUNC =
+    rtError_t (*)(void*, uint64_t, const void*, uint64_t, uint64_t, uint64_t, Stream*, rtMemcpyKind_t, rtMemcpyKind);
+using MEM_COPY_2D_SYNC_FUNC =
+    rtError_t (*)(void*, uint64_t, const void*, uint64_t, uint64_t, uint64_t, rtMemcpyKind_t, rtMemcpyKind);
+using MEMCPY_BATCH_ASYNC_FUNC = rtError_t (*)(
+    void**, const size_t*, void**, const size_t*, size_t, const rtMemcpyBatchAttr*, const size_t*, size_t, size_t*,
+    Stream*);
+using MEMCPY_BATCH_FUNC = rtError_t (*)(void**, void**, size_t*, size_t, rtMemcpyBatchAttr*, size_t*, size_t, size_t*);
+using DEV_MALLOC_FUNC = rtError_t (*)(void**, const uint64_t, const rtMemType_t, const uint16_t);
+using DEV_MALLOC_WITH_CFG_FUNC =
+    rtError_t (*)(void**, const uint64_t, const rtMemType_t, const uint32_t, const uint16_t);
+using DEVICE_RESOURCE_INIT_FUNC = rtError_t (*)(Device*);
+using DEVICE_RESOURCE_RELEASE_FUNC = void (*)(uint32_t);
+using STREAM_RES_DESTROY_FUNC = void (*)(Stream*);
+using DEV_MEMSET_ASYNCFUNC = rtError_t (*)(Stream*, void*, const uint64_t, const uint32_t, const uint64_t);
+using DEV_MEMSET32_FUNC = rtError_t (*)(void*, const uint64_t, const uint32_t, const uint64_t, Stream*, const bool);
 
-// Dynamic attribute processing, which is registered in the SO opened in dlopen mode,
+struct CCProcFunc {
+    DEVICE_RESOURCE_INIT_FUNC devResourceInit = nullptr;
+    DEVICE_RESOURCE_RELEASE_FUNC devResourceRelease = nullptr;
+    STREAM_RES_DESTROY_FUNC streamResDestroy = nullptr;
+};
+
+struct MemProcFunc {
+    MEMCPY_ASYNC_FUNC memcpyAsync = nullptr;
+    MEM_COPY_SYNC_FUNC memCopySync = nullptr;
+    MEM_COPY_2D_ASYNC_FUNC memCopy2DAsync = nullptr;
+    MEM_COPY_2D_SYNC_FUNC memCopy2DSync = nullptr;
+    MEMCPY_BATCH_ASYNC_FUNC memcpyBatchAsync = nullptr;
+    MEMCPY_BATCH_FUNC memcpyBatch = nullptr;
+    DEV_MALLOC_FUNC devMalloc = nullptr;
+    DEV_MALLOC_WITH_CFG_FUNC devMallocWithCfg = nullptr;
+    DEV_MEMSET_ASYNCFUNC devMemsetAsync = nullptr;
+    DEV_MEMSET32_FUNC devMemset32 = nullptr;
+};
+
 struct DevDynInfoProcFunc {
     DEV_PROPS_UPDATE_FUNC devPropsUpdateFunc = nullptr;
     DEV_RAS_PRE_CHECK_FUNC devHitBlackListErrors = nullptr;
+    REG_CC_FEATURE_PROC_FUNC regCCFeatureProcFunc = nullptr;
+    MemProcFunc memProcFunc;
+    CCProcFunc ccProcFunc;
 };
 } // namespace runtime
 } // namespace cce

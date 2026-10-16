@@ -15,6 +15,7 @@
 #include "rw_lock.h"
 #include "feature_type.h"
 #include "device_properties.h"
+#include "dev_info.h"
 #include "mmpa_linux.h"
 
 using namespace cce::runtime;
@@ -64,6 +65,7 @@ public:
 
     bool RegDevInfoProcFunc(const rtChipType_t chip, const DevDynInfoProcFunc& func);
     rtError_t GetDevInfoProcFunc(const rtChipType_t chip, DevDynInfoProcFunc& func);
+
     void SetDestroy() { isDestroy = true; }
 
 private:
@@ -85,7 +87,6 @@ private:
 
     mmRWLock_t devInfoProcLock{};
     std::unordered_map<rtChipType_t, DevDynInfoProcFunc> devInfoProcMap;
-    // capability
 };
 } // namespace runtime
 } // namespace cce

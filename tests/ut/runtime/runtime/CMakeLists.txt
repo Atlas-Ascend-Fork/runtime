@@ -711,11 +711,11 @@ set(runtimeut_src_list
     ${TOP_DIR}/src/runtime/core/src/plugin_manage/runtime_keeper.cc
     ${TOP_DIR}/src/runtime/core/src/plugin_manage/v100/plugin_old_arch.cc
     ${TOP_DIR}/src/runtime/core/src/utils/capability.cc
-    ${TOP_DIR}/src/runtime/core/src/task/ctrl_res_pool.cpp
-    ${TOP_DIR}/src/runtime/core/src/utils/osal.cc
-    ${TOP_DIR}/src/runtime/core/src/engine/hwts/scheduler.cc
-    ${TOP_DIR}/src/runtime/core/src/profiler/profiler.cc
-    ${TOP_DIR}/src/runtime/core/src/dfx/atrace_log.cc
+     ${TOP_DIR}/src/runtime/core/src/task/ctrl_res_pool.cpp
+     ${TOP_DIR}/src/runtime/core/src/utils/osal.cc
+     ${TOP_DIR}/src/runtime/core/src/engine/hwts/scheduler.cc
+     ${TOP_DIR}/src/runtime/core/src/profiler/profiler.cc
+     ${TOP_DIR}/src/runtime/core/src/dfx/atrace_log.cc
     ${TOP_DIR}/src/runtime/core/src/dfx/fp16_t.cpp
     ${TOP_DIR}/src/runtime/core/src/dfx/hifloat.cpp
     ${TOP_DIR}/src/runtime/core/src/dfx/printf.cc
@@ -791,6 +791,7 @@ set(runtimeut_david_src_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_standard_soc.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_snapshot.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_soma.cc
+    ${TOP_DIR}/src/runtime/config/950/dev_info_proc_func.cc
     ${TOP_DIR}/src/runtime/feature/xpu/api_error_xpu.cc
     ${TOP_DIR}/src/runtime/api/impl/api_error.cc
     ${TOP_DIR}/src/runtime/api/impl/api_error_standard_soc.cc
@@ -905,10 +906,17 @@ set(runtimeut_david_src_list
     ${TOP_DIR}/src/runtime/core/src/kernel/program.cc
     ${TOP_DIR}/src/runtime/core/src/kernel/symbol_table.cc
     ${TOP_DIR}/src/runtime/core/src/kernel/program_common.cc
-    ${TOP_DIR}/src/runtime/core/src/kernel/kernel_utils.cc
-    ${TOP_DIR}/src/runtime/core/src/kernel/json_parse.cc
-    ${runtimeut_src_common_list}
-    ${runtimeut_platform_list}
+     ${TOP_DIR}/src/runtime/core/src/kernel/kernel_utils.cc
+     ${TOP_DIR}/src/runtime/core/src/kernel/json_parse.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/cc_manager.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/cc_res_manage.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/crypto/cc_crypto.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/crypto/aes_gcm.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/cc_worker.cc
+     ${TOP_DIR}/src/runtime/feature/cc_manager/cc_stream_res_manage.cc
+     ${CMAKE_CURRENT_SOURCE_DIR}/stub/cc_crypto_stub.cc
+     ${runtimeut_src_common_list}
+     ${runtimeut_platform_list}
 )
 
 list(REMOVE_ITEM runtimeut_david_src_list
@@ -925,6 +933,7 @@ target_include_directories(
     ${TOP_DIR}/abl/slog/inc
     ${TOP_DIR}/abl/mmpa/inc
     ${TOP_DIR}/abl/libc_sec/include
+    ${TOP_DIR}/src/runtime/feature/cc_manager
 )
 
 target_compile_definitions(runtime_ut_david_static_lib PUBLIC
@@ -1508,6 +1517,7 @@ set(RUNTIME_TEST_INC_DIR_COMMON
     ${TOP_DIR}/src/runtime/feature/fusion
     ${TOP_DIR}/src/runtime/feature/xpu
     ${TOP_DIR}/src/runtime/feature/dqs
+    ${TOP_DIR}/src/runtime/feature/cc_manager
     ${TOP_DIR}/src/runtime/core/inc/context
     ${TOP_DIR}/src/runtime/core/inc/spec
     ${TOP_DIR}/src/runtime/inc/common

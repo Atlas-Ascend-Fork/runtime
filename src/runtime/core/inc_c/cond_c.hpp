@@ -27,7 +27,9 @@ rtError_t CondStreamSwitchEx(
 rtError_t CondStreamSwitchN(
     const void* const ptr, const uint32_t size, const void* const valuePtr, Stream** const trueStreamPtr,
     const uint32_t elementSize, Stream* const stm, const rtSwitchDataType_t dataType, Context* const ctx = nullptr);
-rtError_t CondMemWaitValue(const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm);
+rtError_t CondMemWaitValue(
+    const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm,
+    RtStarsWriteValueSizeType writeValueSizeType = RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT);
 rtError_t StreamAddCondTask(CondHandle* condHandle, rtCondTaskParams params, Stream* const stm, uint32_t flags);
 rtError_t SubmitCaptureConditionTask(CondHandle* condHandle, Stream* const stm);
 } // namespace runtime

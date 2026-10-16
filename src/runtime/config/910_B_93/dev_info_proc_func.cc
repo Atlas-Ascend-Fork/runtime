@@ -33,6 +33,9 @@ static void UpdateDevProps(DevProperties& props)
 static DevDynInfoProcFunc CHIP_910B_PROC_FUNC = {
     .devPropsUpdateFunc = &UpdateDevProps,
     .devHitBlackListErrors = &HitBlackListErrors,
+    .regCCFeatureProcFunc = nullptr,
+    .memProcFunc = {},
+    .ccProcFunc = {},
 };
 
 REGISTER_DEV_INFO_PROC_FUNC(CHIP_910_B_93, CHIP_910B_PROC_FUNC);

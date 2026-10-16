@@ -17,6 +17,10 @@
 #include "driver_types.hpp"
 namespace cce {
 namespace runtime {
+rtError_t GetPtrAttributes(const void* const ptr, rtPtrAttributes_t* const attributes);
+rtError_t CheckMemCpyAttr(
+    const void* const dst, const void* const src, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
+    rtPtrAttributes_t& srcAttr);
 rtError_t MemcopyAsyncPtr(
     void* const memcpyAddrInfo, const uint64_t destMax, const uint64_t count, Stream* stm,
     const std::shared_ptr<void>& guardMem, const rtTaskCfgInfo_t* const cfgInfo, const bool isMemcpyDesc);

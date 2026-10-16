@@ -12,6 +12,7 @@
 #include "stream.hpp"
 #include "stream_launch_blocking.hpp"
 #include "device_enum_desc.hpp"
+#include "dev_info_manage.h"
 #include "model_update_task.h"
 #include "runtime_handle_guard.h"
 #include "arg_loader.hpp"
@@ -289,6 +290,16 @@ Stream::~Stream()
         }
         recordDevMemAddr_.clear();
         devTilingTblAddr.clear();
+
+        // CC 模式回调：释放 Stream 级 CC BAR 资源并取消未执行任务。
+        // 时序保证：Worker 处理任务期间持有 shared_ptr<Stream>，~Stream 在所有引用释放后才执行，
+        // 因此回调不会与执行中的 Worker 并发访问 CCStreamResManage。回调仅在 CC 模式注册。
+        DevDynInfoProcFunc func{};
+        if ((GET_DEV_INFO_PROC_FUNC(rt->GetChipType(), func) == RT_ERROR_NONE) &&
+            (func.ccProcFunc.streamResDestroy != nullptr)) {
+            func.ccProcFunc.streamResDestroy(this);
+        }
+
         captureStream_ = nullptr;
         streamResId = RTS_INVALID_RES_ID;
         context_ = nullptr;

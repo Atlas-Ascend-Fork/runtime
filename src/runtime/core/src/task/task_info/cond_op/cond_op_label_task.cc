@@ -64,7 +64,18 @@ void SetLabelInfoForLabelSetTask(TaskInfo* taskInfo, const uint32_t pos)
         "LabelSetTask, set label position in sq, labelId:%u, sqId:%u, pos:%u, labelInfo:%u, devDstAddr=%#" PRIx64,
         static_cast<uint32_t>(labelId), sqId, pos, labelInfo, RtPtrToValue((devDstAddr)));
 
-    const rtError_t error = taskInfo->stream->Device_()->Driver_()->MemCopySync(
+    rtError_t error = RT_ERROR_NONE;
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopySync != nullptr)) {
+        error = func.memProcFunc.memCopySync(
+            devDstAddr, RT_CHIP_CLOUD_V2_LABEL_INFO_SIZE, static_cast<void*>(labelInfo),
+            RT_CHIP_CLOUD_V2_LABEL_INFO_SIZE, RT_MEMCPY_HOST_TO_DEVICE);
+        if (error != RT_ERROR_CONTINUE_EXECUTE) {
+            return;
+        }
+    }
+    error = taskInfo->stream->Device_()->Driver_()->MemCopySync(
         devDstAddr, RT_CHIP_CLOUD_V2_LABEL_INFO_SIZE, static_cast<void*>(labelInfo), RT_CHIP_CLOUD_V2_LABEL_INFO_SIZE,
         RT_MEMCPY_HOST_TO_DEVICE);
     COND_LOG_ERROR(

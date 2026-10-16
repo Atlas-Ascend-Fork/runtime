@@ -6572,6 +6572,26 @@ rtError_t ApiErrorDecorator::ModelTaskDisable(rtTask_t task)
     return impl_->ModelTaskDisable(task);
 }
 
+rtError_t ApiErrorDecorator::DeviceGetCcMode(int32_t deviceId, int32_t* mode)
+{
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        mode, RT_ERROR_INVALID_VALUE, "Querying device confidential computing mode");
+
+    int32_t realDeviceId;
+    rtError_t error = Runtime::Instance()->ChgUserDevIdToDeviceId(
+        static_cast<uint32_t>(deviceId), RtPtrToPtr<uint32_t*>(&realDeviceId), true);
+    COND_RETURN_ERROR(
+        error != RT_ERROR_NONE, RT_ERROR_DEVICE_ID, "Failed to convert the user device ID %d to driver device ID.",
+        deviceId);
+
+    error = CheckDeviceIdIsValid(realDeviceId);
+    COND_RETURN_ERROR_MSG_INNER(
+        error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%d, retCode=%#x", realDeviceId,
+        static_cast<uint32_t>(error));
+
+    return impl_->DeviceGetCcMode(realDeviceId, mode);
+}
+
 rtError_t ApiErrorDecorator::GetDeviceInfoByAttr(uint32_t deviceId, rtDevAttr attr, int64_t* val)
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(

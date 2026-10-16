@@ -7671,7 +7671,6 @@ TEST_F(ApiTest, rtSetOpExecuteTimeOutV2)
 
 TEST_F(ApiTest, CheckMemCpyAttr_NumaCoverage)
 {
-    ApiImpl api;
     char d_obj = 0;
     char s_obj = 0;
     void* dst_ptr = &d_obj;
@@ -7684,8 +7683,18 @@ TEST_F(ApiTest, CheckMemCpyAttr_NumaCoverage)
     memAttr.srcLoc.type = RT_MEMORY_LOC_HOST_NUMA;
     memAttr.srcLoc.id = 1;
     MOCKER(drvMemGetAttribute).stubs().will(invoke(drvMemGetAttribute_2));
-    rtError_t error = api.CheckMemCpyAttr(dst_ptr, src_ptr, memAttr, dstAttr_actual, srcAttr_actual);
+    rtError_t error = CheckMemCpyAttr(dst_ptr, src_ptr, memAttr, dstAttr_actual, srcAttr_actual);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    GlobalMockObject::verify();
+}
+
+TEST_F(ApiTest, GetPtrAttributesCommon)
+{
+    char ptr = 0;
+    rtPtrAttributes_t attributes{};
+    MOCKER(drvMemGetAttribute).stubs().will(invoke(drvMemGetAttribute_2));
+    EXPECT_EQ(GetPtrAttributes(&ptr, &attributes), RT_ERROR_NONE);
+    EXPECT_EQ(attributes.location.type, RT_MEMORY_LOC_HOST);
     GlobalMockObject::verify();
 }
 

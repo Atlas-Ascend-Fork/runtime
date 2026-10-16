@@ -1047,6 +1047,17 @@ drvError_t halGetChipFromDevice(int device_id, int* chip_id)
     return DRV_ERROR_NONE;
 }
 drvError_t halMemcpy2D(struct MEMCPY2D* pCopy) { return DRV_ERROR_NONE; }
+
+drvError_t halMemcpy(void* dst, size_t destMax, void* src, size_t count, struct memcpy_info* info)
+{
+    (void)info;
+    if (dst == nullptr || src == nullptr || count == 0 || count > destMax) {
+        return DRV_ERROR_INVALID_VALUE;
+    }
+    (void)memcpy_s(dst, destMax, src, count);
+    return DRV_ERROR_NONE;
+}
+
 drvError_t halMemCtl(int type, void* param_value, size_t param_value_size, void* out_value, size_t* out_size_ret)
 {
     return DRV_ERROR_NONE;

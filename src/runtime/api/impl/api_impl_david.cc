@@ -757,6 +757,24 @@ rtError_t ApiImplDavid::SetMemcpyDesc(
     Context* const curCtx = CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     const Device* const dev = curCtx->Device_();
+
+    rtDavidMemcpyAddrInfo memcpyData;
+    (void)memset_s(&memcpyData, sizeof(rtDavidMemcpyAddrInfo), 0, sizeof(rtDavidMemcpyAddrInfo));
+
+    memcpyData.len = static_cast<uint32_t>(count);
+    memcpyData.src = RtPtrToValue<const void*>(srcAddr);
+    memcpyData.dst = RtPtrToValue<const void*>(dstAddr);
+
+    constexpr uint64_t dstMax = MEMCPY_DESC_SIZE_V2; // 64U
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopySync != nullptr)) {
+        const rtError_t callbackError =
+            func.memProcFunc.memCopySync(desc, dstMax, &memcpyData, dstMax, RT_MEMCPY_HOST_TO_DEVICE);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
+
     return cce::runtime::SetMemcpyDesc(desc, srcAddr, dstAddr, count, dev);
 }
 
@@ -780,11 +798,18 @@ rtError_t ApiImplDavid::MemCopy2DAsync(
     void* const dst, const uint64_t dstPitch, const void* const src, const uint64_t srcPitch, const uint64_t width,
     const uint64_t height, Stream* const stm, const rtMemcpyKind_t kind, const rtMemcpyKind newKind)
 {
-    UNUSED(newKind);
     RT_LOG(
         RT_LOG_DEBUG,
         "Sync memcpy2d, dstPitch=%" PRIu64 ", srcPitch=%" PRIu64 ", width=%" PRIu64 ", height=%" PRIu64 ", kind=%s.",
         dstPitch, srcPitch, width, height, MemcpyKindToStr(kind));
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopy2DAsync != nullptr)) {
+        const rtError_t callbackError =
+            func.memProcFunc.memCopy2DAsync(dst, dstPitch, src, srcPitch, width, height, stm, kind, newKind);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
 
     rtError_t error = RT_ERROR_NONE;
     uint64_t remainSize = width * height;
@@ -930,6 +955,13 @@ rtError_t ApiImplDavid::MemcpyBatchAsync(
     const rtMemcpyBatchAttr* const attrs, const size_t* const attrsIdxs, const size_t numAttrs, size_t* const failIdx,
     Stream* const stm)
 {
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memcpyBatchAsync != nullptr)) {
+        return func.memProcFunc.memcpyBatchAsync(
+            dsts, destMaxs, srcs, sizes, count, attrs, attrsIdxs, numAttrs, failIdx, stm);
+    }
+
     Context* curCtx = Runtime::Instance()->CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     NULL_PTR_RETURN_MSG(curCtx->Device_(), RT_ERROR_DEVICE_NULL);
@@ -956,9 +988,16 @@ rtError_t ApiImplDavid::MemcpyAsync(
     Stream* const stm, const rtTaskCfgInfo_t* const cfgInfo, const rtD2DAddrCfgInfo_t* const addrCfg, bool checkKind,
     const rtMemcpyConfig_t* const memcpyConfig)
 {
-    UNUSED(checkKind);
-    UNUSED(memcpyConfig);
     RT_LOG(RT_LOG_DEBUG, "Async memcpy, count=%" PRIu64 ", kind=%s", cnt, MemcpyKindToStr(kind));
+
+    // 已注册的拷贝回调作为 CC 模式标志，回调为空时 或 返回值为RT_ERROR_CONTINUE_EXECUTE，沿用原 Runtime 路径。
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memcpyAsync != nullptr)) {
+        const rtError_t callbackError =
+            func.memProcFunc.memcpyAsync(dst, destMax, src, cnt, kind, stm, cfgInfo, addrCfg, checkKind, memcpyConfig);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
 
     Context* const curCtx = CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);

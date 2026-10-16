@@ -337,6 +337,7 @@ public:
     rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
     rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
     rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) override;
+    rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) override;
 
     // context
     rtError_t ContextCreate(Context** const inCtx, const int32_t devId) override;

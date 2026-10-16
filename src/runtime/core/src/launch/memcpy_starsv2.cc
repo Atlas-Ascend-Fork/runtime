@@ -40,10 +40,17 @@ rtError_t MemcopyAsyncPtr(
     InitStarsSdmaSqeForDavid(&sdmaSqe, cfgInfo, stm);
     RT_LOG(RT_LOG_INFO, "memcpyAddrInfo=0x%lx, qos=%u", RtPtrToValue(memcpyAddrInfo), sdmaSqe.qos);
 
-    error = dev->Driver_()->MemCopySync(memcpyAddrInfo, cpySize, &sdmaSqe, cpySize, RT_MEMCPY_HOST_TO_DEVICE);
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopySync != nullptr)) {
+        error = func.memProcFunc.memCopySync(memcpyAddrInfo, cpySize, &sdmaSqe, cpySize, RT_MEMCPY_HOST_TO_DEVICE);
+    } else {
+        error = dev->Driver_()->MemCopySync(memcpyAddrInfo, cpySize, &sdmaSqe, cpySize, RT_MEMCPY_HOST_TO_DEVICE);
+    }
     ERROR_RETURN(
         error, "Failed to memory copy info, device_id=%u, size=%u(bytes), retCode=%#x.", dev->Id_(), cpySize,
         static_cast<uint32_t>(error));
+
     error = CheckTaskCanSend(stm);
     ERROR_RETURN_MSG_INNER(
         error, "Failed to check if task can be sent, stream_id=%d, retCode=%#x.", stm->Id_(),

@@ -183,11 +183,19 @@ rtError_t ApiImpl::MemCopy2DSync(
     void* const dst, const uint64_t dstPitch, const void* const src, const uint64_t srcPitch, const uint64_t width,
     const uint64_t height, const rtMemcpyKind_t kind, const rtMemcpyKind newKind)
 {
-    (void)newKind;
     RT_LOG(
         RT_LOG_DEBUG,
         "sync memcpy2d, dstPitch=%" PRIu64 ", srcPitch=%" PRIu64 ", width=%" PRIu64 ", height=%" PRIu64 ", kind=%s.",
         dstPitch, srcPitch, width, height, MemcpyKindToStr(kind));
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopy2DSync != nullptr)) {
+        const rtError_t callbackError =
+            func.memProcFunc.memCopy2DSync(dst, dstPitch, src, srcPitch, width, height, kind, newKind);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
+
     Context* const curCtx = CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
 
@@ -380,6 +388,12 @@ rtError_t ApiImpl::DevMalloc(
         // no operation
     }
     RT_LOG(RT_LOG_INFO, "type=%#x.", type);
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.devMallocWithCfg != nullptr)) {
+        return func.memProcFunc.devMallocWithCfg(devPtr, tmpSize, type, realDeviceId, cfgVal.moduleId);
+    }
     DevMemAllocConfig allocConfig = {};
     return (curCtx->Device_()->Driver_())
         ->DevMemAlloc(devPtr, tmpSize, type, realDeviceId, cfgVal.moduleId, true, allocConfig, true);
@@ -390,6 +404,13 @@ rtError_t ApiImpl::MemcpyBatch(
     size_t* failIdx)
 {
     RT_LOG(RT_LOG_DEBUG, "Start to batch memcpy, count=%zd, numAttrs=%zd.", count, numAttrs);
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memcpyBatch != nullptr)) {
+        return func.memProcFunc.memcpyBatch(dsts, srcs, sizes, count, attrs, attrsIdxs, numAttrs, failIdx);
+    }
+
     rtError_t error;
     size_t attrIdx = 0U;
     rtMemcpyBatchAttr memAttr = attrs[0];
@@ -417,44 +438,6 @@ rtError_t ApiImpl::MemcpyBatch(
                 MemLocationTypeToString(realDstLoc).c_str(), MemLocationTypeToString(realSrcLoc).c_str()));
     }
     return NpuDriver::MemcpyBatch(RtPtrToPtr<uint64_t*>(dsts), RtPtrToPtr<uint64_t*>(srcs), sizes, count);
-}
-
-rtError_t ApiImpl::CheckMemCpyAttr(
-    const void* const dst, const void* const src, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
-    rtPtrAttributes_t& srcAttr)
-{
-    rtMemLocationType memType;
-    rtError_t error = PtrGetAttributes(dst, &dstAttr);
-    ERROR_RETURN(error, "get dst attribute failed, error=%#x", error);
-    memType = (dstAttr.location.type == RT_MEMORY_LOC_UNREGISTERED) ? RT_MEMORY_LOC_HOST : dstAttr.location.type;
-    const rtMemLocationType inputDstType =
-        (memAttr.dstLoc.type == RT_MEMORY_LOC_HOST_NUMA) ? RT_MEMORY_LOC_HOST : memAttr.dstLoc.type;
-    COND_RETURN_AND_MSG_OUTER(
-        ((memType != inputDstType) ||
-         ((memType == RT_MEMORY_LOC_DEVICE) && (dstAttr.location.id != memAttr.dstLoc.id))),
-        RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Checking memory copy attributes", "dst",
-        RtFmtMsg(
-            "The input memory type %s and the actual memory type %s do not match,"
-            " or the input device ID (device_id=%d) and the actual device ID (device_id=%d) do not match",
-            MemLocationTypeToString(memAttr.dstLoc.type).c_str(),
-            MemLocationTypeToString(dstAttr.location.type).c_str(), memAttr.dstLoc.id, dstAttr.location.id));
-
-    error = PtrGetAttributes(src, &srcAttr);
-    ERROR_RETURN(error, "get src attribute failed, error=%#x.", error);
-    memType = (srcAttr.location.type == RT_MEMORY_LOC_UNREGISTERED) ? RT_MEMORY_LOC_HOST : srcAttr.location.type;
-    const rtMemLocationType inputSrcType =
-        (memAttr.srcLoc.type == RT_MEMORY_LOC_HOST_NUMA) ? RT_MEMORY_LOC_HOST : memAttr.srcLoc.type;
-    COND_RETURN_AND_MSG_OUTER(
-        ((memType != inputSrcType) ||
-         ((memType == RT_MEMORY_LOC_DEVICE) && (srcAttr.location.id != memAttr.srcLoc.id))),
-        RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Checking memory copy attributes", "src",
-        RtFmtMsg(
-            "The input memory type %s and the actual memory type %s do not match,"
-            " or the input device ID (device_id=%d) and the actual device ID (device_id=%d) do not match",
-            MemLocationTypeToString(memAttr.srcLoc.type).c_str(),
-            MemLocationTypeToString(srcAttr.location.type).c_str(), memAttr.srcLoc.id, srcAttr.location.id));
-
-    return RT_ERROR_NONE;
 }
 
 rtError_t ApiImpl::ValidateMemCpyParamsAndAttributes(

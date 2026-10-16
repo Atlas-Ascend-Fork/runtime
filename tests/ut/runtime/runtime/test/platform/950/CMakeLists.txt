@@ -25,6 +25,7 @@ add_executable(runtime_utest_api_david
     rt_utest_api_soma.cc
     rt_utest_soma.cc
     rt_utest_david_snapshot.cc
+    rt_utest_cc_manager.cc
 )
 
 target_compile_definitions(runtime_utest_api_david PUBLIC
@@ -64,12 +65,17 @@ add_executable(runtime_utest_task_david
     rt_utest_david_customer_stack_size.cc
     rt_utest_memory_corruption.cc
     rt_utest_aclgraph_ub.cc
+    rt_utest_cc_manager.cc
     ${TOP_DIR}/tests/ut/runtime/runtime/test/rt_utest_task_sqe.cc
 )
 
 target_compile_definitions(runtime_utest_task_david PUBLIC
     TEMP_PERFORMANCE
     TEMP_PERFORMANCE_NOT_OUTPUT
+)
+
+target_include_directories(runtime_utest_task_david PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../..
 )
 
 target_link_libraries(runtime_utest_task_david PRIVATE

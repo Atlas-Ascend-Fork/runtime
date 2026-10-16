@@ -28,6 +28,7 @@
 #include "maintenance_task.h"
 #include "stream_task.h"
 #include "api_impl.hpp"
+#include "dev_info_manage.h"
 #include "runtime_handle_guard.h"
 #include "base.hpp"
 #include "elf.hpp"
@@ -2382,6 +2383,13 @@ rtError_t ApiImpl::EventSynchronize(Event* const evt, const int32_t timeout)
 rtError_t ApiImpl::DevMalloc(void** const devPtr, const uint64_t size, const rtMemType_t type, const uint16_t moduleId)
 {
     RT_LOG(RT_LOG_INFO, "size=%" PRIu64 ", type=%u, moduleId=%hu.", size, type, moduleId);
+
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.devMalloc != nullptr)) {
+        return func.memProcFunc.devMalloc(devPtr, size, type, moduleId);
+    }
+
     Context* const curCtx = CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
 
@@ -2501,6 +2509,17 @@ rtError_t ApiImpl::MemCopySync(
     const uint32_t checkKind)
 {
     RT_LOG(RT_LOG_DEBUG, "memcpy sync, cnt=%" PRIu64 ", kind=%s.", cnt, MemcpyKindToStr(kind));
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(Runtime::Instance()->GetChipType(), func) == RT_ERROR_NONE) &&
+        (func.memProcFunc.memCopySync != nullptr)) {
+        Context* const curCtx = CurrentContext();
+        CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
+        CHECK_CAPTURE_MODE_SUPPORT_AND_RETURN_WITH_FUNC_DESC(curCtx, "Synchronous memory copy");
+
+        const rtError_t callbackError = func.memProcFunc.memCopySync(dst, destMax, src, cnt, kind);
+        COND_RETURN_WITH_NOLOG(callbackError != RT_ERROR_CONTINUE_EXECUTE, callbackError);
+    }
+
     Context* const curCtx = CurrentContext();
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     Device* device = curCtx->Device_();
@@ -2711,25 +2730,7 @@ rtError_t ApiImpl::PointerGetAttributes(rtPointerAttributes_t* const attributes,
 
 rtError_t ApiImpl::PtrGetAttributes(const void* const ptr, rtPtrAttributes_t* const attributes)
 {
-    RT_LOG(RT_LOG_DEBUG, "get memory attribute.");
-    Context* const curCtx = CurrentContext();
-    Driver* curDrv = nullptr;
-    if (!ContextManage::CheckContextIsValid(curCtx)) {
-        curDrv = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
-    } else {
-        curDrv = curCtx->Device_()->Driver_();
-    }
-    rtError_t error = curDrv->PtrGetAttributes(ptr, attributes);
-    ERROR_RETURN(error, "failed to PtrGetAttributes, err:%#x", static_cast<uint32_t>(error));
-    rtMemLocationType locationType = attributes->location.type;
-    if ((locationType == RT_MEMORY_LOC_DEVICE) || (locationType == RT_MEMORY_LOC_MANAGED)) {
-        const uint32_t drvDeviceId = attributes->location.id;
-        error = Runtime::Instance()->GetUserDevIdByDeviceId(drvDeviceId, &attributes->location.id);
-        COND_RETURN_ERROR_MSG_INNER(
-            error != RT_ERROR_NONE, error, "Failed to convert the driver device ID %u to user device ID, retCode=%#x",
-            drvDeviceId, static_cast<uint32_t>(error));
-    }
-    return RT_ERROR_NONE;
+    return GetPtrAttributes(ptr, attributes);
 }
 
 rtError_t ApiImpl::GetDeviceIDs(uint32_t* const devId, const uint32_t len)
@@ -6883,6 +6884,20 @@ rtError_t ApiImpl::ModelTaskDisable(rtTask_t task)
     RT_LOG(
         RT_LOG_INFO, "stream_id=%d, task_id=%hu, typeName=%s, task type=%d", taskInfo->stream->Id_(),
         GetTaskId(taskInfo), taskInfo->typeName, taskInfo->type);
+    return RT_ERROR_NONE;
+}
+
+rtError_t ApiImpl::DeviceGetCcMode(int32_t deviceId, int32_t* mode)
+{
+    HAL_CC_INFO ccInfo{};
+    int32_t size = static_cast<int32_t>(sizeof(ccInfo));
+    rtError_t error = NpuDriver::GetDeviceInfoByBuff(
+        static_cast<uint32_t>(deviceId), static_cast<int32_t>(MODULE_TYPE_CC), static_cast<int32_t>(INFO_TYPE_CC),
+        &ccInfo, &size);
+    if (error != RT_ERROR_NONE) {
+        return error;
+    }
+    *mode = static_cast<int32_t>(ccInfo.cc_running_info.cc_mode);
     return RT_ERROR_NONE;
 }
 

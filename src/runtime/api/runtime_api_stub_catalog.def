@@ -917,6 +917,10 @@ RUNTIME_API(device, rtError_t, rtDeviceGetHostAtomicCapabilities,
     (uint32_t* capabilities, const rtAtomicOperation* operations, const uint32_t count, int32_t deviceId),
     (capabilities, operations, count, deviceId), FEATURE_NOT_SUPPORT, EXPORT)
 
+RUNTIME_API(device, rtError_t, rtDeviceGetCcMode,
+    (int32_t deviceId, int32_t* mode),
+    (deviceId, mode), FEATURE_NOT_SUPPORT, EXPORT)
+
 RUNTIME_API(device, rtError_t, rtDeviceGetLimit,
     (rtLimitType_t type, uint32_t* val),
     (type, val), FEATURE_NOT_SUPPORT, EXPORT)

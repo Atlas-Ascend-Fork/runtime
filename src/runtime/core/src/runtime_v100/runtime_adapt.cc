@@ -121,6 +121,8 @@ Runtime::~Runtime()
     DeleteModuleBackupPoint();
 }
 
+rtError_t Runtime::InitCcFeature() { return RT_ERROR_NONE; }
+
 rtError_t Runtime::PrimaryXpuContextRelease(const uint32_t devId)
 {
     UNUSED(devId);

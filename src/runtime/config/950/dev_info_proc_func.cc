@@ -18,6 +18,13 @@ static bool HitBlackListErrors(uint32_t devId) { return IsHitBlacklist(devId, g_
 static DevDynInfoProcFunc CHIP_DAVID_PROC_FUNC = {
     .devPropsUpdateFunc = nullptr,
     .devHitBlackListErrors = &HitBlackListErrors,
+#ifdef CFG_DEV_PLATFORM_PC
+    .regCCFeatureProcFunc = nullptr,
+#else
+    .regCCFeatureProcFunc = &RegCCManagerProcFunc,
+#endif
+    .memProcFunc = {},
+    .ccProcFunc = {},
 };
 
 REGISTER_DEV_INFO_PROC_FUNC(CHIP_DAVID, CHIP_DAVID_PROC_FUNC);

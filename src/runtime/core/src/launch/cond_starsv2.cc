@@ -171,7 +171,9 @@ rtError_t CondStreamSwitchN(
     return RT_ERROR_NONE;
 }
 
-rtError_t CondMemWaitValue(const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm)
+rtError_t CondMemWaitValue(
+    const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm,
+    RtStarsWriteValueSizeType writeValueSizeType)
 {
     const int32_t streamId = stm->Id_();
     rtError_t error = CheckTaskCanSend(stm);
@@ -201,6 +203,7 @@ rtError_t CondMemWaitValue(const void* const devAddr, const uint64_t value, cons
         static_cast<uint32_t>(error));
     rtMemWaitValueTask->needPostProc = true;
     rtMemWaitValueTask->stmArgPos = static_cast<DavidStream*>(dstStm)->GetArgPos();
+    rtMemWaitValueTask->u.memWaitValueTask.awSize = writeValueSizeType;
     error = DavidSendTask(rtMemWaitValueTask, dstStm);
     ERROR_RETURN_MSG_INNER(
         error, "Failed to submit memory wait value task, stream_id=%d, pos=%u, retCode=%#x.", streamId, pos,

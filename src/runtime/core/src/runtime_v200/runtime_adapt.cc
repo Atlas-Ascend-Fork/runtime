@@ -27,6 +27,7 @@
 #include "api_profile_decorator.hpp"
 #include "api_profile_log_decorator.hpp"
 #include "driver.hpp"
+#include "npu_driver.hpp"
 #include "subscribe.hpp"
 #include "base.hpp"
 #include "device_state_callback_manager.hpp"
@@ -52,6 +53,90 @@
 #include "kernel.hpp"
 namespace cce {
 namespace runtime {
+
+static bool IsHostCcMode()
+{
+    constexpr const char_t* hostCcDevicePath = "/dev/sev-guest";
+    return mmAccess2(hostCcDevicePath, M_F_OK) == EN_OK;
+}
+
+static rtError_t CheckDeviceCcStatus(const uint32_t deviceId)
+{
+    bool deviceCcOn = false;
+    const rtError_t error = NpuDriver::QueryDeviceCcStatus(deviceId, deviceCcOn);
+    ERROR_RETURN(
+        error, "Failed to query device CC status, device_id=%u, retCode=%#x.", deviceId, static_cast<uint32_t>(error));
+    COND_RETURN_ERROR(
+        !deviceCcOn, RT_ERROR_INVALID_VALUE, "Device CC is disabled in a confidential host environment, device_id=%u.",
+        deviceId);
+    return RT_ERROR_NONE;
+}
+
+rtError_t Runtime::CheckVisibleDevicesCcStatus()
+{
+    rtError_t error = RT_ERROR_NONE;
+    COND_RETURN_ERROR(
+        !isHaveDevice_, RT_ERROR_DRV_NO_DEVICE, "No visible device is available in a confidential host environment.");
+
+    // Host CC 开启后，所有可见设备都必须查询成功且处于 CC ON 状态。
+    const char_t* visibleEnv = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_RT_VISIBLE_DEVICES, visibleEnv);
+    if (visibleEnv == nullptr) {
+        uint32_t deviceCount = 0U;
+        const drvError_t drvRet = drvGetDevNum(&deviceCount);
+        COND_RETURN_ERROR(
+            drvRet != DRV_ERROR_NONE, RT_ERROR_DRV_ERR, "Failed to get visible devices, drvRetCode=%d.",
+            static_cast<int32_t>(drvRet));
+        COND_RETURN_ERROR(
+            (deviceCount == 0U) || (deviceCount > RT_MAX_DEV_NUM), RT_ERROR_INVALID_VALUE,
+            "Invalid visible device count, device_count=%u.", deviceCount);
+        for (uint32_t deviceId = 0U; deviceId < deviceCount; ++deviceId) {
+            error = CheckDeviceCcStatus(deviceId);
+            COND_RETURN_WITH_NOLOG(error != RT_ERROR_NONE, error);
+        }
+    } else {
+        if (!isSetVisibleDev || (deviceInfo == nullptr) || (deviceCnt == 0U) || (deviceCnt > RT_MAX_DEV_NUM) ||
+            (userDeviceCnt == 0U) || (userDeviceCnt > RT_SET_DEVICE_STR_MAX_LEN) || (userDeviceCnt > deviceCnt) ||
+            (retType != RT_ALL_DATA_OK)) {
+            RT_LOG(RT_LOG_ERROR, "Invalid visible-device configuration, ret_type=%d.", static_cast<int32_t>(retType));
+            return (retType == RT_GET_DRIVER_ERROR) ? RT_ERROR_DRV_ERR : RT_ERROR_INVALID_VALUE;
+        }
+        for (uint32_t index = 0U; index < userDeviceCnt; ++index) {
+            COND_RETURN_ERROR(
+                (deviceInfo[index] == MAX_UINT32_NUM) || (deviceInfo[index] >= deviceCnt), RT_ERROR_INVALID_VALUE,
+                "Invalid visible device id, index=%u, device_id=%u.", index, deviceInfo[index]);
+            error = CheckDeviceCcStatus(deviceInfo[index]);
+            COND_RETURN_WITH_NOLOG(error != RT_ERROR_NONE, error);
+        }
+    }
+    return RT_ERROR_NONE;
+}
+
+rtError_t Runtime::InitCcFeature()
+{
+    // CC 特性按芯片函数表注册入口开启：未注册 CC 特性的芯片直接返回，
+    // 不做 /dev/sev-guest 探测与可见设备查询，避免无 CC 芯片被误检测。
+    DevDynInfoProcFunc func{};
+    if ((GET_DEV_INFO_PROC_FUNC(chipType_, func) != RT_ERROR_NONE) || (func.regCCFeatureProcFunc == nullptr)) {
+        return RT_ERROR_NONE;
+    }
+
+    // CC 特性初始化：环境检测（fail closed）+ 通过芯片函数表触发特性注册。
+    COND_RETURN_INFO(!IsHostCcMode(), RT_ERROR_NONE, "CC mode is disabled because host CC is off.");
+    RT_LOG(RT_LOG_INFO, "Host CC mode is enabled, /dev/sev-guest detected.");
+
+    // Host CC 开启后，所有可见设备都必须查询成功且处于 CC ON 状态。
+    rtError_t error = CheckVisibleDevicesCcStatus();
+    COND_RETURN_ERROR(
+        error != RT_ERROR_NONE, error, "Failed to validate visible devices for confidential computing, retCode=%#x.",
+        static_cast<uint32_t>(error));
+    error = func.regCCFeatureProcFunc(chipType_);
+    COND_RETURN_ERROR(
+        error != RT_ERROR_NONE, error, "Failed to register CC process functions, retCode=%#x.",
+        static_cast<uint32_t>(error));
+
+    return RT_ERROR_NONE;
+}
 
 Runtime::~Runtime()
 {

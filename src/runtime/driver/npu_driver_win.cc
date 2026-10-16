@@ -1690,6 +1690,19 @@ rtError_t NpuDriver::DevMemAlloc(
     return RT_ERROR_NONE;
 }
 
+rtError_t NpuDriver::DevMemAllocWithFlag(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
+    const bool starsTillingFlag)
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(isLogError);
+    UNUSED(starsTillingFlag);
+    return RT_ERROR_NONE;
+}
+
 rtError_t NpuDriver::DevMemAllocConPhy(
     void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId)
 {

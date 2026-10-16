@@ -83,6 +83,7 @@ class EngineStreamObserver;
 class TaskAllocator;
 class LogicSq;
 class StreamLaunchBlocking;
+class CCStreamResManage;
 
 enum class TagtsSqAllocType : std::uint32_t { SQ_ALLOC_TYPE_RT_DEFAULT = 0U };
 using RtSqAllocType = TagtsSqAllocType;
@@ -317,6 +318,17 @@ public:
     uint32_t GetPoolId() const { return poolId_; }
 
     Device* Device_() const { return device_; }
+
+    CCStreamResManage* GetCCStreamResource() const { return ccStreamResource_; }
+
+    void SetCCStreamResource(CCStreamResManage* const resource) { ccStreamResource_ = resource; }
+
+    CCStreamResManage* TakeCCStreamResource()
+    {
+        CCStreamResManage* const resource = ccStreamResource_;
+        ccStreamResource_ = nullptr;
+        return resource;
+    }
 
     uint32_t Priority() const { return priority_; }
 
@@ -1105,6 +1117,7 @@ private:
     bool isSlaveStream_{false}; // 是否为slave stream
 public:
     TaskResManage* taskResMang_{nullptr};
+    CCStreamResManage* ccStreamResource_{nullptr};
     bool isHasPcieBar_{false};
     Atomic<uint32_t> pendingNum_;
     bool isSubmitTaskFail_{false};

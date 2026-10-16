@@ -766,6 +766,10 @@ typedef struct {
 #define MEM_SNAPSHOT_OPTIONAL (1ULL << MEM_SNAPSHOT_OPTIONAL_BIT)
 #define MEM_SNAPSHOT_REQUIRED (1ULL << MEM_SNAPSHOT_REQUIRED_BIT)
 
+/* Confidential-computing private memory cannot be used by copy interfaces. */
+#define MEM_DEV_PRIVATE_BIT 35
+#define MEM_DEV_PRIVATE (0X1ULL << MEM_DEV_PRIVATE_BIT)
+
 /* align size 5 bits width 20-24bit */
 #define MEM_ALIGN_BIT 20
 #define MEM_ALIGN_SIZE(x) (1U << (((x) >> MEM_ALIGN_BIT) & 0x1FU))

@@ -171,6 +171,15 @@ rtError_t InitializePrimaryContext(PrimaryContextInitInfo& initInfo)
     ERROR_RETURN_MSG_INNER(
         err, "Primary context register dcache lock op failed, devId=%u, retCode=%#x.", initInfo.dev->Id_(),
         static_cast<uint32_t>(err));
+
+    DevDynInfoProcFunc devInfoProcFunc{};
+    if ((GET_DEV_INFO_PROC_FUNC(initInfo.dev->GetChipType(), devInfoProcFunc) == RT_ERROR_NONE) &&
+        (devInfoProcFunc.ccProcFunc.devResourceInit != nullptr)) {
+        err = devInfoProcFunc.ccProcFunc.devResourceInit(initInfo.dev);
+        ERROR_RETURN_MSG_INNER(
+            err, "Primary context CC resource initialization failed, devId=%u, retCode=%#x.", initInfo.dev->Id_(),
+            static_cast<uint32_t>(err));
+    }
     return RT_ERROR_NONE;
 }
 
@@ -1708,6 +1717,10 @@ rtError_t Runtime::Init()
 
     FindDcacheLockOp();
 
+    // CC 特性初始化放在 Runtime 初始化末尾；失败时进入统一清理流程释放已初始化资源。
+    error = InitCcFeature();
+    COND_GOTO_ERROR_MSG_AND_ASSIGN_CALL(
+        ERR_MODULE_SYSTEM, error != RT_ERROR_NONE, INIT_FAIL, error, error, "Failed to initialize CC feature.");
     return error;
 
 INIT_FAIL:

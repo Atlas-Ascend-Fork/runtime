@@ -186,6 +186,16 @@ set(libruntime_v200_stream_src_files
     ${RUNTIME_CORE_DIR}/src/stream/v200/stream_creator_c.cc
 )
 
+set(libruntime_v200_cc_manager_src_files
+    ${RUNTIME_FEATURE_DIR}/cc_manager/cc_manager.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/cc_res_manage.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/crypto/cc_crypto.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/crypto/aes_gcm.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/crypto/openssl_loader.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/cc_worker.cc
+    ${RUNTIME_FEATURE_DIR}/cc_manager/cc_stream_res_manage.cc
+)
+
 # v201
 set(libruntime_v201_stream_src_files
     ${libruntime_v200_stream_common_src_files}
@@ -420,6 +430,7 @@ set(libruntime_v200_src_files
     ${libruntime_v200_task_src_files}
     ${libruntime_v200_context_src_files}
     ${libruntime_v200_stream_src_files}
+    ${libruntime_v200_cc_manager_src_files}
     ${libruntime_v200_profile_src_files}
     ${libruntime_v200_arg_loader_files}
     ${libruntime_v200_callback_files}
@@ -476,6 +487,7 @@ set(RUNTIME_INC_DIR_COMMON_V200
     ${RUNTIME_CORE_DIR}/inc_c
     ${RUNTIME_FEATURE_DIR}/fusion
     ${RUNTIME_FEATURE_DIR}/ccu
+    ${RUNTIME_FEATURE_DIR}/cc_manager
     ${RUNTIME_DIR}/src/runtime/core/inc/args
     ${RUNTIME_DIR}/src/runtime/core/inc/arg_loader
     ${RUNTIME_DIR}/src/runtime/inc/common
