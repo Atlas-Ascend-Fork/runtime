@@ -1657,7 +1657,7 @@ rtError_t NpuDriver::SqCqAllocate(
     const uint32_t deviceId, const uint32_t tsId, const uint32_t groupId, uint32_t* const sqId, uint32_t* const cqId)
 {
     struct halSqCqOutputInfo normalSqCqAllocOutputInfo;
-    struct halSqCqInputInfo normalSqCqAllocInputInfo;
+    struct halSqCqInputInfo normalSqCqAllocInputInfo = {};
 
     normalSqCqAllocInputInfo.type = DRV_CALLBACK_TYPE;
     normalSqCqAllocInputInfo.tsId = tsId;
