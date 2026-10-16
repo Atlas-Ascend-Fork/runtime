@@ -513,12 +513,18 @@ aclError SaveCtrlSharedPtrToVec(
 
 aclError UnpackageRecvDataInfo(uint8_t* outputHostAddr, size_t size, std::vector<acl::aclTdtDataItemInfo>& itemVec)
 {
+    if (outputHostAddr == nullptr || size < sizeof(ItemInfo)) {
+        ACL_LOG_ERROR(
+            "invalid receive buffer, address is null: %d, actual size is %zu, minimum required size is %zu",
+            outputHostAddr == nullptr, size, sizeof(ItemInfo));
+        return ACL_ERROR_FAILURE;
+    }
     ItemInfo* head = reinterpret_cast<ItemInfo*>(outputHostAddr);
     uint32_t cnt = head->cnt;
     ACL_LOG_INFO("get tensor cnt is %u", cnt);
     size_t offset = 0;
     for (uint32_t i = 0; i < cnt; ++i) {
-        if (offset + sizeof(ItemInfo) > size) {
+        if (offset > size || sizeof(ItemInfo) > size - offset) {
             ACL_LOG_ERROR("offset is %zu, size is %zu", offset, size);
             return ACL_ERROR_FAILURE;
         }
@@ -533,7 +539,7 @@ aclError UnpackageRecvDataInfo(uint8_t* outputHostAddr, size_t size, std::vector
         offset += sizeof(ItemInfo);
 
         for (uint32_t j = 0; j < tmp->dimNum; ++j) {
-            if (offset + sizeof(int64_t) > size) {
+            if (offset > size || sizeof(int64_t) > size - offset) {
                 ACL_LOG_ERROR("offset is %zu, size is %zu", offset, size);
                 return ACL_ERROR_FAILURE;
             }
@@ -543,7 +549,7 @@ aclError UnpackageRecvDataInfo(uint8_t* outputHostAddr, size_t size, std::vector
             offset += sizeof(int64_t);
         }
 
-        if (offset + tmp->dataLen > size) {
+        if (offset > size || tmp->dataLen > size - offset) {
             ACL_LOG_ERROR("offset is %zu, data len is %lu, size is %zu", offset, tmp->dataLen, size);
             return ACL_ERROR_FAILURE;
         }
