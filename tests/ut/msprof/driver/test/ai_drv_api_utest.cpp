@@ -23,6 +23,7 @@
 #include "validation/param_validation.h"
 #include "utils.h"
 #include "platform/platform.h"
+#include "../../stub/hdc-log-stub.h"
 
 using namespace analysis::dvvp::common::error;
 using namespace analysis::dvvp::driver;
@@ -36,7 +37,7 @@ using namespace Analysis::Dvvp::Common::Platform;
 class DRIVER_AI_DRV_API_TEST : public testing::Test {
 protected:
     virtual void SetUp() {}
-    virtual void TearDown() {}
+    virtual void TearDown() { Platform::instance()->Uninit(); }
 };
 
 namespace {
@@ -532,6 +533,165 @@ TEST_F(DRIVER_AI_DRV_API_TEST, DrvStart)
     EXPECT_EQ(-10, analysis::dvvp::driver::DrvStart(prof_device_id, prof_channel, &data));
     EXPECT_EQ(-11, analysis::dvvp::driver::DrvStart(prof_device_id, prof_channel, &data));
     EXPECT_EQ(PROF_OK, analysis::dvvp::driver::DrvStart(prof_device_id, prof_channel, &data));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartTaskPmuReturns918LogsDedicatedError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER_CPP(&Platform::CheckIfPlatformExist, bool(Platform::*)(void) const).stubs().will(returnValue(true));
+    MOCKER_CPP(&Platform::CheckIfSupport, bool(Platform::*)(const PlatformFeature) const)
+        .stubs()
+        .will(returnValue(true));
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x918));
+    EXPECT_EQ(0x918, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    const std::string logMsg = GetLastDlogRecordMsg();
+    EXPECT_NE(std::string::npos, logMsg.find("device[0]"));
+    EXPECT_NE(std::string::npos, logMsg.find("channel[53]"));
+    EXPECT_NE(std::string::npos, logMsg.find("ret=0x918"));
+    EXPECT_NE(std::string::npos, logMsg.find("Exit all processes before starting task-based PMU collection"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartTaskPmuReturns917LogsMutuallyExclusiveError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER_CPP(&Platform::CheckIfPlatformExist, bool(Platform::*)(void) const).stubs().will(returnValue(true));
+    MOCKER_CPP(&Platform::CheckIfSupport, bool(Platform::*)(const PlatformFeature) const)
+        .stubs()
+        .will(returnValue(true));
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x917));
+    EXPECT_EQ(0x917, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    const std::string logMsg = GetLastDlogRecordMsg();
+    EXPECT_NE(std::string::npos, logMsg.find("device[0]"));
+    EXPECT_NE(std::string::npos, logMsg.find("channel[53]"));
+    EXPECT_NE(std::string::npos, logMsg.find("ret=0x917"));
+    EXPECT_NE(std::string::npos, logMsg.find("sample-based and task-based profiling are mutually exclusive"));
+    EXPECT_NE(std::string::npos, logMsg.find("Exit all processes before restarting profiling"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartSamplePmuReturns917LogsMutuallyExclusiveError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER_CPP(&Platform::CheckIfPlatformExist, bool(Platform::*)(void) const).stubs().will(returnValue(true));
+    MOCKER_CPP(&Platform::CheckIfSupport, bool(Platform::*)(const PlatformFeature) const)
+        .stubs()
+        .will(returnValue(true));
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x917));
+    EXPECT_EQ(0x917, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_SAMPLE, &data));
+    const std::string logMsg = GetLastDlogRecordMsg();
+    EXPECT_NE(std::string::npos, logMsg.find("device[0]"));
+    EXPECT_NE(std::string::npos, logMsg.find("channel[54]"));
+    EXPECT_NE(std::string::npos, logMsg.find("ret=0x917"));
+    EXPECT_NE(std::string::npos, logMsg.find("sample-based and task-based profiling are mutually exclusive"));
+    EXPECT_NE(std::string::npos, logMsg.find("Exit all processes before restarting profiling"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartUninitializedPlatform918DoesNotLogDedicatedError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    Platform::instance()->Uninit();
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x918));
+    EXPECT_EQ(0x918, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("task-based PMU collection"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartUninitializedPlatform917DoesNotLogMutuallyExclusiveError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    Platform::instance()->Uninit();
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x917));
+    EXPECT_EQ(0x917, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("mutually exclusive"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartOtherPlatform917DoesNotLogMutuallyExclusiveError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER_CPP(&Platform::CheckIfSupport, bool(Platform::*)(const PlatformFeature) const)
+        .stubs()
+        .will(returnValue(false));
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x917));
+    EXPECT_EQ(0x917, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("mutually exclusive"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartOtherChannel917DoesNotLogMutuallyExclusiveError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x917));
+    EXPECT_EQ(0x917, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_HBM, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("mutually exclusive"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartTaskPmuSuccessDoesNotLogDedicatedError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER(prof_drv_start).stubs().will(returnValue(PROF_OK));
+    EXPECT_EQ(PROF_OK, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("task-based PMU collection"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartTaskPmuOtherErrorCodeOnlyKeepsExistingBehavior)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    const int32_t existingCodes[] = {-10, -11, 115};
+
+    for (const int32_t code : existingCodes) {
+        ResetLastDlogRecordMsg();
+        GlobalMockObject::reset();
+        MOCKER(prof_drv_start).stubs().will(returnValue(code));
+        EXPECT_EQ(code, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+        EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("task-based PMU collection"));
+    }
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartOtherPlatform918DoesNotLogDedicatedError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER_CPP(&Platform::CheckIfSupport, bool(Platform::*)(const PlatformFeature) const)
+        .stubs()
+        .will(returnValue(false));
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x918));
+    EXPECT_EQ(0x918, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_TASK, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("task-based PMU collection"));
+}
+
+TEST_F(DRIVER_AI_DRV_API_TEST, DrvStartOtherChannel918DoesNotLogDedicatedError)
+{
+    GlobalMockObject::verify();
+    struct prof_start_para data = {};
+    ResetLastDlogRecordMsg();
+
+    MOCKER(prof_drv_start).stubs().will(returnValue(0x918));
+    EXPECT_EQ(0x918, DrvStart(0U, analysis::dvvp::driver::PROF_CHANNEL_FFTS_PROFILE_SAMPLE, &data));
+    EXPECT_EQ(std::string::npos, std::string(GetLastDlogRecordMsg()).find("task-based PMU collection"));
 }
 
 TEST_F(DRIVER_AI_DRV_API_TEST, DrvStop)

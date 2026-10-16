@@ -410,6 +410,17 @@ TEST_F(PLATFORM_UTEST, ApiStatsFeatureSupportedOnCloudAndDavidPlatforms)
     EXPECT_TRUE(davidV121Platform.FeatureIsSupport(PLATFORM_API_STATS));
 }
 
+TEST_F(PLATFORM_UTEST, TaskPmuResourceNotResetOnlySupportedOnDavidV121)
+{
+    DavidPlatform davidPlatform;
+    DavidLitePlatform davidLitePlatform;
+    DavidV121Platform davidV121Platform;
+
+    EXPECT_FALSE(davidPlatform.FeatureIsSupport(PLATFORM_TASK_PMU_RESOURCE_NOT_RESET));
+    EXPECT_FALSE(davidLitePlatform.FeatureIsSupport(PLATFORM_TASK_PMU_RESOURCE_NOT_RESET));
+    EXPECT_TRUE(davidV121Platform.FeatureIsSupport(PLATFORM_TASK_PMU_RESOURCE_NOT_RESET));
+}
+
 TEST_F(PLATFORM_UTEST, DavidLitePlatformKeepsDavidFeaturesAndLimitsDieChannels)
 {
     DavidLitePlatform davidLitePlatform;

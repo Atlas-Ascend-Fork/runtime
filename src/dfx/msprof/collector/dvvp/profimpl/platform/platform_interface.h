@@ -152,16 +152,17 @@ enum PlatformFeature {
     PLATFORM_API_STATS,
     PLATFORM_AICPU_SAMPLE_PERIOD,
     // 平台能力扩展特性：蓝区平台类按能力置位，扩展平台（module ext）由扩展侧置位
-    PLATFORM_TASK_BLOCK_ON,              // task-block支持'on'取值
-    PLATFORM_AICORE_EVENT_FROM_ZERO,     // aicore pmu event最小值为0
-    PLATFORM_ADPROF,                     // 支持adprof采集
-    PLATFORM_AIV_INDEPENDENT_CONFIG,     // aiv参数独立配置(aiv-mode/aiv-metrics/默认值)
-    PLATFORM_AICORE_EXCT_DEFAULT,        // 默认aicore metrics为PipeUtilizationExct
-    PLATFORM_TASK_L2CACHE_ENUM,          // aicoreMetrics支持L2Cache枚举值
-    PLATFORM_SYS_DEVICE_LLC_EXT,         // 扩展平台LLC驱动支持
-    PLATFORM_SYS_DEVICE_SIO_PA,          // sys-interconnection覆盖SIO和PA
-    PLATFORM_SYS_DEVICE_INTERCONNECTION, // 提供sys-interconnection采集能力
+    PLATFORM_TASK_BLOCK_ON,               // task-block支持'on'取值
+    PLATFORM_AICORE_EVENT_FROM_ZERO,      // aicore pmu event最小值为0
+    PLATFORM_ADPROF,                      // 支持adprof采集
+    PLATFORM_AIV_INDEPENDENT_CONFIG,      // aiv参数独立配置(aiv-mode/aiv-metrics/默认值)
+    PLATFORM_AICORE_EXCT_DEFAULT,         // 默认aicore metrics为PipeUtilizationExct
+    PLATFORM_TASK_L2CACHE_ENUM,           // aicoreMetrics支持L2Cache枚举值
+    PLATFORM_SYS_DEVICE_LLC_EXT,          // 扩展平台LLC驱动支持
+    PLATFORM_SYS_DEVICE_SIO_PA,           // sys-interconnection覆盖SIO和PA
+    PLATFORM_SYS_DEVICE_INTERCONNECTION,  // 提供sys-interconnection采集能力
     PLATFORM_STARS_F_DIE,
+    PLATFORM_TASK_PMU_RESOURCE_NOT_RESET, // task based PMU资源未复位错误码
     // MAX
     PLATFORM_COLLECTOR_TYPES_MAX
 };
