@@ -197,6 +197,19 @@ TEST_F(UTEST_ACL_Capability, aclGetDeviceCapability_Fail_DeviceIdOutOfRange)
     EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
 }
 
+TEST_F(UTEST_ACL_Capability, aclGetDeviceCapability_Fail_NoAvailableDevice)
+{
+    aclDeviceInfo infoType = ACL_DEVICE_INFO_AI_CORE_NUM;
+    int64_t value;
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtGetDeviceCount(_))
+        .WillOnce(DoAll(SetArgPointee<0>(0), Return(RT_ERROR_NONE)));
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), GetPlatformResWithLock(_, _, _))
+        .WillRepeatedly(Invoke(MockGetPlatformResWithLock));
+
+    const aclError ret = aclGetDeviceCapability(0U, infoType, &value);
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+}
+
 TEST_F(UTEST_ACL_Capability, aclGetDeviceCapability_Fail_GetPlatformInfoError)
 {
     EXPECT_CALL(MockFunctionTest::aclStubInstance(), InitializePlatformInfo())

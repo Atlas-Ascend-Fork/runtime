@@ -1363,11 +1363,11 @@ aclError aclGetDeviceCapabilityImpl(uint32_t deviceId, aclDeviceInfo deviceInfo,
     int32_t count = -1;
     ACL_REQUIRES_RTS_OK(rtGetDeviceCount(&count));
     // currently check only, deviceId with [0, count - 1]
-    if (deviceId > static_cast<uint32_t>(count - 1)) {
-        ACL_LOG_ERROR("%s failed because deviceId %u greater than deviceNum %d.", __func__, deviceId, count);
+    if (count <= 0 || deviceId >= static_cast<uint32_t>(count)) {
+        ACL_LOG_ERROR("%s failed because deviceId %u is out of range for deviceNum %d.", __func__, deviceId, count);
         const std::string deviceIdVal = std::to_string(deviceId);
         std::string errMsg =
-            acl::AclErrorLogManager::FormatStr("deviceId %u greater than deviceNum %d", deviceId, count);
+            acl::AclErrorLogManager::FormatStr("deviceId %u out of range for deviceNum %d", deviceId, count);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
