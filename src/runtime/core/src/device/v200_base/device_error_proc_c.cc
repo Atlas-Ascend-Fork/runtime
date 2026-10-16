@@ -1025,9 +1025,9 @@ rtError_t ProcRingBufferTaskDavid(
         error, "Failed to check stream, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     uint32_t pos = 0xFFFFU;
     Stream* dstStm = stm;
-    std::function<void()> const errRecycle = [&tsk, &dstStm, &pos, &stm]() {
+    std::function<void()> const errRecycle = [&tsk, &stm, &pos]() {
         TaskUnInitProc(tsk);
-        TaskRollBack(dstStm, pos);
+        TaskRollBack(stm, pos);
         stm->StreamUnLock();
     };
     stm->StreamLock();
