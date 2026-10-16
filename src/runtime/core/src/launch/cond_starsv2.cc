@@ -247,7 +247,7 @@ rtError_t SubmitCaptureConditionTask(CondHandle* condHandle, Stream* const stm)
         error,
         "Capture condition task init failed, model_id=%u, stream_id=%d, task_id=%u, condtype=%s, condsize=%u, "
         "retCode=%#x.",
-        stm->Model_()->Id_(), streamId, pos, CondTaskTypeToString(condHandle->GetCondType()).c_str(),
+        condHandle->GetParentModel()->Id_(), streamId, pos, CondTaskTypeToString(condHandle->GetCondType()).c_str(),
         condHandle->GetCondSize(), error);
 
     error = DavidSendTask(condTask, dstStm);
@@ -297,7 +297,7 @@ rtError_t StreamAddCondTask(CondHandle* condHandle, rtCondTaskParams params, Str
         "Failed to submit capture condition task, model_id=%u, stream_id=%d, condition type=%s, "
         "condition size=%u, "
         "retCode=%#x.",
-        stm->Model_()->Id_(), stm->Id_(), CondTaskTypeToString(params.type).c_str(), params.size,
+        condHandle->GetParentModel()->Id_(), stm->Id_(), CondTaskTypeToString(params.type).c_str(), params.size,
         static_cast<uint32_t>(error));
 
     subModelErrRecycle.ReleaseGuard();

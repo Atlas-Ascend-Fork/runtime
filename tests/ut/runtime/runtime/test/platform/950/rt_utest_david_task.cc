@@ -85,6 +85,7 @@
 #include "model_to_aicpu_task.h"
 #include "capture_model.hpp"
 #include "cond_handle/cond_handle.hpp"
+#include "aclgraph_cond_task.h"
 #include "runtime/rt_inner_model.h"
 #include "capture_model_utils.hpp"
 #include "aic_aiv_sqe_common.hpp"
@@ -174,6 +175,15 @@ static void* NothrowNewFail(size_t size, const std::nothrow_t& tag)
 
 namespace {
 std::vector<RtDebugSendInfo> g_davidDebugRequests;
+uint32_t g_hostMemFreeCount = 0U;
+
+rtError_t CountHostMemFree(Driver* const driver, void* const hostAddr)
+{
+    UNUSED(driver);
+    UNUSED(hostAddr);
+    ++g_hostMemFreeCount;
+    return RT_ERROR_NONE;
+}
 
 struct UbMemcpyCall {
     void* dst;
@@ -2361,6 +2371,48 @@ TEST_F(TaskTestDavid, SubmitUpdateDavidKernelTask)
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
+TEST_F(TaskTestDavid, SubmitUpdateDavidKernelTaskSendFailFreesHostMemoryOnce)
+{
+    RefreshTaskFuncPointer(CHIP_DAVID);
+    ASSERT_EQ(g_taskUnInitFunc[TS_TASK_TYPE_MEMCPY], &StarsV2MemcpyAsyncTaskUnInit);
+    rtStream_t stream = 0;
+    rtError_t error = rtStreamCreate(&stream, 0);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    Stream* const stm = rt_ut::UnwrapOrNull<Stream>(stream);
+    TaskResManageDavid* const taskResMng = static_cast<TaskResManageDavid*>(stm->taskResMang_);
+    TaskInfo* updateTask = nullptr;
+    uint32_t pos = UINT32_MAX;
+    error = taskResMng->AllocTaskInfoAndPos(2U, pos, &updateTask);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+
+    rtFunsionTaskInfo_t fusionInfo = {};
+    updateTask->stream = stm;
+    updateTask->u.fusionKernelTask.sqeLen = 2U;
+    updateTask->u.fusionKernelTask.fusionKernelInfo = static_cast<void*>(&fusionInfo);
+    updateTask->type = TS_TASK_TYPE_FUSION_KERNEL;
+
+    uint8_t hostMemory[256U] = {};
+    void* hostAddr = hostMemory;
+    Driver* const driver = stm->Device_()->Driver_();
+    g_hostMemFreeCount = 0U;
+    MOCKER_CPP_VIRTUAL(driver, &Driver::HostMemAlloc)
+        .stubs()
+        .with(outBoundP(&hostAddr, sizeof(hostAddr)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::MemCopySync).stubs().will(invoke(MemCopySyncCopyStub));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::HostMemFree).stubs().will(invoke(CountHostMemFree));
+    MOCKER(DavidSendTask).stubs().will(returnValue(RT_ERROR_DRV_ERR));
+
+    error = UpdateDavidKernelTaskSubmit(updateTask, stm, 2U);
+    EXPECT_EQ(error, RT_ERROR_DRV_ERR);
+    EXPECT_EQ(g_hostMemFreeCount, 1U);
+
+    taskResMng->ResetTaskRes();
+    taskResMng->ReleaseTaskResource(stm);
+    error = rtStreamDestroy(stream);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+}
+
 TEST_F(TaskTestDavid, test_recycle_thread_do_for_david_non_null_device)
 {
     Context* const curCtx = Runtime::Instance()->CurrentContext();
@@ -3369,6 +3421,42 @@ TEST_F(DavidCondHandleTest, CondHandleIfE2E)
     EXPECT_EQ(ret, RT_ERROR_NONE);
     ret = rtCtxDestroy(ctx);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+}
+
+TEST_F(DavidCondHandleTest, SubmitCaptureConditionTaskInitFailedWithOriginalCaptureStream)
+{
+    rtContext_t ctx = nullptr;
+    ASSERT_EQ(rtCtxCreate(&ctx, 0, 0), RT_ERROR_NONE);
+
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    ASSERT_EQ(rtStreamBeginCapture(stream, RT_STREAM_CAPTURE_MODE_GLOBAL), RT_ERROR_NONE);
+
+    rtStreamCaptureStatus status = RT_STREAM_CAPTURE_STATUS_NONE;
+    rtModel_t parentModel = nullptr;
+    ASSERT_EQ(rtStreamGetCaptureInfo(stream, &status, &parentModel), RT_ERROR_NONE);
+
+    Stream* const originalStream = rt_ut::UnwrapOrNull<Stream>(stream);
+    Model* const parentModelObj = rt_ut::UnwrapOrNull<Model>(parentModel);
+    ASSERT_NE(originalStream, nullptr);
+    ASSERT_NE(parentModelObj, nullptr);
+    ASSERT_EQ(originalStream->Model_(), nullptr);
+    ASSERT_NE(originalStream->GetCaptureStream(), nullptr);
+    ASSERT_EQ(originalStream->GetCaptureStream()->Model_(), parentModelObj);
+
+    auto* const condHandle = new CondHandle(parentModelObj, 0U, static_cast<rtCondHandleFlag_t>(0));
+    condHandle->SetCondType(RT_COND_TASK_TYPE_IF);
+    condHandle->SetCondSize(1U);
+    MOCKER(CaptureConditionTaskInit).expects(once()).will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
+
+    EXPECT_EQ(SubmitCaptureConditionTask(condHandle, originalStream), RT_ERROR_MEMORY_ALLOCATION);
+
+    delete condHandle;
+    rtModel_t capturedModel = nullptr;
+    EXPECT_EQ(rtStreamEndCapture(stream, &capturedModel), RT_ERROR_NONE);
+    EXPECT_EQ(rtModelDestroy(capturedModel), RT_ERROR_NONE);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+    EXPECT_EQ(rtCtxDestroy(ctx), RT_ERROR_NONE);
 }
 
 TEST_F(DavidCondHandleTest, CondHandleIfSizeOneE2E)

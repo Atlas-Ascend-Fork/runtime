@@ -211,15 +211,6 @@ static rtError_t UpdateDavidKernelPrepare(TaskInfo* const updateTask, void** con
     return RT_ERROR_NONE;
 }
 
-void FreeTempHostAddr(const Stream* const stm, void* const hostAddr)
-{
-    if ((unlikely(stm == nullptr)) || (unlikely(hostAddr == nullptr))) {
-        return;
-    }
-
-    stm->Device_()->Driver_()->HostMemFree(hostAddr);
-}
-
 rtError_t UpdateDavidKernelTaskSubmit(TaskInfo* const updateTask, Stream* const stm, uint32_t sqeLen)
 {
     void* srcHostAddr = nullptr;
@@ -233,10 +224,9 @@ rtError_t UpdateDavidKernelTaskSubmit(TaskInfo* const updateTask, Stream* const 
 
     TaskInfo* rtMemcpyAsyncTask = nullptr;
     uint32_t pos = 0xFFFFU;
-    std::function<void()> const errRecycle = [&rtMemcpyAsyncTask, &stm, &pos, &srcHostAddr]() {
+    std::function<void()> const errRecycle = [&rtMemcpyAsyncTask, &stm, &pos]() {
         TaskUnInitProc(rtMemcpyAsyncTask);
         TaskRollBack(stm, pos);
-        FreeTempHostAddr(stm, srcHostAddr);
     };
 
     // 申请memcpyAsync task
