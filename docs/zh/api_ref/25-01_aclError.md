@@ -277,7 +277,7 @@ typedef int aclError;
 | uint32_t ACL_ERROR_GE_DATATYPE_INVALID = 145022; | 无效的数据类型。 | 请检查Tensor数据的数据类型是否有效。 |
 | uint32_t ACL_ERROR_GE_MEMORY_ALLOCATION = 245000; | 申请内存失败。 | 请检查硬件环境上的内存剩余情况。 |
 | uint32_t ACL_ERROR_GE_MEMORY_OPERATE_FAILED = 245001; | 内存初始化、内存复制操作失败。 | 请检查内存地址是否正确、硬件环境上的内存是否足够等。 |
-| uint32_t ACL_ERROR_GE_DEVICE_MEMORY_ALLOCATION_FAILED = 245002; | 申请Device内存失败。 | Device内存已用完，无法继续申请，请释放部分Device内存，再重新尝试。 |
+| uint32_t ACL_ERROR_GE_DEVICE_MEMORY_OPERATE_FAILED = 245002; | Device内存操作失败。 | 请检查Device内存操作的地址、大小及操作类型是否有效。 |
 | uint32_t  ACL_ERROR_GE_SUBHEALTHY = 345102; | 亚健康状态。 | 设备或进程异常触发的重部署动作完成后的状态为亚健康状态，亚健康状态下可以正常调用相关接口。 |
 | static const uint32_t ACL_ERROR_GE_USER_RAISE_EXCEPTION = 345103; | 用户自定义函数主动抛异常。 | 用户可根据DataFlowInfo中设置的UserData识别出来哪个输入的数据执行报错了，再根据报错排查问题。 |
 | static const uint32_t ACL_ERROR_GE_DATA_NOT_ALIGNED = 345104; | 数据未对齐。 | 若用户自定义函数存在多个输出时，需排查用户代码中是否少设置输出，缺少输出可能会导致数据对齐异常。 |
