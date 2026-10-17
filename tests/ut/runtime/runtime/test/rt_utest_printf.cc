@@ -954,6 +954,16 @@ static rtError_t CreateAicpuPrintfThreadStub()
     return RT_ERROR_NONE;
 }
 
+static std::vector<int32_t> g_aicpuDfxSyncTimeouts;
+
+static rtError_t RecordAicpuDfxSyncTimeout(Stream* stream, const bool isNeedWaitSyncCq, const int32_t timeout)
+{
+    (void)stream;
+    (void)isNeedWaitSyncCq;
+    g_aicpuDfxSyncTimeouts.push_back(timeout);
+    return (g_aicpuDfxSyncTimeouts.size() == 1U) ? RT_ERROR_NONE : RT_ERROR_STREAM_SYNC_TIMEOUT;
+}
+
 TEST_F(PrintfTest, InitPrintInfoDevMemAllocUsesRuntimeModuleId)
 {
     EXPECT_EQ(rtSetDevice(0), RT_ERROR_NONE);
@@ -1144,7 +1154,38 @@ TEST_F(PrintfTest, TestProcAicpuPrintfDfx_LaunchCpuKernelFail)
     rtDeviceReset(0);
 }
 
-TEST_F(PrintfTest, TestProcAicpuPrintfDfx_StreamSyncTimeout)
+TEST_F(PrintfTest, TestProcAicpuPrintfDfx_StreamSyncTimeoutRetainsTaskMemory)
+{
+    rtError_t rtError = rtSetDevice(0);
+    EXPECT_EQ(rtError, RT_ERROR_NONE);
+    RawDevice* dev = (RawDevice*)((Runtime*)Runtime::Instance())->GetDevice(0U, 0U);
+    ASSERT_NE(dev, nullptr);
+
+    PlainProgram* prog = CreateAicpuPrintfProgram(dev);
+    ASSERT_NE(prog, nullptr);
+
+    SetupProcCpuKernelH2DMemCommonMocks(dev);
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
+    g_aicpuDfxSyncTimeouts.clear();
+    MOCKER_CPP_VIRTUAL(dev->primaryStream_, &Stream::Synchronize).stubs().will(invoke(RecordAicpuDfxSyncTimeout));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).expects(exactly(3)).will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP(&Engine::CreatePrintfThread).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(StreamLaunchCpuKernel).stubs().will(returnValue(RT_ERROR_NONE));
+    rtError = prog->ProcCpuKernelH2DMem(true, dev);
+    EXPECT_EQ(rtError, RT_ERROR_NONE);
+    EXPECT_EQ(dev->aicpuDfxSent_, false);
+    ASSERT_EQ(g_aicpuDfxSyncTimeouts.size(), 2U);
+    EXPECT_EQ(g_aicpuDfxSyncTimeouts[0], -1);
+    EXPECT_EQ(g_aicpuDfxSyncTimeouts[1], 1091 * 1000);
+
+    GlobalMockObject::verify();
+    cmodelDrvMemcpy_flag = 0;
+    dev->aicpuDfxSent_ = false;
+    delete prog;
+    rtDeviceReset(0);
+}
+
+TEST_F(PrintfTest, TestProcAicpuPrintfDfx_StreamSyncErrorRetainsTaskMemory)
 {
     rtError_t rtError = rtSetDevice(0);
     EXPECT_EQ(rtError, RT_ERROR_NONE);
@@ -1159,8 +1200,8 @@ TEST_F(PrintfTest, TestProcAicpuPrintfDfx_StreamSyncTimeout)
     MOCKER_CPP_VIRTUAL(dev->primaryStream_, &Stream::Synchronize)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
-        .then(returnValue(RT_ERROR_STREAM_SYNC_TIMEOUT));
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).expects(exactly(5)).will(returnValue(RT_ERROR_NONE));
+        .then(returnValue(RT_ERROR_INVALID_VALUE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).expects(exactly(3)).will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&Engine::CreatePrintfThread).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER(StreamLaunchCpuKernel).stubs().will(returnValue(RT_ERROR_NONE));
     rtError = prog->ProcCpuKernelH2DMem(true, dev);

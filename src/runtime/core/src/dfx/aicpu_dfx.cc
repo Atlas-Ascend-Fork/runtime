@@ -20,6 +20,10 @@
 
 namespace cce {
 namespace runtime {
+namespace {
+constexpr int32_t AICPU_DFX_SYNC_TIMEOUT_MS = 1091 * 1000;
+}
+
 rtError_t SetupAicpuPrintfDfx(Device* device, uint32_t devId)
 {
     NULL_PTR_RETURN(device, RT_ERROR_DEVICE_NULL);
@@ -102,10 +106,9 @@ rtError_t SetupAicpuPrintfDfx(Device* device, uint32_t devId)
         return ret;
     }
 
-    ret = ctrlStm->Synchronize(false, 10000);
+    ret = ctrlStm->Synchronize(false, AICPU_DFX_SYNC_TIMEOUT_MS);
     if (ret != RT_ERROR_NONE) {
-        (void)device->Driver_()->DevMemFree(devDfxMem, devId);
-        (void)device->Driver_()->DevMemFree(devDfxArgs, devId);
+        // retain dfx memory because the submitted task may still access it later
         RT_LOG(RT_LOG_WARNING, "SetAicpuDfx sync failed! error=%#x", ret);
         return ret;
     }
