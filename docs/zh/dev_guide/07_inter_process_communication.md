@@ -91,7 +91,7 @@
     writeFile("file/ipc_event", handle, ACL_IPC_EVENT_HANDLE_SIZE);
 
     // 下发record任务
-    aclrtEventRecord(event, stream);
+    aclrtRecordEvent(event, stream);
 
     // Event使用完, 销毁共享Event
     aclrtDestroyEvent(event);
