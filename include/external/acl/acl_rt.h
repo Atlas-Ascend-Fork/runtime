@@ -3121,7 +3121,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t* free, si
  * @param deviceId [IN]             the deviceId to be queried.
  * @param memUsageInfo [IN/OUT]     the memUsageInfo used to store memory usage information.
  * @param inputNum [IN]             the number of components that are expected to be queried.
- * @param outputNum [IN/OUT]        the actual number of components queried.
+ * @param outputNum [OUT]           the actual number of components queried.
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
