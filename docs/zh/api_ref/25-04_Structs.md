@@ -796,7 +796,7 @@ typedef struct {
 
 | 成员名称 | 描述 |
 | --- | --- |
-| allocationType | 内存分配类型。类型定义请参见[aclrtMemAllocationType](25-02_Enumerations.md#aclrtMemAllocationType)。<br>当前仅支持ACL_MEM_ALLOCATION_TYPE_PINNED，表示锁页内存。 |
+| allocType | 内存分配类型。类型定义请参见[aclrtMemAllocationType](25-02_Enumerations.md#aclrtMemAllocationType)。<br>当前仅支持ACL_MEM_ALLOCATION_TYPE_PINNED，表示锁页内存。 |
 | handleType | handle类型。类型定义请参见[aclrtMemHandleType](25-02_Enumerations.md#aclrtMemHandleType)。 |
 | location | 内存所在位置。类型定义请参见[aclrtMemLocation](#aclrtMemLocation)。<br>type当前仅支持设置为ACL_MEM_LOCATION_TYPE_DEVICE。 |
 | maxSize | 内存池大小，单位Byte。 |
