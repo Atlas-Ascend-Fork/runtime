@@ -1085,7 +1085,7 @@ void DirectHwtsEngine::ProcAicpuErrMsgReport(const rtLogicReport_t& logic) const
     // add for helper error aic or aiv
     const std::string kernelNameStr = GetKernelNameForAiCoreorAiv(exceptionInfo.streamid, exceptionInfo.taskid);
     RT_LOG_INNER_MSG(
-        RT_LOG_ERROR, "aicpu model retCode=%#x,[%s], task_id=%u, stream_id=%u, kernel_name=%s.",
+        RT_LOG_ERROR, "aicpu model retCode=%#x, retDes=%s, task_id=%u, stream_id=%u, kernel_name=%s.",
         static_cast<uint32_t>(rtErrCode), retDes, exceptionInfo.taskid, exceptionInfo.streamid, kernelNameStr.c_str());
 
     TaskFailCallBackNotify(&exceptionInfo);

@@ -137,7 +137,7 @@ rtError_t LaunchModelSerialSchedTaskByType(Stream* const stm, const tsTaskType_t
 
     const ModelSerialSchedTaskInitInfo* taskInitInfo = &(iter->second);
     const int32_t streamId = stm->Id_();
-    RT_LOG(RT_LOG_INFO, "[%s], streamId=%d.", taskInitInfo->taskDesc, streamId);
+    RT_LOG(RT_LOG_INFO, "taskDesc=%s, streamId=%d.", taskInitInfo->taskDesc, streamId);
 
     rtError_t error = CheckTaskCanSend(stm);
     ERROR_RETURN_MSG_INNER(
@@ -149,20 +149,20 @@ rtError_t LaunchModelSerialSchedTaskByType(Stream* const stm, const tsTaskType_t
     stm->StreamLock();
     TaskInfo* task = nullptr;
     task = stm->AllocTask(nullptr, TS_TASK_TYPE_RESERVED, error);
-    COND_PROC_RETURN_ERROR_MSG_INNER(task == nullptr, error, stm->StreamUnLock();
-                                     , "streamId=%d alloc [%s] failed, retCode=%#x.", streamId, taskInitInfo->taskDesc,
-                                     static_cast<uint32_t>(error));
+    COND_PROC_RETURN_ERROR_MSG_INNER(
+        task == nullptr, error, stm->StreamUnLock(), "streamId=%d alloc taskDesc=%s failed, retCode=%#x.", streamId,
+        taskInitInfo->taskDesc, static_cast<uint32_t>(error));
     pos = task->id;
     dstStm = task->stream;
 
     error = taskInitInfo->taskInitFunc(task, param);
     ERROR_PROC_RETURN_MSG_INNER(
-        error, RollbackAndRecycle(task, dstStm, pos), "[%s] init failed, streamId=%d, retCode=%#x.",
+        error, RollbackAndRecycle(task, dstStm, pos), "taskDesc=%s init failed, streamId=%d, retCode=%#x.",
         taskInitInfo->taskDesc, streamId, static_cast<uint32_t>(error));
 
     error = DavidSendTask(task, dstStm);
     ERROR_PROC_RETURN_MSG_INNER(
-        error, RollbackAndRecycle(task, dstStm, pos), "[%s] submit failed, streamId=%d, retCode=%#x.",
+        error, RollbackAndRecycle(task, dstStm, pos), "taskDesc=%s submit failed, streamId=%d, retCode=%#x.",
         taskInitInfo->taskDesc, streamId, static_cast<uint32_t>(error));
     stm->StreamUnLock();
 
