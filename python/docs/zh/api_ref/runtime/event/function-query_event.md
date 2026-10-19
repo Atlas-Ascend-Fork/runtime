@@ -52,5 +52,5 @@
 
 | 返回值 | 说明 |
 | --- | --- |
-| status | int，表示的是Event状态的指针地址。<br>**ACL_EVENT_RECORDED_STATUS_NOT_READY = 0**，Event未被记录到Stream中，或记录到Stream中的Event未被执行或执行失败。<br>**ACL_EVENT_RECORDED_STATUS_COMPLETE = 1**，记录到Stream中的Event执行成功。 |
+| status | int，表示的是Event状态的指针地址。<br>**ACL_EVENT_STATUS_COMPLETE = 0**，记录到Stream中的Event执行成功。<br>**ACL_EVENT_STATUS_NOT_READY = 1**，Event未被记录到Stream中，或记录到Stream中的Event未被执行或执行失败。 |
 | ret | int，错误码，返回0表示成功，返回[其它值](../datatypes/aclError.md)表示失败。 |
