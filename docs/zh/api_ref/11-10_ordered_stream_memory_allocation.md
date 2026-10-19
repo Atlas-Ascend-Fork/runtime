@@ -537,7 +537,7 @@ aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 | 参数名  | 输入/输出 | 说明                                                         |
 | ------- | :-------: | ------------------------------------------------------------ |
 | ptr     |   输入    | 指向待释放内存地址的指针。                                   |
-| memPool |   输入    | 指定执行内存释放任务的Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。 |
+| stream  |   输入    | 指定执行内存释放任务的Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。 |
 
 ### 返回值说明
 
