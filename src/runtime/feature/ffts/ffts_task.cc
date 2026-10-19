@@ -139,7 +139,8 @@ rtError_t CheckFftsPlusDsaContext(const void* const descBuf, const uint64_t desc
             contextBuf + (static_cast<uint64_t>(i) * CONTEXT_LEN));
         COND_RETURN_AND_MSG_OUTER(
             context->contextType == RT_CTX_TYPE_DSA, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1006,
-            "Checking the FFTS Plus task context", "random number generation subtask");
+            "Checking the FFTS Plus task context", "Random number generation subtask",
+            "DSA context type is not supported in FFTS Plus task");
     }
     return RT_ERROR_NONE;
 }
