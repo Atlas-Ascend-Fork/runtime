@@ -11,6 +11,7 @@
 #include "stream_mem_pool.hpp"
 #include "npu_driver.hpp"
 #include <algorithm>
+#include "enum_desc.hpp"
 #include "error_message_manage.hpp"
 
 namespace cce {
@@ -494,7 +495,7 @@ rtError_t SegmentManager::GetAttribute(rtMemPoolAttr attr, void* value)
             *static_cast<uint64_t*>(value) = maxBusySize_;
             break;
         default:
-            RT_LOG(RT_LOG_ERROR, "Invalid attribute.");
+            RT_LOG(RT_LOG_ERROR, "GetAttribute failed, invalid attr=%s.", MemPoolAttrToString(attr).c_str());
             return RT_ERROR_POOL_PROP_INVALID;
     }
     return RT_ERROR_NONE;
@@ -549,7 +550,7 @@ rtError_t SegmentManager::SetAttribute(rtMemPoolAttr attr, const void* value)
             RT_LOG(RT_LOG_DEBUG, "Reset usedMemHigh to 0 successfully.");
             break;
         default:
-            RT_LOG(RT_LOG_ERROR, "Invalid attribute.");
+            RT_LOG(RT_LOG_ERROR, "SetAttribute failed, invalid attr=%s.", MemPoolAttrToString(attr).c_str());
             return RT_ERROR_POOL_PROP_INVALID;
     }
     return RT_ERROR_NONE;

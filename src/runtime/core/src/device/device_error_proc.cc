@@ -577,7 +577,7 @@ rtError_t DeviceErrorProc::ProcessOneElementInRingBuffer(
             RtPtrToPtr<const uint8_t*, const DevRingBufferCtlInfo*>(ctlInfo) + headSize + (head * elementSize);
         const RingBufferElementInfo* const info = RtPtrToPtr<const RingBufferElementInfo*, const uint8_t*>(infoAddr);
 
-        RT_LOG(RT_LOG_INFO, "head info %u, tail info %u.", head, tail);
+        RT_LOG(RT_LOG_DEBUG, "head=%u, tail=%u.", head, tail);
 
         head = (head + 1U) % (ctlInfo->ringBufferLen);
 
@@ -1795,7 +1795,9 @@ rtError_t DeviceErrorProc::ProcessOneElementInRingBufferImpl(
         const RingBufferElementInfo* const elementInfo = GetRingBufferElement(ctlInfo, elementSize, head);
 
         const uint32_t taskType = (taskPtr == nullptr) ? 0xFFU : static_cast<uint32_t>(taskPtr->type);
-        RT_LOG(RT_LOG_INFO, "head info %u, tail info=%u, type=%u.", head, tail, taskType);
+        RT_LOG(
+            RT_LOG_DEBUG, "head=%u, tail=%u, task_type=%s(%u).", head, tail,
+            ((taskPtr != nullptr) && (taskPtr->typeName != nullptr)) ? taskPtr->typeName : "Unknown", taskType);
 
         head = (head + 1U) % (ctlInfo->ringBufferLen);
 
