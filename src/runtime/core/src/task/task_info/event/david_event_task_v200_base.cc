@@ -55,7 +55,7 @@ void DavidEventRecordTaskUnInit(TaskInfo* const taskInfo)
     Stream* const stream = taskInfo->stream;
     DavidEvent* evt = dynamic_cast<DavidEvent*>(eventRecordTaskInfo->event);
     COND_RETURN_NORMAL(evt == nullptr, "event is null, device_id=%u", stream->Device_()->Id_());
-    evt->RecordDavidEventComplete(taskInfo, UINT64_MAX);
+    eventRecordTaskInfo->event->RecordComplete(taskInfo, UINT64_MAX, UINT64_MAX);
     const rtError_t deviceStatus = stream->Device_()->GetDeviceStatus();
     const rtError_t streamAbortStatus = stream->GetAbortStatus();
     if ((deviceStatus == RT_ERROR_DEVICE_TASK_ABORT) || (streamAbortStatus == RT_ERROR_STREAM_ABORT)) {
@@ -92,7 +92,6 @@ void DoCompleteSuccessForDavidEventRecordTask(TaskInfo* const taskInfo, const ui
     UNUSED(devId);
     DavidEventRecordTaskInfo* eventRecordTaskInfo = &(taskInfo->u.davidEventRecordTaskInfo);
     Stream* const stream = taskInfo->stream;
-    DavidEvent* evt = dynamic_cast<DavidEvent*>(eventRecordTaskInfo->event);
     COND_RETURN_VOID(eventRecordTaskInfo->event == nullptr, "event is nullptr");
     if (unlikely(taskInfo->errorCode != static_cast<uint32_t>(RT_ERROR_NONE))) {
         taskInfo->stream->SetErrCode(taskInfo->errorCode);
@@ -102,7 +101,7 @@ void DoCompleteSuccessForDavidEventRecordTask(TaskInfo* const taskInfo, const ui
             GetTsErrCodeDesc(taskInfo->errorCode));
         PrintErrorInfo(taskInfo, devId);
     } else {
-        evt->RecordDavidEventComplete(taskInfo, eventRecordTaskInfo->timestamp);
+        eventRecordTaskInfo->event->RecordComplete(taskInfo, eventRecordTaskInfo->timestamp, UINT64_MAX);
     }
     DavidUpdateAndTryToDestroyEvent(
         taskInfo, &(eventRecordTaskInfo->event), DavidTaskMapType::TASK_MAP_TYPE_RECORD_RESET_MAP);
@@ -147,7 +146,7 @@ static void ConstructDavidSqeForEventRecordTask(TaskInfo* const taskInfo, void* 
     }
 
     evt->InsertRecordResetToMap(taskInfo);
-    DavidRecordTaskInfo latestRecord = {stream->Id_(), static_cast<uint32_t>(taskInfo->id)};
+    const DavidRecordTaskInfo latestRecord = {stream->Id_(), static_cast<uint32_t>(taskInfo->id), 0U};
     evt->UpdateLatestRecord(latestRecord, DavidEventState_t::EVT_NOT_RECORDED, UINT64_MAX);
 
     PrintDavidSqe(davidSqe, "EventRecordTask");

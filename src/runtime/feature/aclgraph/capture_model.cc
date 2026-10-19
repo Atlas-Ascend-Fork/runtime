@@ -44,10 +44,12 @@
 #include "notify_c.hpp"
 #include "event_c.hpp"
 #include <securec.h>
+#include <new>
 #include <algorithm>
 #include <cstring>
 #include "task.hpp"
 #include "stream_launch_blocking.hpp"
+#include "raw_device.hpp"
 
 namespace cce {
 namespace runtime {
@@ -83,18 +85,43 @@ static rtError_t RetainRecordedEventForExternalWait(Event* event, uint64_t* even
     return RT_ERROR_NONE;
 }
 
-static rtError_t InitExternalRecordTask(TaskInfo* taskInfo, const void* const entryAddr)
+static rtError_t InitExternalRecordTask(TaskInfo* taskInfo, Event* event, const void* const entryAddr)
 {
-    const rtError_t ret = WriteValuePtrTaskInit(taskInfo, entryAddr, TASK_WR_CQE_DEFAULT);
+    TaskUpdateInfo* const updateInfo = new (std::nothrow) TaskUpdateInfo{};
+    COND_RETURN_AND_MSG_OUTER(
+        updateInfo == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, sizeof(TaskUpdateInfo), "new");
+    updateInfo->latestParams.isValid = 0U;
+    const TaskWrCqeFlag cqeFlag = event->IsEventWithTimeline() ? TASK_WR_CQE_ALWAYS : TASK_WR_CQE_NEVER;
+    const rtError_t ret = WriteValuePtrTaskInit(taskInfo, event, entryAddr, cqeFlag);
     if (ret != RT_ERROR_NONE) {
+        delete updateInfo;
         return ret;
     }
     taskInfo->typeName = "CAPTURE_RECORD_EXTERNAL";
     taskInfo->type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo->sqeNum = static_cast<uint8_t>(GetSendSqeNum(taskInfo));
+    taskInfo->updateInfo = updateInfo;
     return RT_ERROR_NONE;
 }
 
 CaptureModel::CaptureModel(ModelType type) : Model(type) { beginCaptureTimeStamp_ = MsprofSysCycleTime(); }
+
+void CaptureModel::InsertGraphUpdateTask(TaskInfo* taskInfo) { (void)updateInfo_.updateTask.insert(taskInfo); }
+
+void CaptureModel::ClearGraphUpdateTask() { updateInfo_.updateTask.clear(); }
+// 写到capture_utils 里面
+bool CaptureModel::IsCaptureModelRunningAfterPoll() const
+{
+    if (!IsCaptureModelRunning()) {
+        return false;
+    }
+    RawDevice* const rawDev = dynamic_cast<RawDevice*>(Context_()->Device_());
+    if (rawDev != nullptr) {
+        rawDev->PollEndGraphNotifyInfoByModelId(Id_());
+    }
+    return IsCaptureModelRunning();
+}
+
 CaptureModel::~CaptureModel() noexcept
 {
     Runtime* const rt = Runtime::Instance();
@@ -157,6 +184,13 @@ CaptureModel::~CaptureModel() noexcept
         mgr->FreeLogicSq(sq->Id_());
     }
     logicSqs_.clear();
+
+    if (GetGraphUpdateInfo().hostSqeUpdateAddr != nullptr) {
+        (void)Context_()->Device_()->Driver_()->HostMemFree(GetGraphUpdateInfo().hostSqeUpdateAddr);
+        GetGraphUpdateInfo().hostSqeUpdateAddr = nullptr;
+    }
+    updateInfo_.updateTask.clear();
+    updateInfo_.curApplyUpdateTask.clear();
 }
 
 rtError_t CaptureModel::LoadCompleteByStreamPrep(Stream*& stream)
@@ -464,7 +498,8 @@ rtError_t CaptureModel::CheckExecuteReady(void) const
         return RT_ERROR_MODEL_CAPTURED;
     }
 
-    if (captureModelStatus_ != RtCaptureModelStatus::READY) {
+    if ((captureModelStatus_ != RtCaptureModelStatus::READY) &&
+        (captureModelStatus_ != RtCaptureModelStatus::UPDATING)) {
         RT_LOG_OUTER_MSG_IMPL(
             ErrorCode::EE1017, "Checking whether the capture model is ready", "modelRI",
             RtFmtMsg(
@@ -476,8 +511,10 @@ rtError_t CaptureModel::CheckExecuteReady(void) const
     return RT_ERROR_NONE;
 }
 
-rtError_t CaptureModel::PreModelExecute(Stream* const stm, ExternalEventRefreshInfo* refreshInfo)
+rtError_t CaptureModel::PreModelExecute(
+    Stream* const stm, ExternalEventRefreshInfo* refreshInfo, bool& executeRefAcquired)
 {
+    executeRefAcquired = false;
     rtError_t error = AddPreviousExecutionDependency(stm);
     COND_RETURN_ERROR_MSG_INNER(
         error != RT_ERROR_NONE, error,
@@ -493,12 +530,18 @@ rtError_t CaptureModel::PreModelExecute(Stream* const stm, ExternalEventRefreshI
     COND_RETURN_ERROR_MSG_INNER(
         error != RT_ERROR_NONE, error, "Build SQ/CQ failed, stream_id=%d, model_id=%u, retCode=%#x.", stm->Id_(), Id_(),
         static_cast<uint32_t>(error));
+    executeRefAcquired = IsSoftwareSqEnable();
 
     error = InitAllSubCaptureModelCondTaskByDefValue(stm);
     COND_RETURN_ERROR_MSG_INNER(
         error != RT_ERROR_NONE, error,
         "Failed to initialize sub acl graph condition value, stream_id=%d, model_id=%u, retCode=%#x.", stm->Id_(),
         Id_(), static_cast<uint32_t>(error));
+
+    error = PrepareGraphUpdateProc(stm);
+    COND_RETURN_ERROR_MSG_INNER(
+        error != RT_ERROR_NONE, error, "Prepare graph update failed, stream_id=%d, model_id=%u, retCode=%#x.",
+        stm->Id_(), Id_(), static_cast<uint32_t>(error));
 
     error = PrepareExternalEventRefreshInfo(refreshInfo);
     COND_RETURN_ERROR_MSG_INNER(
@@ -563,7 +606,13 @@ rtError_t CaptureModel::ExecuteCommon(Stream* const stm, int32_t timeout, const 
     }
 
     ExternalEventRefreshInfo refreshInfo = {};
-    error = PreModelExecute(stm, &refreshInfo);
+    bool executeRefAcquired = false;
+    ScopeGuard executeRefGuard([this, &executeRefAcquired]() {
+        if (executeRefAcquired) {
+            CaptureModelExecuteFinish(RT_ERROR_NONE);
+        }
+    });
+    error = PreModelExecute(stm, &refreshInfo, executeRefAcquired);
     if (error != RT_ERROR_NONE) {
         return error;
     }
@@ -571,6 +620,7 @@ rtError_t CaptureModel::ExecuteCommon(Stream* const stm, int32_t timeout, const 
     if (error != RT_ERROR_NONE) {
         return error;
     }
+    executeRefGuard.ReleaseGuard();
     return PostModelExecute(stm, &refreshInfo);
 }
 
@@ -671,10 +721,10 @@ void CaptureModel::FinalizeHostStateOnExit() noexcept
 
 rtError_t CaptureModel::ResetCaptureEvents(Stream* const stm) const { return ResetCaptureEventsProc(this, stm); }
 
-static bool HasExternalEventItem(const std::vector<ExternalEventTaskItem>& items, const Event* const event)
+static bool HasExternalEventItem(
+    const std::map<std::tuple<uint32_t, uint32_t>, Event*>& items, const Event* const event)
 {
-    return std::any_of(
-        items.begin(), items.end(), [event](const ExternalEventTaskItem& item) { return item.event == event; });
+    return std::any_of(items.begin(), items.end(), [event](const auto& item) { return item.second == event; });
 }
 
 rtError_t CaptureModel::CheckExternalEventConstraints(const Event* const event, bool isRecord) const
@@ -709,15 +759,15 @@ rtError_t CaptureModel::CheckExternalEventConstraints(const Event* const event, 
 
 rtError_t CaptureModel::AddExternalRecordEvent(Event* event, uint32_t captureStreamId, uint32_t taskId)
 {
-    ExternalEventTaskItem taskRef = {event, captureStreamId, taskId};
-    externalRecordEventItems_.push_back(taskRef);
+    auto key = std::make_tuple(captureStreamId, taskId);
+    (void)externalRecordEventItems_.emplace(key, event);
     return RT_ERROR_NONE;
 }
 
 rtError_t CaptureModel::AddExternalWaitEvent(Event* event, uint32_t captureStreamId, uint32_t taskId)
 {
-    ExternalEventTaskItem taskRef = {event, captureStreamId, taskId};
-    externalWaitEventItems_.push_back(taskRef);
+    auto key = std::make_tuple(captureStreamId, taskId);
+    (void)externalWaitEventItems_.emplace(key, event);
     return RT_ERROR_NONE;
 }
 
@@ -750,59 +800,65 @@ rtError_t CaptureModel::AllocateExternalRefreshTable()
 rtError_t CaptureModel::BuildActualExternalRecordTasks()
 {
     const uint64_t recordEntrySize = static_cast<uint64_t>(GetExternalRecordRefreshEntrySize());
-    for (size_t i = 0U; i < externalRecordEventItems_.size(); i++) {
-        const ExternalEventTaskItem& taskRef = externalRecordEventItems_[i];
-        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), taskRef.captureStreamId, taskRef.taskId);
+    size_t index = 0U;
+    for (const auto& taskRef : externalRecordEventItems_) {
+        const uint32_t captureStreamId = std::get<0>(taskRef.first);
+        const uint32_t taskId = std::get<1>(taskRef.first);
+        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), captureStreamId, taskId);
         const auto entryAddr = RtValueToPtr<const void*>(
             RtPtrToValue(externalEventRefreshDeviceBase_) + externalEventRefreshLayout_.recordOffset +
-            i * recordEntrySize);
-        const rtError_t error = InitExternalRecordTask(taskInfo, entryAddr);
+            index * recordEntrySize);
+        const rtError_t error = InitExternalRecordTask(taskInfo, taskRef.second, entryAddr);
         if (error != RT_ERROR_NONE) {
             ReleaseExternalRefreshTable();
             ERROR_RETURN(error, "Build actual external record tasks failed, model_id=%u, retCode=%#x.", Id_(), error);
         }
-        taskInfo->u.memWriteValueTask.event = taskRef.event;
+        index++;
     }
     return RT_ERROR_NONE;
 }
 
 rtError_t CaptureModel::BuildActualExternalWaitTasks()
 {
-    for (size_t i = 0U; i < externalWaitEventItems_.size(); i++) {
-        const ExternalEventTaskItem& taskRef = externalWaitEventItems_[i];
-        TaskInfo* taskInfo = GetTaskInfo(Context_()->Device_(), taskRef.captureStreamId, taskRef.taskId);
+    size_t index = 0U;
+    for (const auto& taskRef : externalWaitEventItems_) {
+        const uint32_t captureStreamId = std::get<0>(taskRef.first);
+        const uint32_t taskId = std::get<1>(taskRef.first);
+        TaskInfo* taskInfo = GetTaskInfo(Context_()->Device_(), captureStreamId, taskId);
         const auto entryAddr = RtValueToPtr<const void*>(
             RtPtrToValue(externalEventRefreshDeviceBase_) + externalEventRefreshLayout_.waitOffset +
-            i * EXTERNAL_WAIT_REFRESH_ENTRY_SIZE);
-        const rtError_t error = CaptureWaitExternalTaskInit(taskInfo, entryAddr);
+            index * EXTERNAL_WAIT_REFRESH_ENTRY_SIZE);
+        const rtError_t error = CaptureWaitExternalTaskInit(taskInfo, taskRef.second, entryAddr);
         if (error != RT_ERROR_NONE) {
             ReleaseExternalRefreshTable();
             ERROR_RETURN(error, "Build actual external wait tasks failed, model_id=%u, retCode=%#x.", Id_(), error);
         }
-        taskInfo->u.memWaitValueTask.event = taskRef.event;
+        index++;
     }
     return RT_ERROR_NONE;
 }
 
 rtError_t CaptureModel::RebuildAllExternalTaskSqes() const
 {
-    for (const ExternalEventTaskItem& taskRef : externalRecordEventItems_) {
-        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), taskRef.captureStreamId, taskRef.taskId);
+    for (const auto& taskRef : externalRecordEventItems_) {
+        const uint32_t captureStreamId = std::get<0>(taskRef.first);
+        const uint32_t taskId = std::get<1>(taskRef.first);
+        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), captureStreamId, taskId);
         COND_RETURN_ERROR_MSG_INNER(
             (taskInfo == nullptr) || (taskInfo->type != TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL), RT_ERROR_INVALID_VALUE,
-            "External record task is invalid, model_id=%u, stream_id=%u, task_id=%u.", Id_(), taskRef.captureStreamId,
-            taskRef.taskId);
+            "External record task is invalid, model_id=%u, stream_id=%u, task_id=%u.", Id_(), captureStreamId, taskId);
         const rtError_t error = UpdateHostSqeBufferByTask(taskInfo);
         ERROR_RETURN(
             error, "Failed to rebuild external record SQE, model_id=%u, retCode=%#x.", Id_(),
             static_cast<uint32_t>(error));
     }
-    for (const ExternalEventTaskItem& taskRef : externalWaitEventItems_) {
-        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), taskRef.captureStreamId, taskRef.taskId);
+    for (const auto& taskRef : externalWaitEventItems_) {
+        const uint32_t captureStreamId = std::get<0>(taskRef.first);
+        const uint32_t taskId = std::get<1>(taskRef.first);
+        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), captureStreamId, taskId);
         COND_RETURN_ERROR_MSG_INNER(
             (taskInfo == nullptr) || (taskInfo->type != TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL), RT_ERROR_INVALID_VALUE,
-            "External wait task is invalid, model_id=%u, stream_id=%u, task_id=%u.", Id_(), taskRef.captureStreamId,
-            taskRef.taskId);
+            "External wait task is invalid, model_id=%u, stream_id=%u, task_id=%u.", Id_(), captureStreamId, taskId);
         const rtError_t error = UpdateHostSqeBufferByTask(taskInfo);
         ERROR_RETURN(
             error, "Failed to rebuild external wait SQE, model_id=%u, retCode=%#x.", Id_(),
@@ -848,8 +904,17 @@ rtError_t CaptureModel::PrepareExternalRecordsForReplay(ExternalEventRefreshInfo
     rtError_t error = RT_ERROR_NONE;
     const uint64_t recordEntrySize = static_cast<uint64_t>(GetExternalRecordRefreshEntrySize());
     ScopeGuard rollbackGuard([refreshInfo]() { RollbackExternalEventRefreshInfo(refreshInfo); });
-    for (size_t i = 0U; i < externalRecordEventItems_.size(); i++) {
-        EventResource record = {externalRecordEventItems_[i].event, 0U, INVALID_EVENT_ID};
+    size_t index = 0U;
+    for (const auto& item : externalRecordEventItems_) {
+        const uint32_t streamId = std::get<0>(item.first);
+        const uint32_t taskId = std::get<1>(item.first);
+        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), streamId, taskId);
+        COND_RETURN_ERROR_MSG_INNER(
+            (taskInfo == nullptr) || (taskInfo->updateInfo == nullptr), RT_ERROR_INVALID_VALUE,
+            "External record task is invalid, model_id=%u, stream_id=%u, task_id=%u.", Id_(), streamId, taskId);
+        EventResource record = {item.second,      0U,
+                                INVALID_EVENT_ID, static_cast<int32_t>(streamId),
+                                taskId,           taskInfo->u.writeValTask.expectCqeCnt};
         void* eventAddr = nullptr;
         if ((record.event == nullptr) || (record.event->Device_() == nullptr)) {
             error = RT_ERROR_EVENT_NULL;
@@ -859,16 +924,17 @@ rtError_t CaptureModel::PrepareExternalRecordsForReplay(ExternalEventRefreshInfo
         error = record.event->Device_()->AllocExpandingPoolEvent(&eventAddr, &record.eventId);
         ERROR_RETURN_MSG_INNER(error, "Allocate external record event failed, model_id=%u, retCode=%#x.", Id_(), error);
         record.eventAddr = RtPtrToValue(eventAddr);
+        refreshInfo->preparedRecords.push_back(record);
         void* recordEntry = RtValueToPtr<void*>(
             RtPtrToValue(refreshInfo->hostRefresh.get()) + externalEventRefreshLayout_.recordOffset +
-            i * recordEntrySize);
+            index * recordEntrySize);
         error = FillExternalRecordRefreshEntry(recordEntry, record.eventAddr);
         ERROR_RETURN_MSG_INNER(
             error, "Fill external record refresh entry failed, model_id=%u, retCode=%#x.", Id_(), error);
         RT_LOG(
             RT_LOG_INFO, "Prepare external record, model_id=%u, index=%zu, event_id=%d, event_addr=0x%" PRIx64 ".",
-            Id_(), i, record.eventId, record.eventAddr);
-        refreshInfo->preparedRecords.push_back(record);
+            Id_(), index, record.eventId, record.eventAddr);
+        index++;
     }
     rollbackGuard.ReleaseGuard();
     return RT_ERROR_NONE;
@@ -879,26 +945,28 @@ rtError_t CaptureModel::PrepareExternalWaitsForReplay(ExternalEventRefreshInfo* 
     NULL_PTR_RETURN_MSG(refreshInfo, RT_ERROR_INVALID_VALUE);
     rtError_t error = RT_ERROR_NONE;
     ScopeGuard rollbackGuard([refreshInfo]() { RollbackExternalEventRefreshInfo(refreshInfo); });
-    for (size_t i = 0U; i < externalWaitEventItems_.size(); i++) {
+    size_t index = 0U;
+    for (const auto& item : externalWaitEventItems_) {
         uint64_t eventAddr = 0U;
         EventResource resource = {};
-        if (externalWaitEventItems_[i].event == nullptr) {
+        if (item.second == nullptr) {
             error = RT_ERROR_EVENT_NULL;
             RT_LOG_INNER_MSG(RT_LOG_ERROR, "External wait event is null, model_id=%u.", Id_());
             return error;
         }
-        error = RetainRecordedEventForExternalWait(externalWaitEventItems_[i].event, &eventAddr, &resource);
+        error = RetainRecordedEventForExternalWait(item.second, &eventAddr, &resource);
         ERROR_RETURN_MSG_INNER(error, "Retain external wait producer failed, model_id=%u, retCode=%#x.", Id_(), error);
         uint64_t* waitEntry = RtValueToPtr<uint64_t*>(
             RtPtrToValue(refreshInfo->hostRefresh.get()) + externalEventRefreshLayout_.waitOffset +
-            i * EXTERNAL_WAIT_REFRESH_ENTRY_SIZE);
+            index * EXTERNAL_WAIT_REFRESH_ENTRY_SIZE);
         *waitEntry = eventAddr;
         RT_LOG(
             RT_LOG_INFO, "Prepare external wait, model_id=%u, index=%zu, event_id=%d, event_addr=0x%" PRIx64 ".", Id_(),
-            i, resource.eventId, eventAddr);
+            index, resource.eventId, eventAddr);
         if (resource.event != nullptr) {
             refreshInfo->retainedEventResources.push_back(resource);
         }
+        index++;
     }
     rollbackGuard.ReleaseGuard();
     return RT_ERROR_NONE;
@@ -919,6 +987,222 @@ rtError_t CaptureModel::PrepareExternalEventRefreshInfo(ExternalEventRefreshInfo
     error = PrepareExternalWaitsForReplay(refreshInfo);
     ERROR_RETURN(error, "Prepare external refresh waits failed, model_id=%u, retCode=%#x.", Id_(), error);
     return RT_ERROR_NONE;
+}
+
+rtError_t CaptureModel::UpdateExternalRecordEventItems(uint32_t& updateSqeNum)
+{
+    std::map<std::tuple<uint32_t, uint32_t>, Event*> updatedEventItems;
+    uint32_t pendingUpdateSqeNum = 0U;
+    for (const auto& taskInfo : updateInfo_.updateTask) {
+        COND_RETURN_AND_MSG_OUTER(
+            taskInfo->type != TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL, RT_ERROR_MODEL_EXE_FAILED, ErrorCode::EE1017,
+            "Updating task parameters", "modelRI",
+            RtFmtMsg(
+                "ModelRI (model_id=%u) contains non-external event record tasks that cannot be updated."
+                " Please try calling aclmdlRIUpdate first",
+                Id_()));
+
+        const auto key =
+            std::make_tuple(static_cast<uint32_t>(taskInfo->stream->Id_()), static_cast<uint32_t>(taskInfo->id));
+        const auto eventItem = externalRecordEventItems_.find(key);
+        COND_RETURN_ERROR(
+            (eventItem == externalRecordEventItems_.end()), RT_ERROR_INVALID_VALUE,
+            "task is not match, model_id=%u, stream_id=%d, task_id=%hu.", Id_(), taskInfo->stream->Id_(), taskInfo->id);
+        NULL_PTR_RETURN_MSG(taskInfo->updateInfo, RT_ERROR_INVALID_VALUE);
+        Event* const newEvent = taskInfo->updateInfo->latestParams.u.eventRecordUpdateParams.event;
+        NULL_PTR_RETURN_MSG(newEvent, RT_ERROR_INVALID_VALUE);
+        (void)updatedEventItems.emplace(key, newEvent);
+
+        const TaskWrCqeFlag lastCqeFlag = taskInfo->u.writeValTask.cqeFlag;
+        const TaskWrCqeFlag newCqeFlag = newEvent->IsEventWithTimeline() ? TASK_WR_CQE_ALWAYS : TASK_WR_CQE_NEVER;
+        if (lastCqeFlag != newCqeFlag) {
+            pendingUpdateSqeNum += GetSendSqeNum(taskInfo);
+        }
+    }
+
+    std::unordered_set<Event*> usedEvents;
+    usedEvents.reserve(externalRecordEventItems_.size() + externalWaitEventItems_.size());
+    for (const auto& eventItem : externalRecordEventItems_) {
+        const auto updatedEventItem = updatedEventItems.find(eventItem.first);
+        Event* const finalEvent =
+            (updatedEventItem == updatedEventItems.end()) ? eventItem.second : updatedEventItem->second;
+        NULL_PTR_RETURN_MSG(finalEvent, RT_ERROR_INVALID_VALUE);
+        const auto insertResult = usedEvents.insert(finalEvent);
+        COND_RETURN_AND_MSG_OUTER(
+            !insertResult.second, RT_ERROR_MODEL_EXE_FAILED, ErrorCode::EE1017, "Updating an external event", "modelRI",
+            RtFmtMsg(
+                "The same event cannot be used by multiple external record or wait tasks in the same"
+                " modelRI (model_id=%u). Use a different event for each external task",
+                Id_()));
+    }
+    for (const auto& eventItem : externalWaitEventItems_) {
+        NULL_PTR_RETURN_MSG(eventItem.second, RT_ERROR_EVENT_NULL);
+        const auto insertResult = usedEvents.insert(eventItem.second);
+        COND_RETURN_AND_MSG_OUTER(
+            !insertResult.second, RT_ERROR_MODEL_EXE_FAILED, ErrorCode::EE1017, "Updating an external event", "modelRI",
+            RtFmtMsg(
+                "The same event cannot be used by multiple external record or wait tasks in the same"
+                " modelRI (model_id=%u). Use a different event for each external task",
+                Id_()));
+    }
+
+    for (const auto& updatedEventItem : updatedEventItems) {
+        externalRecordEventItems_.find(updatedEventItem.first)->second = updatedEventItem.second;
+    }
+
+    updateSqeNum = pendingUpdateSqeNum;
+    SwapUpdateTask();
+    return RT_ERROR_NONE;
+}
+
+void CaptureModel::SwapUpdateTask()
+{
+    updateInfo_.curApplyUpdateTask.clear();
+    updateInfo_.curApplyUpdateTask.swap(updateInfo_.updateTask);
+
+    return;
+}
+
+rtError_t CaptureModel::PrepareExternalRecordTaskUpdateInfo(
+    void* hostSqeUpdateAddrBase, const uint64_t sqeTotalSize, std::vector<void*>& dsts, std::vector<void*>& srcs,
+    std::vector<size_t>& sizes, uint16_t& count)
+{
+    GraphUpdateInfo& updateInfo = GetGraphUpdateInfo();
+    uint64_t offset = 0U;
+    updateInfo.isCurExecuteNeedCqe = 0;
+    for (const auto& taskRef : externalRecordEventItems_) {
+        Event* event = taskRef.second;
+        const uint32_t streamId = std::get<0>(taskRef.first);
+        const uint32_t taskId = std::get<1>(taskRef.first);
+        TaskInfo* const taskInfo = GetTaskInfo(Context_()->Device_(), streamId, taskId);
+        COND_PROC((taskInfo == nullptr), return RT_ERROR_INVALID_VALUE;);
+        const TaskWrCqeFlag lastCqeFlag = taskInfo->u.writeValTask.cqeFlag;
+        TaskWrCqeFlag newCqeFlag = TASK_WR_CQE_NEVER;
+        uint64_t expectCqeNo = 0U;
+
+        if (event->IsEventWithTimeline()) {
+            taskInfo->u.writeValTask.expectCqeCnt++;
+            updateInfo.totalNeedCqeCnt++;
+            taskInfo->stream->AddCqePendingCnt();
+            expectCqeNo = taskInfo->u.writeValTask.expectCqeCnt;
+            newCqeFlag = TASK_WR_CQE_ALWAYS;
+            updateInfo.isCurExecuteNeedCqe = 1U;
+        }
+
+        taskInfo->u.writeValTask.cqeFlag = newCqeFlag;
+
+        if (lastCqeFlag != newCqeFlag) {
+            const size_t copySize = sizeof(rtStarsSqe_t) * static_cast<size_t>(GetSendSqeNum(taskInfo));
+            COND_RETURN_ERROR(
+                ((offset + copySize) > sqeTotalSize), RT_ERROR_INVALID_VALUE,
+                "offset is invalid, model_id=%u, offset=%lu, sqeTotalSize=%lu.", Id_(), offset, sqeTotalSize);
+            void* const hostAddr = RtPtrToPtr<void*>(RtPtrToPtr<uint8_t*>(hostSqeUpdateAddrBase) + offset);
+            const rtError_t error = UpdateHostSqeBufferAndCopySqeByTask(taskInfo, hostAddr);
+            COND_PROC((error != RT_ERROR_NONE), return error;);
+
+            srcs.push_back(hostAddr);
+            dsts.push_back(taskInfo->stream->GetDeviceSqeAddrByPos(taskInfo->pos));
+            sizes.push_back(copySize);
+
+            offset += static_cast<uint64_t>(copySize);
+            count++;
+        }
+
+        TaskUpdateItem updateItem = {};
+        updateItem.launchNo = updateInfo.launchCnt + 1U;
+        updateItem.u.eventRecordInfo.event = event;
+        updateItem.u.eventRecordInfo.expectCqeNo = expectCqeNo;
+        /**
+         * event发生改变，flag没变，不带time， 需要刷新event指针 ，所以要入queue
+         * event发生改变，flag改变，不带timeline 到 带timeline，肯定要入queue
+         * event发生改变，flag改变，带timeline 到 不带timeline，肯定要入queue
+         * event未发生改变，flag 自身带timeline， 肯定要入queue
+         */
+        const std::lock_guard<std::mutex> queueLock(taskInfo->updateInfo->updateMutex);
+        taskInfo->updateInfo->updateQueue.push(updateItem);
+    }
+
+    return RT_ERROR_NONE;
+}
+
+rtError_t CaptureModel::PrepareGraphUpdateProc(Stream* const exeStm)
+{
+    uint32_t updateSqeNum = 0U;
+    uint64_t sqeTotalSize = 0UL;
+    GraphUpdateInfo& updateInfo = GetGraphUpdateInfo();
+    rtError_t error = RT_ERROR_NONE;
+    {
+        const std::lock_guard<std::mutex> graphUpdateLock(updateInfo.updateMutex);
+        error = UpdateExternalRecordEventItems(updateSqeNum);
+        COND_PROC((error != RT_ERROR_NONE), return error;);
+    }
+
+    if (updateSqeNum != 0U) {
+        COND_RETURN_ERROR(
+            (updateInfo.hostSqeUpdateAddr != nullptr), RT_ERROR_INVALID_VALUE,
+            "host sqe update addr must be null, model_id=%u.", Id_());
+        sqeTotalSize = updateSqeNum * static_cast<uint64_t>(sizeof(rtStarsSqe_t));
+        Driver* const deviceDrv = Context_()->Device_()->Driver_();
+        error = deviceDrv->HostMemAlloc(&(updateInfo.hostSqeUpdateAddr), sqeTotalSize, Context_()->Device_()->Id_());
+        COND_PROC((error != RT_ERROR_NONE), return error;);
+    }
+
+    std::vector<void*> dsts;
+    std::vector<void*> srcs;
+    std::vector<size_t> sizes;
+    uint16_t count = 0U;
+    error = PrepareExternalRecordTaskUpdateInfo(updateInfo.hostSqeUpdateAddr, sqeTotalSize, dsts, srcs, sizes, count);
+    COND_PROC((error != RT_ERROR_NONE), return error;);
+
+    if (count != 0U) {
+        error = BatchSendH2DAsyncTask(
+            dsts.data(), sizes.data(), srcs.data(), sizes.data(), static_cast<size_t>(count), exeStm);
+        COND_RETURN_ERROR(
+            (error != RT_ERROR_NONE), error, "sqe batch update async failed, model_id=%u, count=%hu.", Id_(), count);
+    }
+
+    updateInfo.launchCnt++;
+
+    return RT_ERROR_NONE;
+}
+
+void CaptureModel::ProcessExternalRecordNormalCqe(TaskInfo* const taskInfo, const rtCqReport_t& logicCq)
+{
+    if ((taskInfo == nullptr) || (taskInfo->type != TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL) ||
+        ((logicCq.errorType & (RT_STARS_EXIST_ERROR | RT_STARS_EXIST_WARNING)) != 0U) ||
+        (taskInfo->updateInfo == nullptr)) {
+        return;
+    }
+
+    uint64_t lastCqeNo = taskInfo->u.writeValTask.recvCqeNo;
+    uint64_t expectCqeCnt = taskInfo->u.writeValTask.expectCqeCnt;
+
+    TaskUpdateInfo* const taskUpdate = taskInfo->updateInfo;
+    if (lastCqeNo >= expectCqeCnt) {
+        return;
+    }
+    taskInfo->stream->SubCqePendingCnt();
+    {
+        const std::lock_guard<std::mutex> taskUpdateLock(taskUpdate->updateMutex);
+        const uint64_t curCqeNo = lastCqeNo + 1ULL;
+        bool isFindItem = false;
+        while (!taskUpdate->updateQueue.empty() && !isFindItem) {
+            TaskUpdateItem& item = taskUpdate->updateQueue.front();
+            Event* const updateEvent = item.u.eventRecordInfo.event;
+            if (item.u.eventRecordInfo.expectCqeNo == curCqeNo) {
+                isFindItem = true;
+            }
+            if (isFindItem && (updateEvent->ExpectCqeNo_() == curCqeNo)) {
+                updateEvent->RecordComplete(taskInfo, logicCq.u1.timeStamp, UINT64_MAX, curCqeNo);
+            }
+
+            TaskUpdateItemPostProc(taskInfo, item);
+            taskUpdate->updateQueue.pop();
+        }
+
+        taskInfo->u.writeValTask.recvCqeNo = curCqeNo;
+    }
+    updateInfo_.totalRecvCqeCnt.Add(1U);
 }
 
 rtError_t CaptureModel::AddStreamToCaptureModel(Stream* const stm)
@@ -1159,6 +1443,14 @@ rtError_t CaptureModel::AllocSqCqProc(const uint32_t logicSqNum) const
         error = Context_()->CheckStatus();
         ERROR_RETURN(error, "context is abort, status=%#x.", static_cast<uint32_t>(error));
         error = Context_()->Device_()->GetDeviceSqCqManage()->AllocSqCq(logicSqNum, sqCqArray_);
+        if ((error == RT_ERROR_DRV_NO_RESOURCES) || (error == RT_ERROR_DEVICE_SQCQ_POOL_RESOURCE_FULL)) {
+            Context_()->Device_()->WakeUpRecycleThread();
+            RT_LOG(RT_LOG_WARNING, "Try to recycle sqcq and alloc sqcq.");
+            while (Context_()->Device_()->GetIsDoingRecycling()) {
+                (void)mmSleep(1U);
+            }
+            error = Context_()->Device_()->GetDeviceSqCqManage()->AllocSqCq(logicSqNum, sqCqArray_);
+        }
         totalResNum = Context_()->Device_()->GetDeviceSqCqManage()->GetSqCqPoolTotalResNum();
         COND_PROC(error != RT_ERROR_NONE, errorTmp = Context_()->TryRecycleModelResource(logicSqNum, 0U, this));
         COND_RETURN_ERROR(

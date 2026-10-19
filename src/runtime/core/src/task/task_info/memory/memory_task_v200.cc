@@ -26,14 +26,25 @@ namespace runtime {
 static void ConstructDavidSqeForCaptureExternalRecordTask(
     TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo)
 {
+    rtDavidSqe_t* const davidSqe = static_cast<rtDavidSqe_t*>(sqe);
     const WriteValueTaskInfo* const writeValueTask = &taskInfo->u.writeValTask;
     if (writeValueTask->sqeAddr == 0ULL) {
         // capture阶段还未分配device侧内存，放NopTask占位
-        ConstructDavidPlaceHolderSqe(taskInfo, sqe, sqeInfo);
+        const uint32_t sendSqeNum = taskInfo->sqeNum;
+        for (uint32_t i = 0U; i < sendSqeNum; ++i) {
+            ConstructDavidPlaceHolderSqe(taskInfo, &(davidSqe[i]), sqeInfo);
+        }
         UpdateDavidSqeHeadUpdate(taskInfo, sqe);
-        return;
+    } else {
+        ConstructDavidSqeForWriteValueTask(taskInfo, &(davidSqe[0]), sqeInfo);
+        davidSqe[0].commonSqe.sqeHeader.wrCqe = 0U;
+        ConstructDavidPlaceHolderSqe(taskInfo, &(davidSqe[1]), sqeInfo);
+        if (writeValueTask->cqeFlag == TASK_WR_CQE_DEFAULT) {
+            davidSqe[1].commonSqe.sqeHeader.wrCqe = taskInfo->stream->GetStarsWrCqeFlag() ? 1U : 0U;
+        } else {
+            davidSqe[1].commonSqe.sqeHeader.wrCqe = (writeValueTask->cqeFlag == TASK_WR_CQE_NEVER) ? 0U : 1U;
+        }
     }
-    ConstructDavidSqeForWriteValueTask(taskInfo, sqe, sqeInfo);
 }
 
 static void ConstructDavidSqeForCaptureExternalWaitTask(

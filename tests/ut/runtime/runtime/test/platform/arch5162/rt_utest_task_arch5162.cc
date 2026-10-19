@@ -33,6 +33,8 @@
 #include "task_info.hpp"
 #include "npu_driver.hpp"
 #include "model.hpp"
+#include "capture_model.hpp"
+#include "capture_model_utils.hpp"
 #include "thread_local_container.hpp"
 #include "log_types.h"
 #include "task_execute_time.h"
@@ -163,6 +165,9 @@ TEST_F(Arch5162TaskTest, StubTask)
     ret = GetCaptureRecordTaskParams(nullptr, nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
 
+    ret = GetCaptureExternalRecordTaskParams(nullptr, nullptr);
+    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
+
     ret = GetCaptureWaitTaskParams(nullptr, nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
 
@@ -183,6 +188,30 @@ TEST_F(Arch5162TaskTest, StubTask)
 
     ret = CreateL2AddrTaskInit(nullptr, 0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
+}
+
+TEST_F(Arch5162TaskTest, CaptureModelUpdateStubs)
+{
+    CaptureModel model(RT_MODEL_CAPTURE_MODEL);
+    TaskInfo taskInfo = {};
+    const rtCqReport_t logicCq = {};
+    uint32_t updateSqeNum = 0U;
+    std::vector<void*> dsts;
+    std::vector<void*> srcs;
+    std::vector<size_t> sizes;
+    uint16_t count = 0U;
+
+    model.InsertGraphUpdateTask(&taskInfo);
+    model.ClearGraphUpdateTask();
+    EXPECT_FALSE(model.IsCaptureModelRunningAfterPoll());
+    model.ProcessExternalRecordNormalCqe(&taskInfo, logicCq);
+    EXPECT_EQ(model.PrepareGraphUpdateProc(nullptr), RT_ERROR_FEATURE_NOT_SUPPORT);
+    model.SwapUpdateTask();
+    EXPECT_EQ(model.UpdateExternalRecordEventItems(updateSqeNum), RT_ERROR_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(
+        model.PrepareExternalRecordTaskUpdateInfo(nullptr, 0U, dsts, srcs, sizes, count), RT_ERROR_FEATURE_NOT_SUPPORT);
+    TaskClearForUpdate(&taskInfo);
+    PopCompletedUpdateItems(&taskInfo, 1U);
 }
 
 TEST_F(Arch5162TaskTest, UpdateAddressTaskInitAndConstructSqe)

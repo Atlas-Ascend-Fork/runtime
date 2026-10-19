@@ -43,6 +43,7 @@ static void ConstructSqeForModelMaintainceTask(
     sqe->u.model_maintaince_info.operation = type;
     sqe->u.model_maintaince_info.stream_type = static_cast<uint16_t>(modelMaintainceTaskInfo->streamType);
     sqe->u.model_maintaince_info.first_task_id = static_cast<uint16_t>(modelMaintainceTaskInfo->firstTaskId);
+    sqe->u.model_maintaince_info.enableCqe = modelMaintainceTaskInfo->enableCqe;
 
     switch (type) {
         case MMT_STREAM_ADD:

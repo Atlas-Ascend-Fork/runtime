@@ -436,7 +436,7 @@ classDiagram
         +WaitSendCheck(stm, eventId) bool
         +AllocEventIdResource(stm, eventId) rtError_t
         +UpdateLatestRecord(info, status, ts)
-        +RecordDavidEventComplete(tsk, ts)
+        +RecordComplete(tsk, timestamp, timeline)
         +ClearRecordStatus() rtError_t
     }
 

@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <iostream>
+#include <time.h>
 #include <unistd.h>
 
 #include "driver/ascend_hal.h"
@@ -53,6 +54,30 @@ using namespace testing;
 using namespace cce::runtime;
 extern int64_t g_device_driver_version_stub;
 static rtChipType_t g_chipType;
+static uint8_t* g_externalEventStatus = nullptr;
+static uint32_t g_externalEventQueryTimes = 0U;
+static uint32_t g_externalEventClockTimes = 0U;
+constexpr uint32_t EXTERNAL_EVENT_COMPLETE_QUERY_TIMES = 10001U;
+
+static int ExternalEventTimeoutClockStub(clockid_t clockId, struct timespec* timeSpec)
+{
+    timeSpec->tv_sec = 0;
+    timeSpec->tv_nsec = 0;
+    if (clockId == CLOCK_MONOTONIC_RAW) {
+        timeSpec->tv_nsec = (g_externalEventClockTimes >= 5000U) ? 1000000L : 0L;
+        g_externalEventClockTimes++;
+    }
+    return 0;
+}
+
+static bool CompleteExternalEventAfterRepeatedQueries()
+{
+    g_externalEventQueryTimes++;
+    if (g_externalEventQueryTimes == EXTERNAL_EVENT_COMPLETE_QUERY_TIMES) {
+        *g_externalEventStatus = 1U;
+    }
+    return true;
+}
 
 static rtError_t CheckRecordOwnerThenFail(TaskInfo* task, Stream*)
 {
@@ -375,7 +400,6 @@ TEST_F(EventTestDavid, TestDoCompleteSuccessForDavidEventRecordTask)
     EXPECT_EQ(task.type, TS_TASK_TYPE_DAVID_EVENT_RECORD);
     task.errorCode = TS_ERROR_UNKNOWN;
     MOCKER(TryToFreeEventIdAndDestroyEvent).stubs();
-    MOCKER_CPP(&DavidEvent::RecordComplete).stubs();
     DoCompleteSuccessForDavidEventRecordTask(&task, 0);
     delete evt;
 }
@@ -680,6 +704,131 @@ TEST_F(EventTestDavid, TestSynchronize)
     rtStreamDestroy(stream);
 }
 
+TEST_F(EventTestDavid, SynchronizeExternalStatusReturnsSuccessWhenDeviceValueIsOne)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 1U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    EXPECT_EQ(evt->Synchronize(1), RT_ERROR_NONE);
+    EXPECT_FALSE(evt->isEventSyncTimeout_);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, SynchronizeCompletedExternalStatusSkipsDeviceQuery)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetEventSyncTimeoutFlag(true);
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    EXPECT_EQ(evt->Synchronize(1), RT_ERROR_NONE);
+    EXPECT_FALSE(evt->isEventSyncTimeout_);
+
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, SynchronizeExternalTimelineWaitsUntilTimestampIsReady)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS | RT_EVENT_TIME_LINE), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 1U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetTimeStamp(UINT64_MAX);
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    EXPECT_EQ(evt->Synchronize(1), RT_ERROR_EVENT_SYNC_TIMEOUT);
+    EXPECT_TRUE(evt->isEventSyncTimeout_);
+
+    evt->SetTimeStamp(10U);
+    EXPECT_EQ(evt->Synchronize(1), RT_ERROR_NONE);
+    EXPECT_FALSE(evt->isEventSyncTimeout_);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, SynchronizeExternalStatusCompletesAfterRepeatedPolling)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 0U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetEventAddr(&recordValue);
+
+    g_externalEventStatus = &recordValue;
+    g_externalEventQueryTimes = 0U;
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar)
+        .expects(exactly(EXTERNAL_EVENT_COMPLETE_QUERY_TIMES))
+        .will(invoke(CompleteExternalEventAfterRepeatedQueries));
+
+    EXPECT_EQ(evt->Synchronize(-1), RT_ERROR_NONE);
+    EXPECT_EQ(g_externalEventQueryTimes, EXTERNAL_EVENT_COMPLETE_QUERY_TIMES);
+
+    g_externalEventStatus = nullptr;
+    g_externalEventQueryTimes = 0U;
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, SynchronizeExternalStatusChecksTimeoutDuringRepeatedPolling)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 0U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetEventAddr(&recordValue);
+
+    g_externalEventClockTimes = 0U;
+    MOCKER(clock_gettime).stubs().will(invoke(ExternalEventTimeoutClockStub));
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar)
+        .expects(exactly(5000))
+        .will(returnValue(true));
+
+    EXPECT_EQ(evt->Synchronize(1), RT_ERROR_EVENT_SYNC_TIMEOUT);
+    EXPECT_TRUE(evt->isEventSyncTimeout_);
+
+    g_externalEventClockTimes = 0U;
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
 TEST_F(EventTestDavid, TestQueryEventStatus)
 {
     rtError_t error;
@@ -707,6 +856,127 @@ TEST_F(EventTestDavid, TestQueryEventStatus)
     error = rtEventDestroy(event);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
     rtStreamDestroy(stream);
+}
+
+TEST_F(EventTestDavid, QueryExternalStatusReturnsRecordedWhenDeviceValueIsOne)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 1U;
+    evt->SetRecord(true);
+    evt->latestRecord_.state = RECORDING;
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetLatestRecordInfo(0U, stream_->Id_());
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(evt->QueryEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_RECORDED);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, QueryExternalStatusWithoutRecordReturnsInitInOldMode)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+
+    rtEventStatus_t status = RT_EVENT_RECORDED;
+    EXPECT_EQ(evt->QueryEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_INIT);
+
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, QueryExternalStatusChecksTimestampForDavidTimeline)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS | RT_EVENT_TIME_LINE), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 1U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetLatestRecordInfo(0U, stream_->Id_());
+    evt->SetTimeStamp(UINT64_MAX);
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(evt->QueryEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_INIT);
+
+    evt->SetTimeStamp(10U);
+    status = RT_EVENT_INIT;
+    EXPECT_EQ(evt->QueryEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_RECORDED);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, QueryExternalStatusIgnoresInvalidDeviceValueError)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 2U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    evt->SetLatestRecordInfo(0U, stream_->Id_());
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(evt->QueryEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_INIT);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTestDavid, EventQueryStatusUsesExternalStatusWhenWaitFlagIsExternal)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
+    ASSERT_NE(evt, nullptr);
+
+    uint8_t recordValue = 1U;
+    evt->SetRecord(true);
+    evt->SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
+    evt->SetWaitFlag(RT_EVENT_WAIT_EXTERNAL);
+    evt->SetLatestRecordInfo(0U, stream_->Id_());
+    evt->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(evt->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(evt->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(evt->QueryEventTask(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_RECORDED);
+
+    evt->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
 }
 
 TEST_F(EventTestDavid, TestQueryEventTask)
@@ -805,7 +1075,7 @@ TEST_F(EventTestDavid, TestProcStreamRecordTask)
     rtStreamDestroy(stream);
 }
 
-TEST_F(EventTestDavid, TestRecordDavidEventComplete)
+TEST_F(EventTestDavid, TestRecordCompletePolymorphism)
 {
     rtError_t error;
     rtEvent_t event;
@@ -821,10 +1091,13 @@ TEST_F(EventTestDavid, TestRecordDavidEventComplete)
     taskInfo.id = 0;
     taskInfo.type = TS_TASK_TYPE_EVENT_RECORD;
 
-    DavidRecordTaskInfo latestRecord = {stm->Id_(), static_cast<uint32_t>(taskInfo.id)};
+    const DavidRecordTaskInfo latestRecord = {stm->Id_(), static_cast<uint32_t>(taskInfo.id), 2U};
     evt->UpdateLatestRecord(latestRecord, DavidEventState_t::EVT_NOT_RECORDED, UINT64_MAX);
 
-    evt->RecordDavidEventComplete(&taskInfo, 0ULL);
+    Event* const baseEvent = evt;
+    baseEvent->RecordComplete(&taskInfo, 0ULL, UINT64_MAX, 1U);
+    EXPECT_EQ(evt->status_, DavidEventState_t::EVT_NOT_RECORDED);
+    baseEvent->RecordComplete(&taskInfo, 0ULL, UINT64_MAX, 2U);
     EXPECT_EQ(evt->status_, DavidEventState_t::EVT_RECORDED);
 
     error = rtEventDestroy(event);
@@ -844,7 +1117,6 @@ TEST_F(EventTestDavid, TestDavidEventRecordTaskUnInit)
     EXPECT_EQ(task.type, TS_TASK_TYPE_DAVID_EVENT_RECORD);
 
     MOCKER(TryToFreeEventIdAndDestroyEvent).stubs();
-    MOCKER_CPP(&DavidEvent::RecordComplete).stubs();
     stream_->Device_()->SetDeviceStatus(RT_ERROR_DEVICE_TASK_ABORT);
     DavidEventRecordTaskUnInit(&task);
     EXPECT_EQ(evt->status_, DavidEventState_t::EVT_NOT_RECORDED);
@@ -1138,7 +1410,7 @@ TEST_F(EventTestDavid, EvtWaitSoftwareMode1)
 
     MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
     void* eventAddr = malloc(RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT);
-    evt->PublishSoftwareRecordResource(eventAddr, 7);
+    evt->PublishSoftwareRecordResource(eventAddr, 7, stm->Id_(), 0U, 0U);
 
     TaskInfo task1 = {};
     task1.stream = stm;
@@ -1292,7 +1564,7 @@ TEST_F(EventTestDavid, EvtWaitSoftwareMode7)
 
     MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
     void* eventAddr = malloc(RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT);
-    evt->PublishSoftwareRecordResource(eventAddr, 7);
+    evt->PublishSoftwareRecordResource(eventAddr, 7, stm->Id_(), 0U, 0U);
 
     TaskInfo task1 = {};
     task1.stream = stm;
@@ -1329,7 +1601,7 @@ TEST_F(EventTestDavid, EvtWaitSoftwareMode8)
 
     MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
     void* eventAddr = malloc(RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT);
-    evt->PublishSoftwareRecordResource(eventAddr, 7);
+    evt->PublishSoftwareRecordResource(eventAddr, 7, stm->Id_(), 0U, 0U);
 
     TaskInfo task1 = {};
     task1.stream = stm;
@@ -1462,7 +1734,7 @@ TEST_F(EventTestDavid, StreamWaitSoftwareModeAfterResetDispatchesSoftwareHelper)
 TEST_F(EventTestDavid, CaptureExternalRecordRegistersPlaceholder)
 {
     rtEvent_t event = nullptr;
-    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS | RT_EVENT_TIME_LINE), RT_ERROR_NONE);
     DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
     auto* captureModel = new CaptureModel(RT_MODEL_CAPTURE_MODEL);
     ASSERT_NE(evt, nullptr);
@@ -1475,6 +1747,7 @@ TEST_F(EventTestDavid, CaptureExternalRecordRegistersPlaceholder)
     ApiImplDavid apiImpl;
     TaskInfo phTask = {};
     phTask.stream = stream_;
+    phTask.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
     MOCKER_CPP(static_cast<TaskInfo* (Stream::*)(TaskInfo*, tsTaskType_t, rtError_t&, uint32_t, UpdateTaskFlag)>(
                    &Stream::AllocTask))
         .stubs()
@@ -1483,12 +1756,68 @@ TEST_F(EventTestDavid, CaptureExternalRecordRegistersPlaceholder)
     ASSERT_EQ(apiImpl.CaptureExternalEventRecord(evt, stream_), RT_ERROR_NONE);
 
     EXPECT_FALSE(evt->IsHardwareMode());
+    EXPECT_EQ(phTask.type, TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL);
+    EXPECT_EQ(phTask.sqeNum, 2U);
+    EXPECT_EQ(phTask.u.writeValTask.cqeFlag, TASK_WR_CQE_DEFAULT);
     EXPECT_EQ(captureModel->externalRecordEventItems_.size(), 1U);
     stream_->SetModel(nullptr);
     stream_->UpdateCaptureStream(nullptr);
     stream_->SetCaptureStatus(RT_STREAM_CAPTURE_STATUS_NONE);
     delete captureModel;
     rtEventDestroy(event);
+}
+
+TEST_F(EventTestDavid, ExternalRecordCapturePlaceholderKeepsDefaultCqe)
+{
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_ALWAYS;
+    taskInfo.sqeNum = static_cast<uint8_t>(GetSendDavidSqeNum(&taskInfo));
+    rtDavidSqe_t sqes[2] = {};
+    const TaskSqeInfo sqeInfo = {0ULL, 0ULL};
+
+    EXPECT_EQ(GetSendDavidSqeNum(&taskInfo), 2U);
+    ToConstructSqe(&taskInfo, static_cast<void*>(sqes), sqeInfo);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.type, RT_DAVID_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.type, RT_DAVID_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_ALWAYS);
+
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_NEVER;
+    ToConstructSqe(&taskInfo, static_cast<void*>(sqes), sqeInfo);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_NEVER);
+}
+
+TEST_F(EventTestDavid, ExternalRecordMaterializedBuildsWriteValueThenCqePlaceholder)
+{
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+    taskInfo.u.writeValTask.sqeAddr = 0x1000ULL;
+    taskInfo.u.writeValTask.ptrFlag = 1U;
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_NEVER;
+    rtDavidSqe_t sqes[2] = {};
+    const TaskSqeInfo sqeInfo = {0ULL, 0ULL};
+
+    EXPECT_EQ(GetSendDavidSqeNum(&taskInfo), 2U);
+    ToConstructSqe(&taskInfo, static_cast<void*>(sqes), sqeInfo);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.type, RT_DAVID_SQE_TYPE_WRITE_VALUE);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.type, RT_DAVID_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_NEVER);
+
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_ALWAYS;
+    ToConstructSqe(&taskInfo, static_cast<void*>(sqes), sqeInfo);
+    EXPECT_EQ(sqes[0].commonSqe.sqeHeader.wrCqe, 0U);
+    EXPECT_EQ(sqes[1].commonSqe.sqeHeader.wrCqe, 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_ALWAYS);
 }
 
 TEST_F(EventTestDavid, EventRecordExternalDispatchesThroughApiImpl)
@@ -1609,7 +1938,7 @@ TEST_F(EventTestDavid, TestEventSynchronizeWithEventInModel)
     rtStreamCreate(&stream, 0);
     Stream* stm = rt_ut::UnwrapOrNull<Stream>(stream);
 
-    DavidRecordTaskInfo latestRecord = {stm->Id_(), 0U};
+    const DavidRecordTaskInfo latestRecord = {stm->Id_(), 0U, 0U};
     evt->UpdateLatestRecord(latestRecord, DavidEventState_t::EVT_RECORDED, UINT64_MAX);
 
     std::shared_ptr<Stream> stmSharedPtr(stm, [](Stream*) {});

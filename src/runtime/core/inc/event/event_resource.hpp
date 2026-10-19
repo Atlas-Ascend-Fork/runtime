@@ -20,6 +20,9 @@ struct EventResource {
     Event* event{nullptr};
     uint64_t eventAddr{0ULL};
     int32_t eventId{-1};
+    int32_t streamId{-1};
+    uint32_t taskId{UINT32_MAX};
+    uint64_t expectCqeNo{0ULL};
 };
 } // namespace runtime
 } // namespace cce

@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "kernel_utils.hpp"
+#include <securec.h>
+#include <new>
 #include "davinci_kernel_task.h"
 #include "kernel.hpp"
 #include "para_convertor.hpp"
@@ -19,6 +21,7 @@
 #include "stream_david.hpp"
 #include "enum_desc.hpp"
 #include "task_enum_desc.hpp"
+#include "capture_model_utils.hpp"
 
 namespace cce {
 namespace runtime {
@@ -99,6 +102,7 @@ rtError_t ConvertTaskType(const TaskInfo* const task, rtTaskType* type)
         case TS_TASK_TYPE_EVENT_RECORD:
         case TS_TASK_TYPE_CAPTURE_RECORD:
         case TS_TASK_TYPE_DAVID_EVENT_RECORD:
+        case TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL:
             taskType = RT_TASK_EVENT_RECORD;
             break;
         case TS_TASK_TYPE_EVENT_RESET:
@@ -121,16 +125,27 @@ rtError_t ConvertTaskType(const TaskInfo* const task, rtTaskType* type)
 
 rtError_t GetKernelTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
 {
-    const AicTaskInfo* aicTaskInfo = &(taskInfo->u.aicTaskInfo);
-    rtKernelTaskParams* kernelTaskParams = &(params->kernelTaskParams);
-    Kernel* const kernel = aicTaskInfo->kernel;
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(kernel, RT_ERROR_INVALID_VALUE, "Obtaining kernel task parameters");
-    kernelTaskParams->funcHandle = kernel->GetInnerHandle();
-    kernelTaskParams->cfg = nullptr;
-    kernelTaskParams->args = aicTaskInfo->comm.args;
-    kernelTaskParams->isHostArgs = 0U;
-    kernelTaskParams->argsSize = aicTaskInfo->comm.argsSize;
-    kernelTaskParams->numBlocks = aicTaskInfo->comm.dim;
+    params->type = RT_TASK_KERNEL;
+    rtKernelTaskParams* const kernelTaskParams = &(params->kernelTaskParams);
+    if ((taskInfo->updateInfo != nullptr) && (taskInfo->updateInfo->latestParams.isValid == 1U)) {
+        const KernelTaskUpdateInfo& kernelUpdateInfo = taskInfo->updateInfo->latestParams.u.kernelUpdateParams;
+        kernelTaskParams->funcHandle = kernelUpdateInfo.kernel->GetInnerHandle();
+        kernelTaskParams->cfg = nullptr;
+        kernelTaskParams->args = kernelUpdateInfo.args;
+        kernelTaskParams->isHostArgs = kernelUpdateInfo.isHostArgs;
+        kernelTaskParams->argsSize = kernelUpdateInfo.argsSize;
+        kernelTaskParams->numBlocks = kernelUpdateInfo.numBlocks;
+    } else {
+        const AicTaskInfo* const aicTaskInfo = &(taskInfo->u.aicTaskInfo);
+        Kernel* const kernel = aicTaskInfo->kernel;
+        NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(kernel, RT_ERROR_INVALID_VALUE, "Obtaining kernel task parameters");
+        kernelTaskParams->funcHandle = kernel->GetInnerHandle();
+        kernelTaskParams->cfg = nullptr;
+        kernelTaskParams->args = aicTaskInfo->comm.args;
+        kernelTaskParams->isHostArgs = 0U;
+        kernelTaskParams->argsSize = aicTaskInfo->comm.argsSize;
+        kernelTaskParams->numBlocks = aicTaskInfo->comm.dim;
+    }
 
     Stream* stm = taskInfo->stream;
     Model* mdl = stm->Model_();
@@ -157,66 +172,7 @@ rtError_t GetKernelTaskParams(const TaskInfo* const taskInfo, rtTaskParams* cons
     return RT_ERROR_NONE;
 }
 
-static rtError_t UpdateKernelTaskInfoWithArgsAndCfg(
-    TaskInfo* const taskInfo, Kernel* kernel, const rtArgsEx_t* argsInfo, const TaskCfg* taskCfg, uint32_t blockDim)
-{
-    Stream* stm = taskInfo->stream;
-    Device* dev = stm->Device_();
-    BackupTaskArgHandle(taskInfo);
-    TaskUnInitProc(taskInfo);
-    uint8_t mixType = NO_MIX;
-    uint32_t prefetchCnt1 = 0U;
-    uint32_t prefetchCnt2 = 0U;
-    Program* prog = kernel->Program_();
-    rtError_t error = GetPrefetchCntAndMixTypeWithKernel(kernel, prefetchCnt1, prefetchCnt2, mixType);
-    ERROR_RETURN(
-        error, "failed to get prefetch cnt, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error, dev->Id_(),
-        stm->Id_(), taskInfo->id);
-    const rtKernelAttrType kernelAttrType = kernel->GetKernelAttrType();
-    StarsArgLoaderResult result = {};
-    error = LoadKernelArgs(stm, argsInfo, result);
-    ERROR_RETURN(
-        error, "failed to load args, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error, dev->Id_(),
-        stm->Id_(), taskInfo->id);
-
-    bool isNeedAllocSqeDevBuf = false;
-    AicTaskInit(taskInfo, kernel, kernelAttrType, static_cast<uint16_t>(blockDim), taskCfg, isNeedAllocSqeDevBuf);
-    error = CheckDynSizeValid(taskInfo, kernel);
-    ERROR_RETURN(
-        error, "Failed to check shared memory size, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error,
-        dev->Id_(), stm->Id_(), taskInfo->id);
-
-    AicTaskInfo* aicTask = &(taskInfo->u.aicTaskInfo);
-    aicTask->kernel = kernel;
-    aicTask->progHandle = prog;
-
-    uint64_t kernelPc1 = 0ULL;
-    uint64_t kernelPc2 = 0ULL;
-    error = kernel->GetFunctionDevAddr(kernelPc1, kernelPc2);
-    ERROR_RETURN(error, "get function address failed.");
-    aicTask->funcAddr = kernelPc1;
-    aicTask->funcAddr1 = kernelPc2;
-    kernel->SetPrefetchCnt1_(prefetchCnt1);
-    kernel->SetPrefetchCnt2_(prefetchCnt2);
-
-    SetAicoreArgsSuperKernel(taskInfo, argsInfo, result);
-
-    RT_LOG(
-        RT_LOG_INFO,
-        "device_id=%u, stream_id=%d, task_id=%hu, kernelAttrType=%s, kernel_name=%s, arg_size=%u, "
-        "blockDim=%u, taskRation=%u, funcType=%u, addr1=0x%llx, addr2=0x%llx, "
-        "mixType=%u, kernelFlag=0x%x, qos=%u, partId=%u, schemMode=%u, infoAddr=%p, atomicIndex=%lu, "
-        "shareMemSize=%u, kernelVfType=%u, dynamicShareMemSize=%u, simtDcuSmSize=%u.",
-        dev->Id_(), stm->Id_(), taskInfo->id, KernelAttrTypeToString(kernelAttrType).c_str(), kernel->Name_().c_str(),
-        argsInfo->argsSize, blockDim, kernel->GetTaskRation(), kernel->GetFuncType(), kernelPc1, kernelPc2, mixType,
-        aicTask->comm.kernelFlag, aicTask->qos, aicTask->partId, aicTask->schemMode, aicTask->inputArgsSize.infoAddr,
-        aicTask->inputArgsSize.atomicIndex, kernel->ShareMemSize_(), kernel->KernelVfType_(),
-        aicTask->dynamicShareMemSize, aicTask->simtDcuSmSize);
-
-    return RT_ERROR_NONE;
-}
-
-rtError_t UpdateKernelParams(TaskInfo* const taskInfo, rtTaskParams* const params)
+rtError_t CacheKernelTaskParams(TaskInfo* const taskInfo, const rtTaskParams* const params)
 {
     if ((taskInfo->type != TS_TASK_TYPE_KERNEL_AICORE) && (taskInfo->type != TS_TASK_TYPE_KERNEL_AIVEC)) {
         RT_LOG_OUTER_MSG_IMPL(
@@ -233,7 +189,7 @@ rtError_t UpdateKernelParams(TaskInfo* const taskInfo, rtTaskParams* const param
         (params->taskGrp != nullptr), RT_ERROR_INVALID_VALUE, ErrorCode::EE1003, "rtModelTaskSetParams",
         params->taskGrp, "params->taskGrp", "NULL pointer");
 
-    const rtKernelTaskParams* kernelTaskParams = &(params->kernelTaskParams);
+    const rtKernelTaskParams* const kernelTaskParams = &(params->kernelTaskParams);
     Kernel* kernel = nullptr;
     rtError_t error = GetValidatedObject<Kernel>(kernelTaskParams->funcHandle, kernel);
     ERROR_RETURN(error, "Failed to validate funcHandle, retCode=%#x.", static_cast<uint32_t>(error));
@@ -251,31 +207,120 @@ rtError_t UpdateKernelParams(TaskInfo* const taskInfo, rtTaskParams* const param
     error = ConvertLaunchCfgToTaskCfg(taskCfg, kernelTaskParams->cfg);
     ERROR_RETURN(error, "convert task cfg failed, retCode=%#x.", error);
 
-    rtArgsEx_t argsInfo = {};
-    argsInfo.args = kernelTaskParams->args;
-    argsInfo.argsSize = kernelTaskParams->argsSize;
-    argsInfo.isNoNeedH2DCopy = (kernelTaskParams->isHostArgs == 0U) ? 1U : 0U;
-    error = UpdateKernelTaskInfoWithArgsAndCfg(taskInfo, kernel, &argsInfo, &taskCfg, kernelTaskParams->numBlocks);
-    ERROR_RETURN(error, "update task info failed, retCode=%#x.", error);
-    error = PostUpdateKernelParams(taskInfo);
-    ERROR_RETURN(error, "PostUpdateKernelParams Failed");
-
-    Stream* stm = taskInfo->stream;
-    Model* mdl = stm->Model_();
-    NULL_PTR_RETURN(mdl, RT_ERROR_MODEL_NULL);
-    COND_RETURN_AND_MSG_OUTER(
-        mdl->GetModelType() != RT_MODEL_CAPTURE_MODEL, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1016,
-        "Updating kernel parameters", "Non ACL Graph mode is not supported");
-    CaptureModel* captureModel = dynamic_cast<CaptureModel*>(mdl);
-
-    if (params->opInfoPtr != nullptr && params->opInfoSize != 0) {
+    Stream* const stm = taskInfo->stream;
+    CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(stm->Model_());
+    if ((params->opInfoPtr != nullptr) && (params->opInfoSize != 0U)) {
         taskInfo->taskTrackTimeStamp = MsprofSysCycleTime();
         error = captureModel->SetShapeInfo(stm, GetTaskId(taskInfo), params->opInfoPtr, params->opInfoSize);
         ERROR_RETURN(error, "update shape info failed, stream_id=%d, task_id=%u.", stm->Id_(), GetTaskId(taskInfo));
     } else {
         captureModel->ClearShapeInfo(stm->Id_(), GetTaskId(taskInfo));
     }
+    uint8_t* copiedArgs = nullptr;
+    if ((kernelTaskParams->isHostArgs != 0U)) { // 需要考虑传入2的场景。
+        copiedArgs = new (std::nothrow) uint8_t[kernelTaskParams->argsSize];
+        COND_RETURN_AND_MSG_OUTER(
+            copiedArgs == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, kernelTaskParams->argsSize, "new");
+        const errno_t copyRet =
+            memcpy_s(copiedArgs, kernelTaskParams->argsSize, kernelTaskParams->args, kernelTaskParams->argsSize);
+        if (copyRet != EOK) {
+            delete[] copiedArgs;
+            RT_LOG(
+                RT_LOG_ERROR, "copy kernel args failed, retCode=%d, argsSize=%zu.", copyRet,
+                kernelTaskParams->argsSize);
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1020, "Setting task parameters", "memcpy_s", copyRet,
+                "Failed to copy the supplied host kernel arguments",
+                RtFmtMsg("params->kernelTaskParams.argsSize=%zu.", kernelTaskParams->argsSize));
+            return RT_ERROR_SEC_HANDLE;
+        }
+    }
 
+    KernelTaskUpdateInfo kernelUpdateInfo = {};
+    kernelUpdateInfo.kernel = kernel;
+    kernelUpdateInfo.taskCfg = taskCfg;
+    kernelUpdateInfo.args = (kernelTaskParams->isHostArgs != 0U) ? copiedArgs : kernelTaskParams->args;
+    kernelUpdateInfo.argsSize = kernelTaskParams->argsSize;
+    kernelUpdateInfo.isHostArgs = kernelTaskParams->isHostArgs;
+    kernelUpdateInfo.numBlocks = kernelTaskParams->numBlocks;
+
+    TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    latestParams.u.kernelUpdateParams = kernelUpdateInfo;
+    latestParams.type = RT_TASK_KERNEL;
+    return RT_ERROR_NONE;
+}
+
+rtError_t UpdateKernelParams(TaskInfo* const taskInfo, KernelTaskUpdateInfo* const kernelUpdateInfo)
+{
+    COND_RETURN_ERROR(
+        (kernelUpdateInfo->kernel == nullptr) || (kernelUpdateInfo->args == nullptr) ||
+            (kernelUpdateInfo->argsSize == 0U),
+        RT_ERROR_MODEL_UPDATE_FAILED, "cached kernel params are invalid, stream_id=%d, task_id=%hu.",
+        taskInfo->stream->Id_(), taskInfo->id);
+
+    Stream* const stm = taskInfo->stream;
+    const Device* const dev = stm->Device_();
+    Kernel* const kernel = kernelUpdateInfo->kernel;
+
+    BackupTaskArgHandle(taskInfo);
+    TaskClearForUpdate(taskInfo);
+
+    uint8_t mixType = NO_MIX;
+    uint32_t prefetchCnt1 = 0U;
+    uint32_t prefetchCnt2 = 0U;
+    Program* const prog = kernel->Program_();
+    rtError_t error = GetPrefetchCntAndMixTypeWithKernel(kernel, prefetchCnt1, prefetchCnt2, mixType);
+    ERROR_RETURN(
+        error, "failed to get prefetch cnt, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error, dev->Id_(),
+        stm->Id_(), taskInfo->id);
+
+    const rtKernelAttrType kernelAttrType = kernel->GetKernelAttrType();
+    bool isNeedAllocSqeDevBuf = false;
+    AicTaskInit(
+        taskInfo, kernel, kernelAttrType, static_cast<uint16_t>(kernelUpdateInfo->numBlocks),
+        &(kernelUpdateInfo->taskCfg), isNeedAllocSqeDevBuf);
+    error = CheckDynSizeValid(taskInfo, kernel);
+    ERROR_RETURN(
+        error, "Failed to check shared memory size, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error,
+        dev->Id_(), stm->Id_(), taskInfo->id);
+
+    AicTaskInfo* const aicTask = &(taskInfo->u.aicTaskInfo);
+    aicTask->kernel = kernel;
+    aicTask->progHandle = prog;
+
+    uint64_t kernelPc1 = 0ULL;
+    uint64_t kernelPc2 = 0ULL;
+    error = kernel->GetFunctionDevAddr(kernelPc1, kernelPc2);
+    ERROR_RETURN(error, "get function address failed.");
+    aicTask->funcAddr = kernelPc1;
+    aicTask->funcAddr1 = kernelPc2;
+    kernel->SetPrefetchCnt1_(prefetchCnt1);
+    kernel->SetPrefetchCnt2_(prefetchCnt2);
+
+    StarsArgLoaderResult argsResult = {};
+    rtArgsEx_t argsInfo = {};
+    argsInfo.args = kernelUpdateInfo->args;
+    argsInfo.argsSize = kernelUpdateInfo->argsSize;
+    argsInfo.isNoNeedH2DCopy = (kernelUpdateInfo->isHostArgs == 0U) ? 1U : 0U;
+    error = LoadKernelArgs(stm, &argsInfo, argsResult);
+    ERROR_RETURN(
+        error, "failed to load cached args, retCode=%#x, device_id=%u, stream_id=%d, task_id=%hu.", error, dev->Id_(),
+        stm->Id_(), taskInfo->id);
+    SetAicoreArgsSuperKernel(taskInfo, &argsInfo, argsResult);
+
+    error = PostUpdateKernelParams(taskInfo);
+    ERROR_RETURN(error, "PostUpdateKernelParams failed, retCode=%#x.", error);
+    RT_LOG(
+        RT_LOG_INFO,
+        "device_id=%u, stream_id=%d, task_id=%hu, kernelAttrType=%s, kernel_name=%s, arg_size=%zu, "
+        "blockDim=%u, taskRation=%u, funcType=%u, addr1=0x%llx, addr2=0x%llx, "
+        "mixType=%u, kernelFlag=0x%x, qos=%u, partId=%u, schemMode=%u, infoAddr=%p, atomicIndex=%u, "
+        "shareMemSize=%u, kernelVfType=%u, dynamicShareMemSize=%u, simtDcuSmSize=%u.",
+        dev->Id_(), stm->Id_(), taskInfo->id, KernelAttrTypeToString(kernelAttrType).c_str(), kernel->Name_().c_str(),
+        kernelUpdateInfo->argsSize, kernelUpdateInfo->numBlocks, kernel->GetTaskRation(), kernel->GetFuncType(),
+        kernelPc1, kernelPc2, mixType, aicTask->comm.kernelFlag, aicTask->qos, aicTask->partId, aicTask->schemMode,
+        aicTask->inputArgsSize.infoAddr, aicTask->inputArgsSize.atomicIndex, kernel->ShareMemSize_(),
+        kernel->KernelVfType_(), aicTask->dynamicShareMemSize, aicTask->simtDcuSmSize);
     return RT_ERROR_NONE;
 }
 

@@ -20,7 +20,8 @@ namespace runtime {
 void ComputeRatio(uint16_t ratio[2], uint32_t mixType, uint32_t taskRatio);
 rtError_t ConvertTaskType(const TaskInfo* const task, rtTaskType* type);
 rtError_t GetKernelTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
-rtError_t UpdateKernelParams(TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t CacheKernelTaskParams(TaskInfo* const taskInfo, const rtTaskParams* const params);
+rtError_t UpdateKernelParams(TaskInfo* const taskInfo, KernelTaskUpdateInfo* const kernelUpdateInfo);
 rtError_t GetKernelAttribute(
     const TaskInfo* const taskInfo, rtLaunchKernelAttrId attrId, rtLaunchKernelAttrVal_t* attrValue);
 rtError_t GetOpExecuteMsTimeout(uint32_t* const timeout, uint64_t* customTimeout = nullptr);

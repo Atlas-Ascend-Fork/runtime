@@ -180,7 +180,10 @@ struct RtStarsModelMaintaince {
     uint16_t endgraph_notify_id;
     uint32_t executor_flag;
     uint64_t streamExecTimesAddr;
-    uint32_t reserved[6];
+    uint8_t reserved0[9];
+    uint8_t enableCqe : 1;
+    uint8_t reserved1 : 7;
+    uint8_t reserved2[14];
 };
 
 struct RtStarsMaintaince {

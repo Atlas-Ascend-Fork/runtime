@@ -28,6 +28,7 @@
 #include "capture_model.hpp"
 #include "api.hpp"
 #include <algorithm>
+#include <cinttypes>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -35,6 +36,8 @@
 #include <vector>
 #include "context_manage.hpp"
 #include "error_message_manage.hpp"
+#include "arg_loader.hpp"
+#include "stars_arg_manager.hpp"
 #include "task.hpp"
 
 namespace cce {
@@ -411,6 +414,24 @@ rtError_t WaitAsyncCopyComplete(TaskInfo* taskInfo)
     return RT_ERROR_NONE;
 }
 
+static void TaskUpdateInfoFree(TaskInfo* taskInfo)
+{
+    COND_PROC((taskInfo->updateInfo == nullptr), return);
+    TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    if ((latestParams.isValid == 1U) && (latestParams.type == RT_TASK_KERNEL) &&
+        (latestParams.u.kernelUpdateParams.isHostArgs == 1U)) {
+        auto ptr = RtPtrToPtr<uint8_t*>(latestParams.u.kernelUpdateParams.args);
+        DELETE_A(ptr);
+    }
+    {
+        const std::lock_guard<std::mutex> taskUpdateLock(taskInfo->updateInfo->updateMutex);
+        while (!taskInfo->updateInfo->updateQueue.empty()) {
+            taskInfo->updateInfo->updateQueue.pop();
+        }
+    }
+    DELETE_O(taskInfo->updateInfo);
+}
+
 void TaskUnInitProc(TaskInfo* taskInfo)
 {
     if (taskInfo->type >= TS_TASK_TYPE_RESERVED) {
@@ -427,6 +448,7 @@ void TaskUnInitProc(TaskInfo* taskInfo)
     if (g_taskUnInitFunc[taskInfo->type] != nullptr) {
         g_taskUnInitFunc[taskInfo->type](taskInfo);
     }
+    TaskUpdateInfoFree(taskInfo);
 }
 
 void DoCompleteError(const uint32_t completeError)
@@ -884,10 +906,57 @@ void SetEndGraphNotifyWaitSqPos(TaskInfo* taskInfo, const uint32_t pos)
     if ((taskInfo->type == TS_TASK_TYPE_ENDGRAPH_NOTIFY_WAIT) &&
         taskInfo->u.endGraphNotifyWaitTask.isSoftwareSqCaptureModel) {
         (void)taskInfo->stream->Device_()->StoreEndGraphNotifyInfo(
-            static_cast<uint32_t>(taskInfo->stream->Id_()), taskInfo->u.endGraphNotifyWaitTask.endGraphModel, pos);
+            static_cast<uint32_t>(taskInfo->stream->Id_()), taskInfo->u.endGraphNotifyWaitTask.endGraphModel, pos,
+            taskInfo->u.endGraphNotifyWaitTask.expectTotalRecvCqeCnt);
     }
 
     return;
+}
+
+void UpdateLatestConcernedTaskId(const TaskInfo* const taskInfo)
+{
+    const bool isEndGraphNeedCqe = (taskInfo->type == TS_TASK_TYPE_ENDGRAPH_NOTIFY_WAIT) &&
+                                   (taskInfo->u.endGraphNotifyWaitTask.isCurExecuteNeedCqe == 1U);
+    const bool isMemcpyConcernedRecycle =
+        (taskInfo->type == TS_TASK_TYPE_MEMCPY) && taskInfo->u.memcpyAsyncTaskInfo.isConcernedRecycle;
+    const bool isConcernedRecycle = (taskInfo->isNeedStreamSync != 0U) || (taskInfo->isCqeNeedConcern != 0U) ||
+                                    isEndGraphNeedCqe || isMemcpyConcernedRecycle;
+    if (isConcernedRecycle) {
+        taskInfo->stream->SetLatestConcernedTaskId(taskInfo->id);
+    }
+}
+
+bool IsTaskRecycleBlocked(const TaskInfo* const taskInfo)
+{
+    Stream* const stream = taskInfo->stream;
+    if ((taskInfo->type == TS_TASK_TYPE_ENDGRAPH_NOTIFY_WAIT) &&
+        taskInfo->u.endGraphNotifyWaitTask.isSoftwareSqCaptureModel &&
+        taskInfo->u.endGraphNotifyWaitTask.isCurExecuteNeedCqe && (taskInfo->errorCode == 0U) &&
+        unlikely((stream->GetFailureMode() != ABORT_ON_FAILURE) && (!stream->isForceRecycle_))) {
+        CaptureModel* const captureModel =
+            dynamic_cast<CaptureModel*>(taskInfo->u.endGraphNotifyWaitTask.endGraphModel);
+        if (captureModel != nullptr) {
+            const uint64_t receivedCqeCount = captureModel->GetGraphUpdateInfo().totalRecvCqeCnt.Value();
+            const uint64_t expectedCqeCount = taskInfo->u.endGraphNotifyWaitTask.expectTotalRecvCqeCnt;
+            if (receivedCqeCount < expectedCqeCount) {
+                RT_LOG(
+                    RT_LOG_DEBUG,
+                    "End graph task delay recycle until CQEs received, stream_id=%d, task_id=%hu, "
+                    "received_cqe_count=%" PRIu64 ", expected_cqe_count=%" PRIu64 ".",
+                    stream->Id_(), taskInfo->id, receivedCqeCount, expectedCqeCount);
+                return true;
+            }
+        }
+    }
+    if ((taskInfo->isCqeNeedConcern != 0U) &&
+        unlikely((stream->GetFailureMode() != ABORT_ON_FAILURE) && (!stream->isForceRecycle_))) {
+        RT_LOG(
+            RT_LOG_DEBUG, "Task delay recycle until CQE received, stream_id=%d, task_id=%hu", stream->Id_(),
+            taskInfo->id);
+        stream->SetNeedRecvCqeFlag(true);
+        return true;
+    }
+    return false;
 }
 
 void SetSqPos(TaskInfo* taskInfo, const uint32_t pos)
@@ -912,7 +981,8 @@ void SetSqPos(TaskInfo* taskInfo, const uint32_t pos)
             (taskInfo->type == TS_TASK_TYPE_ENDGRAPH_NOTIFY_WAIT) &&
             taskInfo->u.endGraphNotifyWaitTask.isSoftwareSqCaptureModel) {
             (void)taskInfo->stream->Device_()->StoreEndGraphNotifyInfo(
-                taskInfo->stream->Id_(), taskInfo->u.endGraphNotifyWaitTask.endGraphModel, pos);
+                taskInfo->stream->Id_(), taskInfo->u.endGraphNotifyWaitTask.endGraphModel, pos,
+                taskInfo->u.endGraphNotifyWaitTask.expectTotalRecvCqeCnt);
         } else {
             // no operation
         }

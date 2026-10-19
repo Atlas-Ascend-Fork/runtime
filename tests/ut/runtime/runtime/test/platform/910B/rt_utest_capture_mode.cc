@@ -101,6 +101,10 @@ protected:
             .stubs()
             .with(eq(TS_FEATURE_SOFTWARE_SQ_ENABLE))
             .will(returnValue(true));
+        MOCKER_CPP_VIRTUAL(device, &Device::CheckFeatureSupport)
+            .stubs()
+            .with(eq(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE))
+            .will(returnValue(true));
     }
 
     virtual void TearDown()
@@ -1230,9 +1234,7 @@ TEST_F(CloudV2CaptureModelTest, capture_model_execute_with_null_stream)
     ASSERT_EQ(error, RT_ERROR_NONE);
 
     EXPECT_EQ(rtModelExecute(model, nullptr, 0U), RT_ERROR_NONE);
-
-    CaptureModel* captureModel = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model));
-    captureModel->CaptureModelExecuteFinish(RT_ERROR_NONE);
+    ASSERT_EQ(rtDeviceSynchronize(), RT_ERROR_NONE);
     EXPECT_EQ(rtModelDestroy(model), RT_ERROR_NONE);
     EXPECT_EQ(rtStreamDestroy(captureStream), RT_ERROR_NONE);
     EXPECT_EQ(rtFree(devPtr), RT_ERROR_NONE);
@@ -1304,12 +1306,15 @@ TEST_F(CloudV2CaptureModelTest, capture_mode_api_normal)
     error = rtsModelExecuteAsync(model1, streamExe);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
+    error = rtStreamSynchronize(streamExe);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+
     CaptureModel* captureMdl1 = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1));
-    captureMdl1->CaptureModelExecuteFinish(RT_ERROR_NONE);
     uint32_t releaseSqNum = 0U;
     uint32_t releaseNtyNum = 0;
     captureMdl1->ReleaseSqCqAndNotifyId(releaseSqNum, releaseNtyNum);
     captureMdl1->BuildSqCq(rt_ut::UnwrapOrNull<Stream>(streamExe));
+    captureMdl1->CaptureModelExecuteFinish(RT_ERROR_NONE);
 
     error = rtModelDestroy(model1);
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -1378,6 +1383,10 @@ protected:
         MOCKER_CPP_VIRTUAL(device, &Device::CheckFeatureSupport)
             .stubs()
             .with(eq(TS_FEATURE_ACLGRAPH_COND_OP))
+            .will(returnValue(true));
+        MOCKER_CPP_VIRTUAL(device, &Device::CheckFeatureSupport)
+            .stubs()
+            .with(eq(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE))
             .will(returnValue(true));
         MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
     }
@@ -2077,7 +2086,7 @@ TEST_F(CloudV2CaptureModelTest, capture_mode_try_recycle)
     error = rtModelExecute(model1, streamExe, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER(halStreamTaskFill).stubs().will(returnValue(DRV_ERROR_COPY_USER_FAIL));
+    MOCKER(halStreamTaskFill).stubs().will(returnValue(DRV_ERROR_COPY_USER_FAIL)).then(returnValue(DRV_ERROR_NONE));
     error = rtModelExecute(model2, streamExe, 0);
     EXPECT_EQ(error, ACL_ERROR_RT_COPY_DATA);
 
@@ -2094,11 +2103,8 @@ TEST_F(CloudV2CaptureModelTest, capture_mode_try_recycle)
                     static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model3)), JettyType::JETTY_TYPE_H2D);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    CaptureModel* captureMdl1 = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1));
-    captureMdl1->CaptureModelExecuteFinish(RT_ERROR_NONE);
-
-    CaptureModel* captureMdl2 = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model2));
-    captureMdl2->CaptureModelExecuteFinish(RT_ERROR_NONE);
+    error = rtStreamSynchronize(streamExe);
+    EXPECT_EQ(error, RT_ERROR_NONE);
 
     error = rtModelDestroy(model1);
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -2153,22 +2159,22 @@ TEST_F(CloudV2CaptureModelTest, poll_end_graph_notify)
     rt_ut::UnwrapOrNull<Stream>(streamExe)->taskPosTail_.Set(5000);
     uint32_t streamId = (rt_ut::UnwrapOrNull<Stream>(streamExe))->Id_();
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 10);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 10, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 100);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    error =
-        rawDevice->StoreEndGraphNotifyInfo(streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model2)), 2);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 100, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model2)), 20);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    error =
-        rawDevice->StoreEndGraphNotifyInfo(streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model3)), 3);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model2)), 2, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model3)), 30);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model2)), 20, 0U);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    error = rawDevice->StoreEndGraphNotifyInfo(
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model3)), 3, 0U);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    error = rawDevice->StoreEndGraphNotifyInfo(
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model3)), 30, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     error = rawDevice->DeleteEndGraphNotifyInfo(
@@ -2191,10 +2197,10 @@ TEST_F(CloudV2CaptureModelTest, poll_end_graph_notify)
 
     rt_ut::UnwrapOrNull<Stream>(streamExe)->taskPosTail_.Set(5);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 10);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 10, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 100);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 100, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     uint32_t modelId;
     error = rtModelGetId(model1, &modelId);
@@ -2204,10 +2210,10 @@ TEST_F(CloudV2CaptureModelTest, poll_end_graph_notify)
     rawDevice->PollEndGraphNotifyInfo();
 
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 120);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 120, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rawDevice->StoreEndGraphNotifyInfo(
-        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 49);
+        streamId, static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model1)), 49, 0U);
     EXPECT_EQ(error, RT_ERROR_NONE);
     rt_ut::UnwrapOrNull<Stream>(streamExe)->taskPosTail_.Set(50);
     rawDevice->PollEndGraphNotifyInfo();
@@ -2294,12 +2300,12 @@ TEST_F(CloudV2CaptureModelTest, cascade_stream)
     ret = rtModelExecute(model, streamExe, 0);
     EXPECT_EQ(ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&Model::DelStream).stubs().will(returnValue(RT_ERROR_NONE));
-    ret = curCtx->ModelDelStream(rt_ut::UnwrapOrNull<Model>(model), rt_ut::UnwrapOrNull<Stream>(streamExe));
-    EXPECT_EQ(ret, RT_ERROR_NONE);
-
     CaptureModel* captureMdl = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(model));
     captureMdl->CaptureModelExecuteFinish(RT_ERROR_NONE);
+    const std::list<Stream*> modelStreams(captureMdl->StreamList_());
+    for (Stream* const modelStream : modelStreams) {
+        ASSERT_EQ(curCtx->ModelDelStream(captureMdl, modelStream), RT_ERROR_NONE);
+    }
 
     ret = rtModelDestroy(model);
     EXPECT_EQ(ret, RT_ERROR_NONE);

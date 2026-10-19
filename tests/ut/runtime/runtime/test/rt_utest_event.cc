@@ -33,6 +33,18 @@
 using namespace testing;
 using namespace cce::runtime;
 
+static rtError_t CopyExternalEventValue(
+    void* dst, uint64_t destMax, const void* src, uint64_t size, rtMemcpyKind_t kind, bool errShow, uint32_t devId)
+{
+    UNUSED(destMax);
+    UNUSED(kind);
+    UNUSED(errShow);
+    UNUSED(devId);
+    *static_cast<uint8_t*>(dst) = *static_cast<const uint8_t*>(src);
+    EXPECT_EQ(size, sizeof(uint8_t));
+    return RT_ERROR_NONE;
+}
+
 class EventTest : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "event test start" << std::endl; }
@@ -194,6 +206,76 @@ TEST_F(EventTest, TestInsertToNotifierMapAndDeleteFromNotifierMap)
 
     error = rtEventDestroy(event);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
+}
+
+TEST_F(EventTest, SynchronizeExternalStatusReturnsSuccessWhenDeviceValueIsOne)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    Event* eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(eventObj, nullptr);
+
+    uint8_t recordValue = 1U;
+    ((Runtime*)Runtime::Instance())->SetDisableThread(true);
+    eventObj->SetRecord(true);
+    eventObj->latestRecord_.state = RECORDING;
+    eventObj->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    eventObj->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(eventObj->Device_()->Driver_(), &Driver::MemCopySync)
+        .expects(once())
+        .will(invoke(CopyExternalEventValue));
+
+    EXPECT_EQ(eventObj->Synchronize(1), RT_ERROR_NONE);
+    EXPECT_FALSE(eventObj->isEventSyncTimeout_);
+
+    eventObj->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTest, SynchronizeCompletedExternalStatusSkipsDeviceQuery)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    Event* eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(eventObj, nullptr);
+
+    ((Runtime*)Runtime::Instance())->SetDisableThread(true);
+    eventObj->SetRecord(true);
+    eventObj->latestRecord_.state = RECORDED;
+    eventObj->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    eventObj->SetEventSyncTimeoutFlag(true);
+    MOCKER_CPP_VIRTUAL(eventObj->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    EXPECT_EQ(eventObj->Synchronize(1), RT_ERROR_NONE);
+    EXPECT_FALSE(eventObj->isEventSyncTimeout_);
+
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(EventTest, SynchronizeExternalStatusReturnsTimeoutWhenDeviceValueStaysZero)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    Event* eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(eventObj, nullptr);
+
+    uint8_t recordValue = 0U;
+    ((Runtime*)Runtime::Instance())->SetDisableThread(true);
+    eventObj->SetRecord(true);
+    eventObj->latestRecord_.state = RECORDING;
+    eventObj->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    eventObj->SetEventAddr(&recordValue);
+
+    MOCKER_CPP_VIRTUAL(eventObj->Device_()->Driver_(), &Driver::MemCopySync)
+        .stubs()
+        .will(invoke(CopyExternalEventValue));
+
+    EXPECT_EQ(eventObj->Synchronize(1), RT_ERROR_EVENT_SYNC_TIMEOUT);
+    EXPECT_TRUE(eventObj->isEventSyncTimeout_);
+
+    eventObj->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
 }
 
 TEST_F(EventTest, TaskReclaimAllForNoRes)

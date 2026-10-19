@@ -115,6 +115,13 @@ rtError_t ModelMaintainceTaskInit(
                 static_cast<int32_t>(modelMaintainceTaskInfo->opStream->Device_()->Id_()), RtPtrToValue(execTimesSvm),
                 &(modelMaintainceTaskInfo->execTimesSvmOffset));
         }
+
+        if ((modelPtr != nullptr && modelPtr->GetModelType() == RT_MODEL_CAPTURE_MODEL) &&
+            (dev->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE))) {
+            modelMaintainceTaskInfo->enableCqe = 0x1U;
+        } else {
+            modelMaintainceTaskInfo->enableCqe = 0x0U;
+        }
         return error;
     }
     return RT_ERROR_NONE;

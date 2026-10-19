@@ -34,6 +34,7 @@
 #include "task_recycle.hpp"
 #include "device.hpp"
 #include "stream_david.hpp"
+#include "capture_model.hpp"
 
 namespace cce {
 namespace runtime {
@@ -310,6 +311,14 @@ rtError_t TaskReclaimForSeparatedStm(Stream* const stm)
     return error;
 }
 
+static void ProcCqeForSinkStm(Stream* const stm)
+{
+    if ((!stm->IsExistCqe()) && (stm->GetCqePendingCnt() == 0U)) {
+        return;
+    }
+    ProcLogicCqUntilEmpty(stm);
+}
+
 void RecycleThreadDoForStarsV2(Device* deviceInfo)
 {
     rtError_t ret = RT_ERROR_NONE;
@@ -323,10 +332,18 @@ void RecycleThreadDoForStarsV2(Device* deviceInfo)
         stream.get()->StreamRecycleLock();
         stream.get()->SetThreadProcFlag(true);
         stream.get()->ProcArgRecycleList();
-        bool noProcessFlag =
+        CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(stream->Model_());
+        if ((captureModel != nullptr) && deviceInfo->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE)) {
+            ProcCqeForSinkStm(stream.get());
+            stream.get()->SetThreadProcFlag(false);
+            stream.get()->StreamRecycleUnlock();
+            stream.reset();
+            continue;
+        }
+        const bool noProcessFlag =
             ((stream.get()->Flags() & (RT_STREAM_AICPU | RT_STREAM_CP_PROCESS_USE | RT_STREAM_PERSISTENT)) != 0);
-        COND_PROC(noProcessFlag || (stream.get()->Model_() != nullptr), stream.get()->SetThreadProcFlag(false);
-                  stream.get()->StreamRecycleUnlock(); stream.reset(); continue);
+        COND_PROC(noProcessFlag, stream.get()->SetThreadProcFlag(false); stream.get()->StreamRecycleUnlock();
+                  stream.reset(); continue);
 
         COND_PROC(((stream.get()->taskResMang_->IsEmpty()) || (stream.get()->IsBindDvppGrp()) ||
                    (!stream.get()->IsSeparateSendAndRecycle())),

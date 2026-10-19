@@ -79,16 +79,16 @@ rtError_t EvtRecordSoftwareMode(Event* const evt, Stream* const stm)
     ERROR_RETURN(
         error, "Failed to capture address, deviceId=%u, tsId=%u, retCode=%#x", dev->Id_(), dev->DevGetTsId(),
         static_cast<uint32_t>(error));
-    davidEvt->PublishSoftwareRecordResource(eventAddr, newEventId);
     uint32_t pos = 0xFFFFU;
     Stream* dstStm = stm;
     stm->StreamLock();
     tsk = stm->AllocTask(nullptr, TS_TASK_TYPE_DAVID_EVENT_RECORD, error);
-    COND_PROC_RETURN_ERROR_MSG_INNER(tsk == nullptr, error, stm->StreamUnLock();
-                                     , "Failed to allocate task, stream_id=%d, retCode=%#x.", stm->Id_(),
-                                     static_cast<uint32_t>(error));
+    COND_PROC_RETURN_ERROR_MSG_INNER(tsk == nullptr, error, dev->FreeExpandingPoolEvent(newEventId);
+                                     stm->StreamUnLock();, "Failed to allocate task, stream_id=%d, retCode=%#x.",
+                                                         stm->Id_(), static_cast<uint32_t>(error));
     pos = tsk->id;
     dstStm = tsk->stream;
+    davidEvt->PublishSoftwareRecordResource(eventAddr, newEventId, dstStm->Id_(), tsk->id, 0U);
 
     (void)MemWriteValueTaskInit(tsk, eventAddr, 1UL);
     tsk->typeName = "EVENT_RECORD";

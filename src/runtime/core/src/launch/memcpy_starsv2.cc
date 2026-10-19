@@ -200,6 +200,52 @@ rtError_t MemcopyBatchAsync(
     return RT_ERROR_NONE;
 }
 
+rtError_t BatchSendH2DAsyncTask(
+    void** const dsts, const size_t* const destMaxs, void** const srcs, const size_t* const sizes, const size_t count,
+    Stream* const stm)
+{
+    rtError_t error = RT_ERROR_NONE;
+    uint64_t realSize = 0ULL;
+
+    if (!Runtime::Instance()->GetConnectUbFlag()) {
+        for (size_t i = 0U; i < count; i++) {
+            error = MemcopyAsync(
+                dsts[i], destMaxs[i], srcs[i], sizes[i], RT_MEMCPY_HOST_TO_DEVICE, stm, &realSize, nullptr);
+            COND_PROC((error != RT_ERROR_NONE), return error;);
+        }
+
+        return RT_ERROR_NONE;
+    }
+
+    uint64_t realCnt = 0ULL;
+    uint64_t remainCnt = count;
+    uint64_t fixedCnt = 0ULL;
+    uint64_t fixedSize = 0ULL;
+
+    std::vector<void*> localDsts(dsts, dsts + count);
+    std::vector<void*> localSrcs(srcs, srcs + count);
+    std::vector<uint64_t> localSizes(sizes, sizes + count);
+    while (remainCnt > 0ULL) {
+        AsyncDmaBatchInfo batchInfo = {localDsts.data(), localSrcs.data(), localSizes.data(),
+                                       remainCnt,        fixedCnt,         fixedSize};
+        error = MemcopyBatchAsync(batchInfo, &realCnt, &realSize, stm);
+        COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
+        COND_RETURN_ERROR(
+            realCnt > remainCnt, RT_ERROR_DRV_ERR,
+            "Invalid memcpy batch progress, realCnt=%" PRIu64 ", remainCnt=%" PRIu64 ".", realCnt, remainCnt);
+        // realCnt 本次处理的
+        fixedCnt = realCnt;
+        fixedSize = realSize;
+        remainCnt -= fixedCnt;
+        if (remainCnt > 0ULL) {
+            error = stm->Synchronize();
+            ERROR_RETURN_MSG_INNER(error, "Failed to synchronize stream, retCode=%#x.", static_cast<uint32_t>(error));
+        }
+    }
+
+    return RT_ERROR_NONE;
+}
+
 static bool isModelByUb(const Stream* const stm)
 {
     if ((stm->IsCapturing() || stm->GetBindFlag()) && (Runtime::Instance()->GetConnectUbFlag())) {

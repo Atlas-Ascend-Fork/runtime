@@ -13,6 +13,14 @@
 namespace cce {
 namespace runtime {
 
+void TaskClearForUpdate(TaskInfo* taskInfo) { UNUSED(taskInfo); }
+
+void PopCompletedUpdateItems(TaskInfo* const taskInfo, const uint32_t launchNo)
+{
+    UNUSED(taskInfo);
+    UNUSED(launchNo);
+}
+
 bool IsEventCapturing(const Event* const evt, const Stream* const stm)
 {
     UNUSED(evt);

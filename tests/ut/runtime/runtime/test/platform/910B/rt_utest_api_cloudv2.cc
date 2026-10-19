@@ -305,6 +305,22 @@ TEST_F(RtApiTest, streamWaitFlagIsSetByApiErrorDecorator)
     EXPECT_EQ(event.GetWaitFlag(), RT_EVENT_WAIT_EXTERNAL);
 }
 
+TEST_F(RtApiTest, externalEventFlagsRemainUnsetWhenSubModelRejectsOperation)
+{
+    ApiImpl apiImpl;
+    ApiErrorDecorator apiError(&apiImpl);
+    MOCKER(IsStreamBindWithSubModel).expects(exactly(2)).will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(apiImpl, &ApiImpl::EventRecord).expects(never());
+    MOCKER_CPP_VIRTUAL(apiImpl, &ApiImpl::StreamWaitEvent).expects(never());
+    Event event(nullptr, RT_EVENT_DDSYNC_NS, nullptr, false, true);
+    Stream stream(static_cast<Device*>(nullptr), 0U);
+
+    EXPECT_EQ(apiError.EventRecord(&event, &stream, RT_EVENT_RECORD_EXTERNAL), RT_ERROR_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(event.GetRecordFlag(), UINT32_MAX);
+    EXPECT_EQ(apiError.StreamWaitEvent(&stream, &event, 0U, RT_EVENT_WAIT_EXTERNAL), RT_ERROR_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(event.GetWaitFlag(), UINT32_MAX);
+}
+
 TEST_F(RtApiTest, eventOperationFlagSetterOnlySetsValue)
 {
     Event event;

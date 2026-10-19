@@ -24,6 +24,7 @@ enum class DavidEventState_t : uint8_t {
 struct DavidRecordTaskInfo {
     int32_t streamId;
     uint32_t taskId;
+    uint64_t expectCqeNo{0ULL};
 };
 
 class DavidEvent : public Event {
@@ -39,7 +40,11 @@ public:
     rtError_t QueryEventTask(rtEventStatus_t* const status) override;
     rtError_t WaitTask(const int32_t timeout) override;
     rtError_t ReclaimTask(const bool evtWaitTask) override;
-    void RecordDavidEventComplete(const TaskInfo* const tsk, const uint64_t recTimestamp);
+    void RecordComplete(
+        TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline,
+        const uint64_t cqeNo = 0ULL) override;
+    void PublishSoftwareRecordResource(
+        void* const eventAddr, int32_t eventId, int32_t streamId, uint32_t taskId, uint64_t cqeNo) override;
     bool WaitSendCheck(const Stream* const stm, int32_t& eventId) override;
     bool TryFreeEventIdAndCheckCanBeDelete(const int32_t id, bool isNeedDestroy) override;
     bool DavidUpdateRecordMapAndDestroyEvent(TaskInfo* taskInfo);
@@ -47,7 +52,9 @@ public:
     rtError_t ClearRecordStatus() override;
     rtError_t AllocEventIdResource(Stream* const stm, int32_t& eventId) override;
     void UpdateLatestRecord(
-        const DavidRecordTaskInfo& recordInfo, const DavidEventState_t latestStatus, const uint64_t timeStamp);
+        const DavidRecordTaskInfo& recordInfo, const DavidEventState_t latestStatus, const uint64_t timeStamp,
+        const int32_t newEventId = INVALID_EVENT_ID, void* const newEventAddr = nullptr);
+    uint64_t ExpectCqeNo_() const override;
     rtError_t GenEventId() override;
     bool IsEventInModel() override;
     rtError_t ReAllocId() override;
@@ -62,10 +69,11 @@ public:
     void SetCntValue(uint32_t val) { cntValue_ = val; }
     void SetRecordStatus(DavidEventState_t status) { status_ = status; }
     DavidEventState_t GetRecordStatus() const { return status_; }
-    void SetLatestRecordInfo(uint32_t taskId, int32_t stmId)
+    void SetLatestRecordInfo(uint32_t taskId, int32_t stmId, uint64_t expectCqeNo = 0ULL)
     {
         latestRecordTask_.taskId = taskId;
         latestRecordTask_.streamId = stmId;
+        latestRecordTask_.expectCqeNo = expectCqeNo;
     }
     DavidRecordTaskInfo GetLatestRecordInfo() { return latestRecordTask_; }
 
@@ -73,7 +81,7 @@ private:
     bool isCntNotify_{false};
     uint32_t cntValue_{0U};
     DavidEventState_t status_;
-    DavidRecordTaskInfo latestRecordTask_{0, 0U};
+    DavidRecordTaskInfo latestRecordTask_{0, 0U, 0ULL};
 };
 } // namespace runtime
 } // namespace cce

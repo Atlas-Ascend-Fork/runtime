@@ -76,7 +76,7 @@ rtError_t Event::RecordSoftwareEvent(Stream* const stm)
     error = dev->AllocExpandingPoolEvent(&eventAddr, &newEventId);
     ERROR_RETURN_MSG_INNER(
         error, "Capture addr error, deviceId=%u, tsId=%u, retCode=%#x.", device_->Id_(), device_->DevGetTsId(), error);
-    PublishSoftwareRecordResource(eventAddr, newEventId);
+    PublishSoftwareRecordResource(eventAddr, newEventId, stm->Id_(), tsk->id, 0U);
     (void)MemWriteValueTaskInit(tsk, eventAddr, static_cast<uint64_t>(1U));
     tsk->typeName = "EVENT_RECORD";
     // capture task需按实际所属stream的bind状态选择任务类型。

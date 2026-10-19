@@ -82,7 +82,9 @@ struct DavidStarsModelMaintaince {
     uint32_t opSqId;
     uint32_t sqId;
     uint8_t notifyIdExpandFlag;
-    uint8_t rev[3];
+    uint8_t enableCqe : 1;
+    uint8_t reserved0 : 7;
+    uint8_t rev[2];
     uint32_t endgraphNotifyIdExpand; // endgraphNotifyId may exceed 64K on A5/A6.
     uint32_t reserved[2];
 };

@@ -86,13 +86,7 @@ bool GetPublicTask(
         return true;
     }
 
-    // check task is can be recycled
-    if ((delWorkTask->isCqeNeedConcern == 1) &&
-        unlikely((stm->GetFailureMode() != ABORT_ON_FAILURE) && (!stm->isForceRecycle_))) {
-        RT_LOG(
-            RT_LOG_DEBUG, "Task delay recycle until CQE received, stream_id=%d, task_id=%hu.", stm->Id_(),
-            delWorkTask->id);
-        stm->SetNeedRecvCqeFlag(true);
+    if (IsTaskRecycleBlocked(delWorkTask)) {
         earlyBreakFlag = true;
         return true;
     }

@@ -53,6 +53,7 @@ struct RecordTaskInfo {
     int32_t streamId;
     uint32_t taskId;
     rtEventState_t state;
+    uint64_t expectCqeNo{0ULL};
 };
 
 class Event : public NoCopy {
@@ -83,7 +84,8 @@ public:
     rtError_t WaitForBusy();
     virtual rtError_t ReclaimTask(const bool evtWaitTask);
     rtError_t GetFailureStatus();
-    void RecordComplete(TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline);
+    virtual void RecordComplete(
+        TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline, const uint64_t cqeNo = 0U);
     void UpdateTimeline();
     virtual rtError_t WaitTask(const int32_t timeout);
 
@@ -99,7 +101,7 @@ public:
     void DeleteRecordResetFromMap(TaskInfo* tsk);
     void UpdateLatestRecord(
         RecordTaskInfo& latestRecord, const int32_t newEventId = INVALID_EVENT_ID, const uint64_t timeLine = UINT64_MAX,
-        const uint64_t timeStamp = UINT64_MAX);
+        const uint64_t timeStamp = UINT64_MAX, void* const newEventAddr = nullptr);
     virtual bool WaitSendCheck(const Stream* const stm, int32_t& eventId);
     virtual rtError_t AllocEventIdResource(Stream* const stm, int32_t& newEventId);
     void InitEventAllocFlag(int32_t streamId = -1);
@@ -115,14 +117,18 @@ public:
     virtual uint64_t GetEventFlag() const { return eventFlag_; }
     int32_t EventId_() const { return eventId_; }
     void SetEventId(int32_t newEventId) { eventId_ = newEventId; }
+    virtual uint64_t ExpectCqeNo_() const { return GetLatestRecord().expectCqeNo; }
 
-    void PublishSoftwareRecordResource(void* const eventAddr, int32_t eventId);
+    virtual void PublishSoftwareRecordResource(
+        void* const eventAddr, int32_t eventId, int32_t streamId, uint32_t taskId, uint64_t cqeNo);
 
     void SetEventAddr(void* eventAddr) { eventAddr_ = eventAddr; }
 
     void* GetEventAddr() const { return eventAddr_; }
 
-    RecordTaskInfo GetLatestRecord()
+    bool IsEventWithTimeline() const { return (eventFlag_ & RT_EVENT_TIME_LINE); }
+
+    RecordTaskInfo GetLatestRecord() const
     {
         const std::lock_guard<std::mutex> latestStateLock(recordStateMutex_);
         return latestRecord_;
@@ -162,7 +168,7 @@ public:
     Notifier* FindFromNotifierMap(uint32_t streamId, uint16_t taskId);
     void InsertToNotifierMap(uint32_t streamId, uint16_t taskId, Notifier* value);
     void DeleteFromNotifierMap(uint32_t streamId, uint16_t taskId);
-    void RefreshEventId(int32_t eventid);
+    void RefreshEventId(int32_t eventid, void* const eventAddr = nullptr);
     virtual rtError_t ClearRecordStatus();
     virtual Device* Device_() const { return device_; }
     virtual Context* Context_() const { return context_; }
@@ -195,9 +201,12 @@ public:
     uint32_t GetWaitFlag() const { return waitFlag_.Value(); }
     void SetRecordFlag(uint32_t flag) { recordFlag_.Set(flag); }
     void SetWaitFlag(uint32_t flag) { waitFlag_.Set(flag); }
+    bool IsExternalRecordOrWait() const;
 
 protected:
     bool AreTaskMapsEmptyLocked();
+    rtError_t QueryExternalEventStatus(rtEventStatus_t* const status);
+    rtError_t SynchronizeExternalEventStatus(int32_t timeout, bool recordCompleted);
     Device* device_; // 创建Event时，所在的设备
     RecordTaskInfo latestRecord_;
     Atomic<bool> isNeedDestroy_;
@@ -211,7 +220,7 @@ protected:
     std::mutex eventLock_;
     std::mutex eventLockForRecord_;
     std::mutex idMapMutex_;
-    std::mutex recordStateMutex_;
+    mutable std::mutex recordStateMutex_;
     std::mutex taskMapMutex_;
     std::mutex initMutex_;
     Context* context_;

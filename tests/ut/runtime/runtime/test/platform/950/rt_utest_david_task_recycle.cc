@@ -808,7 +808,10 @@ TEST_F(DavidTaskRecycleTest, ProcReport)
 TEST_F(DavidTaskRecycleTest, ProcReportWithTaskMultiple)
 {
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
+    rtStream_t streamHandle = nullptr;
+    ASSERT_EQ(rtStreamCreate(&streamHandle, 0), RT_ERROR_NONE);
     TaskInfo reportTask = {};
+    reportTask.stream = rt_ut::UnwrapOrNull<Stream>(streamHandle);
     reportTask.type = TS_TASK_TYPE_MULTIPLE_TASK;
     reportTask.sqeNum = 2U;
     MOCKER(GetTaskInfo).stubs().will(returnValue(&reportTask));
@@ -825,6 +828,7 @@ TEST_F(DavidTaskRecycleTest, ProcReportWithTaskMultiple)
     pos = ProcReport(device, 0U, 65535, 1, &report, isFinished, hasCqeReportErr);
     EXPECT_EQ(pos, 0);
 
+    EXPECT_EQ(rtStreamDestroy(streamHandle), RT_ERROR_NONE);
     ((Runtime*)Runtime::Instance())->DeviceRelease(device);
 }
 
@@ -1740,6 +1744,7 @@ TEST_F(DavidTaskRecycleTest, ProcLogicCqWhenErr)
     EXPECT_EQ(ret, RT_ERROR_NONE);
 
     TaskInfo task = {};
+    task.stream = rt_ut::UnwrapOrNull<Stream>(stream);
     task.type = TS_TASK_TYPE_MULTIPLE_TASK;
     task.sqeNum = 2U;
     task.u.davinciMultiTaskInfo.sqeNum = 2U;

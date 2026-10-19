@@ -28,7 +28,9 @@
 #include "context.hpp"
 #include "stream.hpp"
 
+#include <chrono>
 #include <cmath>
+#include <thread>
 
 namespace cce {
 namespace runtime {
@@ -46,6 +48,12 @@ const char_t* EventStateName(const rtEventState_t state)
             return "UNKNOWN";
     }
 }
+
+constexpr uint8_t EVENT_EXTERNAL_STATUS_INIT = 0U;
+constexpr uint8_t EVENT_EXTERNAL_STATUS_RECORDED = 1U;
+constexpr uint16_t EXTERNAL_EVENT_SYNC_QUERY_TIMES_PER_YIELD = 1000U;
+constexpr uint16_t EXTERNAL_EVENT_SYNC_YIELD_TIMES_PER_SLEEP = 5U;
+constexpr uint32_t EXTERNAL_EVENT_SYNC_SLEEP_US = 50U;
 } // namespace
 
 Event::Event()
@@ -70,6 +78,7 @@ Event::Event()
     latestRecord_.streamId = -1;
     latestRecord_.taskId = UINT32_MAX;
     latestRecord_.state = INIT;
+    latestRecord_.expectCqeNo = 0ULL;
     eventFlag_ = Runtime::Instance()->GetDisableThread() ? UINT64_MAX : RT_EVENT_DEFAULT;
 }
 
@@ -96,6 +105,7 @@ Event::Event(Device* device, uint64_t eventFlag, Context* ctx, bool isSync, bool
     latestRecord_.streamId = -1;
     latestRecord_.taskId = UINT32_MAX;
     latestRecord_.state = INIT;
+    latestRecord_.expectCqeNo = 0U;
 }
 
 Event::~Event() noexcept
@@ -126,11 +136,13 @@ Event::~Event() noexcept
 void Event::TryFreeLastEventId()
 {
     const std::lock_guard<std::mutex> lock(idMapMutex_);
-    if (isNewMode_ || freeEventId_ == INVALID_EVENT_ID) {
-        RT_LOG(RT_LOG_INFO, "NewMode free in DoComplete, oldMode only free at second record.");
+    if (((IsHardwareMode()) && isNewMode_) || freeEventId_ == INVALID_EVENT_ID) {
+        RT_LOG(RT_LOG_INFO, "HardWare NewMode free in DoComplete, oldMode only free at second record.");
         return;
     }
-    if (device_->IsSupportEventPool()) {
+    if (!IsHardwareMode()) {
+        device_->FreeExpandingPoolEvent(freeEventId_);
+    } else if (device_->IsSupportEventPool()) {
         device_->PushNextPoolFreeEventId(freeEventId_);
         device_->WakeUpRecycleThread();
         RT_LOG(RT_LOG_INFO, "pool push recycle event_id=%d.", freeEventId_);
@@ -172,21 +184,12 @@ void Event::EventIdCountSub(const int32_t id, bool isFreeId)
     }
 }
 
-void Event::PublishSoftwareRecordResource(void* const eventAddr, int32_t eventId)
+void Event::PublishSoftwareRecordResource(
+    void* const eventAddr, int32_t eventId, int32_t streamId, uint32_t taskId, uint64_t cqeNo)
 {
-    int32_t oldEventId = INVALID_EVENT_ID;
-    bool needFreeOldEvent = false;
-    {
-        const std::lock_guard<std::mutex> lock(idMapMutex_);
-        oldEventId = eventId_;
-        const bool hasOldResource = (eventAddr_ != nullptr) && (oldEventId != INVALID_EVENT_ID);
-        eventAddr_ = eventAddr;
-        eventId_ = eventId;
-        needFreeOldEvent = hasOldResource && (oldEventId != eventId) && (idMap_.find(oldEventId) == idMap_.end());
-    }
-    if (needFreeOldEvent && (device_ != nullptr)) {
-        device_->FreeExpandingPoolEvent(oldEventId);
-    }
+    RecordTaskInfo latestRecord = {streamId, taskId, RECORDING, cqeNo};
+    UpdateLatestRecord(latestRecord, eventId, UINT64_MAX, UINT64_MAX, eventAddr);
+    TryFreeLastEventId();
 }
 
 rtError_t Event::TrySwitchToSoftwareMode()
@@ -362,18 +365,20 @@ void Event::DeleteFromNotifierMap(uint32_t streamId, uint16_t taskId)
 }
 
 void Event::UpdateLatestRecord(
-    RecordTaskInfo& latestRecord, const int32_t newEventId, const uint64_t timeLine, const uint64_t timeStamp)
+    RecordTaskInfo& latestRecord, const int32_t newEventId, const uint64_t timeLine, const uint64_t timeStamp,
+    void* const newEventAddr)
 {
     const std::lock_guard<std::mutex> updateLock(recordStateMutex_);
     if (latestRecord.state == RECORDING) {
         latestRecord_ = latestRecord;
-        RefreshEventId(newEventId);
+        RefreshEventId(newEventId, newEventAddr);
         SetRecord(true);
         SetHasReset(false);
         timeline_ = UINT64_MAX;
         timestamp_ = UINT64_MAX;
     } else if (latestRecord.state == RECORDED) {
-        if ((latestRecord.streamId == latestRecord_.streamId) && (latestRecord.taskId == latestRecord_.taskId)) {
+        if ((latestRecord.streamId == latestRecord_.streamId) && (latestRecord.taskId == latestRecord_.taskId) &&
+            (latestRecord.expectCqeNo == latestRecord_.expectCqeNo)) {
             timeline_ = timeLine;
             timestamp_ = timeStamp;
             latestRecord_.state = RECORDED;
@@ -391,22 +396,24 @@ void Event::UpdateLatestRecord(
 
     RT_LOG(
         RT_LOG_INFO,
-        "device_id=%u, event_id=%d, cur stream_id=%d, cur task_id=%u, "
-        "latest stream_id=%d, latest task_id=%u, status=%s(%u)",
-        device_->Id_(), eventId_, latestRecord_.streamId, latestRecord_.taskId, latestRecord.streamId,
-        latestRecord.taskId, EventStateName(latestRecord_.state), static_cast<uint32_t>(latestRecord_.state));
+        "device_id=%u, event_id=%d, cur stream_id=%d, cur task_id=%u, cur cqe_no=%" PRIu64 ", "
+        "latest stream_id=%d, latest task_id=%u, latest cqe_no=%" PRIu64 ", status=%d(%s)",
+        device_->Id_(), eventId_, latestRecord_.streamId, latestRecord_.taskId, latestRecord_.expectCqeNo,
+        latestRecord.streamId, latestRecord.taskId, latestRecord.expectCqeNo, latestRecord_.state,
+        EventStateName(latestRecord_.state));
 }
 
-void Event::RefreshEventId(int32_t eventid)
+void Event::RefreshEventId(int32_t eventid, void* const eventAddr)
 {
     // refresh new id, must be lock, may be conflict with TryFreeEventIdAndCheckCanBeDelete.
     const std::lock_guard<std::mutex> lock(idMapMutex_);
     if (isNewMode_ || eventFlag_ == RT_EVENT_DEFAULT) {
-        if (idMap_.find(eventId_) == idMap_.end()) {
+        if ((eventId_ != eventid) && (idMap_.find(eventId_) == idMap_.end())) {
             freeEventId_ = eventId_;
         }
         RT_LOG(RT_LOG_INFO, "old event_id=%d, fresh event_id=%d", eventId_, eventid);
         eventId_ = eventid;
+        eventAddr_ = eventAddr;
     }
 }
 
@@ -867,10 +874,11 @@ rtError_t Event::GetFailureStatus()
     return RT_ERROR_NONE;
 }
 
-void Event::RecordComplete(TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline)
+void Event::RecordComplete(
+    TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline, const uint64_t cqeNo)
 {
     const std::lock_guard<std::mutex> lock(eventLock_);
-    RecordTaskInfo latestRecord = {tsk->stream->Id_(), tsk->id, RECORDED};
+    RecordTaskInfo latestRecord = {tsk->stream->Id_(), tsk->id, RECORDED, cqeNo};
     UpdateLatestRecord(latestRecord, INVALID_EVENT_ID, recTimeline, recTimestamp);
     MEMORY_FENCE();
     Notifier* notifier = FindFromNotifierMap(static_cast<uint32_t>(tsk->stream->Id_()), tsk->id);
@@ -933,8 +941,12 @@ rtError_t Event::QueryEventTask(rtEventStatus_t* const status)
         error, "Failed to check the context status for the stream. Reason: context is abort, status=%#x.",
         static_cast<int32_t>(error));
     if (device_->IsStarsPlatform()) {
-        error = stm->JudgeHeadTailPos(status, this->recordPos_);
-        if (error != RT_ERROR_NONE) { // confirm
+        if (IsExternalRecordOrWait()) {
+            error = QueryExternalEventStatus(status);
+        } else {
+            error = stm->JudgeHeadTailPos(status, this->recordPos_);
+        }
+        if (error != RT_ERROR_NONE) {
             return RT_ERROR_NONE;
         }
         if (*status == RT_EVENT_RECORDED && (eventFlag_ & RT_EVENT_TIME_LINE) != 0) {
@@ -943,7 +955,11 @@ rtError_t Event::QueryEventTask(rtEventStatus_t* const status)
                                                                                                          TimeStamp();
             if (curUs == UINT64_MAX) {
                 *status = RT_EVENT_INIT;
-                stm->TaskReclaim();
+                if (IsExternalRecordOrWait()) {
+                    device_->WakeUpRecycleThread();
+                } else {
+                    stm->TaskReclaim();
+                }
             }
         }
         RT_LOG(
@@ -1123,11 +1139,14 @@ rtError_t Event::Synchronize(int32_t timeout)
     if (!HasRecord()) {
         const int32_t device_id = (device_ == nullptr) ? -1 : static_cast<int32_t>(device_->Id_());
         RT_LOG(
-            RT_LOG_INFO, "No record to synchronize; returning success, device_id=%d, event_id=%d", device_id, eventId_);
+            RT_LOG_INFO, "No record to synchronize, return success, device_id=%d, event_id=%d.", device_id, eventId_);
         return RT_ERROR_NONE;
     }
 
     if (Runtime::Instance()->GetDisableThread()) {
+        if (IsExternalRecordOrWait()) {
+            return SynchronizeExternalEventStatus(timeout, GetLatestRecord().state == RECORDED);
+        }
         error = WaitTask(timeout);
         if (error == RT_ERROR_STREAM_SYNC_TIMEOUT) {
             SetEventSyncTimeoutFlag(true);
@@ -1250,6 +1269,88 @@ rtError_t Event::QueryEventStatus(rtEventStatus_t* const status)
         RT_LOG_INFO, "device_id=%u, event_id=%d, latest state=%s(%u), status=%d", device_->Id_(), eventId_,
         EventStateName(latestRecord.state), static_cast<uint32_t>(latestRecord.state), *status);
     return error;
+}
+
+bool Event::IsExternalRecordOrWait() const
+{
+    return ((GetRecordFlag() == RT_EVENT_RECORD_EXTERNAL) || (GetWaitFlag() == RT_EVENT_WAIT_EXTERNAL));
+}
+
+rtError_t Event::QueryExternalEventStatus(rtEventStatus_t* const status)
+{
+    COND_RETURN_ERROR(
+        eventAddr_ == nullptr, RT_ERROR_EVENT_RECORDER_NULL, "Event address is null, event_id=%d.", EventId_());
+    uint8_t recordValue = EVENT_EXTERNAL_STATUS_INIT;
+    if (device_->IsEventExpandingPoolSupportBar()) {
+        recordValue = *RtPtrToPtr<volatile uint8_t*>(eventAddr_);
+    } else {
+        const rtError_t error = device_->Driver_()->MemCopySync(
+            &recordValue, sizeof(recordValue), eventAddr_, sizeof(recordValue), RT_MEMCPY_DEVICE_TO_HOST);
+        COND_RETURN_ERROR(
+            error != RT_ERROR_NONE, error, "Failed to copy external event status, event_id=%d, retCode=%#x.",
+            EventId_(), static_cast<uint32_t>(error));
+    }
+    COND_RETURN_ERROR(
+        (recordValue != EVENT_EXTERNAL_STATUS_INIT) && (recordValue != EVENT_EXTERNAL_STATUS_RECORDED),
+        RT_ERROR_INVALID_VALUE, "Invalid external event status=%u, event_id=%d.", recordValue, EventId_());
+
+    if (recordValue == EVENT_EXTERNAL_STATUS_INIT) {
+        *status = RT_EVENT_INIT;
+    } else {
+        *status = RT_EVENT_RECORDED;
+    }
+    return RT_ERROR_NONE;
+}
+
+rtError_t Event::SynchronizeExternalEventStatus(int32_t timeout, bool recordCompleted)
+{
+    SetEventSyncTimeoutFlag(false);
+    if (recordCompleted) {
+        return RT_ERROR_NONE;
+    }
+
+    uint16_t queryTimes = 0U;
+    uint16_t yieldTimes = 0U;
+    const mmTimespec beginTimeSpec = mmGetTickCount();
+    rtError_t error = RT_ERROR_NONE;
+    while (true) {
+        rtEventStatus_t status = RT_EVENT_INIT;
+        if (Context_() != nullptr) {
+            error = Context_()->CheckStatus();
+            ERROR_RETURN(error, "context is aborted, status=%#x.", static_cast<uint32_t>(error));
+        }
+        error = QueryExternalEventStatus(&status);
+        COND_RETURN_ERROR(
+            error != RT_ERROR_NONE, error, "Failed to synchronize external event, event_id=%d.", EventId_());
+        if (status == RT_EVENT_RECORDED) {
+            if (!IsEventWithTimeline()) {
+                return RT_ERROR_NONE;
+            }
+            if (TimeStamp() != UINT64_MAX) {
+                return RT_ERROR_NONE;
+            }
+            device_->WakeUpRecycleThread();
+        }
+
+        if (IsProcessTimeout(beginTimeSpec, timeout)) {
+            SetEventSyncTimeoutFlag(true);
+            RT_LOG(
+                RT_LOG_ERROR, "external event synchronize timeout, device_id=%u, event_id=%d, timeout=%dms.",
+                device_->Id_(), eventId_, timeout);
+            return RT_ERROR_EVENT_SYNC_TIMEOUT;
+        }
+
+        queryTimes++;
+        if (queryTimes == EXTERNAL_EVENT_SYNC_QUERY_TIMES_PER_YIELD) {
+            std::this_thread::yield();
+            yieldTimes++;
+            if (yieldTimes == EXTERNAL_EVENT_SYNC_YIELD_TIMES_PER_SLEEP) {
+                std::this_thread::sleep_for(std::chrono::microseconds(EXTERNAL_EVENT_SYNC_SLEEP_US));
+                yieldTimes = 0U;
+            }
+            queryTimes = 0U;
+        }
+    }
 }
 
 rtError_t Event::QueryEventWaitStatus(const bool disableThread, bool& waitFlag)
@@ -1378,6 +1479,7 @@ rtError_t Event::ClearRecordStatus()
     latestRecord_.streamId = -1;
     latestRecord_.taskId = UINT32_MAX;
     latestRecord_.state = INIT;
+    latestRecord_.expectCqeNo = 0U;
     freeEventId_ = INVALID_EVENT_ID;
     timestamp_ = UINT64_MAX;
     timeline_ = UINT64_MAX;

@@ -19,9 +19,29 @@
 
 namespace cce {
 namespace runtime {
+
+static void ReleaseEventBuffer(Device* const dev, void* const addr, const bool isHostRegistered)
+{
+    if (isHostRegistered) {
+        const rtError_t unregisterRet = dev->Driver_()->PcieHostUnRegister(addr, dev->Id_());
+        COND_LOG_WARN(
+            unregisterRet != RT_ERROR_NONE, "host unregister failed, retCode=%#x, device_id=%u.",
+            static_cast<uint32_t>(unregisterRet), dev->Id_());
+    }
+    const rtError_t freeRet = dev->Driver_()->DevMemFree(addr, dev->Id_());
+    COND_LOG_WARN(
+        freeRet != RT_ERROR_NONE, "device mem free failed, retCode=%#x, device_id=%u.", static_cast<uint32_t>(freeRet),
+        dev->Id_());
+}
+
 EventExpandingPool::EventExpandingPool(Device* const dev)
     : NoCopy(), device_(dev), eventIdCount_(EVENT_INIT_VALUE), lastEventId_(0U), poolIndex_(0U)
 {
+    uint32_t capability = RT_CAPABILITY_NOT_SUPPORT;
+    const uint64_t size = static_cast<uint64_t>(EVENT_INIT_CNT) * sizeof(uint8_t);
+    const bool need4KAsync = size <= HUGE_PAGE_MEM_CRITICAL_VALUE;
+    (void)device_->Driver_()->CheckSupportPcieBarCopy(device_->Id_(), capability, need4KAsync);
+    barSupported_ = (capability == RT_CAPABILITY_SUPPORT);
     for (int i = 0; i < MAX_POOL_CNT; ++i) {
         eventAllocator_[i] = nullptr;
     }
@@ -37,29 +57,55 @@ EventExpandingPool::~EventExpandingPool()
 void* EventExpandingPool::MallocBufferForEvent(const size_t size, void* const para)
 {
     void* addr = nullptr;
-    Device* const dev = static_cast<Device*>(para);
+    const EventExpandingPool* const pool = static_cast<EventExpandingPool*>(para);
+    Device* const dev = pool->device_;
+    const bool barSupported = pool->barSupported_;
+    /* 如果支持，申请device内存时PCIE场景必须传入P2P, UB场景传入普通MEMORY也可以，为了归一，都传入P2P */
+    const rtMemType_t memType = barSupported ? RT_MEMORY_P2P_HBM : RT_MEMORY_DDR;
     rtError_t error = dev->Driver_()->DevMemAllocWithBackupFlag(
-        &addr, static_cast<uint64_t>(size), RT_MEMORY_DDR, dev->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
+        &addr, static_cast<uint64_t>(size), memType, dev->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
     COND_RETURN_WARN(
         error != RT_ERROR_NONE, nullptr,
         "device mem alloc pool mem failed, "
-        "size=%u(bytes), kind=%d, device_id=%u, retCode=%#x",
-        size, RT_MEMORY_DDR, dev->Id_(), static_cast<uint32_t>(error));
-    error = dev->Driver_()->MemSetSync(addr, static_cast<uint64_t>(size), 0, static_cast<uint64_t>(size));
-    COND_PROC_RETURN_WARN(
-        error != RT_ERROR_NONE, nullptr, (void)dev->Driver_()->DevMemFree(addr, dev->Id_()),
-        "device memset sync failed, size=%u(bytes), kind=%d, device_id=%u, retCode=%#x", size, RT_MEMORY_DDR,
-        dev->Id_(), static_cast<uint32_t>(error));
+        "size=%zu(bytes), kind=%d, device_id=%u, retCode=%#x",
+        size, memType, dev->Id_(), static_cast<uint32_t>(error));
+
+    if (barSupported) {
+        void* outAddr = nullptr;
+        error = dev->Driver_()->PcieHostRegister(addr, static_cast<uint64_t>(size), dev->Id_(), outAddr);
+        if (error != RT_ERROR_NONE) {
+            ReleaseEventBuffer(dev, addr, false);
+            RT_LOG(
+                RT_LOG_ERROR, "Pcie host register failed, retCode=%#x, size=%zu(bytes), device_id=%u.",
+                static_cast<uint32_t>(error), size, dev->Id_());
+            return nullptr;
+        }
+        if (outAddr != addr) {
+            ReleaseEventBuffer(dev, addr, true);
+            RT_LOG(
+                RT_LOG_ERROR,
+                "host register returned a different address, dev_addr=%p, host_addr=%p, "
+                "size=%zu(bytes), device_id=%u.",
+                addr, outAddr, size, dev->Id_());
+            return nullptr;
+        }
+    }
+
+    error = dev->Driver_()->MemSetSync(addr, static_cast<uint64_t>(size), 0U, static_cast<uint64_t>(size));
+    if (error != RT_ERROR_NONE) {
+        ReleaseEventBuffer(dev, addr, barSupported);
+        RT_LOG(
+            RT_LOG_WARNING, "device memset sync failed, size=%zu(bytes), kind=%d, device_id=%u, retCode=%#x", size,
+            memType, dev->Id_(), static_cast<uint32_t>(error));
+        return nullptr;
+    }
     return addr;
 }
 
 void EventExpandingPool::FreeBufferForEvent(void* const addr, void* const para)
 {
-    Device* const dev = static_cast<Device*>(para);
-    const rtError_t error = dev->Driver_()->DevMemFree(addr, dev->Id_());
-    COND_LOG_WARN(
-        error != RT_ERROR_NONE, "device mem free failed, device_id=%u, retCode=%#x!", dev->Id_(),
-        static_cast<uint32_t>(error));
+    const EventExpandingPool* const pool = static_cast<EventExpandingPool*>(para);
+    ReleaseEventBuffer(pool->device_, addr, pool->barSupported_);
 }
 
 rtError_t EventExpandingPool::AllocAndInsertEvent(void** const eventAddr, int32_t* eventId)
@@ -75,11 +121,13 @@ rtError_t EventExpandingPool::AllocAndInsertEvent(void** const eventAddr, int32_
         if (eventAllocator_[poolIndex_] == nullptr) {
             eventAllocator_[poolIndex_] = new (std::nothrow) BufferAllocator(
                 sizeof(uint8_t), EVENT_INIT_CNT, PER_POOL_CNT, BufferAllocator::LINEAR, &MallocBufferForEvent,
-                &FreeBufferForEvent, device_);
+                &FreeBufferForEvent, this);
             COND_RETURN_AND_MSG_OUTER(
                 eventAllocator_[poolIndex_] == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013,
                 std::to_string(sizeof(BufferAllocator)).c_str(), "new");
-            RT_LOG(RT_LOG_INFO, "Init EventExpandingPool success, poolIndex=%hu.", poolIndex_);
+            RT_LOG(
+                RT_LOG_INFO, "Init EventExpandingPool success, poolIndex=%hu, barSupported=%d.", poolIndex_,
+                IsBarSupported());
         }
 
         currentEventId = eventAllocator_[poolIndex_]->AllocIdWithoutRetry(false);

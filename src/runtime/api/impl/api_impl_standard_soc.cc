@@ -53,6 +53,7 @@
 #include "capture_model_utils.hpp"
 #include "stars_engine.hpp"
 #include "binary_loader.hpp"
+#include "arg_loader.hpp"
 #include "args_handle_allocator.hpp"
 #include "para_convertor.hpp"
 #include "soc_info.h"
@@ -62,7 +63,7 @@
 #include "memory_c.hpp"
 #include "aicpu_c.hpp"
 #include "enum_desc.hpp"
-
+#include "capture_model_enum_desc.hpp"
 namespace cce {
 namespace runtime {
 
@@ -1146,39 +1147,9 @@ rtError_t ApiImpl::InvalidCache(const uint64_t base, const size_t len)
     return RT_ERROR_NONE;
 }
 
-rtError_t ApiImpl::TaskGetParams(rtTask_t task, rtTaskParams* const params)
+static rtError_t GetTaskParamsWithoutUpdate(const TaskInfo* const taskInfo, rtTaskParams* const params)
 {
-    const TaskInfo* const taskInfo = RtPtrToPtr<const TaskInfo*>(task);
-    const Stream* stm = taskInfo->stream;
-    NULL_PTR_RETURN(stm, RT_ERROR_STREAM_NULL);
-    Model* const mdl = stm->Model_();
-    if ((mdl != nullptr) && (mdl->GetModelType() == RT_MODEL_CAPTURE_MODEL)) {
-        CaptureModel* captureModel = dynamic_cast<CaptureModel*>(mdl);
-        COND_RETURN_WARN(
-            ((captureModel != nullptr) && captureModel->IsSubCaptureModel()), RT_ERROR_FEATURE_NOT_SUPPORT,
-            "task belongs to sub ACL Graph, does not support getting task parameters");
-    }
-    rtError_t error = CheckCaptureModelSupportSoftwareSq(stm->Device_());
-    COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
-
-    if (taskInfo->taskOwner == static_cast<uint8_t>(TaskOwner::RT_TASK_INNER)) {
-        RT_LOG_OUTER_MSG_IMPL(
-            ErrorCode::EE1017, "Obtaining task parameter information", "task->type",
-            "The current task type RT_TASK_DEFAULT(0) does not support obtaining of parameters."
-            " Only task types other than RT_TASK_DEFAULT(0) support obtaining parameters");
-        RT_LOG(
-            RT_LOG_ERROR, "streamId=%d, taskId=%u, alloc taskType=%s(%d), taskOwner=TASK_INNER(%u).",
-            taskInfo->stream->Id_(), taskInfo->id, taskInfo->typeName, static_cast<int32_t>(taskInfo->type),
-            static_cast<uint32_t>(taskInfo->taskOwner));
-        return RT_ERROR_INVALID_VALUE;
-    }
-
-    COND_RETURN_WARN(
-        IsTaskBelongToSubCaptureMdl(taskInfo), RT_ERROR_FEATURE_NOT_SUPPORT,
-        "task belongs to sub ACL Graph, does not support querying task type");
-
-    (void)memset_s(params, sizeof(rtTaskParams), 0, sizeof(rtTaskParams));
-    error = ConvertTaskType(taskInfo, &params->type);
+    rtError_t error = ConvertTaskType(taskInfo, &params->type);
     ERROR_RETURN(error, "get task type failed, retCode=%d.", error);
     switch (taskInfo->type) {
         case TS_TASK_TYPE_KERNEL_AICORE:
@@ -1204,8 +1175,10 @@ rtError_t ApiImpl::TaskGetParams(rtTask_t task, rtTaskParams* const params)
             error = GetEventResetTaskParamsStarsV2(taskInfo, params);
             break;
         case TS_TASK_TYPE_CAPTURE_RECORD:
-        case TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL:
             error = GetCaptureRecordTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL:
+            error = GetCaptureExternalRecordTaskParams(taskInfo, params);
             break;
         case TS_TASK_TYPE_CAPTURE_WAIT:
         case TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL:
@@ -1230,11 +1203,69 @@ rtError_t ApiImpl::TaskGetParams(rtTask_t task, rtTaskParams* const params)
                 " Only task types other than RT_TASK_DEFAULT(0) support obtaining parameters");
             RT_LOG(
                 RT_LOG_ERROR, "now this task doesn't support get params, stream_id=%d, task_id=%hu, task_type=%s(%d)",
-                stm->Id_(), taskInfo->id, taskInfo->typeName, taskInfo->type);
+                taskInfo->stream->Id_(), taskInfo->id, taskInfo->typeName, taskInfo->type);
             error = RT_ERROR_INVALID_VALUE;
             break;
     }
     return error;
+}
+
+static rtError_t GetTaskParamsWithUpdate(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    rtTaskType latestType = taskInfo->updateInfo->latestParams.type;
+
+    switch (latestType) {
+        case RT_TASK_KERNEL:
+            return GetKernelTaskParams(taskInfo, params);
+        case RT_TASK_EVENT_RECORD:
+            return GetEventRecordLastestParams(taskInfo, params);
+        case RT_TASK_VALUE_WRITE:
+            return GetWriteValueTaskLastestParams(taskInfo, params);
+        case RT_TASK_VALUE_WAIT:
+            return GetWaitValueTaskLastestParams(taskInfo, params);
+        default:
+            RT_LOG(
+                RT_LOG_ERROR, "unsupported cached task type, stream_id=%d, task_id=%hu, type=%d.",
+                taskInfo->stream->Id_(), taskInfo->id, static_cast<int32_t>(latestType));
+            return RT_ERROR_INVALID_VALUE;
+    }
+}
+
+rtError_t ApiImpl::TaskGetParams(rtTask_t task, rtTaskParams* const params)
+{
+    const TaskInfo* const taskInfo = RtPtrToPtr<const TaskInfo*>(task);
+    const Stream* stm = taskInfo->stream;
+    NULL_PTR_RETURN(stm, RT_ERROR_STREAM_NULL);
+    CaptureModel* captureModel = dynamic_cast<CaptureModel*>(stm->Model_());
+    COND_RETURN_WARN(
+        (captureModel == nullptr), RT_ERROR_FEATURE_NOT_SUPPORT, "Obtaining task parameters",
+        "Non ACL Graph mode is not supported");
+
+    const rtError_t error = CheckCaptureModelSupportSoftwareSq(stm->Device_());
+    COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
+
+    if (taskInfo->taskOwner == static_cast<uint8_t>(TaskOwner::RT_TASK_INNER)) {
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1017, "Obtaining task parameter information", "task->type",
+            "The current task type RT_TASK_DEFAULT(0) does not support obtaining of parameters."
+            " Only task types other than RT_TASK_DEFAULT(0) support obtaining parameters");
+        RT_LOG(
+            RT_LOG_ERROR, "streamId=%d, taskId=%u, alloc taskType=%s(%d), taskOwner=TASK_INNER(%u).",
+            taskInfo->stream->Id_(), taskInfo->id, taskInfo->typeName, static_cast<int32_t>(taskInfo->type),
+            static_cast<uint32_t>(taskInfo->taskOwner));
+        return RT_ERROR_INVALID_VALUE;
+    }
+
+    COND_RETURN_WARN(
+        IsTaskBelongToSubCaptureMdl(taskInfo), RT_ERROR_FEATURE_NOT_SUPPORT,
+        "task belongs to sub ACL Graph, does not support getting task parameters");
+
+    (void)memset_s(params, sizeof(rtTaskParams), 0, sizeof(rtTaskParams));
+    const std::lock_guard<std::mutex> graphUpdateLock(captureModel->GetGraphUpdateInfo().updateMutex);
+    if ((taskInfo->updateInfo != nullptr) && (taskInfo->updateInfo->latestParams.isValid == 1U)) {
+        return GetTaskParamsWithUpdate(taskInfo, params);
+    }
+    return GetTaskParamsWithoutUpdate(taskInfo, params);
 }
 
 rtError_t ApiImpl::TaskSetParams(rtTask_t task, rtTaskParams* const params)
@@ -1243,33 +1274,54 @@ rtError_t ApiImpl::TaskSetParams(rtTask_t task, rtTaskParams* const params)
     rtError_t error = CheckCaptureModelForUpdate(taskInfo->stream);
     COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
 
-    CaptureModel* captureModel = dynamic_cast<CaptureModel*>(taskInfo->stream->Model_());
-    NULL_PTR_RETURN(captureModel, RT_ERROR_MODEL_NULL);
-
+    CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(taskInfo->stream->Model_());
+    const std::lock_guard<std::mutex> graphUpdateLock(captureModel->GetGraphUpdateInfo().updateMutex);
+    if (!captureModel->CanUpdate()) {
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1017, "Checking whether the capture model is updatable", "modelRI",
+            RtFmtMsg(
+                "ModelRI (model_id=%u) is in capture state, status=%s", captureModel->Id_(),
+                CaptureModelStatusToString(captureModel->GetCaptureModelStatus()).c_str()));
+        return RT_ERROR_MODEL_UPDATE_FAILED;
+    }
     captureModel->SetCaptureModelStatus(RtCaptureModelStatus::UPDATING);
+    if (taskInfo->updateInfo == nullptr) {
+        taskInfo->updateInfo = new (std::nothrow) TaskUpdateInfo{};
+        if (taskInfo->updateInfo == nullptr) {
+            RT_LOG_OUTER_MSG_IMPL(ErrorCode::EE1013, sizeof(TaskUpdateInfo), "new");
+            captureModel->SetCaptureModelStatus(RtCaptureModelStatus::FAULT);
+            return RT_ERROR_MEMORY_ALLOCATION;
+        }
+        taskInfo->updateInfo->latestParams.isValid = 0U;
+    }
 
+    const TaskUpdateInfo* const taskUpdate = taskInfo->updateInfo;
+
+    const uint8_t* oldKernelArgs = nullptr;
+    if ((taskUpdate->latestParams.type == RT_TASK_KERNEL) &&
+        (taskUpdate->latestParams.u.kernelUpdateParams.isHostArgs != 0U)) {
+        oldKernelArgs = RtPtrToPtr<uint8_t*>(taskUpdate->latestParams.u.kernelUpdateParams.args);
+    }
     switch (params->type) {
         case RT_TASK_KERNEL:
-            error = UpdateKernelParams(taskInfo, params);
+            error = CacheKernelTaskParams(taskInfo, params);
             break;
         case RT_TASK_EVENT_RECORD:
-        case RT_TASK_EVENT_WAIT:
-        case RT_TASK_EVENT_RESET:
-            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
-                ErrorCode::EE1003, "Setting task parameters", TaskTypeToString(params->type), "params->type",
-                "TASK_KERNEL(1) or TASK_VALUE_WRITE(5) or TASK_VALUE_WAIT(6)");
-            error = RT_ERROR_INVALID_VALUE;
+            error = CacheEventRecordTaskParams(taskInfo, params);
             break;
         case RT_TASK_VALUE_WRITE:
-            error = UpdateWriteValueTaskParams(taskInfo, params);
+            error = CacheWriteValueTaskParams(taskInfo, params);
             break;
         case RT_TASK_VALUE_WAIT:
-            error = UpdateWaitValueTaskParams(taskInfo, params);
+            error = CacheWaitValueTaskParams(taskInfo, params);
             break;
+        case RT_TASK_EVENT_WAIT:
+        case RT_TASK_EVENT_RESET:
         default:
             RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
                 ErrorCode::EE1003, "Setting task parameters", TaskTypeToString(params->type), "params->type",
-                "TASK_KERNEL(1) or TASK_VALUE_WRITE(5) or TASK_VALUE_WAIT(6)");
+                "TASK_KERNEL(1), TASK_EVENT_RECORD(2) for external event record tasks, "
+                "TASK_VALUE_WRITE(5), or TASK_VALUE_WAIT(6)");
             error = RT_ERROR_INVALID_VALUE;
             break;
     }
@@ -1278,10 +1330,16 @@ rtError_t ApiImpl::TaskSetParams(rtTask_t task, rtTaskParams* const params)
         RT_LOG(RT_LOG_ERROR, "Failed to set task params, retCode=%#x.", error);
         return error;
     }
+    // free old host args.
+    DELETE_A(oldKernelArgs);
+    captureModel->InsertGraphUpdateTask(taskInfo);
+    taskInfo->updateInfo->latestParams.isValid = 1U;
     taskInfo->updateFlag = static_cast<uint8_t>(TaskUpdateFlag::RT_TASK_UPDATE);
+
     RT_LOG(
-        RT_LOG_INFO, "stream_id=%d, task_id=%hu, typeName=%s, task type=%d, target type=%s", taskInfo->stream->Id_(),
-        taskInfo->id, taskInfo->typeName, taskInfo->type, TaskTypeToString(params->type).c_str());
+        RT_LOG_INFO, "cache task params success, stream_id=%d, task_id=%hu, typeName=%s, task type=%d, target type=%s",
+        taskInfo->stream->Id_(), taskInfo->id, taskInfo->typeName, taskInfo->type,
+        TaskTypeToString(params->type).c_str());
     return RT_ERROR_NONE;
 }
 

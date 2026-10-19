@@ -37,6 +37,7 @@
 #include "inner_thread_local.hpp"
 #include "task.hpp"
 #include "aicpu_timeout_manager.h"
+#include "capture_model.hpp"
 
 namespace cce {
 namespace runtime {
@@ -378,6 +379,20 @@ rtError_t ProcReport(
         }
 
         RT_LOG(RT_LOG_INFO, "taskType=%u.", reportTask->type);
+        CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(reportTask->stream->Model_());
+        if (captureModel != nullptr) {
+            RT_LOG(
+                RT_LOG_INFO,
+                "Receive capture model CQE, device_id=%u, model_id=%u, stream_id=%d, task_id=%hu, task_type=%u, "
+                "sq_head=%hu, sqe_type=%u, err_type=%#x, err_code=%#x.",
+                dev->Id_(), captureModel->Id_(), reportTask->stream->Id_(), reportTask->id,
+                static_cast<uint32_t>(reportTask->type), report.sqHead, static_cast<uint32_t>(report.sqeType),
+                report.errorType, report.errorCode);
+            captureModel->ProcessExternalRecordNormalCqe(reportTask, report);
+            isFinished = false;
+            hasCqeReportErr = false;
+            continue;
+        }
         if ((reportTask->type == TS_TASK_TYPE_MULTIPLE_TASK) && (reportTask->sqeNum > 1U)) {
             if (CompleteProcMultipleTaskReport(reportTask, report)) {
                 rtCqReport_t cqReport = report;

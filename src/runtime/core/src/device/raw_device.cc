@@ -2529,7 +2529,8 @@ rtError_t RawDevice::GetPrintFifoAddrAndCreateThread(uint64_t* const addr, const
     return ret;
 }
 
-rtError_t RawDevice::StoreEndGraphNotifyInfo(const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos)
+rtError_t RawDevice::StoreEndGraphNotifyInfo(
+    const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos, uint64_t expectTotalRecvCqeCnt)
 {
     auto key = std::make_tuple(streamId, captureModel);
     size_t numOfPos = 0U;
@@ -2539,10 +2540,11 @@ rtError_t RawDevice::StoreEndGraphNotifyInfo(const uint32_t streamId, Model* cap
     auto it = captureModelExeInfoMap_.find(key);
     if (it == captureModelExeInfoMap_.end()) {
         numOfPos = 1U;
-        (void)captureModelExeInfoMap_.emplace(key, std::list<uint32_t>(numOfPos, endGraphNotifyPos));
+        (void)captureModelExeInfoMap_.emplace(
+            key, std::list<std::pair<uint32_t, uint64_t>>(numOfPos, {endGraphNotifyPos, expectTotalRecvCqeCnt}));
     } else {
-        std::list<uint32_t>& posList = captureModelExeInfoMap_[key];
-        (void)posList.emplace_back(endGraphNotifyPos);
+        std::list<std::pair<uint32_t, uint64_t>>& posList = captureModelExeInfoMap_[key];
+        (void)posList.emplace_back(endGraphNotifyPos, expectTotalRecvCqeCnt);
         numOfPos = posList.size();
     }
 
@@ -2565,8 +2567,10 @@ rtError_t RawDevice::DeleteEndGraphNotifyInfo(
 
     auto it = captureModelExeInfoMap_.find(key);
     if (it != captureModelExeInfoMap_.end()) {
-        std::list<uint32_t>& posList = captureModelExeInfoMap_[key];
-        auto posIt = std::find(posList.begin(), posList.end(), endGraphNotifyPos);
+        std::list<std::pair<uint32_t, uint64_t>>& posList = captureModelExeInfoMap_[key];
+        auto posIt = std::find_if(
+            posList.begin(), posList.end(),
+            [endGraphNotifyPos](const std::pair<uint32_t, uint64_t>& item) { return item.first == endGraphNotifyPos; });
         if (posIt != posList.end()) {
             (void)posList.erase(posIt);
         } else {
@@ -2642,7 +2646,7 @@ bool JudgeIsExecuted(const uint16_t sqHead, const uint16_t sqTail, const uint32_
 }
 
 bool RawDevice::JudgeIsEndGraphNotifyWaitExecuted(
-    const Stream* const exeStream, Model* captureModel, std::list<uint32_t>& sqePosList) const
+    const Stream* const exeStream, Model* captureModel, std::list<std::pair<uint32_t, uint64_t>>& sqePosList) const
 {
     uint16_t sqHead = 0U;
     const uint32_t sqId = exeStream->GetSqId();
@@ -2652,16 +2656,18 @@ bool RawDevice::JudgeIsEndGraphNotifyWaitExecuted(
         // update head and tail timingly
         const uint16_t sqTail = exeStream->GetTaskPosTail();
         const rtError_t error = this->Driver_()->GetSqHead(this->Id_(), tsId, sqId, sqHead);
+        const uint32_t endGraphNotifyPos = (*it).first;
+        const uint64_t expectTotalRecvCqeCnt = (*it).second;
         COND_RETURN_ERROR(
             error != RT_ERROR_NONE, false, "Query sq head failed in JudgeIsEndGraphNotifyWaitExecuted, retCode=%#x.",
             static_cast<uint32_t>(error));
 
-        if (JudgeIsExecuted(sqHead, sqTail, *it)) {
+        CaptureModel* captureModelTmp = static_cast<CaptureModel*>(captureModel);
+        if (JudgeIsExecuted(sqHead, sqTail, endGraphNotifyPos) && captureModelTmp != nullptr &&
+            captureModelTmp->GetGraphUpdateInfo().totalRecvCqeCnt.Value() >= expectTotalRecvCqeCnt) {
             it = sqePosList.erase(it);
             CaptureModel* captureModelTmp = static_cast<CaptureModel*>(captureModel);
-            if (captureModelTmp != nullptr) {
-                (void)captureModelTmp->CaptureModelExecuteFinish(RT_ERROR_NONE);
-            }
+            (void)captureModelTmp->CaptureModelExecuteFinish(RT_ERROR_NONE);
         } else {
             break;
         }
@@ -2683,7 +2689,7 @@ void RawDevice::PollEndGraphNotifyInfo()
         COND_PROC(((ret != RT_ERROR_NONE) || (exeStream == nullptr)), it = captureModelExeInfoMap_.erase(it);
                   continue;);
 
-        std::list<uint32_t>& sqePosList = it->second;
+        std::list<std::pair<uint32_t, uint64_t>>& sqePosList = it->second;
         const bool isAlreadyExecuted = JudgeIsEndGraphNotifyWaitExecuted(exeStream.get(), model, sqePosList);
         exeStream.reset();
         if (isAlreadyExecuted) {
@@ -2708,7 +2714,7 @@ void RawDevice::PollEndGraphNotifyInfoByModelId(const uint32_t modelId)
         const rtError_t ret = GetStreamSqCqManage()->GetStreamSharedPtrById(streamId, exeStream);
         COND_PROC(((ret != RT_ERROR_NONE) || (exeStream == nullptr)), it = captureModelExeInfoMap_.erase(it); break;);
 
-        std::list<uint32_t>& sqePosList = it->second;
+        std::list<std::pair<uint32_t, uint64_t>>& sqePosList = it->second;
         const bool isAlreadyExecuted = JudgeIsEndGraphNotifyWaitExecuted(exeStream.get(), model, sqePosList);
         exeStream.reset();
         if (isAlreadyExecuted) {

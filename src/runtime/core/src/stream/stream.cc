@@ -3559,10 +3559,7 @@ rtError_t Stream::StarsAddTaskToStream(TaskInfo* const tsk, const uint32_t sendS
 
     SetSqPos(tsk, posTail);
     SetLastTaskId(static_cast<uint32_t>(tsk->id));
-    if ((tsk->isNeedStreamSync != 0U) || (tsk->isCqeNeedConcern != 0U) ||
-        ((tsk->type == TS_TASK_TYPE_MEMCPY) && (tsk->u.memcpyAsyncTaskInfo.isConcernedRecycle))) {
-        tsk->stream->latestConcernedTaskId.Set(tsk->id);
-    }
+    UpdateLatestConcernedTaskId(tsk);
     return RT_ERROR_NONE;
 }
 
@@ -4673,7 +4670,10 @@ bool Stream::IsExistCqe(void) const
     bool status = false;
     const uint32_t sqId = GetSqId();
     const uint32_t tsId = device_->DevGetTsId();
-
+    /* 支持sq和stream动态绑定 */
+    if (sqId == UINT32_MAX) {
+        return false;
+    }
     rtError_t error = device_->Driver_()->GetCqeStatus(device_->Id_(), tsId, sqId, status);
     if (error != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_DEBUG, "Get cqe status failed, retCode=%#x.", error);
@@ -4816,6 +4816,7 @@ void Stream::ResetStreamConstruct()
     taskPosHead_.Set(0);
     taskPosTail_.Set(0);
     isNeedRecvCqe_ = false;
+    cqePendingCnt_.Set(0U);
     needSync_ = false;
     lastRecyclePos_ = 0xFFFFU;
     pendingNum_.Set(0);

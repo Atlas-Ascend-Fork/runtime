@@ -353,6 +353,25 @@ rtError_t AttachExternalEventsRes(TaskInfo* taskInfo, Model* captureModel)
     return RT_ERROR_NONE;
 }
 
+rtError_t AttachGraphUpdateRes(TaskInfo* const taskInfo, CaptureModel* const captureModel)
+{
+    auto updateTask = std::unique_ptr<std::set<TaskInfo*>>(new (std::nothrow) std::set<TaskInfo*>());
+    COND_RETURN_AND_MSG_OUTER(
+        updateTask == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, sizeof(std::set<TaskInfo*>), "new");
+
+    EndGraphNotifyWaitTaskInfo* const endGraphWaitTask = &(taskInfo->u.endGraphNotifyWaitTask);
+    GraphUpdateInfo& updateInfo = captureModel->GetGraphUpdateInfo();
+    endGraphWaitTask->launchNo = updateInfo.launchCnt;
+    endGraphWaitTask->expectTotalRecvCqeCnt = updateInfo.totalNeedCqeCnt;
+    updateTask->swap(updateInfo.curApplyUpdateTask);
+    endGraphWaitTask->updateTask = updateTask.release();
+    endGraphWaitTask->hostSqeUpdateAddr = updateInfo.hostSqeUpdateAddr;
+    updateInfo.hostSqeUpdateAddr = nullptr;
+    endGraphWaitTask->isCurExecuteNeedCqe = updateInfo.isCurExecuteNeedCqe;
+
+    return RT_ERROR_NONE;
+}
+
 rtError_t EndGraphNotifyWaitTaskInit(
     TaskInfo* taskInfo, const uint32_t notifyIndex, const uint32_t timeOutNum, Notify* notify)
 {
@@ -368,18 +387,39 @@ rtError_t EndGraphNotifyWaitTaskInit(
     endGraphWaitTask->notifyId = notifyIndex;
     endGraphWaitTask->timeout = timeOutNum;
     endGraphWaitTask->externalEventsRes = nullptr;
+    endGraphWaitTask->updateTask = nullptr;
+    endGraphWaitTask->hostSqeUpdateAddr = nullptr;
+    endGraphWaitTask->isCurExecuteNeedCqe = false;
     CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(endGraphWaitTask->endGraphModel);
     endGraphWaitTask->isSoftwareSqCaptureModel = (captureModel != nullptr) && captureModel->IsSoftwareSqEnable();
     taskInfo->needPostProc = endGraphWaitTask->isSoftwareSqCaptureModel;
 
     if (endGraphWaitTask->isSoftwareSqCaptureModel) {
-        const rtError_t ret = AttachExternalEventsRes(taskInfo, captureModel);
+        rtError_t ret = AttachExternalEventsRes(taskInfo, captureModel);
         COND_RETURN_ERROR(ret != RT_ERROR_NONE, ret, "Attach external events resources failed, retCode=%#x.", ret);
+        ret = AttachGraphUpdateRes(taskInfo, captureModel);
+        COND_RETURN_ERROR(ret != RT_ERROR_NONE, ret, "Attach graph update resources failed, retCode=%#x.", ret);
     }
     return RT_ERROR_NONE;
 }
 
-void EndGraphNotifyWaitTaskUnInit(TaskInfo* taskInfo) { ReleaseExternalEventsRes(taskInfo); }
+void EndGraphNotifyWaitTaskUnInit(TaskInfo* taskInfo)
+{
+    ReleaseExternalEventsRes(taskInfo);
+    EndGraphNotifyWaitTaskInfo* const endGraphWaitTask = &(taskInfo->u.endGraphNotifyWaitTask);
+    if (endGraphWaitTask->updateTask != nullptr) {
+        for (TaskInfo* const updateTask : *(endGraphWaitTask->updateTask)) {
+            PopCompletedUpdateItems(updateTask, endGraphWaitTask->launchNo);
+        }
+    }
+    DELETE_O(endGraphWaitTask->updateTask);
+
+    if (endGraphWaitTask->hostSqeUpdateAddr != nullptr) {
+        Driver* const deviceDrv = taskInfo->stream->Device_()->Driver_();
+        (void)deviceDrv->HostMemFree(endGraphWaitTask->hostSqeUpdateAddr);
+        endGraphWaitTask->hostSqeUpdateAddr = nullptr;
+    }
+}
 
 static void MapNotifyErrorCodeForFastRecovery(TaskInfo* taskInfo, const uint32_t devId)
 {
@@ -494,6 +534,21 @@ void DoCompleteSuccessForEndGraphNotifyWaitTask(TaskInfo* taskInfo, const uint32
         }
     }
 
+    if (taskInfo->errorCode == static_cast<uint32_t>(RT_ERROR_NONE)) {
+        if (endGraphWaitTask->updateTask != nullptr) {
+            for (TaskInfo* const updateTask : *(endGraphWaitTask->updateTask)) {
+                PopCompletedUpdateItems(updateTask, endGraphWaitTask->launchNo);
+            }
+        }
+    }
+
+    DELETE_O(endGraphWaitTask->updateTask);
+    if (endGraphWaitTask->hostSqeUpdateAddr != nullptr) {
+        Driver* const deviceDrv = taskInfo->stream->Device_()->Driver_();
+        (void)deviceDrv->HostMemFree(endGraphWaitTask->hostSqeUpdateAddr);
+        endGraphWaitTask->hostSqeUpdateAddr = nullptr;
+    }
+
     if (Runtime::Instance()->ChipIsHaveStars() && (taskInfo->bindFlag == 0U)) {
         Stream* const stream = taskInfo->stream;
         RT_LOG(
@@ -550,6 +605,7 @@ TaskInfo* GetRealReportFaultTaskForEndGraphNotifyWaitTask(const TaskInfo* taskIn
         }
 
         TaskInfo* taskPtr = GetTaskInfo(dev, static_cast<uint32_t>(streamId), static_cast<uint32_t>(taskId), true);
+        PopCompletedUpdateItems(taskPtr, taskInfo->u.endGraphNotifyWaitTask.launchNo);
 
         return taskPtr;
     }

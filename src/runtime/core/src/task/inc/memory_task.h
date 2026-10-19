@@ -17,6 +17,7 @@ namespace cce {
 namespace runtime {
 
 struct TaskSqeInfo;
+struct TaskUpdateParams;
 
 constexpr uint32_t MEM_WAIT_WRITE_VALUE_ADDRESS_LEN = 64U;
 
@@ -78,19 +79,26 @@ rtError_t UpdateTaskH2DSubmit(TaskInfo* const updateTask, Stream* const stm, voi
 rtError_t MemWriteValueTaskInit(TaskInfo* taskInfo, const void* const devAddr, const uint64_t value);
 void MemWriteTaskUnInit(TaskInfo* taskInfo);
 rtError_t GetWriteValueTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
-rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params);
 
 rtError_t MemWaitValueTaskInit(
     TaskInfo* taskInfo, const void* const devAddr, const uint64_t value, const uint32_t flag);
-rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, const void* const waitRefreshAddr);
+rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, Event* event, const void* const waitRefreshAddr);
 void MemWaitTaskUnInit(TaskInfo* taskInfo);
 rtError_t GetWaitValueTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
-rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params);
 
 // common
 rtError_t GetCaptureRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 rtError_t GetCaptureWaitTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 rtError_t GetCaptureResetTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t GetCaptureExternalRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t GetEventRecordLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t GetWriteValueTaskLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t GetWaitValueTaskLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
+rtError_t CacheEventRecordTaskParams(TaskInfo* taskInfo, const rtTaskParams* params);
+rtError_t CacheWriteValueTaskParams(TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t CacheWaitValueTaskParams(TaskInfo* taskInfo, rtTaskParams* params);
 void IpcEventDestroy(IpcEvent** eventPtr, int32_t freeId, bool isNeedDestroy);
 void FillMemWaitFunctionCallSqe(TaskInfo* taskInfo, RtStarsFunctionCallSqe& sqe, const uint64_t funcCallSize);
 rtError_t ConstructLastSqeForExternalWaitTask(

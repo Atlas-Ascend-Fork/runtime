@@ -633,6 +633,14 @@ public:
 
     bool GetNeedRecvCqeFlag() const { return isNeedRecvCqe_; }
 
+    void SetLatestConcernedTaskId(const uint16_t taskId) { latestConcernedTaskId.Set(taskId); }
+
+    void AddCqePendingCnt() { cqePendingCnt_.Add(1U); }
+
+    void SubCqePendingCnt() { cqePendingCnt_.Sub(1U); }
+
+    uint32_t GetCqePendingCnt() const { return cqePendingCnt_.Value(); }
+
     void SetIsForceRecycle(bool flag) { isForceRecycle_ = flag; }
 
     bool GetIsForceRecycle() const { return isForceRecycle_; }
@@ -998,6 +1006,7 @@ protected:
     uint64_t sqRegVirtualAddr_{0ULL}; // virtual address of stars_simple_sq0_4k head, get from DRV by sq_id
     uint32_t finishTaskId_{MAX_UINT32_NUM};
     bool isNeedRecvCqe_{false};
+    Atomic<uint32_t> cqePendingCnt_{0U};
     Event* lastHalfRecord_{nullptr};
     std::mutex publicTaskMutex_;
     Model* model_{nullptr};

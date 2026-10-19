@@ -41,6 +41,22 @@ struct SqCqAllocateCapture {
 
 SqCqAllocateCapture g_sqCqAllocateCapture;
 
+drvError_t CaptureHalSqCqAllocate(
+    const uint32_t deviceId, halSqCqInputInfo* const input, halSqCqOutputInfo* const output)
+{
+    UNUSED(deviceId);
+    g_sqCqAllocateCapture.called = true;
+    g_sqCqAllocateCapture.drvFlag = input->flag;
+    g_sqCqAllocateCapture.msgLen = input->ext_info_len;
+    if ((input->ext_info != nullptr) && (input->ext_info_len == sizeof(rtStreamInfoExMsg_t))) {
+        g_sqCqAllocateCapture.infoEx = *reinterpret_cast<const rtStreamInfoExMsg_t*>(input->ext_info);
+        g_sqCqAllocateCapture.hasInfoEx = true;
+    }
+    output->sqId = TEST_SQ_ID;
+    output->cqId = TEST_CQ_ID;
+    return DRV_ERROR_NONE;
+}
+
 rtError_t StubGetChipTypeFromPlatform(const char_t* const socName, rtChipType_t& chipType)
 {
     UNUSED(socName);
@@ -48,28 +64,6 @@ rtError_t StubGetChipTypeFromPlatform(const char_t* const socName, rtChipType_t&
     return RT_ERROR_NONE;
 }
 
-rtError_t CaptureNormalSqCqAllocate(
-    Driver* const driver, const uint32_t deviceId, const uint32_t tsId, const uint32_t drvFlag, uint32_t* const sqId,
-    uint32_t* const cqId, uint32_t* const info, const uint32_t len, uint32_t* const msg, const uint32_t msgLen,
-    const int32_t retryCount)
-{
-    UNUSED(driver);
-    UNUSED(deviceId);
-    UNUSED(tsId);
-    UNUSED(info);
-    UNUSED(len);
-    UNUSED(retryCount);
-    g_sqCqAllocateCapture.called = true;
-    g_sqCqAllocateCapture.drvFlag = drvFlag;
-    g_sqCqAllocateCapture.msgLen = msgLen;
-    if ((msg != nullptr) && (msgLen == sizeof(rtStreamInfoExMsg_t))) {
-        g_sqCqAllocateCapture.infoEx = *reinterpret_cast<const rtStreamInfoExMsg_t*>(msg);
-        g_sqCqAllocateCapture.hasInfoEx = true;
-    }
-    *sqId = TEST_SQ_ID;
-    *cqId = TEST_CQ_ID;
-    return RT_ERROR_NONE;
-}
 } // namespace
 
 class Arch9201StreamInfoExTest : public testing::Test {
@@ -108,9 +102,7 @@ protected:
         MOCKER_CPP_VIRTUAL(device_, &Device::GetStackPhyBase32k)
             .stubs()
             .will(returnValue(reinterpret_cast<const void*>(STACK_PHY_ADDR)));
-        MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::NormalSqCqAllocate)
-            .expects(once())
-            .will(invoke(CaptureNormalSqCqAllocate));
+        MOCKER(halSqCqAllocate).expects(once()).will(invoke(CaptureHalSqCqAllocate));
     }
 
     void ExpectSimtInfoEx() const

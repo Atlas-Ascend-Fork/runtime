@@ -3028,6 +3028,41 @@ static rtError_t stubCreateAsyncDmaWqeBatchSuccess(
     return RT_ERROR_NONE;
 }
 
+static rtError_t ReturnBatchWithoutProgress(
+    AsyncDmaBatchInfo&, uint64_t* const realCnt, uint64_t* const realSize, Stream*)
+{
+    *realCnt = 0U;
+    *realSize = 0U;
+    return RT_ERROR_NONE;
+}
+
+static rtError_t ReturnBatchWithProgress(AsyncDmaBatchInfo&, uint64_t* const realCnt, uint64_t* const realSize, Stream*)
+{
+    *realCnt = 1U;
+    *realSize = 1U;
+    return RT_ERROR_NONE;
+}
+
+TEST_F(TaskTestDavid, BatchSendH2DRetriesAfterZeroProgress)
+{
+    Runtime* const runtime = static_cast<Runtime*>(Runtime::Instance());
+    runtime->SetConnectUbFlag(true);
+    uint8_t dstValue = 0U;
+    uint8_t srcValue = 1U;
+    void* dsts[] = {&dstValue};
+    void* srcs[] = {&srcValue};
+    size_t sizes[] = {sizeof(srcValue)};
+    MOCKER(MemcopyBatchAsync)
+        .expects(exactly(2))
+        .will(invoke(ReturnBatchWithoutProgress))
+        .then(invoke(ReturnBatchWithProgress));
+    MOCKER_CPP_VIRTUAL(stream_, &Stream::Synchronize).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    const rtError_t error = BatchSendH2DAsyncTask(dsts, sizes, srcs, sizes, 1U, stream_);
+    runtime->SetConnectUbFlag(false);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+}
+
 TEST_F(TaskTestDavid, memcpy_async_batch_ub_dma_test)
 {
     Runtime* rtInstance = ((Runtime*)Runtime::Instance());

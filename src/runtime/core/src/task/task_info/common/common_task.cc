@@ -125,7 +125,7 @@ rtError_t GetIsCmdListNotFreeValByDvppCfg(rtDvppCfg_t* cfg, bool& isCmdListNotFr
 #endif
 
 #if F_DESC("WriteValuePtrTask")
-rtError_t WriteValuePtrTaskInit(TaskInfo* taskInfo, const void* const pointedAddr, TaskWrCqeFlag cqeFlag)
+rtError_t WriteValuePtrTaskInit(TaskInfo* taskInfo, Event* event, const void* const pointedAddr, TaskWrCqeFlag cqeFlag)
 {
     TaskCommonInfoInit(taskInfo);
     taskInfo->typeName = "WriteValuePtrTask";
@@ -136,6 +136,7 @@ rtError_t WriteValuePtrTaskInit(TaskInfo* taskInfo, const void* const pointedAdd
     writeValTsk->sqeAddr = RtPtrToValue(pointedAddr);
     writeValTsk->cqeFlag = cqeFlag;
     writeValTsk->ptrFlag = 1U;
+    writeValTsk->event = event; // used for external event
 
     return RT_ERROR_NONE;
 }

@@ -25,6 +25,7 @@
 #include "raw_device.hpp"
 #include "stars.hpp"
 #include "stream.hpp"
+#include "stub_task.hpp"
 #include "task.hpp"
 #include "common_task.h"
 #include "event_task.h"
@@ -46,6 +47,15 @@ void* NothrowNewFail(size_t size, const std::nothrow_t& tag)
     UNUSED(size);
     UNUSED(tag);
     return nullptr;
+}
+
+rtError_t CopyNormalEventValue(
+    Driver*, void* dst, uint64_t, const void* src, uint64_t size, rtMemcpyKind_t kind, bool, uint32_t)
+{
+    EXPECT_EQ(size, sizeof(uint8_t));
+    EXPECT_EQ(kind, RT_MEMCPY_DEVICE_TO_HOST);
+    *static_cast<uint8_t*>(dst) = *static_cast<const uint8_t*>(src);
+    return RT_ERROR_NONE;
 }
 
 void EnableSoftwareRecord(Event* event, uint8_t* recordValue, int32_t eventId)
@@ -96,6 +106,81 @@ protected:
     }
 };
 
+TEST_F(ExternalEventTaskTest910B, QueryExternalStatusReadsHostWhenPcieBarSupported)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    Event* eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(eventObj, nullptr);
+    uint8_t recordValue = 1U;
+    eventObj->SetEventAddr(&recordValue);
+    MOCKER_CPP_VIRTUAL(eventObj->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(true));
+    MOCKER_CPP_VIRTUAL(eventObj->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(eventObj->QueryExternalEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_RECORDED);
+    eventObj->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, QueryExternalStatusCopiesWhenPcieBarUnsupported)
+{
+    rtEvent_t event = nullptr;
+    ASSERT_EQ(rtEventCreate(&event), RT_ERROR_NONE);
+    Event* eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(eventObj, nullptr);
+    uint8_t recordValue = 1U;
+    eventObj->SetEventAddr(&recordValue);
+    MOCKER_CPP_VIRTUAL(eventObj->Device_(), &Device::IsEventExpandingPoolSupportBar).stubs().will(returnValue(false));
+    MOCKER_CPP_VIRTUAL(eventObj->Device_()->Driver_(), &Driver::MemCopySync)
+        .expects(once())
+        .will(invoke(CopyNormalEventValue));
+
+    rtEventStatus_t status = RT_EVENT_INIT;
+    EXPECT_EQ(eventObj->QueryExternalEventStatus(&status), RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_RECORDED);
+    eventObj->SetEventAddr(nullptr);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, ExternalEventItemsOrderedByTaskKey)
+{
+    CaptureModel model(RT_MODEL_CAPTURE_MODEL);
+    model.context_ = Runtime::Instance()->CurrentContext();
+    Event* const firstEvent = RtValueToPtr<Event*>(0x1000U);
+    Event* const secondEvent = RtValueToPtr<Event*>(0x2000U);
+    constexpr uint32_t firstStreamId = 1U;
+    constexpr uint32_t firstTaskId = 2U;
+    constexpr uint32_t secondStreamId = 2U;
+    constexpr uint32_t secondTaskId = 1U;
+    const auto firstKey = std::make_tuple(firstStreamId, firstTaskId);
+    const auto secondKey = std::make_tuple(secondStreamId, secondTaskId);
+
+    ASSERT_EQ(model.AddExternalRecordEvent(secondEvent, secondStreamId, secondTaskId), RT_ERROR_NONE);
+    ASSERT_EQ(model.AddExternalRecordEvent(firstEvent, firstStreamId, firstTaskId), RT_ERROR_NONE);
+    ASSERT_EQ(model.AddExternalWaitEvent(secondEvent, secondStreamId, secondTaskId), RT_ERROR_NONE);
+    ASSERT_EQ(model.AddExternalWaitEvent(firstEvent, firstStreamId, firstTaskId), RT_ERROR_NONE);
+
+    auto recordIter = model.externalRecordEventItems_.cbegin();
+    ASSERT_NE(recordIter, model.externalRecordEventItems_.cend());
+    EXPECT_EQ(recordIter->first, firstKey);
+    EXPECT_EQ(recordIter->second, firstEvent);
+    recordIter++;
+    ASSERT_NE(recordIter, model.externalRecordEventItems_.cend());
+    EXPECT_EQ(recordIter->first, secondKey);
+    EXPECT_EQ(recordIter->second, secondEvent);
+
+    auto waitIter = model.externalWaitEventItems_.cbegin();
+    ASSERT_NE(waitIter, model.externalWaitEventItems_.cend());
+    EXPECT_EQ(waitIter->first, firstKey);
+    EXPECT_EQ(waitIter->second, firstEvent);
+    waitIter++;
+    ASSERT_NE(waitIter, model.externalWaitEventItems_.cend());
+    EXPECT_EQ(waitIter->first, secondKey);
+    EXPECT_EQ(waitIter->second, secondEvent);
+}
+
 TEST_F(ExternalEventTaskTest910B, ExternalWaitPlaceholderMaterializesMemWaitResourceAtFinalize)
 {
     MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
@@ -118,8 +203,9 @@ TEST_F(ExternalEventTaskTest910B, ExternalWaitPlaceholderMaterializesMemWaitReso
 
     ASSERT_EQ(rtStreamWaitEventWithFlag(stream, event, 0U, RT_EVENT_WAIT_EXTERNAL), RT_ERROR_NONE);
     ASSERT_EQ(model->externalWaitEventItems_.size(), 1U);
-    TaskInfo* waitTask = captureStream->Device_()->GetTaskFactory()->GetTask(
-        captureStream->Id_(), static_cast<uint16_t>(model->externalWaitEventItems_[0].taskId));
+    const uint32_t waitTaskId = std::get<1>(model->externalWaitEventItems_.begin()->first);
+    TaskInfo* waitTask =
+        captureStream->Device_()->GetTaskFactory()->GetTask(captureStream->Id_(), static_cast<uint16_t>(waitTaskId));
     ASSERT_NE(waitTask, nullptr);
     EXPECT_EQ(waitTask->type, TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL);
     EXPECT_EQ(GetSendSqeNum(waitTask), MEM_WAIT_V2_SQE_NUM);
@@ -152,6 +238,14 @@ TEST_F(ExternalEventTaskTest910B, ExternalRecordLaunchCommitPublishesSoftwareRes
     CaptureModel* model = UnwrapCaptureModel(modelHandle);
     ASSERT_NE(eventObj, nullptr);
     ASSERT_NE(model, nullptr);
+    ASSERT_EQ(model->externalRecordEventItems_.size(), 1U);
+    const auto& recordTaskKey = model->externalRecordEventItems_.begin()->first;
+    TaskInfo* const recordTask = model->Context_()->Device_()->GetTaskFactory()->GetTask(
+        std::get<0>(recordTaskKey), static_cast<uint16_t>(std::get<1>(recordTaskKey)));
+    ASSERT_NE(recordTask, nullptr);
+    EXPECT_EQ(recordTask->type, TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL);
+    EXPECT_EQ(recordTask->sqeNum, 2U);
+    EXPECT_EQ(recordTask->u.writeValTask.cqeFlag, TASK_WR_CQE_NEVER);
     EXPECT_EQ(model->GetCurReplayExternalEventsRes(), nullptr);
     ExternalEventRefreshInfo launch;
     ASSERT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_NONE);
@@ -166,6 +260,41 @@ TEST_F(ExternalEventTaskTest910B, ExternalRecordLaunchCommitPublishesSoftwareRes
     EXPECT_TRUE(eventObj->HasRecord());
     EXPECT_FALSE(eventObj->HasReset());
     RollbackExternalEventRefreshInfo(&launch);
+    EXPECT_EQ(rtModelDestroy(modelHandle), RT_ERROR_NONE);
+    EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, ExternalRecordPrepareFailureReleasesAllocatedResource)
+{
+    MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
+    rtStream_t stream = nullptr;
+    rtEvent_t event = nullptr;
+    rtModel_t modelHandle = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    ASSERT_EQ(rtEventCreateExWithFlag(&event, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    ASSERT_EQ(rtStreamBeginCapture(stream, RT_STREAM_CAPTURE_MODE_GLOBAL), RT_ERROR_NONE);
+    ASSERT_EQ(rtEventRecordWithFlag(event, stream, RT_EVENT_RECORD_EXTERNAL), RT_ERROR_NONE);
+    ASSERT_EQ(rtStreamEndCapture(stream, &modelHandle), RT_ERROR_NONE);
+    CaptureModel* const model = UnwrapCaptureModel(modelHandle);
+    Event* const eventObj = rt_ut::UnwrapOrNull<Event>(event);
+    ASSERT_NE(model, nullptr);
+    ASSERT_NE(eventObj, nullptr);
+    uint8_t recordValue = 0U;
+    void* recordAddr = &recordValue;
+    int32_t eventId = 7;
+    MOCKER_CPP_VIRTUAL(eventObj->Device_(), &Device::AllocExpandingPoolEvent)
+        .expects(once())
+        .with(outBoundP(&recordAddr, sizeof(recordAddr)), outBoundP(&eventId, sizeof(eventId)))
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(eventObj->Device_(), &Device::FreeExpandingPoolEvent).expects(once()).with(eq(eventId));
+    MOCKER(FillExternalRecordRefreshEntry).expects(once()).will(returnValue(RT_ERROR_INVALID_VALUE));
+
+    ExternalEventRefreshInfo launch;
+    EXPECT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_INVALID_VALUE);
+    EXPECT_TRUE(launch.preparedRecords.empty());
+    EXPECT_EQ(launch.hostRefresh, nullptr);
+
     EXPECT_EQ(rtModelDestroy(modelHandle), RT_ERROR_NONE);
     EXPECT_EQ(rtEventDestroy(event), RT_ERROR_NONE);
     EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
@@ -195,8 +324,27 @@ TEST_F(ExternalEventTaskTest910B, ExternalWaitLaunchRetainsRecordedProducerOnly)
     ExternalEventRefreshInfo launch;
     ASSERT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_NONE);
     auto* waitEntries = RtPtrToPtr<uint64_t*>(launch.hostRefresh.get() + model->externalEventRefreshLayout_.waitOffset);
-    EXPECT_EQ(waitEntries[0], RtPtrToValue(&recordValue));
-    EXPECT_EQ(waitEntries[1], 0U);
+    Event* const recordedEventObj = rt_ut::UnwrapOrNull<Event>(recordedEvent);
+    Event* const resetEventObj = rt_ut::UnwrapOrNull<Event>(resetEvent);
+    const Event* const expectedEvents[] = {recordedEventObj, resetEventObj};
+    const uint64_t expectedHostEntries[] = {RtPtrToValue(&recordValue), 0U};
+    ASSERT_EQ(model->externalWaitEventItems_.size(), 2U);
+    size_t index = 0U;
+    for (const auto& item : model->externalWaitEventItems_) {
+        EXPECT_EQ(item.second, expectedEvents[index]);
+        const uint32_t captureStreamId = std::get<0>(item.first);
+        const uint32_t taskId = std::get<1>(item.first);
+        TaskInfo* const waitTask =
+            model->Context_()->Device_()->GetTaskFactory()->GetTask(captureStreamId, static_cast<uint16_t>(taskId));
+        ASSERT_NE(waitTask, nullptr);
+        EXPECT_EQ(waitTask->u.memWaitValueTask.event, expectedEvents[index]);
+        EXPECT_EQ(
+            waitTask->u.memWaitValueTask.devAddr, RtPtrToValue(model->externalEventRefreshDeviceBase_) +
+                                                      model->externalEventRefreshLayout_.waitOffset +
+                                                      index * EXTERNAL_WAIT_REFRESH_ENTRY_SIZE);
+        EXPECT_EQ(waitEntries[index], expectedHostEntries[index]);
+        index++;
+    }
     EXPECT_EQ(launch.retainedEventResources.size(), 1U);
     RollbackExternalEventRefreshInfo(&launch);
     EXPECT_EQ(rtModelDestroy(modelHandle), RT_ERROR_NONE);
@@ -274,7 +422,7 @@ TEST_F(ExternalEventTaskTest910B, ExternalWaitUninitReleasesOwnedEventId)
 
     event.device_ = streamObj->Device_();
     event.EventIdCountAdd(ownedEventId);
-    event.PublishSoftwareRecordResource(nullptr, ownedEventId);
+    event.PublishSoftwareRecordResource(nullptr, ownedEventId, streamObj->Id_(), 0U, 0U);
     InitByStream(&taskInfo, streamObj);
     taskInfo.type = TS_TASK_TYPE_MEM_WAIT_VALUE;
     taskInfo.u.memWaitValueTask.event = &event;
@@ -298,7 +446,7 @@ TEST_F(ExternalEventTaskTest910B, MemWriteRegistrationReleasesPendingDestroyOnUn
     ASSERT_NE(event, nullptr);
     ASSERT_EQ(event->TrySwitchToSoftwareMode(), RT_ERROR_NONE);
     constexpr int32_t eventId = 41;
-    event->PublishSoftwareRecordResource(nullptr, eventId);
+    event->PublishSoftwareRecordResource(nullptr, eventId, 0, 0U, 0U);
     event->EventIdCountAdd(eventId);
     Event* owner = event;
     TryToFreeEventIdAndDestroyEvent(&owner, eventId, true);
@@ -371,7 +519,7 @@ TEST_F(ExternalEventTaskTest910B, PublishSoftwareRecordResourceLifetime)
     EnableSoftwareRecord(eventObj, &oldRecordValue, 7);
     eventObj->EventIdCountAdd(7);
 
-    eventObj->PublishSoftwareRecordResource(&newRecordValue, 8);
+    eventObj->PublishSoftwareRecordResource(&newRecordValue, 8, 0, 0U, 0U);
 
     EXPECT_EQ(eventObj->GetEventAddr(), &newRecordValue);
     EXPECT_EQ(eventObj->EventId_(), 8);
@@ -393,9 +541,9 @@ TEST_F(ExternalEventTaskTest910B, CompleteReleaseFreesOldSoftwareGenerationOnly)
     Event* event = rt_ut::UnwrapOrNull<Event>(eventHandle);
     ASSERT_NE(event, nullptr);
     ASSERT_EQ(event->TrySwitchToSoftwareMode(), RT_ERROR_NONE);
-    event->PublishSoftwareRecordResource(&oldRecordValue, 7);
+    event->PublishSoftwareRecordResource(&oldRecordValue, 7, 0, 0U, 0U);
     event->EventIdCountAdd(7);
-    event->PublishSoftwareRecordResource(&currentRecordValue, 8);
+    event->PublishSoftwareRecordResource(&currentRecordValue, 8, 0, 0U, 0U);
     MOCKER_CPP_VIRTUAL(event->Device_(), &Device::FreeExpandingPoolEvent).expects(once()).with(eq(7));
     Event* owner = event;
     TryToFreeEventIdAndDestroyEvent(&owner, 7, false);
@@ -418,7 +566,7 @@ TEST_F(ExternalEventTaskTest910B, PublishSoftwareRecordResourceFreesStaleEvent)
     EnableSoftwareRecord(eventObj, &oldRecordValue, 7);
     MOCKER_CPP_VIRTUAL(eventObj->Device_(), &Device::FreeExpandingPoolEvent).stubs().will(ignoreReturnValue());
 
-    eventObj->PublishSoftwareRecordResource(&newRecordValue, 8);
+    eventObj->PublishSoftwareRecordResource(&newRecordValue, 8, 0, 0U, 0U);
 
     EXPECT_EQ(eventObj->GetEventAddr(), &newRecordValue);
     EXPECT_EQ(eventObj->EventId_(), 8);
@@ -678,10 +826,10 @@ TEST_F(ExternalEventTaskTest910B, ExternalLaunchRollbackAndPrepareRejectInvalidE
     CommitExternalEventRecords(&launch);
     model->externalEventRefreshLayout_.totalSize = sizeof(uint64_t);
     model->externalEventRefreshHostTemplate_.reset(new uint8_t[sizeof(uint64_t)](), std::default_delete<uint8_t[]>());
-    model->externalRecordEventItems_.push_back({nullptr, 0U, 0U});
-    EXPECT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_EVENT_NULL);
+    ASSERT_EQ(model->AddExternalRecordEvent(nullptr, 0U, 0U), RT_ERROR_NONE);
+    EXPECT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_INVALID_VALUE);
     model->externalRecordEventItems_.clear();
-    model->externalWaitEventItems_.push_back({nullptr, 0U, 0U});
+    ASSERT_EQ(model->AddExternalWaitEvent(nullptr, 0U, 0U), RT_ERROR_NONE);
     EXPECT_EQ(model->PrepareExternalEventRefreshInfo(&launch), RT_ERROR_EVENT_NULL);
     model->externalWaitEventItems_.clear();
 
@@ -711,10 +859,10 @@ TEST_F(ExternalEventTaskTest910B, ExternalTaskSqeBuildRejectsInvalidTaskRefs)
     EXPECT_EQ(UpdateHostSqeBufferByTask(&taskInfo), RT_ERROR_INVALID_VALUE);
     taskInfo.stream = streamObj;
     EXPECT_EQ(UpdateHostSqeBufferByTask(&taskInfo), RT_ERROR_INVALID_VALUE);
-    model->externalRecordEventItems_.push_back({nullptr, streamObj->Id_(), 0U});
+    ASSERT_EQ(model->AddExternalRecordEvent(nullptr, streamObj->Id_(), 0U), RT_ERROR_NONE);
     EXPECT_EQ(model->RebuildAllExternalTaskSqes(), RT_ERROR_INVALID_VALUE);
     model->externalRecordEventItems_.clear();
-    model->externalWaitEventItems_.push_back({nullptr, streamObj->Id_(), 0U});
+    ASSERT_EQ(model->AddExternalWaitEvent(nullptr, streamObj->Id_(), 0U), RT_ERROR_NONE);
     EXPECT_EQ(model->RebuildAllExternalTaskSqes(), RT_ERROR_INVALID_VALUE);
     model->externalWaitEventItems_.clear();
 
@@ -743,7 +891,7 @@ TEST_F(ExternalEventTaskTest910B, ExternalTaskSqeBuildSkipsNullBuffer)
     uint32_t oldSqeBufferSize = captureStream->sqeBufferSize_;
     uint8_t* oldSqeBuffer = captureStream->sqeBuffer_;
     taskInfo.stream = captureStream;
-    ASSERT_EQ(CaptureWaitExternalTaskInit(&taskInfo, &sqeBuffer[0]), RT_ERROR_NONE);
+    ASSERT_EQ(CaptureWaitExternalTaskInit(&taskInfo, nullptr, &sqeBuffer[0]), RT_ERROR_NONE);
     taskInfo.u.memWaitValueTask.funcCallSvmMem2 = funcCallMem;
     taskInfo.u.memWaitValueTask.funCallMemSize2 = sizeof(funcCallMem);
     EXPECT_TRUE(NeedReBuildSqe(&taskInfo));
@@ -796,33 +944,288 @@ TEST_F(ExternalEventTaskTest910B, ExternalWaitPlaceholderSqeSkipsFuncCallCopy)
     EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
 }
 
+TEST_F(ExternalEventTaskTest910B, ExternalRecordCapturePlaceholderKeepsDefaultCqe)
+{
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    Stream* streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
+    ASSERT_NE(streamObj, nullptr);
+
+    TaskInfo taskInfo = {};
+    taskInfo.stream = streamObj;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_ALWAYS;
+    taskInfo.sqeNum = static_cast<uint8_t>(GetSendSqeNum(&taskInfo));
+    rtStarsSqe_t sqes[2] = {};
+
+    EXPECT_EQ(GetSendSqeNum(&taskInfo), 2U);
+    ToConstructSqe(&taskInfo, sqes, TaskSqeInfo{0ULL, 0ULL});
+    EXPECT_EQ(sqes[0].phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[0].phSqe.wr_cqe, 0U);
+    EXPECT_EQ(sqes[1].phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[1].phSqe.wr_cqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_ALWAYS);
+
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_NEVER;
+    ToConstructSqe(&taskInfo, sqes, TaskSqeInfo{0ULL, 0ULL});
+    EXPECT_EQ(sqes[0].phSqe.wr_cqe, 0U);
+    EXPECT_EQ(sqes[1].phSqe.wr_cqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_NEVER);
+
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, ExternalRecordMaterializedBuildsWriteValueThenCqePlaceholder)
+{
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    Stream* streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
+    ASSERT_NE(streamObj, nullptr);
+
+    TaskInfo taskInfo = {};
+    taskInfo.stream = streamObj;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+    taskInfo.u.writeValTask.sqeAddr = 0x1000ULL;
+    taskInfo.u.writeValTask.ptrFlag = 1U;
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_NEVER;
+    rtStarsSqe_t sqes[2] = {};
+
+    EXPECT_EQ(GetSendSqeNum(&taskInfo), 2U);
+    ToConstructSqe(&taskInfo, sqes, TaskSqeInfo{0ULL, 0ULL});
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.header.type, RT_STARS_SQE_TYPE_WRITE_VALUE);
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.header.wr_cqe, 0U);
+    EXPECT_EQ(sqes[1].phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[1].phSqe.wr_cqe, 0U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_NEVER);
+
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_ALWAYS;
+    ToConstructSqe(&taskInfo, sqes, TaskSqeInfo{0ULL, 0ULL});
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.header.wr_cqe, 0U);
+    EXPECT_EQ(sqes[1].phSqe.wr_cqe, 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_ALWAYS);
+
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, TimelineCqeDoesNotConsumeNonTimelineUpdateItem)
+{
+    CaptureModel model(RT_MODEL_CAPTURE_MODEL);
+    model.context_ = Runtime::Instance()->CurrentContext();
+    TaskInfo taskInfo = {};
+    TaskUpdateInfo updateInfo = {};
+    TaskUpdateItem updateItem = {};
+    const rtCqReport_t logicCq = {};
+
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.updateInfo = &updateInfo;
+    updateItem.launchNo = 2U;
+    updateItem.u.eventRecordInfo.event = nullptr;
+    updateItem.u.eventRecordInfo.expectCqeNo = 0U;
+    updateInfo.updateQueue.push(updateItem);
+
+    model.ProcessExternalRecordNormalCqe(&taskInfo, logicCq);
+
+    EXPECT_EQ(taskInfo.u.writeValTask.recvCqeNo, 0U);
+    EXPECT_EQ(updateInfo.updateQueue.size(), 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.event, nullptr);
+    EXPECT_EQ(model.updateInfo_.totalRecvCqeCnt.Value(), 0U);
+}
+
+TEST_F(ExternalEventTaskTest910B, ExternalRecordUpdateBuildsSqeRefreshAndConsumesTimelineCqe)
+{
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    Stream* const streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
+    ASSERT_NE(streamObj, nullptr);
+
+    Event oldEvent(nullptr, RT_EVENT_DEFAULT, nullptr);
+    Event timelineEvent(nullptr, RT_EVENT_TIME_LINE, nullptr);
+    Event waitEvent(nullptr, RT_EVENT_DEFAULT, nullptr);
+    CaptureModel model(RT_MODEL_CAPTURE_MODEL);
+    model.context_ = Runtime::Instance()->CurrentContext();
+
+    TaskUpdateInfo taskUpdate = {};
+    TaskInfo taskInfo = {};
+    taskInfo.stream = streamObj;
+    taskInfo.id = 7U;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.sqeNum = static_cast<uint8_t>(GetSendSqeNum(&taskInfo));
+    taskInfo.updateInfo = &taskUpdate;
+    taskInfo.u.writeValTask.cqeFlag = TASK_WR_CQE_NEVER;
+    taskUpdate.latestParams.u.eventRecordUpdateParams.event = &timelineEvent;
+
+    const uint32_t streamId = static_cast<uint32_t>(streamObj->Id_());
+    ASSERT_EQ(model.AddExternalRecordEvent(&oldEvent, streamId, taskInfo.id), RT_ERROR_NONE);
+    ASSERT_EQ(model.AddExternalWaitEvent(&waitEvent, streamId, taskInfo.id + 1U), RT_ERROR_NONE);
+    model.InsertGraphUpdateTask(&taskInfo);
+
+    uint32_t updateSqeNum = 0U;
+    ASSERT_EQ(model.UpdateExternalRecordEventItems(updateSqeNum), RT_ERROR_NONE);
+    EXPECT_EQ(updateSqeNum, GetSendSqeNum(&taskInfo));
+    EXPECT_EQ(model.externalRecordEventItems_.begin()->second, &timelineEvent);
+    EXPECT_TRUE(model.updateInfo_.updateTask.empty());
+    EXPECT_EQ(model.updateInfo_.curApplyUpdateTask.count(&taskInfo), 1U);
+
+    rtStarsSqe_t hostUpdateSqes[2] = {};
+    std::vector<void*> dsts;
+    std::vector<void*> srcs;
+    std::vector<size_t> sizes;
+    uint16_t count = 0U;
+    MOCKER(GetTaskInfo).stubs().will(returnValue(&taskInfo));
+    MOCKER(UpdateHostSqeBufferAndCopySqeByTask).expects(once()).will(returnValue(RT_ERROR_NONE));
+    ASSERT_EQ(
+        model.PrepareExternalRecordTaskUpdateInfo(hostUpdateSqes, sizeof(hostUpdateSqes), dsts, srcs, sizes, count),
+        RT_ERROR_NONE);
+    ASSERT_EQ(count, 1U);
+    ASSERT_EQ(dsts.size(), 1U);
+    ASSERT_EQ(srcs.size(), 1U);
+    ASSERT_EQ(sizes.size(), 1U);
+    EXPECT_EQ(srcs[0], hostUpdateSqes);
+    EXPECT_EQ(sizes[0], sizeof(hostUpdateSqes));
+    EXPECT_EQ(taskInfo.u.writeValTask.expectCqeCnt, 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.cqeFlag, TASK_WR_CQE_ALWAYS);
+    EXPECT_EQ(streamObj->GetCqePendingCnt(), 1U);
+    ASSERT_EQ(taskUpdate.updateQueue.size(), 1U);
+
+    uint8_t eventValue = 0U;
+    timelineEvent.PublishSoftwareRecordResource(&eventValue, 17, streamObj->Id_(), taskInfo.id, 1U);
+    rtCqReport_t logicCq = {};
+    logicCq.u1.timeStamp = 123U;
+    model.ProcessExternalRecordNormalCqe(&taskInfo, logicCq);
+
+    EXPECT_EQ(taskInfo.u.writeValTask.recvCqeNo, 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.event, &timelineEvent);
+    EXPECT_TRUE(taskUpdate.updateQueue.empty());
+    EXPECT_EQ(model.updateInfo_.totalRecvCqeCnt.Value(), 1U);
+    EXPECT_EQ(streamObj->GetCqePendingCnt(), 0U);
+    EXPECT_EQ(timelineEvent.TimeStamp(), 123U);
+
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, CompletedUpdateItemsStopAtFutureLaunch)
+{
+    Event firstEvent(nullptr, RT_EVENT_DEFAULT, nullptr);
+    Event secondEvent(nullptr, RT_EVENT_DEFAULT, nullptr);
+    TaskUpdateInfo taskUpdate = {};
+    TaskInfo taskInfo = {};
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.updateInfo = &taskUpdate;
+
+    TaskUpdateItem firstItem = {};
+    firstItem.launchNo = 1U;
+    firstItem.u.eventRecordInfo.event = &firstEvent;
+    TaskUpdateItem secondItem = {};
+    secondItem.launchNo = 3U;
+    secondItem.u.eventRecordInfo.event = &secondEvent;
+    taskUpdate.updateQueue.push(firstItem);
+    taskUpdate.updateQueue.push(secondItem);
+
+    PopCompletedUpdateItems(nullptr, 1U);
+    PopCompletedUpdateItems(&taskInfo, 1U);
+    EXPECT_EQ(taskInfo.u.writeValTask.event, &firstEvent);
+    ASSERT_EQ(taskUpdate.updateQueue.size(), 1U);
+    EXPECT_EQ(taskUpdate.updateQueue.front().launchNo, 3U);
+
+    PopCompletedUpdateItems(&taskInfo, 3U);
+    EXPECT_EQ(taskInfo.u.writeValTask.event, &secondEvent);
+    EXPECT_TRUE(taskUpdate.updateQueue.empty());
+
+    TaskInfo commonTask = {};
+    commonTask.type = TS_TASK_TYPE_KERNEL_AICORE;
+    TaskUpdateItemPostProc(&commonTask, firstItem);
+}
+
+TEST_F(ExternalEventTaskTest910B, UpdateHostSqeBufferCopiesEntireExternalRecordTask)
+{
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    Stream* const streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
+    ASSERT_NE(streamObj, nullptr);
+
+    TaskInfo taskInfo = {};
+    taskInfo.stream = streamObj;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.sqeNum = static_cast<uint8_t>(GetSendSqeNum(&taskInfo));
+    uint8_t hostSqeBuffer[sizeof(rtStarsSqe_t) * 2U] = {};
+    rtStarsSqe_t copiedSqes[2] = {};
+    uint8_t* const oldSqeBuffer = streamObj->sqeBuffer_;
+    const uint32_t oldSqeBufferSize = streamObj->sqeBufferSize_;
+    streamObj->SetSqeBuffer(hostSqeBuffer);
+    streamObj->SetSqeBufferSize(sizeof(hostSqeBuffer));
+
+    ASSERT_EQ(UpdateHostSqeBufferAndCopySqeByTask(&taskInfo, copiedSqes), RT_ERROR_NONE);
+    ASSERT_NE(streamObj->GetHostSqeAddrByPos(taskInfo.pos), nullptr);
+    EXPECT_EQ(memcmp(copiedSqes, streamObj->GetHostSqeAddrByPos(taskInfo.pos), sizeof(copiedSqes)), 0);
+
+    streamObj->SetSqeBuffer(oldSqeBuffer);
+    streamObj->SetSqeBufferSize(oldSqeBufferSize);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
+TEST_F(ExternalEventTaskTest910B, CacheExternalRecordUpdatePropagatesSoftwareModeFailure)
+{
+    rtStream_t stream = nullptr;
+    rtEvent_t oldEventHandle = nullptr;
+    rtEvent_t newEventHandle = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    ASSERT_EQ(rtEventCreateExWithFlag(&oldEventHandle, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    ASSERT_EQ(rtEventCreateExWithFlag(&newEventHandle, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    Event* const oldEvent = rt_ut::UnwrapOrNull<Event>(oldEventHandle);
+    Event* const newEvent = rt_ut::UnwrapOrNull<Event>(newEventHandle);
+    ASSERT_NE(oldEvent, nullptr);
+    ASSERT_NE(newEvent, nullptr);
+    newEvent->SetRecord(true);
+
+    TaskUpdateInfo updateInfo = {};
+    updateInfo.latestParams.type = RT_TASK_VALUE_WRITE;
+    TaskInfo taskInfo = {};
+    taskInfo.stream = rt_ut::UnwrapOrNull<Stream>(stream);
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.updateInfo = &updateInfo;
+    taskInfo.u.writeValTask.event = oldEvent;
+    rtTaskParams params = {};
+    params.eventRecordTaskParams.event = newEventHandle;
+    params.eventRecordTaskParams.eventFlag = static_cast<uint32_t>(newEvent->GetEventFlag());
+    params.eventRecordTaskParams.recordFlag = RT_EVENT_RECORD_EXTERNAL;
+
+    EXPECT_EQ(CacheEventRecordTaskParams(&taskInfo, &params), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(updateInfo.latestParams.type, RT_TASK_VALUE_WRITE);
+    EXPECT_EQ(newEvent->GetRecordFlag(), UINT32_MAX);
+
+    EXPECT_EQ(rtEventDestroy(newEventHandle), RT_ERROR_NONE);
+    EXPECT_EQ(rtEventDestroy(oldEventHandle), RT_ERROR_NONE);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+}
+
 TEST_F(ExternalEventTaskTest910B, ExternalPlaceholderBuildFailuresReleaseRefreshTable)
 {
-    auto* model = new CaptureModel(RT_MODEL_CAPTURE_MODEL);
-    ASSERT_NE(model, nullptr);
+    CaptureModel recordModel(RT_MODEL_CAPTURE_MODEL);
+    CaptureModel waitModel(RT_MODEL_CAPTURE_MODEL);
+    Event event(nullptr, RT_EVENT_DEFAULT, nullptr);
     uint8_t deviceTable = 0U;
     void* deviceTablePtr = &deviceTable;
-    model->context_ = Runtime::Instance()->CurrentContext();
-    model->externalRecordEventItems_.push_back({nullptr, 0U, 0U});
-    MOCKER_CPP_VIRTUAL(model->context_->Device_()->Driver_(), &Driver::DevMemAlloc)
+    recordModel.context_ = Runtime::Instance()->CurrentContext();
+    waitModel.context_ = Runtime::Instance()->CurrentContext();
+    ASSERT_EQ(recordModel.AddExternalRecordEvent(&event, 0U, 0U), RT_ERROR_NONE);
+    ASSERT_EQ(waitModel.AddExternalWaitEvent(nullptr, 0U, 0U), RT_ERROR_NONE);
+    MOCKER_CPP_VIRTUAL(recordModel.context_->Device_()->Driver_(), &Driver::DevMemAlloc)
         .stubs()
         .with(outBoundP(&deviceTablePtr, sizeof(deviceTablePtr)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(model->context_->Device_()->Driver_(), &Driver::DevMemFree)
+    MOCKER_CPP_VIRTUAL(recordModel.context_->Device_()->Driver_(), &Driver::DevMemFree)
         .stubs()
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER(WriteValuePtrTaskInit).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
-
-    EXPECT_EQ(model->FinalizeExternalRefreshTable(), RT_ERROR_INVALID_VALUE);
-
-    EXPECT_EQ(model->externalEventRefreshDeviceBase_, nullptr);
-    model->externalRecordEventItems_.clear();
-    model->externalWaitEventItems_.push_back({nullptr, 0U, 0U});
-    MOCKER_CPP_VIRTUAL(model->context_->Device_()->Driver_(), &Driver::DevMemAlloc)
+    MOCKER(static_cast<rtError_t (*)(TaskInfo*, Event*, const void*, TaskWrCqeFlag)>(WriteValuePtrTaskInit))
         .stubs()
-        .with(outBoundP(&deviceTablePtr, sizeof(deviceTablePtr)), mockcpp::any(), mockcpp::any(), mockcpp::any())
-        .will(returnValue(RT_ERROR_NONE));
+        .will(returnValue(RT_ERROR_INVALID_VALUE));
+
+    EXPECT_EQ(recordModel.FinalizeExternalRefreshTable(), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(recordModel.externalEventRefreshDeviceBase_, nullptr);
+
     MOCKER(CaptureWaitExternalTaskInit).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
-    EXPECT_EQ(model->FinalizeExternalRefreshTable(), RT_ERROR_INVALID_VALUE);
-    EXPECT_EQ(model->externalEventRefreshDeviceBase_, nullptr);
+    EXPECT_EQ(waitModel.FinalizeExternalRefreshTable(), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(waitModel.externalEventRefreshDeviceBase_, nullptr);
 }

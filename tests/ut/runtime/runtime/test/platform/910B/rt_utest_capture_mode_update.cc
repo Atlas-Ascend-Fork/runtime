@@ -308,6 +308,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute001)
     rtLaunchKernelAttrVal_t attrValue;
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+    const uint8_t originalSchemMode = attrValue.schemMode;
 
     rtLaunchKernelAttr_t attr = {RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE, 1};
     rtKernelLaunchCfg_t cfg = {&attr, 1};
@@ -317,7 +318,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute001)
 
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(attrValue.schemMode, 1);
+    EXPECT_EQ(attrValue.schemMode, originalSchemMode);
 
     ReleaseModelResource(ctx, stream, model);
     GlobalMockObject::verify();
@@ -338,6 +339,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute002)
     rtLaunchKernelAttrVal_t attrValue;
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+    const uint32_t originalDynUBufSize = attrValue.dynUBufSize;
 
     rtLaunchKernelAttr_t attr = {RT_LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE, 2};
     rtKernelLaunchCfg_t cfg = {&attr, 1};
@@ -347,7 +349,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute002)
 
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(attrValue.dynUBufSize, 2);
+    EXPECT_EQ(attrValue.dynUBufSize, originalDynUBufSize);
 
     ReleaseModelResource(ctx, stream, model);
     GlobalMockObject::verify();
@@ -368,6 +370,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute003)
     rtLaunchKernelAttrVal_t attrValue;
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_DATA_DUMP, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+    const uint8_t originalDataDump = attrValue.isDataDump;
 
     rtLaunchKernelAttr_t attr = {RT_LAUNCH_KERNEL_ATTR_DATA_DUMP, 1};
     rtKernelLaunchCfg_t cfg = {&attr, 1};
@@ -377,7 +380,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute003)
 
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_DATA_DUMP, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(attrValue.isDataDump, 1);
+    EXPECT_EQ(attrValue.isDataDump, originalDataDump);
 
     ReleaseModelResource(ctx, stream, model);
     GlobalMockObject::verify();
@@ -398,6 +401,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute004)
     rtLaunchKernelAttrVal_t attrValue;
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_TIMEOUT, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+    const uint32_t originalTimeout = attrValue.timeout;
 
     rtLaunchKernelAttr_t attr = {RT_LAUNCH_KERNEL_ATTR_TIMEOUT, 100};
     rtKernelLaunchCfg_t cfg = {&attr, 1};
@@ -407,7 +411,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute004)
 
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_TIMEOUT, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(attrValue.timeout, 100);
+    EXPECT_EQ(attrValue.timeout, originalTimeout);
 
     ReleaseModelResource(ctx, stream, model);
     GlobalMockObject::verify();
@@ -428,6 +432,7 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute005)
     rtLaunchKernelAttrVal_t attrValue;
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+    const auto originalTimeoutUs = attrValue.timeoutUs;
 
     rtLaunchKernelAttr_t attr;
     attr.id = RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
@@ -439,8 +444,8 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute005)
 
     ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US, &attrValue);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(attrValue.timeoutUs.timeoutLow, 100);
-    EXPECT_EQ(attrValue.timeoutUs.timeoutHigh, 0);
+    EXPECT_EQ(attrValue.timeoutUs.timeoutLow, originalTimeoutUs.timeoutLow);
+    EXPECT_EQ(attrValue.timeoutUs.timeoutHigh, originalTimeoutUs.timeoutHigh);
 
     ReleaseModelResource(ctx, stream, model);
     GlobalMockObject::verify();

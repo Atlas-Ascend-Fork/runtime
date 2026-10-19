@@ -10,6 +10,11 @@
 #ifndef CCE_RUNTIME_TASK_INFO_STRUCT_HPP
 #define CCE_RUNTIME_TASK_INFO_STRUCT_HPP
 
+#include <mutex>
+#include <queue>
+#include <set>
+
+#include "args/args_inner.h"
 #include "dev.h"
 #include "task_info_base.hpp"
 #include "rt_inner_model.h"
@@ -29,6 +34,55 @@ class Model;
 class Driver;
 class ArgLoader;
 class CondHandle;
+class Kernel;
+typedef struct tagTaskInfoStru TaskInfo;
+
+struct KernelTaskUpdateInfo {
+    Kernel* kernel;
+    TaskCfg taskCfg;
+    void* args;
+    size_t argsSize;
+    uint32_t isHostArgs;
+    uint32_t numBlocks;
+};
+
+struct EventRecordTaskUpdateInfo {
+    Event* event;
+    uint32_t eventFlag;
+    uint32_t recordFlag;
+};
+
+struct TaskUpdateParams {
+    uint8_t isValid;
+    uint8_t rsv1[3];
+    rtTaskType type;
+    union {
+        uint8_t rsv2[64];
+        KernelTaskUpdateInfo kernelUpdateParams;
+        EventRecordTaskUpdateInfo eventRecordUpdateParams;
+        rtValueWriteTaskParams valueWriteUpdateParams;
+        rtValueWaitTaskParams valueWaitUpdateParams;
+    } u;
+};
+
+struct EventRecordUpdateInfo {
+    Event* event;
+    uint64_t expectCqeNo;
+};
+
+struct TaskUpdateItem {
+    uint32_t launchNo;
+    union {
+        KernelTaskUpdateInfo kernelInfo;
+        EventRecordUpdateInfo eventRecordInfo;
+    } u;
+};
+
+struct TaskUpdateInfo {
+    TaskUpdateParams latestParams; // 必须用graph里面的update锁
+    std::mutex updateMutex;        // 只锁queue，用来保证和回收线程互斥
+    std::queue<TaskUpdateItem> updateQueue;
+};
 
 struct CmoAddrTaskInfo {
     void* src;
@@ -173,6 +227,8 @@ struct ModelMaintainceTaskInfo {
     MmtType type;
     uint32_t streamType;
     uint32_t firstTaskId;
+    uint8_t enableCqe : 1;
+    uint8_t reserved : 7;
 };
 
 struct ModelExecuteTaskInfo {
@@ -291,6 +347,9 @@ struct WriteValueTaskInfo {
     TaskWrCqeFlag cqeFlag;
     uint32_t ptrFlag;
     uint64_t sqeAddr;
+    uint64_t recvCqeNo;    // used for external event
+    uint64_t expectCqeCnt; // used for external event
+    Event* event;          // used for external event，other scene is null
 };
 
 // CmoTask
@@ -360,7 +419,12 @@ struct EndGraphNotifyWaitTaskInfo {
     uint32_t notifyId;
     uint32_t timeout;
     std::vector<EventResource>* externalEventsRes;
+    uint32_t launchNo;
+    uint64_t expectTotalRecvCqeCnt;
+    std::set<TaskInfo*>* updateTask;
+    void* hostSqeUpdateAddr; // release when end graph task is finished
     bool isSoftwareSqCaptureModel;
+    bool isCurExecuteNeedCqe;
 };
 
 struct LabelSetTaskInfo {

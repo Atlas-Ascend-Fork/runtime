@@ -228,6 +228,7 @@ public:
     virtual rtError_t FreePoolEvent(const int32_t eventId) = 0;
     virtual rtError_t AllocExpandingPoolEvent(void** const eventAddr, int32_t* eventId) = 0;
     virtual void FreeExpandingPoolEvent(const int32_t eventId) = 0;
+    virtual bool IsEventExpandingPoolSupportBar() const = 0;
     virtual rtChipType_t GetChipType() const = 0;
     virtual void SetChipType(rtChipType_t chipType) = 0;
     virtual std::string GetSocVersion() const = 0;
@@ -466,7 +467,7 @@ public:
     virtual uint32_t GetAicpuPrintfMemSize() const = 0;
     virtual rtError_t ReInitAicpuPrintfMem() = 0;
     virtual rtError_t StoreEndGraphNotifyInfo(
-        const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos) = 0;
+        const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos, uint64_t expectTotalRecvCqeCnt) = 0;
     virtual rtError_t DeleteEndGraphNotifyInfo(
         const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos, const uint32_t errCode) = 0;
     virtual rtError_t ClearEndGraphNotifyInfoByModel(Model* captureModel) = 0;

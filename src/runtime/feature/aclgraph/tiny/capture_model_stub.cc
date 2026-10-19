@@ -230,6 +230,18 @@ void CaptureModel::BackupArgHandle(const uint16_t streamId, const uint16_t taskI
 
 rtError_t CaptureModel::Update(void) { return RT_ERROR_FEATURE_NOT_SUPPORT; }
 
+void CaptureModel::InsertGraphUpdateTask(TaskInfo* const taskInfo) { UNUSED(taskInfo); }
+
+void CaptureModel::ClearGraphUpdateTask() {}
+
+bool CaptureModel::IsCaptureModelRunningAfterPoll() const { return false; }
+
+void CaptureModel::ProcessExternalRecordNormalCqe(TaskInfo* const taskInfo, const rtCqReport_t& logicCq)
+{
+    UNUSED(taskInfo);
+    UNUSED(logicCq);
+}
+
 rtError_t CaptureModel::ReleaseNotifyId(uint32_t& releaseNum)
 {
     UNUSED(releaseNum);
@@ -346,6 +358,33 @@ void CaptureModel::ReleaseExternalRefreshTable() {}
 rtError_t CaptureModel::PrepareExternalEventRefreshInfo(ExternalEventRefreshInfo* refreshInfo)
 {
     UNUSED(refreshInfo);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
+rtError_t CaptureModel::PrepareGraphUpdateProc(Stream* const exeStm)
+{
+    UNUSED(exeStm);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
+void CaptureModel::SwapUpdateTask() { return; }
+
+rtError_t CaptureModel::UpdateExternalRecordEventItems(uint32_t& updateSqeNum)
+{
+    UNUSED(updateSqeNum);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
+rtError_t CaptureModel::PrepareExternalRecordTaskUpdateInfo(
+    void* hostSqeUpdateAddrBase, const uint64_t sqeTotalSize, std::vector<void*>& dsts, std::vector<void*>& srcs,
+    std::vector<size_t>& sizes, uint16_t& count)
+{
+    UNUSED(hostSqeUpdateAddrBase);
+    UNUSED(sqeTotalSize);
+    UNUSED(dsts);
+    UNUSED(srcs);
+    UNUSED(sizes);
+    UNUSED(count);
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 

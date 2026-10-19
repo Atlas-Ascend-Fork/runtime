@@ -28,6 +28,7 @@ public:
     rtError_t AllocAndInsertEvent(void** const eventAddr, int32_t* eventId);
     void FreeEventId(int32_t eventId);
     rtError_t ResetBufferForEvent();
+    bool IsBarSupported() const { return barSupported_; }
 
     uint16_t GetPoolIndex() const { return poolIndex_; }
 
@@ -40,6 +41,7 @@ private:
     int32_t eventIdCount_;
     int32_t lastEventId_;
     uint16_t poolIndex_;
+    bool barSupported_{false};
     static void* MallocBufferForEvent(const size_t size, void* const para);
     static void FreeBufferForEvent(void* const addr, void* const para);
 };

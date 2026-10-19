@@ -639,7 +639,7 @@ void UpdateDavidAICpuKernelSqeForDavinciTask(RtDavidStarsAicpuKernelSqe* const s
 void UpdateDavidAICpuControlSqeForDavinciTask(RtDavidStarsAicpuControlSqe* const sqe);
 void ConstructDavidSqeForCallbackLaunchTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo);
 
-rtError_t WriteValuePtrTaskInit(TaskInfo* taskInfo, const void* const pointedAddr, TaskWrCqeFlag cqeFlag);
+rtError_t WriteValuePtrTaskInit(TaskInfo* taskInfo, Event* event, const void* const pointedAddr, TaskWrCqeFlag cqeFlag);
 void ConstructDavidSqeForWriteValueTask(TaskInfo* const taskInfo, void* const sqe, const TaskSqeInfo& sqeInfo);
 } // namespace runtime
 } // namespace cce

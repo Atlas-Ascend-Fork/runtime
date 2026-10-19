@@ -18,8 +18,10 @@
 #include "device_sq_cq_pool.hpp"
 #include "cond_handle.hpp"
 #include "logic_sq.hpp"
-#include <unordered_set>
+#include <mutex>
+#include <set>
 #include <tuple>
+#include <unordered_set>
 
 namespace cce {
 namespace runtime {
@@ -52,15 +54,6 @@ constexpr uint32_t MS_PROF_SHAPE_INFO_SIZE = static_cast<uint32_t>(sizeof(Msprof
 constexpr uint32_t MS_PROF_SHAPE_HEADER_SIZE = static_cast<uint32_t>(sizeof(MsprofShapeHeader));
 constexpr uint64_t EXTERNAL_WAIT_REFRESH_ENTRY_SIZE = sizeof(uint64_t);
 
-struct ExternalEventTaskItem {
-    // external操作使用的event对象。
-    Event* event{nullptr};
-    // capture阶段占位任务所在stream id。
-    uint32_t captureStreamId{0U};
-    // capture阶段占位任务id。
-    uint32_t taskId{0U};
-};
-
 struct ExternalEventRefreshLayout {
     // record refresh entry区域在device表中的偏移。
     uint64_t recordOffset{0U};
@@ -77,6 +70,18 @@ struct ExternalEventRefreshInfo {
     std::vector<EventResource> preparedRecords;
     // 本轮external record和wait资源，挂靠到endGraph notify释放。
     std::vector<EventResource> retainedEventResources;
+};
+
+struct GraphUpdateInfo {
+    uint32_t launchCnt{0U};
+    Atomic<uint64_t> totalRecvCqeCnt{0ULL};
+    uint64_t totalNeedCqeCnt{0ULL};
+    uint32_t isCurExecuteNeedCqe : 1;
+    uint32_t rsv : 31;
+    std::mutex updateMutex;
+    std::set<TaskInfo*> updateTask;         /* 通过set接口设置下来的更新任务 */
+    std::set<TaskInfo*> curApplyUpdateTask; /* 本次graph launch时，应用的更新任务 */
+    void* hostSqeUpdateAddr{nullptr};
 };
 
 class CaptureModel : public Model {
@@ -132,8 +137,8 @@ public:
     bool CanUpdate() const
     {
         return (
-            (!IsCaptureModelRunning()) && (captureModelStatus_ == RtCaptureModelStatus::READY ||
-                                           captureModelStatus_ == RtCaptureModelStatus::UPDATING));
+            (captureModelStatus_ == RtCaptureModelStatus::READY) ||
+            (captureModelStatus_ == RtCaptureModelStatus::UPDATING));
     }
 
     void InsertSingleOperStmIdAndCaptureStmId(const int32_t singleOperStmId, const int32_t captureStmId)
@@ -244,6 +249,8 @@ public:
 
     bool IsCaptureModelRunning(void) const { return (refCount_ != 0U); }
 
+    bool IsCaptureModelRunningAfterPoll() const;
+
     bool ModelSqOperTryLock(void) { return sqBindMutex_.try_lock(); }
 
     void ModelSqOperUnLock(void) { return sqBindMutex_.unlock(); }
@@ -277,6 +284,7 @@ public:
     const TaskGroup* GetTaskGroup(uint16_t streamId, uint16_t taskId);
     void BackupArgHandle(const uint16_t streamId, const uint16_t taskId);
     rtError_t Update(void);
+    void ProcessExternalRecordNormalCqe(TaskInfo* taskInfo, const rtCqReport_t& logicCq);
 
     rtError_t ReleaseNotifyId(uint32_t& releaseNum);
     rtError_t UpdateNotifyId(Stream* const exeStream);
@@ -322,6 +330,11 @@ public:
     void SetJettyBindFlag(bool bound) { jettyBindFlag_ = bound; }
     rtError_t EndCaptureAdapterProc();
 
+    GraphUpdateInfo& GetGraphUpdateInfo() { return updateInfo_; }
+
+    void InsertGraphUpdateTask(TaskInfo* taskInfo);
+    void ClearGraphUpdateTask();
+
 private:
     rtError_t AllocSqCqProc(const uint32_t logicSqNum) const;
     rtError_t BindSqCq(void);
@@ -336,7 +349,7 @@ private:
     void FinalizeHostStateOnExit() noexcept;
     Stream* GetOriginalCaptureStream(void) const;
     rtError_t CheckExecuteReady(void) const;
-    rtError_t PreModelExecute(Stream* const stm, ExternalEventRefreshInfo* refreshInfo);
+    rtError_t PreModelExecute(Stream* const stm, ExternalEventRefreshInfo* refreshInfo, bool& executeRefAcquired);
     rtError_t ExecuteModel(
         Stream* const stm, int32_t timeout, const uint8_t executeMode, ExternalEventRefreshInfo* refreshInfo);
     rtError_t PostModelExecute(Stream* const stm, ExternalEventRefreshInfo* refreshInfo);
@@ -358,6 +371,12 @@ private:
     rtError_t BindStreamToModel(void);
     void ReportCacheTrackData();
     rtError_t InitAllSubCaptureModelCondTaskByDefValue(Stream* const stm);
+    rtError_t PrepareGraphUpdateProc(Stream* const exeStm);
+    rtError_t PrepareExternalRecordTaskUpdateInfo(
+        void* hostSqeUpdateAddrBase, const uint64_t sqeTotalSize, std::vector<void*>& dsts, std::vector<void*>& srcs,
+        std::vector<size_t>& sizes, uint16_t& count);
+    void SwapUpdateTask();
+    rtError_t UpdateExternalRecordEventItems(uint32_t& updateSqeNum);
     std::vector<CaptureModel*>& GetAllSubCaptureModels();
     void RestoreJettyForSnapshot();
     rtError_t RefreshJettyInfoList();
@@ -370,9 +389,9 @@ private:
     std::set<Event*> singleOperEvents_;
     std::set<Event*> captureEvents_;
     // external record占位任务引用，capture end和每次replay按该列表刷新。
-    std::vector<ExternalEventTaskItem> externalRecordEventItems_;
+    std::map<std::tuple<uint32_t, uint32_t>, Event*> externalRecordEventItems_;
     // external wait占位任务引用，capture end和每次replay按该列表刷新。
-    std::vector<ExternalEventTaskItem> externalWaitEventItems_;
+    std::map<std::tuple<uint32_t, uint32_t>, Event*> externalWaitEventItems_;
     // external refresh表布局，先存record entry，再存wait producer地址entry。
     ExternalEventRefreshLayout externalEventRefreshLayout_;
     // capture model生命周期内固定的device refresh表基地址。
@@ -381,6 +400,7 @@ private:
     std::shared_ptr<uint8_t[]> externalEventRefreshHostTemplate_{nullptr};
     // 每次replay的Event资源owner在execute期间由此中转，并由主endGraph notify接管。
     std::vector<EventResource>* curReplayExternalEventsRes_{nullptr};
+    GraphUpdateInfo updateInfo_;
     std::map<Stream*, std::vector<Stream*>> addStreamMap_; // key为add进来的stream，value为隐式创建的stream
     std::vector<Notify*> addStreamNotifyList_;
     std::vector<Notify*> executeNotifyList_;

@@ -86,6 +86,8 @@ private:
 
     rtError_t MonitorTaskReclaim(uint16_t errorStreamId);
 
+    void ProcCqeForSinkStm(Stream* stm);
+
     void MonitorForWatchDog(Device* const dev);
 
     void MonitorEndGraphNotify(Device* const dev) const;

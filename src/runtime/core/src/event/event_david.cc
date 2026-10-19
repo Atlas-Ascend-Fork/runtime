@@ -25,7 +25,6 @@
 #include "context.hpp"
 namespace cce {
 namespace runtime {
-
 DavidEvent::DavidEvent(Device* device, uint64_t eventFlag, Context* ctx, bool isNewMode)
     : Event(device, eventFlag, ctx, false, isNewMode)
 {
@@ -182,7 +181,8 @@ bool DavidEvent::WaitSendCheck(const Stream* const stm, int32_t& eventId)
 }
 
 void DavidEvent::UpdateLatestRecord(
-    const DavidRecordTaskInfo& recordInfo, const DavidEventState_t latestStatus, const uint64_t timeStamp)
+    const DavidRecordTaskInfo& recordInfo, const DavidEventState_t latestStatus, const uint64_t timeStamp,
+    const int32_t newEventId, void* const newEventAddr)
 {
     const std::lock_guard<std::mutex> lock(recordStateMutex_);
     if (latestStatus == DavidEventState_t::EVT_NOT_RECORDED) {
@@ -190,23 +190,39 @@ void DavidEvent::UpdateLatestRecord(
         SetRecord(true);
         SetHasReset(false);
         SetTimeStamp(UINT64_MAX);
-        SetLatestRecordInfo(recordInfo.taskId, recordInfo.streamId);
+        SetLatestRecordInfo(recordInfo.taskId, recordInfo.streamId, recordInfo.expectCqeNo);
+        if (!IsHardwareMode()) {
+            RefreshEventId(newEventId, newEventAddr);
+        }
     } else if (latestStatus == DavidEventState_t::EVT_RECORDED) {
-        if ((recordInfo.streamId == latestRecordTask_.streamId) && (recordInfo.taskId == latestRecordTask_.taskId)) {
+        if ((recordInfo.streamId == latestRecordTask_.streamId) && (recordInfo.taskId == latestRecordTask_.taskId) &&
+            (recordInfo.expectCqeNo == latestRecordTask_.expectCqeNo)) {
             SetTimeStamp(timeStamp);
             status_ = DavidEventState_t::EVT_RECORDED;
-        } else {
-            // no operation
         }
-    } else {
-        // no operation
     }
 }
 
-void DavidEvent::RecordDavidEventComplete(const TaskInfo* const tsk, const uint64_t recTimestamp)
+uint64_t DavidEvent::ExpectCqeNo_() const
 {
-    DavidRecordTaskInfo latestRecord = {tsk->stream->Id_(), tsk->id};
+    const std::lock_guard<std::mutex> lock(recordStateMutex_);
+    return latestRecordTask_.expectCqeNo;
+}
+
+void DavidEvent::RecordComplete(
+    TaskInfo* const tsk, const uint64_t recTimestamp, const uint64_t recTimeline, const uint64_t cqeNo)
+{
+    UNUSED(recTimeline);
+    const DavidRecordTaskInfo latestRecord = {tsk->stream->Id_(), tsk->id, cqeNo};
     UpdateLatestRecord(latestRecord, DavidEventState_t::EVT_RECORDED, recTimestamp);
+}
+
+void DavidEvent::PublishSoftwareRecordResource(
+    void* const eventAddr, int32_t eventId, int32_t streamId, uint32_t taskId, uint64_t cqeNo)
+{
+    const DavidRecordTaskInfo latestRecord = {streamId, taskId, cqeNo};
+    UpdateLatestRecord(latestRecord, DavidEventState_t::EVT_NOT_RECORDED, UINT64_MAX, eventId, eventAddr);
+    TryFreeLastEventId();
 }
 
 rtError_t DavidEvent::ReclaimTask(const bool evtWaitTask)
@@ -251,16 +267,26 @@ rtError_t DavidEvent::QueryEventTask(rtEventStatus_t* const status)
         error != RT_ERROR_NONE, error,
         "Failed to check the context status for the stream. Reason: context is abort, status=%#x.",
         static_cast<int32_t>(error));
-    error = stm->JudgeHeadTailPos(status, this->recordPos_);
-    if (error != RT_ERROR_NONE) { // confirm
+    if (IsExternalRecordOrWait()) {
+        error = QueryExternalEventStatus(status);
+    } else {
+        error = stm->JudgeHeadTailPos(status, this->recordPos_);
+    }
+
+    if (error != RT_ERROR_NONE) {
         return RT_ERROR_NONE;
     }
+
     if (*status == RT_EVENT_RECORDED && (eventFlag_ & RT_EVENT_TIME_LINE) != 0) {
         const uint64_t curUs = TimeStamp();
         if (curUs == UINT64_MAX) {
             *status = RT_EVENT_INIT;
             stm->StreamSyncLock();
-            (void)TaskReclaimByStream(stm, false);
+            if (IsExternalRecordOrWait()) {
+                device_->WakeUpRecycleThread();
+            } else {
+                (void)TaskReclaimByStream(stm, false);
+            }
             stm->StreamSyncUnLock();
         }
     }
@@ -294,8 +320,12 @@ rtError_t DavidEvent::Synchronize(int32_t timeout)
 {
     if (!HasRecord()) {
         const int32_t deviceId = (device_ == nullptr) ? -1 : static_cast<int32_t>(device_->Id_());
-        RT_LOG(RT_LOG_INFO, "No record to synchronize, return success. device_id=%d, event_id=%d", deviceId, eventId_);
+        RT_LOG(RT_LOG_INFO, "No record to synchronize, return success, device_id=%d, event_id=%d.", deviceId, eventId_);
         return RT_ERROR_NONE;
+    }
+
+    if (IsExternalRecordOrWait()) {
+        return SynchronizeExternalEventStatus(timeout, status_ == DavidEventState_t::EVT_RECORDED);
     }
 
     rtError_t error = WaitTask(timeout);
@@ -305,6 +335,7 @@ rtError_t DavidEvent::Synchronize(int32_t timeout)
     } else {
         SetEventSyncTimeoutFlag(false);
     }
+
     return error;
 }
 
@@ -422,6 +453,7 @@ rtError_t DavidEvent::ClearRecordStatus()
     const std::lock_guard<std::mutex> latestStateLock(recordStateMutex_);
     latestRecordTask_.streamId = -1;
     latestRecordTask_.taskId = UINT32_MAX;
+    latestRecordTask_.expectCqeNo = 0U;
     SetRecordStatus(DavidEventState_t::EVT_NOT_RECORDED);
     if (isNewMode_) {
         SetRecordStatus(DavidEventState_t::EVT_RECORDED);

@@ -984,7 +984,7 @@ rtError_t StreamWriteValuePtr(
                                      static_cast<uint32_t>(error));
     pos = writeValPtrTask->id;
     dstStm = writeValPtrTask->stream;
-    (void)WriteValuePtrTaskInit(writeValPtrTask, pointedAddr, TASK_WR_CQE_DEFAULT);
+    (void)WriteValuePtrTaskInit(writeValPtrTask, nullptr, pointedAddr, TASK_WR_CQE_DEFAULT);
     writeValPtrTask->stmArgPos = static_cast<DavidStream*>(dstStm)->GetArgPos();
     error = DavidSendTask(writeValPtrTask, dstStm);
     ERROR_PROC_RETURN_MSG_INNER(error, TaskUnInitProc(writeValPtrTask); TaskRollBack(dstStm, pos); stm->StreamUnLock();

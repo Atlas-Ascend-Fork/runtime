@@ -722,16 +722,25 @@ void ConstructSqeForMemWaitValueTask(TaskInfo* taskInfo, void* const sqeBuffer, 
 
 void ConstructSqeForCaptureExternalRecordTask(TaskInfo* taskInfo, void* const sqeBuffer, const TaskSqeInfo& sqeInfo)
 {
-    UNUSED(sqeInfo);
     rtStarsSqe_t* const command = static_cast<rtStarsSqe_t*>(sqeBuffer);
 
     const WriteValueTaskInfo* const writeValueTask = &taskInfo->u.writeValTask;
     if (writeValueTask->sqeAddr == 0ULL) {
         // capture阶段还未分配device侧内存，放NopTask占位
-        ConstructSqeForNopTask(taskInfo, command, sqeInfo);
-        return;
+        const uint32_t sendSqeNum = taskInfo->sqeNum;
+        for (uint32_t i = 0U; i < sendSqeNum; ++i) {
+            ConstructSqeForNopTask(taskInfo, &(command[i]), sqeInfo);
+        }
+    } else {
+        ConstructSqeForWriteValueTask(taskInfo, &(command[0]), sqeInfo);
+        command[0].commonSqe.sqeHeader.wr_cqe = 0U;
+        ConstructSqeForNopTask(taskInfo, &(command[1]), sqeInfo);
+        if (writeValueTask->cqeFlag == TASK_WR_CQE_DEFAULT) {
+            command[1].commonSqe.sqeHeader.wr_cqe = taskInfo->stream->GetStarsWrCqeFlag() ? 1U : 0U;
+        } else {
+            command[1].commonSqe.sqeHeader.wr_cqe = (writeValueTask->cqeFlag == TASK_WR_CQE_NEVER) ? 0U : 1U;
+        }
     }
-    ConstructSqeForWriteValueTask(taskInfo, command, sqeInfo);
 }
 
 void ConstructSqeForCaptureExternalWaitTask(TaskInfo* taskInfo, void* const sqeBuffer, const TaskSqeInfo& sqeInfo)

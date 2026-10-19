@@ -822,10 +822,7 @@ rtError_t DavidStream::StarsAddTaskToStream(TaskInfo* const tsk, const uint32_t 
         GetBindFlag() ? "model" : "single-operator", streamId_, tsk->id, tsk->taskSn, static_cast<int32_t>(tsk->type),
         tsk->typeName, sendSqeNum, tsk->stream->Device_()->Id_());
     SetLastTaskId(static_cast<uint32_t>(tsk->id));
-    if ((tsk->isNeedStreamSync != 0U) || (tsk->isCqeNeedConcern != 0U) ||
-        ((tsk->type == TS_TASK_TYPE_MEMCPY) && (tsk->u.memcpyAsyncTaskInfo.isConcernedRecycle))) {
-        tsk->stream->latestConcernedTaskId.Set(tsk->id);
-    }
+    UpdateLatestConcernedTaskId(tsk);
 
     if (IsSoftwareSqEnable() || IsAutoSplitSq()) {
         RecordPosToTaskIdMap(tsk, sendSqeNum);
@@ -1165,6 +1162,7 @@ void DavidStream::ResetDavidStreamConstruct()
     SetLimitFlag(false);
     SetRecycleEndTaskId(MAX_UINT16_NUM);
     isNeedRecvCqe_ = false;
+    cqePendingCnt_.Set(0U);
     SetNeedSyncFlag(false);
     syncTimeout_ = -1;
     isForceRecycle_ = false;

@@ -21,6 +21,8 @@
 #include "task_info.hpp"
 #include "kernel_utils.hpp"
 #include "event_task.h"
+#include "memory_task.h"
+#include "capture_model.hpp"
 #include "model/capture_model_utils.hpp"
 #include <string>
 #undef private
@@ -214,6 +216,11 @@ TEST_F(CloudV2ApiImpltaskOwnerTest, TaskGetParams_UnknownTaskType_DefaultCase)
 {
     MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
 
+    Model* model = nullptr;
+    ASSERT_EQ(context_->ModelCreate(&model, RT_MODEL_CAPTURE_MODEL), RT_ERROR_NONE);
+    CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(model);
+    ASSERT_NE(captureModel, nullptr);
+    stream_->SetModel(captureModel);
     TaskInfo taskInfo;
     (void)memset_s(&taskInfo, sizeof(TaskInfo), 0, sizeof(TaskInfo));
     taskInfo.stream = stream_;
@@ -227,4 +234,84 @@ TEST_F(CloudV2ApiImpltaskOwnerTest, TaskGetParams_UnknownTaskType_DefaultCase)
 
     rtError_t ret = apiImpl.TaskGetParams(&taskInfo, &params);
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
+    stream_->SetModel(nullptr);
+    EXPECT_EQ(context_->ModelDestroy(model), RT_ERROR_NONE);
+}
+
+TEST_F(CloudV2ApiImpltaskOwnerTest, ConvertTaskType_CaptureExternalRecordReturnsEventRecord)
+{
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.taskOwner = static_cast<uint8_t>(TaskOwner::RT_TASK_USER);
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+
+    rtTaskType taskType = RT_TASK_DEFAULT;
+    EXPECT_EQ(ConvertTaskType(&taskInfo, &taskType), RT_ERROR_NONE);
+    EXPECT_EQ(taskType, RT_TASK_EVENT_RECORD);
+}
+
+TEST_F(CloudV2ApiImpltaskOwnerTest, TaskGetParams_CaptureExternalRecordReturnsExternalEventParams)
+{
+    MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
+
+    Model* model = nullptr;
+    ASSERT_EQ(context_->ModelCreate(&model, RT_MODEL_CAPTURE_MODEL), RT_ERROR_NONE);
+    CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(model);
+    ASSERT_NE(captureModel, nullptr);
+    stream_->SetModel(captureModel);
+    Event event(device_, RT_EVENT_DDSYNC_NS, context_);
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.taskOwner = static_cast<uint8_t>(TaskOwner::RT_TASK_USER);
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+    taskInfo.u.writeValTask.event = &event;
+
+    ApiImpl apiImpl;
+    rtTaskParams params = {};
+    EXPECT_EQ(apiImpl.TaskGetParams(&taskInfo, &params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_EVENT_RECORD);
+    EXPECT_EQ(params.eventRecordTaskParams.event, event.GetInnerHandle());
+    EXPECT_EQ(params.eventRecordTaskParams.eventFlag, RT_EVENT_DDSYNC_NS);
+    EXPECT_EQ(params.eventRecordTaskParams.recordFlag, RT_EVENT_RECORD_EXTERNAL);
+    stream_->SetModel(nullptr);
+    EXPECT_EQ(context_->ModelDestroy(model), RT_ERROR_NONE);
+}
+
+TEST_F(CloudV2ApiImpltaskOwnerTest, CacheWriteValueTaskParams_CaptureExternalRecordReturnsInvalidValue)
+{
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.taskOwner = static_cast<uint8_t>(TaskOwner::RT_TASK_USER);
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+
+    rtTaskParams params = {};
+    params.type = RT_TASK_VALUE_WRITE;
+    EXPECT_EQ(CacheWriteValueTaskParams(&taskInfo, &params), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(taskInfo.type, TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL);
+}
+
+TEST_F(CloudV2ApiImpltaskOwnerTest, ModelTaskDisable_CaptureExternalRecordSetsModelFault)
+{
+    MOCKER(CheckCaptureModelForUpdate).stubs().will(returnValue(RT_ERROR_NONE));
+
+    Model* model = nullptr;
+    ASSERT_EQ(context_->ModelCreate(&model, RT_MODEL_CAPTURE_MODEL), RT_ERROR_NONE);
+    CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(model);
+    ASSERT_NE(captureModel, nullptr);
+    captureModel->SetCaptureModelStatus(RtCaptureModelStatus::READY);
+    stream_->SetModel(captureModel);
+    TaskInfo taskInfo = {};
+    taskInfo.stream = stream_;
+    taskInfo.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    taskInfo.taskOwner = static_cast<uint8_t>(TaskOwner::RT_TASK_USER);
+    taskInfo.typeName = "CAPTURE_RECORD_EXTERNAL";
+
+    ApiImpl apiImpl;
+    EXPECT_EQ(apiImpl.ModelTaskDisable(&taskInfo), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(captureModel->GetCaptureModelStatus(), RtCaptureModelStatus::FAULT);
+    stream_->SetModel(nullptr);
+    EXPECT_EQ(context_->ModelDestroy(model), RT_ERROR_NONE);
 }

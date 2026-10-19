@@ -24,6 +24,7 @@
 #include "stream_jetty_handler.h"
 #include "capture_model_utils.hpp"
 #include "rt_inner_event.h"
+#include "runtime_handle_guard.h"
 #include "task.hpp"
 #include "npu_driver.hpp"
 #include "snapshot_process_helper.hpp"
@@ -426,7 +427,7 @@ rtError_t MemWaitValueTaskInit(TaskInfo* taskInfo, const void* const devAddr, co
     return RT_ERROR_NONE;
 }
 
-rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, const void* const waitRefreshAddr)
+rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, Event* event, const void* const waitRefreshAddr)
 {
     taskInfo->typeName = "CAPTURE_WAIT_EXTERNAL";
     taskInfo->type = TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL;
@@ -435,6 +436,7 @@ rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, const void* const wait
         return ret;
     }
     taskInfo->u.memWaitValueTask.awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT;
+    taskInfo->u.memWaitValueTask.event = event;
     taskInfo->sqeNum = static_cast<uint8_t>(GetSendSqeNum(taskInfo));
     return RT_ERROR_NONE;
 }
@@ -659,8 +661,23 @@ rtError_t GetCaptureRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParam
         event, RT_ERROR_INVALID_VALUE, "Obtaining the Event Record task parameters in capture mode");
     params->eventRecordTaskParams.event = static_cast<rtEvent_t>(event->GetInnerHandle());
     params->eventRecordTaskParams.eventFlag = static_cast<uint32_t>(event->GetEventFlag());
-    params->eventRecordTaskParams.recordFlag =
-        (taskInfo->type == TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL) ? RT_EVENT_RECORD_EXTERNAL : RT_EVENT_RECORD_DEFAULT;
+    params->eventRecordTaskParams.recordFlag = RT_EVENT_RECORD_DEFAULT;
+
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetCaptureExternalRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    params->type = RT_TASK_EVENT_RECORD;
+    SetCommonTaskParams(params);
+
+    Event* event = taskInfo->u.writeValTask.event;
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        event, RT_ERROR_INVALID_VALUE, "Obtaining the Event Record task parameters in capture mode");
+    params->eventRecordTaskParams.event = static_cast<rtEvent_t>(event->GetInnerHandle());
+    ;
+    params->eventRecordTaskParams.eventFlag = static_cast<uint32_t>(event->GetEventFlag());
+    params->eventRecordTaskParams.recordFlag = RT_EVENT_RECORD_EXTERNAL;
 
     return RT_ERROR_NONE;
 }
@@ -719,6 +736,36 @@ rtError_t GetWaitValueTaskParams(const TaskInfo* const taskInfo, rtTaskParams* c
     return RT_ERROR_NONE;
 }
 
+rtError_t GetEventRecordLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    params->type = RT_TASK_EVENT_RECORD;
+    SetCommonTaskParams(params);
+    params->eventRecordTaskParams.event =
+        static_cast<rtEvent_t>(latestParams.u.eventRecordUpdateParams.event->GetInnerHandle());
+    params->eventRecordTaskParams.eventFlag = latestParams.u.eventRecordUpdateParams.eventFlag;
+    params->eventRecordTaskParams.recordFlag = latestParams.u.eventRecordUpdateParams.recordFlag;
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetWriteValueTaskLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    params->type = RT_TASK_VALUE_WRITE;
+    SetCommonTaskParams(params);
+    params->valueWriteTaskParams = latestParams.u.valueWriteUpdateParams;
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetWaitValueTaskLastestParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    params->type = RT_TASK_VALUE_WAIT;
+    SetCommonTaskParams(params);
+    params->valueWaitTaskParams = latestParams.u.valueWaitUpdateParams;
+    return RT_ERROR_NONE;
+}
+
 static rtError_t CheckUpdatingTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
 {
     rtTaskType taskType;
@@ -730,6 +777,14 @@ static rtError_t CheckUpdatingTaskParams(TaskInfo* const taskInfo, rtTaskParams*
         "The current task type is RT_TASK_DEFAULT(0). Only task types other than RT_TASK_DEFAULT(0) support "
         "updating task parameters to TASK_VALUE_WRITE(5) or TASK_VALUE_WAIT(6)",
         "Updating value write or value wait task parameters");
+
+    COND_RETURN_AND_MSG_OUTER(
+        taskInfo->type == TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+        "Setting task parameters", "task",
+        RtFmtMsg(
+            "External event record tasks cannot be changed to TASK_VALUE_WRITE(5) or TASK_VALUE_WAIT(6) "
+            "(stream_id=%d, task_id=%hu)",
+            taskInfo->stream->Id_(), GetTaskId(taskInfo)));
 
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
         params->taskGrp != nullptr, RT_ERROR_INVALID_VALUE, "Updating value write or value wait task parameters",
@@ -750,13 +805,105 @@ static rtError_t CheckUpdatingTaskParams(TaskInfo* const taskInfo, rtTaskParams*
     return RT_ERROR_NONE;
 }
 
-rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
+rtError_t CacheEventRecordTaskParams(TaskInfo* taskInfo, const rtTaskParams* params)
+{
+    COND_RETURN_AND_MSG_OUTER(
+        taskInfo->type != TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+        "Setting task parameters", "task",
+        RtFmtMsg(
+            "TASK_EVENT_RECORD(2) updates require an external event record task "
+            "(stream_id=%d, task_id=%hu). Select an external event record task",
+            taskInfo->stream->Id_(), GetTaskId(taskInfo)));
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        params->taskGrp != nullptr, RT_ERROR_INVALID_VALUE, "Setting task parameters", params->taskGrp,
+        "params->taskGrp", "NULL pointer");
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        params->opInfoPtr != nullptr, RT_ERROR_INVALID_VALUE, "Setting task parameters", params->opInfoPtr,
+        "params->opInfoPtr", "NULL pointer");
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        params->opInfoSize != 0U, RT_ERROR_INVALID_VALUE, "Setting task parameters", params->opInfoSize,
+        "params->opInfoSize", "0");
+    COND_RETURN_WARN(
+        IsTaskBelongToSubCaptureMdl(taskInfo), RT_ERROR_FEATURE_NOT_SUPPORT,
+        "task belongs to sub ACL Graph, does not support updating task parameters");
+
+    const rtEventRecordTaskParams& recordParams = params->eventRecordTaskParams;
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        recordParams.recordFlag != RT_EVENT_RECORD_EXTERNAL, RT_ERROR_INVALID_VALUE, "Setting task parameters",
+        recordParams.recordFlag, "params->eventRecordTaskParams.recordFlag", "RT_EVENT_RECORD_EXTERNAL(1)");
+
+    Event* newEvent = nullptr;
+    rtError_t error = GetValidatedObject<Event>(recordParams.event, newEvent);
+    ERROR_RETURN(error, "Failed to validate event handle, retCode=%#x.", error);
+    COND_RETURN_AND_MSG_OUTER(
+        newEvent == nullptr, RT_ERROR_INVALID_VALUE, ErrorCode::EE1004, "Setting task parameters",
+        "params->eventRecordTaskParams.event");
+
+    Event* const oldEvent = taskInfo->u.writeValTask.event;
+    NULL_PTR_RETURN(oldEvent, RT_ERROR_INVALID_VALUE);
+    const uint64_t oldEventFlag = oldEvent->GetEventFlag();
+    const uint64_t newEventFlag = newEvent->GetEventFlag();
+    constexpr uint64_t allowedDiff = static_cast<uint64_t>(RT_EVENT_TIME_LINE);
+    const uint64_t eventFlagDiff = oldEventFlag ^ newEventFlag;
+
+    COND_RETURN_AND_MSG_OUTER(
+        (eventFlagDiff & ~allowedDiff) != 0U, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011, "Setting task parameters",
+        recordParams.event, "params->eventRecordTaskParams.event",
+        RtFmtMsg(
+            "Event flags may differ only in RT_EVENT_TIME_LINE(0x08), old_flag=%#llx, new_flag=%#llx",
+            static_cast<unsigned long long>(oldEventFlag), static_cast<unsigned long long>(newEventFlag)));
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        static_cast<uint64_t>(recordParams.eventFlag) != newEventFlag, RT_ERROR_INVALID_VALUE,
+        "Setting task parameters", RtFmtMsg("%#x", recordParams.eventFlag), "params->eventRecordTaskParams.eventFlag",
+        RtFmtMsg(
+            "%#llx, matching the flags of event (event_id=%d)", static_cast<unsigned long long>(newEventFlag),
+            newEvent->EventId_()));
+
+    if (newEvent->IsEventWithTimeline()) {
+        const Device* const dev = taskInfo->stream->Device_();
+        COND_RETURN_WARN(
+            !dev->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE), RT_ERROR_FEATURE_NOT_SUPPORT,
+            "current device does not support changing external record timeline mode");
+    }
+
+    error = newEvent->TrySwitchToSoftwareMode();
+    ERROR_RETURN(error, "Failed to switch event to software mode, retCode=%#x.", static_cast<uint32_t>(error));
+
+    TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    latestParams.type = RT_TASK_EVENT_RECORD;
+    latestParams.u.eventRecordUpdateParams.event = newEvent;
+    latestParams.u.eventRecordUpdateParams.eventFlag = static_cast<uint32_t>(newEventFlag);
+    latestParams.u.eventRecordUpdateParams.recordFlag = RT_EVENT_RECORD_EXTERNAL;
+    newEvent->SetRecordFlag(RT_EVENT_RECORD_EXTERNAL);
+    return RT_ERROR_NONE;
+}
+
+rtError_t CacheWriteValueTaskParams(TaskInfo* taskInfo, rtTaskParams* params)
 {
     ERROR_RETURN(CheckUpdatingTaskParams(taskInfo, params), "task type or input params is invalid");
 
+    TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    latestParams.type = RT_TASK_VALUE_WRITE;
+    latestParams.u.valueWriteUpdateParams = params->valueWriteTaskParams;
+    return RT_ERROR_NONE;
+}
+
+rtError_t CacheWaitValueTaskParams(TaskInfo* taskInfo, rtTaskParams* params)
+{
+    ERROR_RETURN(CheckUpdatingTaskParams(taskInfo, params), "task type or input params is invalid");
+
+    TaskUpdateParams& latestParams = taskInfo->updateInfo->latestParams;
+    latestParams.type = RT_TASK_VALUE_WAIT;
+    latestParams.u.valueWaitUpdateParams = params->valueWaitTaskParams;
+    return RT_ERROR_NONE;
+}
+
+rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params)
+{
     BackupTaskArgHandle(taskInfo);
-    TaskUnInitProc(taskInfo);
-    (void)MemWriteValueTaskInit(taskInfo, params->valueWriteTaskParams.devAddr, params->valueWriteTaskParams.value);
+    TaskClearForUpdate(taskInfo);
+    (void)MemWriteValueTaskInit(
+        taskInfo, params->u.valueWriteUpdateParams.devAddr, params->u.valueWriteUpdateParams.value);
     taskInfo->u.memWriteValueTask.awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT;
     taskInfo->type = TS_TASK_TYPE_MEM_WRITE_VALUE;
     taskInfo->typeName = "MEM_WRITE_VALUE";
@@ -773,18 +920,16 @@ rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* con
     return RT_ERROR_NONE;
 }
 
-rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
+rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params)
 {
-    ERROR_RETURN(CheckUpdatingTaskParams(taskInfo, params), "task type or input params is invalid");
-
     BackupTaskArgHandle(taskInfo);
-    TaskUnInitProc(taskInfo);
+    TaskClearForUpdate(taskInfo);
     // 需要先赋值类型，此类型会影响Init中的内存申请方式
     taskInfo->type = TS_TASK_TYPE_MEM_WAIT_VALUE;
     taskInfo->typeName = "MEM_WAIT_VALUE";
     const rtError_t error = MemWaitValueTaskInit(
-        taskInfo, params->valueWaitTaskParams.devAddr, params->valueWaitTaskParams.value,
-        params->valueWaitTaskParams.flag);
+        taskInfo, params->u.valueWaitUpdateParams.devAddr, params->u.valueWaitUpdateParams.value,
+        params->u.valueWaitUpdateParams.flag);
     ERROR_RETURN_MSG_INNER(error, "mem wait value init failed, retCode=%#x.", error);
     taskInfo->u.memWaitValueTask.awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT;
     taskInfo->sqeNum = GetSendSqeNum(taskInfo);

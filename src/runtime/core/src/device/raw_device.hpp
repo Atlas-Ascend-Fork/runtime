@@ -189,6 +189,10 @@ public:
     }
 
     void FreeExpandingPoolEvent(const int32_t eventId) override { return eventExpandingPool_->FreeEventId(eventId); }
+    bool IsEventExpandingPoolSupportBar() const override
+    {
+        return (eventExpandingPool_ != nullptr) && eventExpandingPool_->IsBarSupported();
+    }
     bool IsSPM(const void* dptr) override
     {
         if (!IsSupportFeature(RtOptionalFeatureType::RT_FEATURE_DEVICE_SPM_POOL)) {
@@ -512,7 +516,8 @@ public:
     rtError_t ReInitAicpuPrintfMem() override;
 
     rtError_t StoreEndGraphNotifyInfo(
-        const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos) override;
+        const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos,
+        uint64_t expectTotalRecvCqeCnt) override;
     rtError_t DeleteEndGraphNotifyInfo(
         const uint32_t streamId, Model* captureModel, uint32_t endGraphNotifyPos, const uint32_t errCode) override;
     rtError_t ClearEndGraphNotifyInfoByModel(Model* captureModel) override;
@@ -581,7 +586,7 @@ private:
     friend rtError_t CheckAicpuDfxSupportImpl(RawDevice* device);
 
     bool JudgeIsEndGraphNotifyWaitExecuted(
-        const Stream* const exeStream, Model* captureModel, std::list<uint32_t>& sqePosList) const;
+        const Stream* const exeStream, Model* captureModel, std::list<std::pair<uint32_t, uint64_t>>& sqePosList) const;
     bool CheckTschCapability(const uint32_t tsFeature) const;
     uint32_t ConvertTsFeature(const uint32_t tsFeature) const;
     rtError_t RegisterDcacheLockOp(Program*& dcacheLockOpProgram);
@@ -734,8 +739,9 @@ private:
      * 支持的场景：exeStream多次执行相同的captureModel，exeStream执行多个不同的captureModel
      * 不支持的场景：不同的exestream执行相同的captureModel
      */
-    std::map<std::tuple<uint32_t, Model*>, std::list<uint32_t>>
-        captureModelExeInfoMap_; // key: tuple<exeStreamId, captureModel>, value: endGraphNotifyPosList
+    std::map<std::tuple<uint32_t, Model*>, std::list<std::pair<uint32_t, uint64_t>>>
+        captureModelExeInfoMap_; // key: tuple<exeStreamId, captureModel>, value: list<pair<endGraphNotifyPos,
+                                 // expectTotalRecvCqeCnt>>
     std::mutex captureModelExeInfoLock_;
     DeviceSqCqPool* deviceSqCqPool_;
     SqAddrMemoryOrder* sqAddrMemoryOrder_;

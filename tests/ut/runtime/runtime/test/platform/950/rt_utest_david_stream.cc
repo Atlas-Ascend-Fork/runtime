@@ -519,7 +519,6 @@ TEST_F(DavidStreamTest, auto_split_task_clean)
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::MemCopySync).stubs().will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::MemSetSync).stubs().will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::SqSwitchStreamBatch).stubs().will(returnValue(0));
-    MOCKER_CPP(&Model::UnbindStream).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&Model::ModelUnBindTaskSubmit).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemFree).stubs().will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::StreamIdReservedFree).stubs().will(returnValue(0));
@@ -549,8 +548,9 @@ TEST_F(DavidStreamTest, auto_split_task_clean)
     MOCKER_CPP_VIRTUAL(realStream->Context_(), &Context::TearDownStream).stubs().will(returnValue(0));
     error = static_cast<DavidStream*>(realStream)->StreamTaskClean();
     EXPECT_EQ(error, RT_ERROR_NONE);
-    rtModelUnbindStream(rtModel, stream);
-    rtStreamDestroy(stream);
+    EXPECT_EQ(rtModelUnbindStream(rtModel, stream), RT_ERROR_NONE);
+    EXPECT_EQ(rtModelDestroy(rtModel), RT_ERROR_NONE);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
 }
 
 TEST_F(DavidStreamTest, ModelTaskCleanAllowsNullModel)

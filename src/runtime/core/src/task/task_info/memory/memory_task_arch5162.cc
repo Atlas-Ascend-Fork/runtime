@@ -339,6 +339,13 @@ rtError_t GetCaptureRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParam
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
+rtError_t GetCaptureExternalRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    UNUSED(taskInfo);
+    UNUSED(params);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
 rtError_t GetCaptureWaitTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
 {
     UNUSED(taskInfo);
@@ -367,14 +374,14 @@ rtError_t GetWaitValueTaskParams(const TaskInfo* const taskInfo, rtTaskParams* c
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
-rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
+rtError_t UpdateWriteValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params)
 {
     UNUSED(taskInfo);
     UNUSED(params);
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
-rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
+rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params)
 {
     UNUSED(taskInfo);
     UNUSED(params);

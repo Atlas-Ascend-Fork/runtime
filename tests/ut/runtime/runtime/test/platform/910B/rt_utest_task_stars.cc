@@ -1080,19 +1080,21 @@ TEST_F(StarsTaskTest, CaptureRecordExternalTaskBuildsWriteValuePtrSqe)
     rtError_t ret = RT_ERROR_NONE;
     TaskInfo* task = dev_->GetTaskFactory()->Alloc(stream_, TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL, ret);
     ASSERT_NE(task, nullptr);
-    ASSERT_EQ(WriteValuePtrTaskInit(task, &recordSlot, TASK_WR_CQE_DEFAULT), RT_ERROR_NONE);
+    ASSERT_EQ(WriteValuePtrTaskInit(task, nullptr, &recordSlot, TASK_WR_CQE_DEFAULT), RT_ERROR_NONE);
     task->type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
 
-    rtStarsSqe_t sqe = {};
-    ToConstructSqe(task, &sqe, TaskSqeInfo{0ULL, 0ULL});
+    rtStarsSqe_t sqes[2] = {};
+    ToConstructSqe(task, sqes, TaskSqeInfo{0ULL, 0ULL});
 
-    EXPECT_EQ(sqe.writeValuePtrSqe.header.type, RT_STARS_SQE_TYPE_WRITE_VALUE);
-    EXPECT_EQ(sqe.writeValuePtrSqe.ptr_mode, 1U);
-    EXPECT_EQ(sqe.writeValuePtrSqe.va, 1U);
-    EXPECT_EQ(sqe.writeValuePtrSqe.write_addr_low, static_cast<uint32_t>(RtPtrToValue(&recordSlot) & MASK_32_BIT));
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.header.type, RT_STARS_SQE_TYPE_WRITE_VALUE);
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.ptr_mode, 1U);
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.va, 1U);
+    EXPECT_EQ(sqes[0].writeValuePtrSqe.write_addr_low, static_cast<uint32_t>(RtPtrToValue(&recordSlot) & MASK_32_BIT));
     EXPECT_EQ(
-        sqe.writeValuePtrSqe.write_addr_high,
+        sqes[0].writeValuePtrSqe.write_addr_high,
         static_cast<uint32_t>((RtPtrToValue(&recordSlot) >> UINT32_BIT_NUM) & MASK_17_BIT));
+    EXPECT_EQ(sqes[1].phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqes[1].phSqe.task_type, TS_TASK_TYPE_NOP);
 
     (void)dev_->GetTaskFactory()->Recycle(task);
 }

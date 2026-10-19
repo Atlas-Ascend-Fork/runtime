@@ -184,6 +184,22 @@ ERROR_RECYCLE:
     return error;
 }
 
+rtError_t BatchSendH2DAsyncTask(
+    void** const dsts, const size_t* const destMaxs, void** const srcs, const size_t* const sizes, const size_t count,
+    Stream* const stm)
+{
+    rtError_t error = RT_ERROR_NONE;
+    uint64_t realSize = 0ULL;
+
+    for (size_t i = 0U; i < count; i++) {
+        error =
+            MemcopyAsync(dsts[i], destMaxs[i], srcs[i], sizes[i], RT_MEMCPY_HOST_TO_DEVICE, stm, &realSize, nullptr);
+        COND_PROC((error != RT_ERROR_NONE), return error;);
+    }
+
+    return RT_ERROR_NONE;
+}
+
 rtError_t DevMemSetAsyncByMemset(
     Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
 {

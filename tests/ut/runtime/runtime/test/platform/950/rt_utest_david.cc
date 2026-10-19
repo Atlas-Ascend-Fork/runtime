@@ -2887,11 +2887,11 @@ TEST_F(DavidTaskTest, construct_davidsqe_for_write_value_ptr)
     void* addr = &value;
     rtDavidSqe_t* sqe = (rtDavidSqe_t*)malloc(sizeof(rtDavidSqe_t));
     TaskSqeInfo sqeInfo = {0ULL, 0ULL};
-    (void)WriteValuePtrTaskInit(&task, addr, TASK_WR_CQE_DEFAULT);
+    (void)WriteValuePtrTaskInit(&task, nullptr, addr, TASK_WR_CQE_DEFAULT);
     ToConstructSqe(&task, static_cast<void*>(sqe), sqeInfo);
-    (void)WriteValuePtrTaskInit(&task, addr, TASK_WR_CQE_NEVER);
+    (void)WriteValuePtrTaskInit(&task, nullptr, addr, TASK_WR_CQE_NEVER);
     ToConstructSqe(&task, static_cast<void*>(sqe), sqeInfo);
-    (void)WriteValuePtrTaskInit(&task, addr, TASK_WR_CQE_ALWAYS);
+    (void)WriteValuePtrTaskInit(&task, nullptr, addr, TASK_WR_CQE_ALWAYS);
     ToConstructSqe(&task, static_cast<void*>(sqe), sqeInfo);
 
     EXPECT_EQ(sqe->writeValueSqe.header.type, RT_DAVID_SQE_TYPE_WRITE_VALUE);

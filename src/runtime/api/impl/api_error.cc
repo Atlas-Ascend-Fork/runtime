@@ -1393,9 +1393,11 @@ rtError_t ApiErrorDecorator::StreamWaitEvent(
         "flag=%" PRIu64 " is not supported, and there is no need to wait for the event.", evt->GetEventFlag());
     if (flag == RT_EVENT_WAIT_EXTERNAL) {
         COND_RETURN_AND_MSG_OUTER(
-            (!evt->IsNewMode()) || (evt->GetEventFlag() != RT_EVENT_DDSYNC_NS), RT_ERROR_FEATURE_NOT_SUPPORT,
-            ErrorCode::WE0001, "wait for an event",
-            "ACL_EVENT_WAIT_EXTERNAL for an event not created by aclrtCreateEventExWithFlag with ACL_EVENT_SYNC");
+            (!evt->IsNewMode()) || !((evt->GetEventFlag() == RT_EVENT_DDSYNC_NS) ||
+                                     (evt->GetEventFlag() == (RT_EVENT_DDSYNC_NS | RT_EVENT_TIME_LINE))),
+            RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::WE0001, "wait for an event",
+            "ACL_EVENT_WAIT_EXTERNAL for an event not created by aclrtCreateEventExWithFlag with "
+            "ACL_EVENT_SYNC or (ACL_EVENT_SYNC | ACL_EVENT_TIME_LINE)");
     }
     // Wait flag一致性仅由ApiError层检查，其他位置不读写该状态。
     const uint32_t currentFlag = evt->GetWaitFlag();
@@ -1405,11 +1407,10 @@ rtError_t ApiErrorDecorator::StreamWaitEvent(
         RtFmtMsg(
             "The wait flag must remain consistent for the same event, current flag is %s, input flag is %s",
             EventOperationFlagToString(currentFlag, false).c_str(), EventOperationFlagToString(flag, false).c_str()));
-    evt->SetWaitFlag(flag);
-
     COND_RETURN_AND_MSG_OUTER(
         (flag == RT_EVENT_WAIT_EXTERNAL) && IsStreamBindWithSubModel(stm), RT_ERROR_FEATURE_NOT_SUPPORT,
         ErrorCode::WE0001, "wait for an event", "ACL_EVENT_WAIT_EXTERNAL in sub ACL Graph");
+    evt->SetWaitFlag(flag);
     return impl_->StreamWaitEvent(stm, evt, timeout, flag);
 }
 
@@ -1958,9 +1959,11 @@ rtError_t ApiErrorDecorator::EventRecord(Event* const evt, Stream* const stm, co
         RT_ERROR_FEATURE_NOT_SUPPORT, "IPC events are not supported when the capture stream flag is set.");
     if (flag == RT_EVENT_RECORD_EXTERNAL) {
         COND_RETURN_AND_MSG_OUTER(
-            (!evt->IsNewMode()) || (evt->GetEventFlag() != RT_EVENT_DDSYNC_NS), RT_ERROR_FEATURE_NOT_SUPPORT,
-            ErrorCode::WE0001, "record an event",
-            "ACL_EVENT_RECORD_EXTERNAL for an event not created by aclrtCreateEventExWithFlag with ACL_EVENT_SYNC");
+            (!evt->IsNewMode()) || !((evt->GetEventFlag() == RT_EVENT_DDSYNC_NS) ||
+                                     (evt->GetEventFlag() == (RT_EVENT_DDSYNC_NS | RT_EVENT_TIME_LINE))),
+            RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::WE0001, "record an event",
+            "ACL_EVENT_RECORD_EXTERNAL for an event not created by aclrtCreateEventExWithFlag with "
+            "ACL_EVENT_SYNC or (ACL_EVENT_SYNC | ACL_EVENT_TIME_LINE)");
     }
     // Record flag一致性仅由ApiError层检查，其他位置不读写该状态。
     const uint32_t currentFlag = evt->GetRecordFlag();
@@ -1970,11 +1973,10 @@ rtError_t ApiErrorDecorator::EventRecord(Event* const evt, Stream* const stm, co
         RtFmtMsg(
             "The record flag must remain consistent for the same event, current flag is %s, input flag is %s",
             EventOperationFlagToString(currentFlag, true).c_str(), EventOperationFlagToString(flag, true).c_str()));
-    evt->SetRecordFlag(flag);
-
     COND_RETURN_AND_MSG_OUTER(
         (flag == RT_EVENT_RECORD_EXTERNAL) && IsStreamBindWithSubModel(stm), RT_ERROR_FEATURE_NOT_SUPPORT,
         ErrorCode::WE0001, "record an event", "ACL_EVENT_RECORD_EXTERNAL in sub ACL Graph");
+    evt->SetRecordFlag(flag);
     const rtError_t error = impl_->EventRecord(evt, stm, flag);
     COND_RETURN_ERROR(
         (error != RT_ERROR_NONE) && (error != RT_ERROR_FEATURE_NOT_SUPPORT), error, "Record event failed.");
@@ -2017,7 +2019,8 @@ rtError_t ApiErrorDecorator::EventSynchronize(Event* const evt, const int32_t ti
         evt->IsCapturing(), RT_ERROR_EVENT_CAPTURED, ErrorCode::EE1016, "Event synchronization",
         RtFmtMsg("Event (event_id=%d) during the capture stage is not supported", evt->EventId_()));
     COND_RETURN_AND_MSG_OUTER(
-        evt->IsEventInModel(), RT_ERROR_INVALID_VALUE, ErrorCode::EE1016, "Event synchronization",
+        evt->IsEventInModel() && !evt->IsExternalRecordOrWait(), RT_ERROR_INVALID_VALUE, ErrorCode::EE1016,
+        "Event synchronization",
         RtFmtMsg("The event (event_id=%d) in the stream bound to the model is not supported", evt->EventId_()));
     return impl_->EventSynchronize(evt, timeout);
 }

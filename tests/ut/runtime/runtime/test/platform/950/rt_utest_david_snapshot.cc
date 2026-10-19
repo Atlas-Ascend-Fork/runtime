@@ -39,6 +39,7 @@
 #undef private
 #undef protected
 #include "aicpu_timeout_control.h"
+#include "arg_loader_ub.hpp"
 
 using namespace testing;
 using namespace cce::runtime;
@@ -705,6 +706,8 @@ TEST_F(DavidSnapshotTest, DeviceSnapshotUbArgsPoolRestore_Success)
 {
     Runtime* rt = Runtime::Instance();
     rt->SetConnectUbFlag(true);
+    UbArgLoader ubArgLoader(dev_);
+    MOCKER_CPP_VIRTUAL(dev_, &Device::UbArgLoaderPtr).stubs().will(returnValue(&ubArgLoader));
 
     MOCKER_CPP(&DeviceSnapshot::ArgsPoolConvertAddr).stubs().will(returnValue(RT_ERROR_NONE));
 
@@ -716,6 +719,8 @@ TEST_F(DavidSnapshotTest, DeviceSnapshotUbArgsPoolRestore_ConvertAddrFailed)
 {
     Runtime* rt = Runtime::Instance();
     rt->SetConnectUbFlag(true);
+    UbArgLoader ubArgLoader(dev_);
+    MOCKER_CPP_VIRTUAL(dev_, &Device::UbArgLoaderPtr).stubs().will(returnValue(&ubArgLoader));
 
     MOCKER_CPP(&DeviceSnapshot::ArgsPoolConvertAddr).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
 

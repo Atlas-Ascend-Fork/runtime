@@ -77,6 +77,170 @@ protected:
     EventExpandingPool* eventPool_{nullptr};
 };
 
+namespace {
+void* g_eventPoolAllocAddr = nullptr;
+void* g_eventPoolHostAddr = nullptr;
+rtMemType_t g_eventPoolExpectedMemType = RT_MEMORY_DEFAULT;
+
+rtError_t EventPoolDevMemAllocStub(
+    Driver*, void** dptr, uint64_t, rtMemType_t type, uint32_t, uint16_t, bool, DevMemAllocConfig, bool)
+{
+    EXPECT_EQ(type, g_eventPoolExpectedMemType);
+    *dptr = g_eventPoolAllocAddr;
+    return RT_ERROR_NONE;
+}
+
+rtError_t EventPoolPcieHostRegisterStub(Driver*, void*, uint64_t, uint32_t, void*& outAddr)
+{
+    outAddr = g_eventPoolHostAddr;
+    return RT_ERROR_NONE;
+}
+} // namespace
+
+TEST_F(SnapshotTest, EventPoolPcieBarSupportedUsesP2pMemory)
+{
+    uint8_t buffer[16] = {};
+    uint32_t capability = RT_CAPABILITY_SUPPORT;
+    g_eventPoolAllocAddr = buffer;
+    g_eventPoolHostAddr = buffer;
+    g_eventPoolExpectedMemType = RT_MEMORY_P2P_HBM;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(EventPoolDevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister)
+        .expects(once())
+        .will(invoke(EventPoolPcieHostRegisterStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::MemSetSync).expects(once()).will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostUnRegister)
+        .expects(once())
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    void* const addr = EventExpandingPool::MallocBufferForEvent(sizeof(buffer), &pool);
+    EXPECT_EQ(addr, buffer);
+    EventExpandingPool::FreeBufferForEvent(addr, &pool);
+    GlobalMockObject::verify();
+}
+
+TEST_F(SnapshotTest, EventPoolPcieBarUnsupportedKeepsDdrMemory)
+{
+    uint8_t buffer[16] = {};
+    uint32_t capability = RT_CAPABILITY_NOT_SUPPORT;
+    g_eventPoolAllocAddr = buffer;
+    g_eventPoolExpectedMemType = RT_MEMORY_DDR;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(EventPoolDevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister).expects(never());
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::MemSetSync).expects(once()).will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostUnRegister).expects(never());
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    void* const addr = EventExpandingPool::MallocBufferForEvent(sizeof(buffer), &pool);
+    EXPECT_EQ(addr, buffer);
+    EventExpandingPool::FreeBufferForEvent(addr, &pool);
+    GlobalMockObject::verify();
+}
+
+TEST_F(SnapshotTest, EventPoolRejectsDifferentPcieHostAddress)
+{
+    uint8_t deviceBuffer[16] = {};
+    uint8_t hostBuffer[16] = {};
+    uint32_t capability = RT_CAPABILITY_SUPPORT;
+    g_eventPoolAllocAddr = deviceBuffer;
+    g_eventPoolHostAddr = hostBuffer;
+    g_eventPoolExpectedMemType = RT_MEMORY_P2P_HBM;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(EventPoolDevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister)
+        .expects(once())
+        .will(invoke(EventPoolPcieHostRegisterStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::MemSetSync).expects(never());
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostUnRegister)
+        .expects(once())
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(EventExpandingPool::MallocBufferForEvent(sizeof(deviceBuffer), &pool), nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(SnapshotTest, EventPoolPcieAllocationFailureSkipsRegistration)
+{
+    uint32_t capability = RT_CAPABILITY_SUPPORT;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc)
+        .expects(once())
+        .will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister).expects(never());
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(never());
+
+    EXPECT_EQ(EventExpandingPool::MallocBufferForEvent(16U, &pool), nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(SnapshotTest, EventPoolPcieRegistrationFailureReleasesMemory)
+{
+    uint8_t buffer[16] = {};
+    uint32_t capability = RT_CAPABILITY_SUPPORT;
+    g_eventPoolAllocAddr = buffer;
+    g_eventPoolExpectedMemType = RT_MEMORY_P2P_HBM;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(EventPoolDevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister)
+        .expects(once())
+        .will(returnValue(RT_ERROR_DRV_ERR));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostUnRegister).expects(never());
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(EventExpandingPool::MallocBufferForEvent(sizeof(buffer), &pool), nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(SnapshotTest, EventPoolPcieInitializeFailureReleasesRegistration)
+{
+    uint8_t buffer[16] = {};
+    uint32_t capability = RT_CAPABILITY_SUPPORT;
+    g_eventPoolAllocAddr = buffer;
+    g_eventPoolHostAddr = buffer;
+    g_eventPoolExpectedMemType = RT_MEMORY_P2P_HBM;
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::CheckSupportPcieBarCopy)
+        .expects(once())
+        .with(mockcpp::any(), outBound(capability), eq(false))
+        .will(returnValue(RT_ERROR_NONE));
+    EventExpandingPool pool(device_);
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(EventPoolDevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostRegister)
+        .expects(once())
+        .will(invoke(EventPoolPcieHostRegisterStub));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::MemSetSync).expects(once()).will(returnValue(RT_ERROR_DRV_ERR));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::PcieHostUnRegister)
+        .expects(once())
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device_->Driver_(), &Driver::DevMemFree).expects(once()).will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(EventExpandingPool::MallocBufferForEvent(sizeof(buffer), &pool), nullptr);
+    GlobalMockObject::verify();
+}
+
 TEST_F(SnapshotTest, Lock_Unlock)
 {
     rtError_t error = rtSnapShotProcessLock();

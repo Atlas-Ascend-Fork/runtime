@@ -151,13 +151,38 @@ TEST(EventNotifyWaitTaskTest, EndGraphNotifyWaitTaskUnInitClearsExternalWaitReta
     EXPECT_EQ(task.u.endGraphNotifyWaitTask.externalEventsRes, nullptr);
 }
 
+TEST(EventNotifyWaitTaskTest, EndGraphNotifyWaitTaskUnInitClearsUpdatesWithoutModel)
+{
+    TaskUpdateInfo updateInfo = {};
+    TaskUpdateItem updateItem = {};
+    Event* const expectedEvent = RtValueToPtr<Event*>(0x1000U);
+    updateItem.launchNo = 1U;
+    updateItem.u.eventRecordInfo.event = expectedEvent;
+    updateInfo.updateQueue.push(updateItem);
+
+    TaskInfo updateTask = {};
+    updateTask.type = TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL;
+    updateTask.updateInfo = &updateInfo;
+
+    TaskInfo endGraphTask = {};
+    endGraphTask.u.endGraphNotifyWaitTask.endGraphModel = nullptr;
+    endGraphTask.u.endGraphNotifyWaitTask.launchNo = 1U;
+    endGraphTask.u.endGraphNotifyWaitTask.updateTask = new std::set<TaskInfo*>({&updateTask});
+
+    EndGraphNotifyWaitTaskUnInit(&endGraphTask);
+
+    EXPECT_EQ(endGraphTask.u.endGraphNotifyWaitTask.updateTask, nullptr);
+    EXPECT_TRUE(updateInfo.updateQueue.empty());
+    EXPECT_EQ(updateTask.u.writeValTask.event, expectedEvent);
+}
+
 TEST_F(EventTest910B, EndGraphNotifyWaitCompletionReleasesRetainedEventsAndUninitIsIdempotent)
 {
     rtStream_t stream = nullptr;
     ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
     Event event(device_, RT_EVENT_DEFAULT, nullptr);
     event.SoftwareModeEnable();
-    event.PublishSoftwareRecordResource(RtValueToPtr<void*>(0x12340000U), 1004);
+    event.PublishSoftwareRecordResource(RtValueToPtr<void*>(0x12340000U), 1004, 0, 0U, 0U);
     event.EventIdCountAdd(1004);
     event.EventIdCountAdd(1004);
     event.SetRecord(true);

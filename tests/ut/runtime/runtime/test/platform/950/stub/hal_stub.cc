@@ -755,6 +755,7 @@ drvError_t drvCustomCall(uint32_t devid, uint32_t cmd, void* para)
 
 drvError_t halHostRegister(void* hostPtr, UINT64 size, UINT32 flag, UINT32 devid, void** devPtr)
 {
+    *devPtr = hostPtr;
     return DRV_ERROR_NONE;
 }
 

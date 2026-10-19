@@ -44,6 +44,9 @@ rtError_t SetMemcpyDesc(
     rtMemcpyDesc_t desc, const void* const srcAddr, const void* const dstAddr, const size_t count,
     const Device* const device);
 
+rtError_t BatchSendH2DAsyncTask(
+    void** const dsts, const size_t* const destMaxs, void** const srcs, const size_t* const sizes, const size_t count,
+    Stream* const stm);
 } // namespace runtime
 } // namespace cce
 

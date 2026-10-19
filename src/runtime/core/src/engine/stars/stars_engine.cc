@@ -1417,6 +1417,21 @@ void StarsEngine::ProcLogicCqReport(const rtCqReport_t& logicCq, const bool isSt
         reportTask = GetDevice()->GetTaskFactory()->GetTask(static_cast<int32_t>(streamId), taskId);
     }
 
+    if (reportTask != nullptr) {
+        CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(reportTask->stream->Model_());
+        if (captureModel != nullptr) {
+            RT_LOG(
+                RT_LOG_INFO,
+                "Receive capture model CQE, device_id=%u, model_id=%u, stream_id=%d, task_id=%hu, task_type=%u, "
+                "sq_head=%hu, sqe_type=%u, err_type=%#x, err_code=%#x.",
+                GetDevice()->Id_(), captureModel->Id_(), reportTask->stream->Id_(), reportTask->id,
+                static_cast<uint32_t>(reportTask->type), logicCq.sqHead, static_cast<uint32_t>(logicCq.sqeType),
+                logicCq.errorType, logicCq.errorCode);
+            captureModel->ProcessExternalRecordNormalCqe(reportTask, logicCq);
+            return;
+        }
+    }
+
     if (ProcReportIsException(logicCq, reportTask)) {
         RT_LOG(
             RT_LOG_ERROR,
@@ -1759,6 +1774,13 @@ void StarsEngine::RecycleThreadDo()
         ret = device_->GetStreamSqCqManage()->GetStreamSharedPtrById(id, stream);
         COND_PROC(((ret != RT_ERROR_NONE) || (stream == nullptr)), continue);
         stream.get()->StreamRecycleLock();
+        CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(stream->Model_());
+        if ((captureModel != nullptr) && device_->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE)) {
+            ProcCqeForSinkStm(stream.get());
+            stream.get()->StreamRecycleUnlock();
+            stream.reset();
+            continue;
+        }
         COND_PROC(((stream->GetPendingNum() == 0U) || (stream->GetBindFlag()) || (stream->IsBindDvppGrp()) ||
                    (!stream->IsSeparateSendAndRecycle())),
                   stream.get()->StreamRecycleUnlock();
@@ -1769,6 +1791,15 @@ void StarsEngine::RecycleThreadDo()
         COND_PROC((ret != RT_ERROR_NONE), continue);
     }
     device_->FreeFftsPlusArgHandleCache();
+}
+
+void StarsEngine::ProcCqeForSinkStm(Stream* const stm)
+{
+    if ((!stm->IsExistCqe()) && (stm->GetCqePendingCnt() == 0U)) {
+        return;
+    }
+    uint32_t taskId = MAX_UINT16_NUM;
+    (void)ProcLogicCqUntilEmpty(stm, taskId);
 }
 void StarsEngine::RecycleTaskProcessForSeparatedStm(TaskInfo* const recycleTask, const uint32_t devId)
 {
@@ -1829,12 +1860,7 @@ rtError_t StarsEngine::RecycleSeparatedStmByFinishedId(Stream* const stm, const 
             stm->taskResMang_->RecycleResHead();
             continue;
         }
-        if ((recycleTask->isCqeNeedConcern != 0U) &&
-            unlikely((stm->GetFailureMode() != ABORT_ON_FAILURE) && (!stm->isForceRecycle_))) {
-            RT_LOG(
-                RT_LOG_DEBUG, "Task delay recycle until CQE received, stream_id=%d, task_id=%hu", stm->Id_(),
-                recycleTaskId);
-            stm->SetNeedRecvCqeFlag(true);
+        if (IsTaskRecycleBlocked(recycleTask)) {
             break;
         }
         RecycleTaskProcessForSeparatedStm(recycleTask, stm->Device_()->Id_());

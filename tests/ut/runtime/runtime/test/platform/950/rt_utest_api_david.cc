@@ -11651,11 +11651,12 @@ TEST_F(ApiDavidTest, TestTaskGetParamsStarsV2Case)
     ApiImplDavid apiImpl;
     rtError_t error;
     rtEvent_t event;
-    rtModel_t model;
+    Model* model = nullptr;
+    Context* const context = stream_->Context_();
 
-    error = rtModelCreate(&model, 0);
+    error = context->ModelCreate(&model, RT_MODEL_CAPTURE_MODEL);
     EXPECT_EQ(error, RT_ERROR_NONE);
-    stream_->SetModel(rt_ut::UnwrapOrNull<Model>(model));
+    stream_->SetModel(model);
 
     error = rtEventCreate(&event);
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -11693,7 +11694,7 @@ TEST_F(ApiDavidTest, TestTaskGetParamsStarsV2Case)
 
     stream_->SetModel(nullptr);
 
-    error = rtModelDestroy(model);
+    error = context->ModelDestroy(model);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     error = rtEventDestroy(event);

@@ -522,6 +522,10 @@ rtError_t ApiImplDavid::EventRecord(Event* const evt, Stream* const stm, const u
         if (supportRet != RT_ERROR_NONE) {
             return supportRet;
         }
+        COND_RETURN_WARN(
+            evt->IsEventWithTimeline() && (!curCtx->Device_()->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE)),
+            RT_ERROR_FEATURE_NOT_SUPPORT,
+            "This tsfw version does not support external event record with timeline flag ACL_EVENT_TIMELINE.");
         return Starsv2CaptureExternalEventRecord(evt, curStm);
     }
     if (evt->ToBeCaptured(curStm)) {

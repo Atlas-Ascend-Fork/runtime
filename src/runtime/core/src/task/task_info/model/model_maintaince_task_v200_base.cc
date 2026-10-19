@@ -30,6 +30,7 @@ rtError_t DavidModelMaintainceTaskInit(
 {
     ModelMaintainceTaskInfo* modelMaintainceTaskInfo = &(taskInfo->u.modelMaintainceTaskInfo);
     TaskCommonInfoInit(taskInfo);
+    const Device* const dev = taskInfo->stream->Device_();
 
     taskInfo->type = TS_TASK_TYPE_MODEL_MAINTAINCE;
     taskInfo->typeName = "MODEL_MAINTAINCE";
@@ -44,6 +45,12 @@ rtError_t DavidModelMaintainceTaskInit(
     if (mType == MMT_STREAM_ADD) {
         uint16_t* const execTimesSvm = modelMaintainceTaskInfo->opStream->GetExecutedTimesSvm();
         modelMaintainceTaskInfo->execTimesSvmOffset = RtPtrToValue<uint16_t*>(execTimesSvm);
+        if ((modelPtr != nullptr && modelPtr->GetModelType() == RT_MODEL_CAPTURE_MODEL) &&
+            (dev->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE))) {
+            modelMaintainceTaskInfo->enableCqe = 0x1U;
+        } else {
+            modelMaintainceTaskInfo->enableCqe = 0x0U;
+        }
     }
     return RT_ERROR_NONE;
 }
@@ -73,6 +80,7 @@ static void ConstructDavidSqeForModelMaintainceTask(
     ConstructDavidSqeForHeadCommon(taskInfo, davidSqe);
     RtDavidPlaceHolderSqe* const phSqe = &(davidSqe->phSqe);
     ConstructSqeForModelMaintainceTaskCommon(taskInfo, phSqe);
+    phSqe->u.modelMaintainceInfo.enableCqe = modelMaintainceTaskInfo->enableCqe;
 
     const int32_t type = static_cast<int32_t>(modelMaintainceTaskInfo->type);
     switch (type) {

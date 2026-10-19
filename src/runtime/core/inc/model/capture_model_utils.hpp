@@ -26,7 +26,9 @@ struct EventResource;
 struct ExternalEventRefreshLayout;
 struct ExternalEventRefreshInfo;
 using ExternalPlaceholderSubmitter = rtError_t (*)(Device* dev, TaskInfo* task);
-
+void TaskClearForUpdate(TaskInfo* taskInfo);
+void TaskUpdateItemPostProc(TaskInfo* taskInfo, const TaskUpdateItem& updateItem);
+void PopCompletedUpdateItems(TaskInfo* taskInfo, uint32_t launchNo);
 bool IsEventCapturing(const Event* const evt, const Stream* const stm);
 void DetachCaptureEvent(Event* const evt);
 void TerminateCapture(const Event* const evt, const Stream* const stm);
@@ -63,6 +65,7 @@ rtError_t SubmitExternalEventRefreshInfo(
 void CommitExternalEventRecords(ExternalEventRefreshInfo* refreshInfo);
 rtError_t SubmitExternalEventTaskCommon(
     Event* evt, Stream* stm, bool isRecord, ExternalPlaceholderSubmitter submitPlaceholder);
+rtError_t UpdateHostSqeBufferAndCopySqeByTask(TaskInfo* const task, void* hostUpdateSqeAddr);
 rtError_t GetActiveStreamSqId(TaskInfo* const task, uint32_t& activeStreamSqId);
 rtError_t SetupEndGraphNotifyWithoutAllocNtyId(Notify* const notify);
 

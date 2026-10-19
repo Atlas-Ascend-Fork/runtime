@@ -26,15 +26,64 @@
 namespace cce {
 namespace runtime {
 
-static void CommitPreparedExternalRecordToEvent(Event* event, const uint64_t eventAddr, const int32_t eventId)
+void TaskClearForUpdate(TaskInfo* taskInfo)
 {
-    if ((event == nullptr) || (eventAddr == 0U) || (eventId == INVALID_EVENT_ID)) {
-        RT_LOG(RT_LOG_ERROR, "Invalid event record resource, event addr=%lu, event id=%d.", eventAddr, eventId);
+    if (taskInfo->type >= TS_TASK_TYPE_RESERVED) {
         return;
     }
-    event->PublishSoftwareRecordResource(RtValueToPtr<void*>(eventAddr), eventId);
-    event->SetRecord(true);
-    event->SetHasReset(false);
+    Stream* const stream = taskInfo->stream;
+    const uint16_t taskId = taskInfo->id;
+
+    if (Runtime::Instance()->GetNpuCollectFlag()) {
+        stream->DelTaskTag(taskId);
+    }
+    if (g_taskUnInitFunc[taskInfo->type] != nullptr) {
+        g_taskUnInitFunc[taskInfo->type](taskInfo);
+    }
+}
+
+void TaskUpdateItemPostProc(TaskInfo* const taskInfo, const TaskUpdateItem& updateItem)
+{
+    switch (taskInfo->type) {
+        case TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL:
+            if (updateItem.u.eventRecordInfo.event != nullptr) {
+                taskInfo->u.writeValTask.event = updateItem.u.eventRecordInfo.event;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void PopCompletedUpdateItems(TaskInfo* const taskInfo, const uint32_t launchNo)
+{
+    if ((taskInfo == nullptr) || (taskInfo->updateInfo == nullptr)) {
+        return;
+    }
+
+    TaskUpdateInfo* const taskUpdate = taskInfo->updateInfo;
+    const std::lock_guard<std::mutex> taskUpdateLock(taskUpdate->updateMutex);
+    std::queue<TaskUpdateItem>& updateQueue = taskUpdate->updateQueue;
+    while (!updateQueue.empty()) {
+        TaskUpdateItem& item = updateQueue.front();
+        if (item.launchNo > launchNo) {
+            break;
+        }
+        TaskUpdateItemPostProc(taskInfo, item);
+        updateQueue.pop();
+    }
+}
+
+static void CommitPreparedExternalRecordToEvent(const EventResource& record)
+{
+    if ((record.event == nullptr) || (record.eventAddr == 0U) || (record.eventId == INVALID_EVENT_ID)) {
+        RT_LOG(
+            RT_LOG_ERROR, "Invalid event record resource, event addr=%lu, event id=%d.", record.eventAddr,
+            record.eventId);
+        return;
+    }
+    record.event->PublishSoftwareRecordResource(
+        RtValueToPtr<void*>(record.eventAddr), record.eventId, record.streamId, record.taskId, record.expectCqeNo);
 }
 
 constexpr uint32_t HARD_EVENT_RESVERD_MAX = 8U * 1024U;
@@ -288,18 +337,6 @@ rtError_t CheckCaptureModelForUpdate(const Stream* stm)
     COND_RETURN_WARN(
         ((captureModel != nullptr) && captureModel->IsSubCaptureModel()), RT_ERROR_FEATURE_NOT_SUPPORT,
         "stream belongs to sub ACL Graph, does not support update operations");
-    if (!captureModel->CanUpdate()) {
-        RawDevice* const rawDev = dynamic_cast<RawDevice*>(dev);
-        rawDev->PollEndGraphNotifyInfoByModelId(mdl->Id_());
-        if (!captureModel->CanUpdate()) {
-            RT_LOG_OUTER_MSG_IMPL(
-                ErrorCode::EE1017, "Checking whether the capture model is updatable", "modelRI",
-                RtFmtMsg(
-                    "ModelRI (model_id=%u) is in running or capture state, status=%s", captureModel->Id_(),
-                    CaptureModelStatusToString(captureModel->GetCaptureModelStatus()).c_str()));
-            return RT_ERROR_MODEL_UPDATE_FAILED;
-        }
-    }
     return RT_ERROR_NONE;
 }
 
@@ -565,7 +602,7 @@ void CommitExternalEventRecords(ExternalEventRefreshInfo* refreshInfo)
         if ((record.event != nullptr) && (record.eventAddr != 0U) && (record.eventId != INVALID_EVENT_ID)) {
             record.event->EventIdCountAdd(record.eventId);
             refreshInfo->retainedEventResources.push_back(record);
-            CommitPreparedExternalRecordToEvent(record.event, record.eventAddr, record.eventId);
+            CommitPreparedExternalRecordToEvent(record);
         }
     }
     refreshInfo->preparedRecords.clear();
@@ -652,6 +689,26 @@ rtError_t SubmitExternalEventTaskCommon(
     error = isRecord ? captureMdl->AddExternalRecordEvent(evt, static_cast<uint32_t>(captureStm->Id_()), taskId) :
                        captureMdl->AddExternalWaitEvent(evt, static_cast<uint32_t>(captureStm->Id_()), taskId);
     ERROR_RETURN(error, "Submit external event task failed, retCode=%#x.", error);
+    return RT_ERROR_NONE;
+}
+
+rtError_t UpdateHostSqeBufferAndCopySqeByTask(TaskInfo* const task, void* hostUpdateSqeAddr)
+{
+    const uint32_t sendSqeNum = GetSendSqeNum(task);
+    const size_t sqeSize = sizeof(rtStarsSqe_t) * static_cast<size_t>(sendSqeNum);
+
+    const rtError_t error = UpdateHostSqeBufferByTask(task);
+    COND_PROC((error != RT_ERROR_NONE), return error;);
+
+    uint8_t* const hostSqeBuffer = task->stream->GetHostSqeAddrByPos(task->pos);
+
+    const errno_t ret = memcpy_s(hostUpdateSqeAddr, sqeSize, hostSqeBuffer, sqeSize);
+    COND_RETURN_ERROR(
+        ret != EOK, RT_ERROR_INVALID_VALUE,
+        "Failed to copy the host SQE buffer, retCode=%d, sqe_size=%zu, "
+        "stream_id=%d, task_id=%hu, src=%p, dst=%p.",
+        ret, sqeSize, task->stream->Id_(), GetTaskId(task), static_cast<void*>(hostSqeBuffer), hostUpdateSqeAddr);
+
     return RT_ERROR_NONE;
 }
 
