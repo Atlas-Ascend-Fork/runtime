@@ -37,4 +37,6 @@ uint32_t PlatFormInfos::GetCoreNumByType(const std::string& core_type) { return 
 void PlatFormInfos::SetPlatformResWithLock(const std::string& label, std::map<std::string, std::string>& res) {}
 
 std::string PlatFormInfos::SaveToBuffer() { return ""; }
+
+std::string OptionalInfos::GetSocVersion() { return ""; }
 } // namespace fe
