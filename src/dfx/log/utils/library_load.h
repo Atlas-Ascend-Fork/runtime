@@ -27,6 +27,7 @@ ArgPtr LoadRuntimeDll(const char* dllName);
 int32_t UnloadRuntimeDll(ArgPtr handle);
 int32_t LoadDllFunc(ArgPtr handle, SymbolInfo* symbolInfos, uint32_t symbolNum);
 void* LoadDllFuncSingle(ArgPtr handle, const char* symbol);
+void* LoadDllFuncSingleQuiet(ArgPtr handle, const char* symbol);
 
 #ifdef __cplusplus
 }

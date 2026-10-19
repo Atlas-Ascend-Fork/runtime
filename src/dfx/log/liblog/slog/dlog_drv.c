@@ -231,7 +231,7 @@ void DlogSetDriverLogLevel(int32_t moduleId, int32_t level)
         g_drvLibHandle = LoadRuntimeDll(DRV_HDC_LIBRARY_NAME);
     }
     if (g_drvLibHandle != NULL) {
-        ArgPtr func = LoadDllFuncSingle(g_drvLibHandle, DRV_SET_MODULE_LOG_LEVEL);
+        ArgPtr func = LoadDllFuncSingleQuiet(g_drvLibHandle, DRV_SET_MODULE_LOG_LEVEL);
         if (func != NULL) {
             resolved = true;
             ret = ((DrvSetModuleLogLevelFunc)func)(level, moduleIds, size);
@@ -239,11 +239,13 @@ void DlogSetDriverLogLevel(int32_t moduleId, int32_t level)
     }
     (void)pthread_mutex_unlock(&g_drvLibMutex);
 
-    /* Absent library or symbol means the driver has not shipped the interface
-     * yet - both expected on machines without the new driver. */
-    ONE_ACT_WARN_LOG(
-        !resolved, return, "resolve %s from %s failed, skip set log level to drv.", DRV_SET_MODULE_LOG_LEVEL,
-        DRV_HDC_LIBRARY_NAME);
+    /* Absent library or symbol means the driver has not shipped the urma log
+     * interface yet - expected with an older or chip-specific driver package.
+     * The driver's log level is not lost: it was already synced through the
+     * registration path (halCtl log_out_handle carries the initial level), so
+     * only the urma log feature is unavailable and declared as such. A
+     * resolved interface that returns an error is reported below as usual. */
+    ONE_ACT_INFO_LOG(!resolved, return, "urma log is not supported by current driver.");
     if (ret != 0) {
         SELF_LOG_WARN("set log level to drv failed, ret=%d, moduleId=%u, level=%d.", ret, realModuleId, level);
         return;

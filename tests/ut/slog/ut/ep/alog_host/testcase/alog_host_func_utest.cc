@@ -840,9 +840,15 @@ TEST_F(EP_ALOG_HOST_FUNC_UTEST, DlogModuleLevelTableStaysAligned)
 
 // Level dispatch toward the driver must tolerate an unresolved
 // drv_log_set_module_log_level symbol (driver has not shipped it yet).
+// Compatibility scenario of issue 1128: an older or chip-specific driver
+// package keeps working but lacks the interface, so the skip must be
+// reported as an INFO "not supported" notice - never as WARN/ERROR noise
+// in the system log.
 TEST_F(EP_ALOG_HOST_FUNC_UTEST, DlogSetLevelDispatchNoDriverSymbol)
 {
     DlogConstructor();
+    ResetWarnLog();
+    ResetInfoLog();
 
     // DRV and UNIFIEDBUS go down the driver path; ALL_MODULE fans out to both.
     EXPECT_EQ(SYS_OK, dlog_setlevel(DRV, DLOG_WARN, 0));
@@ -851,6 +857,10 @@ TEST_F(EP_ALOG_HOST_FUNC_UTEST, DlogSetLevelDispatchNoDriverSymbol)
     // A module the driver does not own must be a no-op on that path.
     EXPECT_EQ(SYS_OK, dlog_setlevel(SLOG, DLOG_WARN, 0));
 
+    // A driver that simply lacks the interface must not produce any warning,
+    // and each driver-path dispatch must declare the feature unsupported.
+    EXPECT_EQ(0, GetWarnLogNum());
+    EXPECT_EQ(3U, GetInfoLogNum());
     DlogDestructor();
     EXPECT_EQ(0, GetErrLogNum());
 }
