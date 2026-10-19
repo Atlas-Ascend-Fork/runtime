@@ -176,6 +176,8 @@ aclError aclrtBinaryGetDevAddressImpl(const aclrtBinHandle binHandle, void** bin
     ACL_PROFILING_REG(acl::AclProfType::AclrtBinaryGetDevAddress);
     ACL_LOG_INFO("start to execute aclrtBinaryGetDevAddress");
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(binHandle);
+    ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(binAddr);
+    ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(binSize);
     uint32_t tempBinSize = 0U;
 
     const auto rtErr = rtsBinaryGetDevAddress(binHandle, binAddr, &tempBinSize);
