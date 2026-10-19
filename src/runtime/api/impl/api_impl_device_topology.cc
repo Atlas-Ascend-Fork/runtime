@@ -270,7 +270,8 @@ rtError_t ApiImplDeviceTopology::GetPairDevicesInfo(
     Driver* const curDrv = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
     NULL_PTR_RETURN_MSG(curDrv, RT_ERROR_DRV_NULL);
     const rtError_t ret = curDrv->GetPairDevicesInfo(realDeviceId, readOtherDeviceId, infoType, val);
-    if (infoType == DEVS_INFO_TYPE_TOPOLOGY && *val == TOPOLOGY_HCCS_SW && realDeviceId == readOtherDeviceId) {
+    if (ret == RT_ERROR_NONE && infoType == DEVS_INFO_TYPE_TOPOLOGY && *val == TOPOLOGY_HCCS_SW &&
+        realDeviceId == readOtherDeviceId) {
         *val = TOPOLOGY_HCCS;
     }
     return ret;
@@ -287,7 +288,8 @@ rtError_t ApiImplDeviceTopology::GetPairPhyDevicesInfo(
     Driver* const curDrv = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
     NULL_PTR_RETURN_MSG(curDrv, RT_ERROR_DRV_NULL);
     const rtError_t ret = curDrv->GetPairDevicesInfo(devId, otherDevId, infoType, val, true);
-    if (infoType == DEVS_INFO_TYPE_TOPOLOGY && *val == TOPOLOGY_HCCS_SW && devId == otherDevId) {
+    if (ret == RT_ERROR_NONE && infoType == DEVS_INFO_TYPE_TOPOLOGY && *val == TOPOLOGY_HCCS_SW &&
+        devId == otherDevId) {
         *val = TOPOLOGY_HCCS;
     }
     return ret;

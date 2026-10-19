@@ -871,6 +871,31 @@ TEST_F(ApiImplTest, ApiImplDeviceTopologySuccess)
     GlobalContainer::SetRtChipType(oldChipType);
 }
 
+TEST_F(ApiImplTest, ApiImplDeviceTopologyDriverErrorDoesNotNormalizeOutput)
+{
+    ApiImplDeviceTopology apiImpl;
+    Runtime* const rtInstance = static_cast<Runtime*>(Runtime::Instance());
+    const rtChipType_t oldChipType = rtInstance->GetChipType();
+    rtInstance->SetChipType(CHIP_CLOUD);
+    GlobalContainer::SetRtChipType(CHIP_CLOUD);
+    uint32_t runMode = static_cast<uint32_t>(RT_RUN_MODE_ONLINE);
+    MOCKER(drvGetPlatformInfo).stubs().with(outBoundP(&runMode, sizeof(runMode))).will(returnValue(DRV_ERROR_NONE));
+
+    Driver* const driver = rtInstance->driverFactory_.GetDriver(NPU_DRIVER);
+    ASSERT_NE(driver, nullptr);
+    MOCKER_CPP_VIRTUAL(driver, &Driver::GetPairDevicesInfo).expects(exactly(2)).will(returnValue(RT_ERROR_DRV_TIMEOUT));
+
+    int64_t pairInfo = TOPOLOGY_HCCS_SW;
+    EXPECT_EQ(apiImpl.GetPairDevicesInfo(0U, 0U, DEVS_INFO_TYPE_TOPOLOGY, &pairInfo), RT_ERROR_DRV_TIMEOUT);
+    EXPECT_EQ(pairInfo, TOPOLOGY_HCCS_SW);
+
+    EXPECT_EQ(apiImpl.GetPairPhyDevicesInfo(0U, 0U, DEVS_INFO_TYPE_TOPOLOGY, &pairInfo), RT_ERROR_DRV_TIMEOUT);
+    EXPECT_EQ(pairInfo, TOPOLOGY_HCCS_SW);
+
+    rtInstance->SetChipType(oldChipType);
+    GlobalContainer::SetRtChipType(oldChipType);
+}
+
 TEST_F(ApiImplTest, LaunchHostFuncV2RegistersBeforeVirtualSubmit)
 {
     HostFuncApiImplForTest apiImpl;
