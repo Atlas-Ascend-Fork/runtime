@@ -40,7 +40,7 @@
 - **场景四**：IPC 进程间同步
   ```cpp
   // 进程 A：创建 IPC Event，Record 并导出 handle
-  aclrtCreateEventWithFlag(&event, ACL_EVENT_IPC);
+  aclrtCreateEventExWithFlag(&event, ACL_EVENT_IPC);
   aclrtRecordEvent(event, streamA);               // 进程 A 在 stream 上 Record 事件
   aclrtIpcGetEventHandle(event, &ipcHandle);
   // 将 ipcHandle 传递给进程 B（如通过共享内存或 socket）
@@ -90,7 +90,7 @@
 
 ### 2.3 Event Flag 类型
 
-Event Flag 通过 `aclrtCreateEventWithFlag` 传入，决定 Event 的创建分支和同步行为：
+Event Flag 通过 `aclrtCreateEventWithFlag` 或 `aclrtCreateEventExWithFlag` 传入，决定 Event 的创建分支和同步行为。其中，`ACL_EVENT_IPC` 仅支持通过 `aclrtCreateEventExWithFlag` 传入：
 
 | Flag | 值 | 说明 |
 |------|-----|------|
