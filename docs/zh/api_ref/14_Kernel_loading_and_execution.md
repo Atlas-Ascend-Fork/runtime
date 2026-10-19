@@ -705,7 +705,7 @@ aclError aclrtGetFunctionName(const void *func, uint32_t maxLen, char *name)
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | func | 输入 | 核函数指针。此处可以是`__global__`声明的核函数名（比如myKernel，仅适用于Ascend C语言开发自定义算子并基于毕昇编译器进行Host和Device代码混合编译的场景），也可以是[aclrtFuncHandle](25-05_Typedefs.md#aclrtFuncHandle)类型的核函数句柄。 |
-| maxLen | 输入 | 用户申请用于存储核函数名称的最大内存大小，单位Byte。 |
+| maxLen | 输入 | 用户申请用于存储核函数名称的缓冲区容量，单位Byte。maxLen必须大于或等于核函数名称的字节长度加1，以容纳结尾空字符`\0`；容量不足时接口返回参数错误。 |
 | name | 输出 | 核函数名称。 |
 
 ### 返回值说明

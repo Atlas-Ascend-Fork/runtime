@@ -3087,7 +3087,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t* free, si
  * @param deviceId [IN]             the deviceId to be queried.
  * @param memUsageInfo [IN/OUT]     the memUsageInfo used to store memory usage information.
  * @param inputNum [IN]             the number of components that are expected to be queried.
- * @param outputNum [IN/OUT]        the actual number of components queried.
+ * @param outputNum [OUT]           the actual number of components queried.
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -4347,7 +4347,8 @@ ACL_FUNC_VISIBILITY aclError aclrtSwitchStream(
  * @ingroup AscendCL
  * @brief get kernel name
  * @param func [in]      function handle or kernel function symbol
- * @param maxLen [in]    max length of kernel name
+ * @param maxLen [in]    buffer capacity in bytes; must be at least the kernel name length in bytes plus one
+ *                       for the terminating null character
  * @param name [out]     kernel name
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -4786,7 +4787,8 @@ ACL_FUNC_VISIBILITY aclError aclmdlRICaptureGetInfo(
  * @ingroup AscendCL
  * @brief end the stream capture and obtain the corresponding model
  * @param stream [IN] stream to be ended
- * @param modelRI [OUT] return the model runtime instance
+ * @param modelRI [OUT] return the model runtime instance; must not be nullptr for capture started by
+ *        aclmdlRICaptureBegin. May be nullptr for submodel capture started by aclmdlRICaptureToModelRIBegin
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
