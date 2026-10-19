@@ -36,20 +36,6 @@
             "flagPartial": "False",
             "functionName": "RunCpuKernel",
             "kernelSo": "libcust_aicpu_kernels.so",
-            "opKernelLib": "TFKernel",
-            "subTypeOfInferShape": "3",
-            "userDefined": "True",
-            "workspaceSize": "100"
-        }
-    },
-    "UniqueCust": {
-        "opInfo": {
-            "computeCost": "100",
-            "engine": "DNN_VM_AICPU",
-            "flagAsync": "False",
-            "flagPartial": "False",
-            "functionName": "RunCpuKernel",
-            "kernelSo": "libcust_aicpu_kernels.so",
             "opKernelLib": "CUSTAICPUKernel",
             "subTypeOfInferShape": "3",
             "userDefined": "True",
