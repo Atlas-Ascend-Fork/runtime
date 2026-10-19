@@ -172,7 +172,7 @@ TEST_F(RuntimeTest, InitLaunchBlockingUnsupportedChipEnvOn)
     setenv(LAUNCH_BLOCKING_ENV, "1", 1);
     rtInstance->launchBlockingEnvEnabled_ = true;
 
-    rtInstance->SetChipType(CHIP_ASCEND_350);
+    rtInstance->SetChipType(CHIP_MINI_V3);
     rtInstance->InitLaunchBlocking();
 
     EXPECT_FALSE(rtInstance->IsLaunchBlockingEnvEnabled());

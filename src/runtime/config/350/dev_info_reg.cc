@@ -121,7 +121,8 @@ const std::unordered_set<RtOptionalFeatureType> CHIP_DAVID_LITE_FEATURE{
     RtOptionalFeatureType::RT_FEATURE_TASK_EXEC_TIMEOUT_SCALE_MODIFY,
     RtOptionalFeatureType::RT_FEATURE_MEM_WAIT_PROF,
     RtOptionalFeatureType::RT_FEATURE_DFX_PROCESS_SNAPSHOT,
-    RtOptionalFeatureType::RT_FEATURE_STARS_MONITOR_AICPU_TIMEOUT};
+    RtOptionalFeatureType::RT_FEATURE_STARS_MONITOR_AICPU_TIMEOUT,
+    RtOptionalFeatureType::RT_FEATURE_LAUNCH_BLOCKING};
 
 REGISTER_CHIP_FEATURE_SET(CHIP_ASCEND_350, CHIP_DAVID_LITE_FEATURE);
 
@@ -276,7 +277,7 @@ static const DevProperties CHIP_DAVID_LITE_PROPERTIES = {
     .stubEventCount = 131072U,
     .maxReportTimeoutCnt = 36,
     .rtcqDepth = 2049U,
-    .baseAicpuStreamId = 1024U,
+    .baseAicpuStreamId = 65536U, /* 64 * 1024 */
     .expandStreamRsvTaskNum = 8U,
     .expandStreamSqDepthAdapt = 7U,
     .expandStreamAdditionalSqeNum = 8U,
@@ -307,6 +308,8 @@ static const DevProperties CHIP_DAVID_LITE_PROPERTIES = {
     .sqSwapShift = 6U,
     .swapBufferProfCfgOffset = 32U,
     .simtUbSize = RT_SIMT_UB_SIZE_DEFAULT,
+    .taskFailPrintFlushTimeoutMs = TASK_FAIL_PRINT_FLUSH_TIMEOUT_DEFAULT,
+    .memsetTaskSupport = MemsetTaskSupportType::MEMSET_TASK_SUPPORT,
 };
 
 REGISTER_DEV_PROPERTIES(CHIP_ASCEND_350, CHIP_DAVID_LITE_PROPERTIES);
