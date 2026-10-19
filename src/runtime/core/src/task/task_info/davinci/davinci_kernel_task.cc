@@ -210,6 +210,9 @@ rtError_t CheckMixKernelValid(const uint8_t mixType, const uint64_t func2)
 {
     if (mixType != NO_MIX) {
         if (((mixType == MIX_AIC_AIV_MAIN_AIC) || (mixType == MIX_AIC_AIV_MAIN_AIV)) && (func2 == 0ULL)) {
+            RT_LOG_OUTER_MSG_IMPL(
+                ErrorCode::EE1017, "Launch kernel", "kernel",
+                "The Vector Core function address of the mix kernel is null");
             return RT_ERROR_INVALID_VALUE;
         }
     }
