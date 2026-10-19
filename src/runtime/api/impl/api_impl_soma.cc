@@ -144,21 +144,24 @@ rtError_t ApiImplSoma::MemPoolFreeAsync(void* const ptr, Stream* const stm)
         const uint64_t allocSize = SomaApi::GetAllocSize(ptr);
         COND_RETURN_ERROR(allocSize == 0, RT_ERROR_INVALID_VALUE, "Get alloc size is 0, ptr=%#" PRIx64 ".", va);
         SomaApi::MemPoolAsyncConfig(memPool, va, allocSize, SomaAsyncConfigType::SOMA_ASYNC_CONFIG_FREE);
-        rtError_t error = SomaApi::FreeToMemPool(ptr);
+        constexpr AicpuOpType opType = AicpuOpType::FREE;
+        constexpr SomaAicpuSubCmd subCmd = SomaAicpuSubCmd::FREE;
+        rtError_t error = SomaAicpuKernelLaunch(
+            "SomaMemMng", allocSize, va, memPool, stm, static_cast<int32_t>(opType), static_cast<int32_t>(subCmd));
+        if (error != RT_ERROR_NONE) {
+            SomaApi::MemPoolAsyncConfig(memPool, va, allocSize, SomaAsyncConfigType::SOMA_ASYNC_CONFIG_MALLOC);
+        }
+        COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, RT_ERROR_FEATURE_NOT_SUPPORT);
+        ERROR_RETURN_MSG_INNER(
+            error, "Failed to launch soma free aicpu kernel, va=%" PRIu64 ", memPoolId=%#" PRIx64 ", retCode=%#x.", va,
+            RtPtrToValue<void*>(memPool), static_cast<uint32_t>(error));
+        error = SomaApi::FreeToMemPool(ptr);
         ERROR_RETURN_MSG_INNER(
             error, "Failed to free memory to pool, ptr=%#" PRIx64 ", stream_id=%d, retCode=%#x.", va, stm->Id_(),
             static_cast<uint32_t>(error));
         RT_LOG(
             RT_LOG_INFO, "The va is successfully released to the memory pool, ptr=%#" PRIx64 ", stream_id=%d.",
             RtPtrToValue(ptr), stm->Id_());
-        constexpr AicpuOpType opType = AicpuOpType::FREE;
-        constexpr SomaAicpuSubCmd subCmd = SomaAicpuSubCmd::FREE;
-        error = SomaAicpuKernelLaunch(
-            "SomaMemMng", allocSize, va, memPool, stm, static_cast<int32_t>(opType), static_cast<int32_t>(subCmd));
-        COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, RT_ERROR_FEATURE_NOT_SUPPORT);
-        ERROR_RETURN_MSG_INNER(
-            error, "Failed to launch soma free aicpu kernel, va=%" PRIu64 ", memPoolId=%#" PRIx64 ", retCode=%#x.", va,
-            RtPtrToValue<void*>(memPool), static_cast<uint32_t>(error));
         return error;
     }
 

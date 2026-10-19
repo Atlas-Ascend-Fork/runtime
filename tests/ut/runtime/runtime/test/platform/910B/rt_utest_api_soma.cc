@@ -189,6 +189,54 @@ TEST_F(CloudV2ApiTestSOMA, rtMemPoolGetAttrInvalidPool)
     EXPECT_NE(error, RT_ERROR_NONE);
 }
 
+TEST_F(CloudV2ApiTestSOMA, rtMemPoolFreeAsyncKeepsAllocationWhenLaunchFails)
+{
+    RawDevice* device = new RawDevice(0);
+    device->Init();
+    size_t totalSize = (16UL * 1024 * 1024 * 1024);
+    MOCKER_CPP_VIRTUAL(*device->driver_, &Driver::MemGetInfoEx)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), outBoundP(&totalSize, sizeof(totalSize)))
+        .will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(*device, &RawDevice::CheckFeatureSupport).stubs().with(mockcpp::any()).will(returnValue(true));
+
+    rtMemPool_t memPool = nullptr;
+    rtMemPoolProps poolProps = {
+        .side = 1, .devId = 0, .handleType = RT_MEM_HANDLE_TYPE_POSIX, .maxSize = (10UL << 30), .reserve = 0};
+    rtError_t error = rtMemPoolCreate(&memPool, &poolProps);
+    ASSERT_EQ(error, RT_ERROR_NONE);
+
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+
+    void* ptr = nullptr;
+    constexpr uint64_t allocationSize = 2UL * 1024UL * 1024UL;
+
+    // Succeed the allocation launch, fail the first free launch, then allow the retry.
+    MOCKER_CPP(&ApiImplSoma::SomaAicpuKernelLaunch)
+        .stubs()
+        .will(returnValue(RT_ERROR_NONE))
+        .then(returnValue(RT_ERROR_INVALID_VALUE))
+        .then(returnValue(RT_ERROR_NONE));
+
+    ASSERT_EQ(rtMemPoolMallocAsync(&ptr, allocationSize, memPool, stream), RT_ERROR_NONE);
+
+    EXPECT_EQ(rtMemPoolFreeAsync(ptr, stream), ACL_ERROR_RT_PARAM_INVALID);
+    uint64_t usedSize = 0;
+    EXPECT_EQ(rtMemPoolGetAttr(memPool, rtMemPoolAttrUsedMemCurrent, &usedSize), RT_ERROR_NONE);
+    EXPECT_EQ(usedSize, allocationSize);
+    EXPECT_EQ(SomaApi::GetAllocSize(ptr), allocationSize);
+
+    EXPECT_EQ(rtMemPoolFreeAsync(ptr, stream), RT_ERROR_NONE);
+    EXPECT_EQ(rtMemPoolGetAttr(memPool, rtMemPoolAttrUsedMemCurrent, &usedSize), RT_ERROR_NONE);
+    EXPECT_EQ(usedSize, 0U);
+    EXPECT_EQ(SomaApi::GetAllocSize(ptr), 0U);
+
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+    EXPECT_EQ(rtMemPoolDestroy(memPool), RT_ERROR_NONE);
+    delete device;
+}
+
 TEST_F(CloudV2ApiTestSOMA, rtMemPoolSetAttrReusePolicy)
 {
     RawDevice* device = new RawDevice(0);
