@@ -13,10 +13,13 @@
 #include "base.hpp"
 #include "context_data_manage.h"
 #include "rts_snapshot.h"
+#include "task_info.hpp"
 
 namespace cce {
 namespace runtime {
 class Device;
+
+rtError_t AdviseTaskMemoryForSnapshot(const TaskInfo* const taskInfo, const void* const devAddr, const uint64_t size);
 
 rtError_t SnapShotPreProcessBackup(ContextDataManage& ctxMan);
 rtError_t SnapShotDeviceRestore(const uint32_t restoreFlags);

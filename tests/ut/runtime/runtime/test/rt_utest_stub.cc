@@ -943,6 +943,7 @@ TEST_F(TinyStubTest, capture_model_utils_stub)
 
 TEST_F(TinyStubTest, snapshot_process_helper_stub)
 {
+    EXPECT_EQ(AdviseTaskMemoryForSnapshot(nullptr, nullptr, 0U), RT_ERROR_NONE);
     ContextDataManage ctxMan;
     rtError_t ret = SnapShotPreProcessBackup(ctxMan);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);

@@ -114,6 +114,8 @@ rtError_t IpcEvent::IpcEventWaitStarsV2(Stream* const stm)
     dstStm = tsk->stream;
 
     uint8_t* addr = RtPtrToPtr<uint8_t*>(currentDeviceMem_) + curIndex;
+    tsk->typeName = "IPC_WAIT";
+    tsk->type = TS_TASK_TYPE_IPC_WAIT;
     error = MemWaitValueTaskInit(tsk, RtPtrToPtr<void*>(addr), 1, 0x0);
     ERROR_PROC_RETURN_MSG_INNER(error, TaskRollBack(dstStm, pos); stm->StreamUnLock(); IpcVaLock();
                                 ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--; IpcEventCountSub();
@@ -121,8 +123,6 @@ rtError_t IpcEvent::IpcEventWaitStarsV2(Stream* const stm)
                                 , "Failed to initialize mem wait value task, stream_id=%d, task_id=%hu, retCode=%#x.",
                                 stm->Id_(), tsk->id, static_cast<uint32_t>(error));
 
-    tsk->typeName = "IPC_WAIT";
-    tsk->type = TS_TASK_TYPE_IPC_WAIT;
     tsk->needPostProc = true;
     MemWaitValueTaskInfo* memWaitValueTask = &tsk->u.memWaitValueTask;
     memWaitValueTask->curIndex = curIndex;

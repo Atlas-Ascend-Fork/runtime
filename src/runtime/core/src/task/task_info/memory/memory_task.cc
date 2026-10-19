@@ -26,6 +26,7 @@
 #include "rt_inner_event.h"
 #include "task.hpp"
 #include "npu_driver.hpp"
+#include "snapshot_process_helper.hpp"
 
 namespace cce {
 namespace runtime {
@@ -416,13 +417,8 @@ rtError_t MemWaitValueTaskInit(TaskInfo* taskInfo, const void* const devAddr, co
     memWaitValueTask->funCallMemSize2 = 0ULL;
     memWaitValueTask->ownedEventId = INVALID_EVENT_ID;
     memWaitValueTask->awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT;
-    rtError_t ret = RT_ERROR_NONE;
-    const uint32_t devId = taskInfo->stream->Device_()->Id_();
-    if ((devAddr != nullptr) && taskInfo->stream->Device_()->IsProcessDeviceMemSnapshotAdviseSupported()) {
-        ret = taskInfo->stream->Device_()->Driver_()->MemAdvise(
-            const_cast<void*>(devAddr), sizeof(uint64_t), ADVISE_SNAPSHOT_REQUIRED, devId);
-        ERROR_RETURN(ret, "Snapshot advise mem wait value dev addr failed, retCode=%#x.", ret);
-    }
+    rtError_t ret = AdviseTaskMemoryForSnapshot(taskInfo, devAddr, sizeof(uint64_t));
+    ERROR_RETURN(ret, "Snapshot advise mem wait value dev addr failed, retCode=%#x.", ret);
 
     ret = AllocFuncCallMemForMemWaitTask(taskInfo);
     ERROR_RETURN(ret, "Alloc func call svm failed, retCode=%#x.", ret);
@@ -432,12 +428,12 @@ rtError_t MemWaitValueTaskInit(TaskInfo* taskInfo, const void* const devAddr, co
 
 rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, const void* const waitRefreshAddr)
 {
+    taskInfo->typeName = "CAPTURE_WAIT_EXTERNAL";
+    taskInfo->type = TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL;
     const rtError_t ret = MemWaitValueTaskInit(taskInfo, waitRefreshAddr, 1U, 0U);
     if (ret != RT_ERROR_NONE) {
         return ret;
     }
-    taskInfo->typeName = "CAPTURE_WAIT_EXTERNAL";
-    taskInfo->type = TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL;
     taskInfo->u.memWaitValueTask.awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT;
     taskInfo->sqeNum = static_cast<uint8_t>(GetSendSqeNum(taskInfo));
     return RT_ERROR_NONE;

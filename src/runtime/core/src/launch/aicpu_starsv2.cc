@@ -20,6 +20,7 @@
 #include "profiler_c.hpp"
 #include "para_convertor.hpp"
 #include "npu_driver.hpp"
+#include "snapshot_process_helper.hpp"
 
 namespace cce {
 namespace runtime {
@@ -67,14 +68,6 @@ static rtError_t StreamLaunchKernelExForAicpuStream(
     AicpuTaskInit(kernelTask, 1U, flags);
     RT_LOG(RT_LOG_INFO, "kernelFlag=0x%x, blkdim=%u.", aicpuTask->comm.kernelFlag, aicpuTask->comm.dim);
     SetAicpuArgs(kernelTask, args, argsSize, nullptr);
-    const uint32_t devId = stm->Device_()->Id_();
-    if ((args != nullptr) && (argsSize != 0U) && stm->Device_()->IsProcessDeviceMemSnapshotAdviseSupported()) {
-        const rtError_t ret = stm->Device_()->Driver_()->MemAdvise(
-            const_cast<void*>(kernelTask->u.aicpuTaskInfo.comm.args), kernelTask->u.aicpuTaskInfo.comm.argsSize,
-            ADVISE_SNAPSHOT_REQUIRED, devId);
-        ERROR_RETURN(ret, "Snapshot advise kernel launch ex aicpu args failed, retCode=%#x.", ret);
-    }
-
     aicpuTask->aicpuKernelType = static_cast<uint8_t>(TS_AICPU_KERNEL_FMK);
     aicpuTask->aicpuFlags = flags;
     const rtError_t error = ProcAicpuTask(kernelTask);
@@ -114,13 +107,9 @@ rtError_t StreamLaunchKernelEx(const void* const args, const uint32_t argsSize, 
         RT_LOG_INFO, "flags=%u, kernelFlag=0x%x, blkdim=%u.", flags, kernelTask->u.aicpuTaskInfo.comm.kernelFlag,
         kernelTask->u.aicpuTaskInfo.comm.dim);
     SetAicpuArgs(kernelTask, args, argsSize, nullptr);
-    const uint32_t devId = dstStm->Device_()->Id_();
-    if ((args != nullptr) && (argsSize != 0U) && dstStm->Device_()->IsProcessDeviceMemSnapshotAdviseSupported()) {
-        error = dstStm->Device_()->Driver_()->MemAdvise(
-            const_cast<void*>(kernelTask->u.aicpuTaskInfo.comm.args), kernelTask->u.aicpuTaskInfo.comm.argsSize,
-            ADVISE_SNAPSHOT_REQUIRED, devId);
-        ERROR_RETURN(error, "Snapshot advise kernel launch ex aicpu args failed, retCode=%#x.", error);
-    }
+    error = AdviseTaskMemoryForSnapshot(
+        kernelTask, kernelTask->u.aicpuTaskInfo.comm.args, kernelTask->u.aicpuTaskInfo.comm.argsSize);
+    ERROR_RETURN(error, "Snapshot advise kernel launch ex aicpu args failed, retCode=%#x.", error);
     kernelTask->stmArgPos = static_cast<DavidStream*>(dstStm)->GetArgPos();
     AicpuTaskInfo* aicpuTask = &(kernelTask->u.aicpuTaskInfo);
     aicpuTask->aicpuKernelType = static_cast<uint8_t>(TS_AICPU_KERNEL_FMK);

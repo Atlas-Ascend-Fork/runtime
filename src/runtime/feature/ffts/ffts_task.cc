@@ -25,6 +25,7 @@
 #include "device/device_error_proc.hpp"
 #include "hwts.hpp"
 #include "common_task.h"
+#include "snapshot_process_helper.hpp"
 #include "runtime_task_manager.h"
 #include "model.hpp"
 #include "error_code.h"
@@ -433,14 +434,8 @@ rtError_t FftsPlusTaskInit(TaskInfo* taskInfo, const rtFftsPlusTaskInfo_t* const
         error = CheckFftsPlusDsaContextFromDevice(taskInfo, fftsPlusTaskInfo);
         COND_PROC(error != RT_ERROR_NONE, return error);
         fftsPlusTask->descAlignBuf = const_cast<void*>(fftsPlusTaskInfo->descBuf);
-        const uint32_t devId = taskInfo->stream->Device_()->Id_();
-        if ((fftsPlusTaskInfo->descBuf != nullptr) && (fftsPlusTask->descBufLen != 0U) &&
-            taskInfo->stream->Device_()->IsProcessDeviceMemSnapshotAdviseSupported()) {
-            error = taskInfo->stream->Device_()->Driver_()->MemAdvise(
-                const_cast<void*>(fftsPlusTaskInfo->descBuf), fftsPlusTask->descBufLen, ADVISE_SNAPSHOT_REQUIRED,
-                devId);
-            ERROR_RETURN(error, "Snapshot advise ffts plus device desc buf failed, retCode=%#x.", error);
-        }
+        error = AdviseTaskMemoryForSnapshot(taskInfo, fftsPlusTaskInfo->descBuf, fftsPlusTask->descBufLen);
+        ERROR_RETURN(error, "Snapshot advise ffts plus device desc buf failed, retCode=%#x.", error);
         RT_LOG(
             RT_LOG_INFO, "stream_id=%d, task_id=%u, Device addr:descAlignBuf=%" PRIu64 ", descBufLen=%" PRIu64 ".",
             taskInfo->stream->Id_(), taskInfo->id, fftsPlusTask->descAlignBuf, fftsPlusTask->descBufLen);
