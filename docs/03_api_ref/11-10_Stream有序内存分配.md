@@ -230,16 +230,7 @@ int main() {
 aclError aclrtMemPoolCreate(aclrtMemPool *memPool, const aclrtMemPoolProps *poolProps)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品 | 是否支持 |
-| --- | :---: |
-| Ascend 950PR/Ascend 950DT | ☓ |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | ☓ |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -272,16 +263,7 @@ aclError aclrtMemPoolCreate(aclrtMemPool *memPool, const aclrtMemPoolProps *pool
 aclError aclrtMemPoolDestroy(const aclrtMemPool memPool)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品 | 是否支持 |
-| --- | :---: |
-| Ascend 950PR/Ascend 950DT | ☓ |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | ☓ |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -313,16 +295,7 @@ aclError aclrtMemPoolDestroy(const aclrtMemPool memPool)
 aclError aclrtMemPoolSetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *value)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品 | 是否支持 |
-| --- | :---: |
-| Ascend 950PR/Ascend 950DT | ☓ |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | ☓ |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -358,16 +331,7 @@ aclError aclrtMemPoolSetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *
 aclError aclrtMemPoolGetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *value)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品 | 是否支持 |
-| --- | :---: |
-| Ascend 950PR/Ascend 950DT | ☓ |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | ☓ |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -403,16 +367,7 @@ aclError aclrtMemPoolGetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *
 aclError aclrtMemPoolMallocAsync(void **ptr, size_t size, aclrtMemPool memPool, aclrtStream stream)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品                                        | 是否支持 |
-| ------------------------------------------- | :------: |
-| Ascend 950PR/Ascend 950DT                   |    ☓     |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 |    ☓     |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -447,16 +402,7 @@ aclError aclrtMemPoolMallocAsync(void **ptr, size_t size, aclrtMemPool memPool, 
 aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品                                        | 是否支持 |
-| ------------------------------------------- | :------: |
-| Ascend 950PR/Ascend 950DT                   |    ☓     |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 |    ☓     |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -488,16 +434,7 @@ aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品                                        | 是否支持 |
-| ------------------------------------------- | :------: |
-| Ascend 950PR/Ascend 950DT                   |    ☓     |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 |    ☓     |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -529,16 +466,7 @@ aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 aclError aclrtMemPoolTrimTo(aclrtMemPool memPool, size_t minBytesToKeep)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于商用产品中。**
-
-### 产品支持情况
-
-
-| 产品                                        | 是否支持 |
-| ------------------------------------------- | :------: |
-| Ascend 950PR/Ascend 950DT                   |    ☓     |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 |    ☓     |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
