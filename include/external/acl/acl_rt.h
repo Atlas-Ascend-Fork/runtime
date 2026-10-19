@@ -2190,14 +2190,16 @@ ACL_FUNC_VISIBILITY aclError aclrtMemInvalidate(void* devPtr, size_t size);
  * @brief free device memory
  *
  * @par Function
- *  can only free memory allocated through the aclrtMalloc interface
+ *  can free memory allocated through Runtime interfaces such as aclrtMalloc,
+ *  aclrtMallocAlign32, aclrtMallocCached, aclrtMallocWithCfg, and
+ *  aclrtMemAllocManaged.
  *
  * @param  devPtr [IN]  Pointer to memory to be freed
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  *
- * @see aclrtMalloc
+ * @see aclrtMalloc | aclrtMallocAlign32 | aclrtMallocCached | aclrtMallocWithCfg | aclrtMemAllocManaged
  */
 ACL_FUNC_VISIBILITY aclError aclrtFree(void* devPtr);
 
@@ -2259,14 +2261,15 @@ ACL_FUNC_VISIBILITY aclError aclrtFreeHost(void* hostPtr);
  * @brief free device memory with device synchronize
  *
  * @par Function
- *  can only free memory allocated through the aclrtMalloc interface
+ *  can free memory allocated through Runtime interfaces such as aclrtMalloc,
+ *  aclrtMallocAlign32, and aclrtMallocWithCfg.
  *
  * @param  devPtr [IN]  Pointer to memory to be freed
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  *
- * @see aclrtMalloc
+ * @see aclrtMalloc | aclrtMallocAlign32 | aclrtMallocWithCfg
  */
 ACL_FUNC_VISIBILITY aclError aclrtFreeWithDevSync(void* devPtr);
 
