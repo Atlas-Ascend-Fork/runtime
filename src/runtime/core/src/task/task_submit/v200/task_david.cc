@@ -402,7 +402,7 @@ rtError_t ProcAicpuTask(TaskInfo* submitTask)
         return RT_ERROR_NONE;
     }
     if (submitTask->stream->NeedSaveTask(submitTask)) {
-        rtCommand_t command;
+        rtCommand_t command = {};
         ToCommand(submitTask, &command);
         COND_RETURN_ERROR_MSG_INNER(
             (submitTask->stream->Model_() == nullptr), RT_ERROR_MODEL_NULL,
