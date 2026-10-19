@@ -28,7 +28,7 @@ function DP_ASSERT_CHECK_SKIP() {
     fi
 }
 
-if [[ "${task_name}" =~ Compile_Ascend_X86_ubuntu24 ]]; then
+if [[ "${task_name}" =~ Compile_Ascend_X86_ubuntu24 ]] && [ "${target_branch}" == master ]; then
     echo "api-check=compile" >> "${ATOMGIT_OUTPUT}"
 else
     echo "api-check=continue" >> "${ATOMGIT_OUTPUT}"
