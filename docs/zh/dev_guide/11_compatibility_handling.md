@@ -61,7 +61,7 @@ printf("Package Version Num: %d\n", versionNum);
 
 ### 1.3 运行时特性查询
 
-使用`aclrtGetDevFeature`查询设备支持的特性能力，实现功能特性的条件适配：
+使用`aclrtGetDeviceCapability`查询设备支持的特性能力，实现功能特性的条件适配：
 
 ```c
 int32_t deviceId = 0;
@@ -69,7 +69,7 @@ aclrtSetDevice(deviceId);
 
 // 查询是否支持某特性
 int32_t isSupported = 0;
-aclrtGetDevFeature(deviceId, ACL_FEATURE_XXX, &isSupported);
+aclrtGetDeviceCapability(deviceId, ACL_FEATURE_XXX, &isSupported);
 
 if (isSupported) {
     // 使用新特性
@@ -109,7 +109,7 @@ if (versionNum >= major * 10000000 + minor * 100000) {
 ```c
 // 查询特性支持情况
 int32_t isSupported = 0;
-aclrtGetDevFeature(deviceId, ACL_FEATURE_TSCPU_TASK_UPDATE_SUPPORT_AIC_AIV, &isSupported);
+aclrtGetDeviceCapability(deviceId, ACL_FEATURE_TSCPU_TASK_UPDATE_SUPPORT_AIC_AIV, &isSupported);
 
 if (isSupported) {
     // 使用新特性实现高效路径
