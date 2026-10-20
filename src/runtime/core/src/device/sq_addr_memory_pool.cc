@@ -173,7 +173,7 @@ rtError_t SqAddrMemoryOrder::AllocSqAddr(const uint32_t memOrderType, uint64_t**
         return RT_ERROR_MEMORY_ALLOCATION;
     }
 
-    RT_LOG(RT_LOG_DEBUG, "alloc SqAddr success, sqAddr=0x%x", *sqAddr);
+    RT_LOG(RT_LOG_DEBUG, "alloc SqAddr success, sqAddr=0x%llx", *sqAddr);
 
     return RT_ERROR_NONE;
 }

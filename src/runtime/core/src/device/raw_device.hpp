@@ -659,9 +659,9 @@ private:
     std::atomic<int64_t> baseTime_{0}; // device system time after host sync, unit ms
     uint16_t tsdQos_{0U};              // for aicpu task
     uint64_t* messageQueue_{nullptr};
-    uint16_t messageQueueSize_{STREAM_MESSAGE_QUEUE_SIZE};
-    uint16_t messageQueueHead_{0U};
-    uint16_t messageQueueTail_{0U};
+    uint32_t messageQueueSize_{STREAM_MESSAGE_QUEUE_SIZE};
+    uint32_t messageQueueHead_{0U};
+    uint32_t messageQueueTail_{0U};
     std::mutex messageQueueMutex_;
     std::mutex freeEventMutex_;
     void* sqVirtualArrBaseAddr_;

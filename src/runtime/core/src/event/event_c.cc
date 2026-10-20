@@ -252,8 +252,9 @@ rtError_t EvtWaitSoftwareMode(Event* const evt, Stream* const stm)
     tsk->typeName = "EVENT_WAIT";
     tsk->type = (!dstStm->GetBindFlag()) ? TS_TASK_TYPE_MEM_WAIT_VALUE : TS_TASK_TYPE_CAPTURE_WAIT;
     error = MemWaitValueTaskInit(tsk, eventAddr, 1UL, 0U);
-    ERROR_PROC_RETURN_MSG_INNER(error, stm->StreamUnLock();, "Failed to initialize task, stream_id=%d, retCode=%#x.",
-                                                           stm->Id_(), static_cast<uint32_t>(error));
+    ERROR_PROC_RETURN_MSG_INNER(error, TaskRollBack(dstStm, pos); stm->StreamUnLock();
+                                , "Failed to initialize task, stream_id=%d, retCode=%#x.", stm->Id_(),
+                                static_cast<uint32_t>(error));
     MemWaitValueTaskInfo* memWaitValueTask = &tsk->u.memWaitValueTask;
     memWaitValueTask->event = davidEvt;
     memWaitValueTask->awSize = RT_STARS_WRITE_VALUE_SIZE_TYPE_8BIT;

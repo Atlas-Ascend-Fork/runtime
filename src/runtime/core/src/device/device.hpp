@@ -31,7 +31,7 @@
 #include "event_expanding.hpp"
 #include "qos.hpp"
 
-#define STREAM_MESSAGE_QUEUE_SIZE (static_cast<uint16_t>(RT_MAX_STREAM_ID * 3U))
+#define STREAM_MESSAGE_QUEUE_SIZE (RT_MAX_STREAM_ID * 3U)
 
 namespace cce {
 namespace runtime {

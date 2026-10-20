@@ -45,8 +45,7 @@ rtError_t IpcEvent::IpcEventRecordStarsV2(Stream* const stm)
     uint8_t* addr = RtPtrToPtr<uint8_t*>(currentDeviceMem_) + curIndex;
     error = MemWriteValueTaskInit(tsk, RtPtrToPtr<void*>(addr), static_cast<uint64_t>(1U));
     ERROR_PROC_RETURN_MSG_INNER(error, TaskRollBack(dstStm, pos); stm->StreamUnLock(); IpcVaLock();
-                                ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--; IpcEventCountSub();
-                                IpcVaUnLock();
+                                ipcHandleVa_->deviceMemRef[curIndex]--; IpcEventCountSub(); IpcVaUnLock();
                                 , "Failed to initialize mem write value task, stream_id=%d, task_id=%hu, retCode=%#x.",
                                 stm->Id_(), tsk->id, static_cast<uint32_t>(error));
     tsk->typeName = "IPC_RECORD";
@@ -103,7 +102,7 @@ rtError_t IpcEvent::IpcEventWaitStarsV2(Stream* const stm)
     if (tsk == nullptr) {
         stm->StreamUnLock();
         IpcVaLock();
-        ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--;
+        ipcHandleVa_->deviceMemRef[curIndex]--;
         IpcEventCountSub();
         IpcVaUnLock();
         COND_RETURN_ERROR_MSG_INNER(
@@ -118,8 +117,7 @@ rtError_t IpcEvent::IpcEventWaitStarsV2(Stream* const stm)
     tsk->type = TS_TASK_TYPE_IPC_WAIT;
     error = MemWaitValueTaskInit(tsk, RtPtrToPtr<void*>(addr), 1, 0x0);
     ERROR_PROC_RETURN_MSG_INNER(error, TaskRollBack(dstStm, pos); stm->StreamUnLock(); IpcVaLock();
-                                ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--; IpcEventCountSub();
-                                IpcVaUnLock();
+                                ipcHandleVa_->deviceMemRef[curIndex]--; IpcEventCountSub(); IpcVaUnLock();
                                 , "Failed to initialize mem wait value task, stream_id=%d, task_id=%hu, retCode=%#x.",
                                 stm->Id_(), tsk->id, static_cast<uint32_t>(error));
 

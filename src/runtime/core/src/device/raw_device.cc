@@ -1768,8 +1768,8 @@ void RawDevice::DelStreamFromMessageQueue(Stream* const stm)
     }
 
     const std::unique_lock<std::mutex> lk(messageQueueMutex_);
-    uint16_t head = messageQueueHead_;
-    const uint16_t tail = messageQueueTail_;
+    uint32_t head = messageQueueHead_;
+    const uint32_t tail = messageQueueTail_;
 
     while (head != tail) {
         if (messageQueue_[head] == RtPtrToValue(stm)) {
@@ -1788,13 +1788,13 @@ bool RawDevice::AddStreamToMessageQueue(Stream* stm)
 
     const std::unique_lock<std::mutex> lk(messageQueueMutex_);
     if (((messageQueueTail_ + 1U) % messageQueueSize_) == messageQueueHead_) {
-        RT_LOG(RT_LOG_EVENT, "message queue is full, head=%hu, tail=%hu", messageQueueHead_, messageQueueTail_);
+        RT_LOG(RT_LOG_EVENT, "message queue is full, head=%u, tail=%u", messageQueueHead_, messageQueueTail_);
         return false;
     }
 
     /* current stream is exits, do not add to message queue */
-    uint16_t head = messageQueueHead_;
-    const uint16_t tail = messageQueueTail_;
+    uint32_t head = messageQueueHead_;
+    const uint32_t tail = messageQueueTail_;
     const uint64_t addStm = RtPtrToValue(stm);
     while (head != tail) {
         if (messageQueue_[head] == addStm) {

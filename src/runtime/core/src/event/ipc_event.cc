@@ -384,9 +384,9 @@ rtError_t IpcEvent::IpcEventRecord(Stream* const stm)
     COND_PROC_RETURN_ERROR(
         error != RT_ERROR_NONE, error, (void)dev->GetTaskFactory()->Recycle(tsk),
         "Failed to get ipc record index. Reason: context is abort, status=%#x.", static_cast<uint32_t>(error));
-    std::function<void()> const errRecycle = [&dev, &tsk, this]() {
+    std::function<void()> const errRecycle = [&dev, &tsk, curIndex, this]() {
         IpcVaLock();
-        ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--;
+        ipcHandleVa_->deviceMemRef[curIndex]--;
         IpcEventCountSub();
         IpcVaUnLock();
         (void)dev->GetTaskFactory()->Recycle(tsk);
@@ -434,12 +434,12 @@ rtError_t IpcEvent::IpcEventWait(Stream* const stm)
     rtError_t errorReason;
     tsk = stm->AllocTask(&submitTask, TS_TASK_TYPE_IPC_WAIT, errorReason, MEM_WAIT_SQE_NUM);
     COND_PROC_RETURN_ERROR_MSG_CALL(ERR_MODULE_SYSTEM, tsk == nullptr, errorReason, IpcVaLock();
-                                    ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--;
+                                    ipcHandleVa_->deviceMemRef[curIndex]--; IpcEventCountSub();
                                     IpcVaUnLock(), "Failed to allocate task for ipc wait, retCode=%#x.",
                                     static_cast<uint32_t>(errorReason));
-    std::function<void()> const errRecycle = [&dev, &tsk, this]() {
+    std::function<void()> const errRecycle = [&dev, &tsk, curIndex, this]() {
         IpcVaLock();
-        ipcHandleVa_->deviceMemRef[ipcHandleVa_->currentIndex]--;
+        ipcHandleVa_->deviceMemRef[curIndex]--;
         IpcEventCountSub();
         IpcVaUnLock();
         (void)dev->GetTaskFactory()->Recycle(tsk);

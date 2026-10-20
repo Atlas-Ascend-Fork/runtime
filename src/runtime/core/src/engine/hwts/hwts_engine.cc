@@ -68,7 +68,7 @@ void HwtsEngine::ProcessNullTaskOverFlowReport(
     const uint32_t streamId, const uint32_t taskId, const uint32_t retCode) const
 {
     rtError_t rtErrCode = RT_ERROR_NONE;
-    rtExceptionInfo_t exceptionInfo;
+    rtExceptionInfo_t exceptionInfo = {};
     const char_t* const retDes = GetTsErrCodeMap(retCode, &rtErrCode);
 
     TaskInfo* workTask =
