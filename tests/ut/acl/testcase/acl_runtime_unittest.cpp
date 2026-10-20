@@ -2909,6 +2909,35 @@ TEST_F(UTEST_ACL_Runtime, aclrtAllocatorGetByStream_Fail_StreamNotRegistered)
     EXPECT_EQ(ret, ACL_SUCCESS);
 }
 
+TEST_F(UTEST_ACL_Runtime, aclrtAllocatorRegister_optionalAllocAdviseDefaultsToNull)
+{
+    const aclrtStream stream = reinterpret_cast<aclrtStream>(0x101);
+    aclrtAllocatorDesc allocatorDesc = aclrtAllocatorCreateDesc();
+    ASSERT_NE(allocatorDesc, nullptr);
+
+    ASSERT_EQ(aclrtAllocatorSetObjToDesc(allocatorDesc, reinterpret_cast<aclrtAllocator>(0x10)), ACL_SUCCESS);
+    ASSERT_EQ(
+        aclrtAllocatorSetAllocFuncToDesc(allocatorDesc, reinterpret_cast<aclrtAllocatorAllocFunc>(0x20)), ACL_SUCCESS);
+    ASSERT_EQ(
+        aclrtAllocatorSetFreeFuncToDesc(allocatorDesc, reinterpret_cast<aclrtAllocatorFreeFunc>(0x30)), ACL_SUCCESS);
+    ASSERT_EQ(
+        aclrtAllocatorSetGetAddrFromBlockFuncToDesc(
+            allocatorDesc, reinterpret_cast<aclrtAllocatorGetAddrFromBlockFunc>(0x40)),
+        ACL_SUCCESS);
+
+    ASSERT_EQ(aclrtAllocatorRegister(stream, allocatorDesc), ACL_SUCCESS);
+
+    aclrtAllocatorDesc descOut = nullptr;
+    aclrtAllocatorAllocAdviseFunc allocAdviseFunc = reinterpret_cast<aclrtAllocatorAllocAdviseFunc>(0x50);
+    EXPECT_EQ(
+        aclrtAllocatorGetByStream(stream, &descOut, nullptr, nullptr, nullptr, &allocAdviseFunc, nullptr), ACL_SUCCESS);
+    EXPECT_EQ(descOut, allocatorDesc);
+    EXPECT_EQ(allocAdviseFunc, nullptr);
+
+    EXPECT_EQ(aclrtAllocatorUnregister(stream), ACL_SUCCESS);
+    EXPECT_EQ(aclrtAllocatorDestroyDesc(allocatorDesc), ACL_SUCCESS);
+}
+
 TEST_F(UTEST_ACL_Runtime, aclrtGetArgsFromExceptionInfo_failed_with_invalid_exception_type)
 {
     void* devArgs = nullptr;

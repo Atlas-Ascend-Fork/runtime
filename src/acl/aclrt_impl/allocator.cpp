@@ -51,7 +51,7 @@ aclrtAllocatorDesc aclrtAllocatorCreateDescImpl()
     ACL_PROFILING_REG(acl::AclProfType::AclrtAllocatorCreateDesc);
     ACL_ADD_APPLY_TOTAL_COUNT(acl::ACL_STATISTICS_CREATE_DESTROY_ALLOCATOR_DESC);
     ACL_LOG_INFO("Create allocator description.");
-    AllocatorDesc* allocatorDesc = new (std::nothrow) AllocatorDesc;
+    AllocatorDesc* allocatorDesc = new (std::nothrow) AllocatorDesc();
     ACL_CHECK_MALLOC_RESULT_REPORT_RET(allocatorDesc, sizeof(AllocatorDesc), "new", nullptr);
     ACL_ADD_APPLY_SUCCESS_COUNT(acl::ACL_STATISTICS_CREATE_DESTROY_ALLOCATOR_DESC);
     return static_cast<aclrtAllocatorDesc>(allocatorDesc);
