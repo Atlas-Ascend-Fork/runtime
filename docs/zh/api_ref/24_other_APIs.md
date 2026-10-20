@@ -1028,7 +1028,16 @@ aclError aclrtSetStreamConfigOpt(aclrtStreamConfigHandle *handle, aclrtStreamCon
 | handle | 输入 | Stream配置对象的指针。类型定义请参见[aclrtStreamConfigHandle](25-03_Operation_APIs.md#aclrtStreamConfigHandle)。<br>需提前调用[aclrtCreateStreamConfigHandle](25-03_Operation_APIs.md#aclrtCreateStreamConfigHandle)接口创建该对象。 |
 | attr | 输入 | 指定需设置的属性。类型定义请参见[aclrtStreamConfigAttr](25-02_Enumerations.md#aclrtStreamConfigAttr)。 |
 | attrValue | 输入 | 指向属性值的指针，attr对应的属性取值。<br>如果属性值本身是指针，则传入该指针的地址。 |
-| valueSize | 输入 | attrValue部分的数据长度。<br>用户可使用C/C++标准库的函数sizeof(*attrValue)查询数据长度。 |
+| valueSize | 输入 | attrValue对应属性值的数据长度。attrValue的类型为const void *，请根据属性实际类型变量计算sizeof，例如sizeof(priority)、sizeof(workSize)、sizeof(flag)或sizeof(workPtr)，不要对attrValue解引用后计算sizeof（错误示例：sizeof(*attrValue)）。 |
+
+### 属性值与长度示例
+
+| attr | 属性值变量 | attrValue | valueSize |
+| --- | --- | --- | --- |
+| ACL_RT_STREAM_PRIORITY | uint32_t priority | &priority | sizeof(priority) |
+| ACL_RT_STREAM_WORK_SIZE | size_t workSize | &workSize | sizeof(workSize) |
+| ACL_RT_STREAM_FLAG | size_t flag | &flag | sizeof(flag) |
+| ACL_RT_STREAM_WORK_ADDR_PTR | void *workPtr | &workPtr | sizeof(workPtr) |
 
 ### 返回值说明
 
