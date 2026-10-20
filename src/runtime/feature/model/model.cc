@@ -1002,7 +1002,7 @@ rtError_t Model::LoadCompleteByStreamPrep(Stream*& stream)
         COND_RETURN_AND_MSG_OUTER(
             endGraphNum_ != 1U, RT_ERROR_MODEL_ENDGRAPH, ErrorCode::EE1018, "Ending model running instance build",
             "Before ending model running instance build, you need to call the aclmdlRIEndTask API to mark task "
-            "delivery end in the stream.");
+            "delivery end in the stream");
         error = context_->StreamCreate(static_cast<uint32_t>(RT_STREAM_PRIORITY_DEFAULT), 0U, &stream);
         ERROR_RETURN_MSG_INNER(error, "Failed to create model load stream, retCode=%#x.", static_cast<uint32_t>(error));
         RT_LOG(RT_LOG_DEBUG, "create an aicpu stream for model load, model_id=%u, stream_id=%d.", Id_(), stream->Id_());
@@ -1012,7 +1012,7 @@ rtError_t Model::LoadCompleteByStreamPrep(Stream*& stream)
             RtFmtMsg(
                 "The model running instance (model_id=%u) does not contain any stream. Before ending model running "
                 "instance build, you need to call the aclmdlRIBindStream API to bind a stream to the model running "
-                "instance.",
+                "instance",
                 Id_()));
         stream = context_->GetCtrlSQStream();
         RT_LOG(RT_LOG_DEBUG, "use ctrl sq for model load");
@@ -1022,7 +1022,7 @@ rtError_t Model::LoadCompleteByStreamPrep(Stream*& stream)
             RtFmtMsg(
                 "The model running instance (model_id=%u) does not contain any stream. Before ending model running "
                 "instance build, you need to call the aclmdlRIBindStream API to bind a stream to the model running "
-                "instance.",
+                "instance",
                 Id_()));
         stream = context_->DefaultStream_();
         RT_LOG(RT_LOG_DEBUG, "use default stream for model load");
@@ -1999,7 +1999,7 @@ rtError_t MdlAbort(Model* const mdl)
         RT_LOG_DEBUG, "Submit task to ts, model_id=%u, executor_flag=%u, stream_id=%d.", mdl->Id_(), executorFlag,
         streamObj->Id_());
     error = streamObj->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "model abort stream");
+    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "model abort stream.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize model abort stream, retCode=%#x.", static_cast<uint32_t>(error));
     return RT_ERROR_NONE;

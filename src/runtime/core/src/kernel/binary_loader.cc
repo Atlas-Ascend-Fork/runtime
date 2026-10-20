@@ -128,19 +128,24 @@ rtError_t BinaryLoader::ParseLoadOptions()
             }
             RT_LOG(RT_LOG_DEBUG, "Parse binary load option isLazyLoad=%u", lazyLoadCfg);
         } else if (optionId == RT_LOAD_BINARY_OPT_MAGIC) {
-            if (isLoadFromFile_) {
-                RT_LOG_INNER_MSG(
-                    RT_LOG_ERROR, "Binary load failed, RT_LOAD_BINARY_OPT_MAGIC does not support in load from file.");
-                return RT_ERROR_INVALID_VALUE;
-            }
+            COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+                isLoadFromFile_, RT_ERROR_INVALID_VALUE, "Parsing the loading options of the operator binary data",
+                RtFmtMsg("ACL_RT_BINARY_LOAD_OPT_MAGIC(%d)", static_cast<int32_t>(optionId)),
+                RtFmtMsg("options->options[%zu].type", idx),
+                RtFmtMsg(
+                    "{ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD(%d), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE(%d)}",
+                    static_cast<int32_t>(RT_LOAD_BINARY_OPT_LAZY_LOAD),
+                    static_cast<int32_t>(RT_LOAD_BINARY_OPT_CPU_KERNEL_MODE)));
             const uint32_t magic = loadOptions_->options[idx].value.magic;
-            if ((magic != RT_DEV_BINARY_MAGIC_ELF) && (magic != RT_DEV_BINARY_MAGIC_ELF_AICUBE) &&
-                (magic != RT_DEV_BINARY_MAGIC_ELF_AIVEC)) {
-                RT_LOG_INNER_MSG(
-                    RT_LOG_ERROR, "magic %#x is invalid, valid value is {%#x, %#x, %#x}.", magic,
-                    RT_DEV_BINARY_MAGIC_ELF, RT_DEV_BINARY_MAGIC_ELF_AICUBE, RT_DEV_BINARY_MAGIC_ELF_AIVEC);
-                return RT_ERROR_INVALID_VALUE;
-            }
+            COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+                (magic != RT_DEV_BINARY_MAGIC_ELF) && (magic != RT_DEV_BINARY_MAGIC_ELF_AICUBE) &&
+                    (magic != RT_DEV_BINARY_MAGIC_ELF_AIVEC),
+                RT_ERROR_INVALID_VALUE, "Parsing the loading options of the operator binary data",
+                RtFmtMsg("%#x", magic), RtFmtMsg("options->options[%zu].value.magic", idx),
+                RtFmtMsg(
+                    "{ACL_RT_BINARY_MAGIC_ELF_AICORE(%#x), ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE(%#x), "
+                    "ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE(%#x)}",
+                    RT_DEV_BINARY_MAGIC_ELF, RT_DEV_BINARY_MAGIC_ELF_AICUBE, RT_DEV_BINARY_MAGIC_ELF_AIVEC));
             magic_ = magic;
             RT_LOG(RT_LOG_DEBUG, "Parse binary load option magic=%#x", magic);
         } else if (optionId == RT_LOAD_BINARY_OPT_CPU_KERNEL_MODE) {

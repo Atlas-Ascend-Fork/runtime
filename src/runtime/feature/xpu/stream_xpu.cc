@@ -406,7 +406,7 @@ rtError_t XpuStream::SynchronizeExecutedTask(const uint32_t taskId, const mmTime
     while (true) {
         COND_RETURN_AND_MSG_OUTER(
             IsProcessTimeout(beginTime, timeout), RT_ERROR_STREAM_SYNC_TIMEOUT, ErrorCode::EE1002,
-            "exceeded the specified timeout");
+            "exceeded the specified timeout.");
         if (IsProcessTimeout(beginTime, reportTime)) {
             reportTime += reportTime;
             RT_LOG(

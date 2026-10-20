@@ -72,7 +72,7 @@ rtError_t TaskFailCallBackManager::RegTaskFailCallback(
         COND_RETURN_AND_MSG_OUTER(
             callbackMap_.count(regName) > 0, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
             "Registering the callback function for task exceptions", regName, "regName",
-            "The callback name has already been registered.");
+            "The callback name has already been registered");
         callbackMap_[regName].callback = nullptr;
         callbackMap_[regName].callbackV2 = RtPtrToPtr<rtsTaskFailCallback>(callback);
         callbackMap_[regName].args = args;

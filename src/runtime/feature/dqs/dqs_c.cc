@@ -417,27 +417,19 @@ static rtError_t DqsZeroCopyTaskCfgCheck(const rtDqsZeroCopyCfg_t* const cfg)
 
 static rtError_t DqsAdspcTaskCfgCheck(const rtDqsAdspcTaskCfg_t* const cfg)
 {
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        cfg, RT_ERROR_INVALID_VALUE, "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.");
+    constexpr const char_t* funcDesc = "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task";
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(cfg, RT_ERROR_INVALID_VALUE, funcDesc);
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
-        cfg->cqeSize != ADSPC_CQE_SIZE, RT_ERROR_INVALID_VALUE,
-        "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.", cfg->cqeSize,
-        std::to_string(ADSPC_CQE_SIZE));
+        cfg->cqeSize != ADSPC_CQE_SIZE, RT_ERROR_INVALID_VALUE, funcDesc, cfg->cqeSize, std::to_string(ADSPC_CQE_SIZE));
 
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
-        cfg->cqDepth != ADSPC_CQ_DEPTH, RT_ERROR_INVALID_VALUE,
-        "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.", cfg->cqDepth,
-        std::to_string(ADSPC_CQ_DEPTH));
+        cfg->cqDepth != ADSPC_CQ_DEPTH, RT_ERROR_INVALID_VALUE, funcDesc, cfg->cqDepth, std::to_string(ADSPC_CQ_DEPTH));
 
-    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
-        cfg->cqeBaseAddr, "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.");
-    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
-        cfg->cqeCopyAddr, "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.");
+    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(cfg->cqeBaseAddr, funcDesc);
+    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(cfg->cqeCopyAddr, funcDesc);
 
-    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
-        cfg->cqHeadRegAddr, "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.");
-    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
-        cfg->cqTailRegAddr, "Checking the configuration validity of the DQS cross-chip solver (ADSPC) task.");
+    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(cfg->cqHeadRegAddr, funcDesc);
+    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(cfg->cqTailRegAddr, funcDesc);
 
     return RT_ERROR_NONE;
 }

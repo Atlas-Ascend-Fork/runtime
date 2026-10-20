@@ -253,7 +253,7 @@ rtError_t StreamDatadumpInfoLoad(
     dftStm->StreamUnLock();
     error = dftStm->Synchronize();
     COND_RETURN_AND_MSG_OUTER(
-        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DataDumpLoadInfoTask synchronize");
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DataDumpLoadInfoTask synchronize.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize DataDumpLoadInfoTask, retCode=%#x.", static_cast<uint32_t>(error));
     return error;
@@ -489,7 +489,7 @@ rtError_t SyncGetDeviceMsg(
     stm->StreamUnLock();
     // stream synchronize
     error = stm->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "SyncGetDeviceMsg");
+    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "SyncGetDeviceMsg.");
     ERROR_RETURN_MSG_INNER(error, "Failed to synchronize stream, retCode=%#x.", static_cast<uint32_t>(error));
     return RT_ERROR_NONE;
 }
@@ -712,7 +712,7 @@ rtError_t StreamAicpuInfoLoad(
     SET_THREAD_TASKID_AND_STREAMID(dstStm->GetExposedStreamId(), rtAicpuLoadInfoTask->taskSn);
     error = dftStm->Synchronize();
     COND_RETURN_AND_MSG_OUTER(
-        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "AicpuInfoLoadTask synchronize");
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "AicpuInfoLoadTask synchronize.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize AicpuInfoLoadTask, retCode=%#x.", static_cast<uint32_t>(error));
     return error;
@@ -750,7 +750,7 @@ rtError_t UpdateTimeoutConfigTaskSubmitDavid(Stream* const stm, const RtTimeoutC
                                 static_cast<uint32_t>(error));
     stm->StreamUnLock();
     error = stm->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "UpdateTimeoutConfig");
+    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "UpdateTimeoutConfig.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     return error;
@@ -779,7 +779,7 @@ rtError_t SetTimeoutConfigTaskSubmitDavid(Stream* const stm, const rtTaskTimeout
                                 static_cast<uint32_t>(error));
     stm->StreamUnLock();
     error = stm->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "SetTimeoutConfig");
+    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "SetTimeoutConfig.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     return error;
@@ -1021,7 +1021,7 @@ rtError_t SendTopicMsgVersionToAicpuDavid(Stream* const stm)
                                                     static_cast<uint32_t>(error));
     stm->StreamUnLock();
     error = stm->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "TopicMsgVersion");
+    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "TopicMsgVersion.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     return error;

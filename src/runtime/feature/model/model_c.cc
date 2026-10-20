@@ -80,7 +80,7 @@ rtError_t ModelDebugRegister(
     *taskId = rtDbgRegTask->taskSn;
     error = dftStm->Synchronize();
     COND_RETURN_AND_MSG_OUTER(
-        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DebugRegisterTask synchronize");
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DebugRegisterTask synchronize.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize DebugRegisterTask, retCode=%#x.", static_cast<uint32_t>(error));
 
@@ -127,7 +127,7 @@ rtError_t ModelDebugUnRegister(Model* const mdl, Stream* const dftStm)
     dftStm->StreamUnLock();
     error = dftStm->Synchronize();
     COND_RETURN_AND_MSG_OUTER(
-        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DebugUnRegisterTask synchronize");
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "DebugUnRegisterTask synchronize.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize DebugUnRegisterTask, retCode=%#x.", static_cast<uint32_t>(error));
 
@@ -239,7 +239,7 @@ rtError_t AicpuMdlDestroy(Model* const mdl)
     defaultStream->StreamUnLock();
     error = defaultStream->Synchronize();
     COND_RETURN_AND_MSG_OUTER(
-        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "AicpuMdlDestroy stream");
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "AicpuMdlDestroy stream.");
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize stream, model_id=%u, stream_id=%d, retCode=%#x.", mdl->Id_(),
         defaultStream->Id_(), static_cast<uint32_t>(error));

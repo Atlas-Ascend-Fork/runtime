@@ -934,7 +934,7 @@ rtError_t ApiImpl::LaunchSqeUpdateTask(
                     " for storing the data to be updated in the configuration is inconsistent with the currently "
                     "specified device memory address " +
                     std::to_string(currentSrcDevAddr) +
-                    ". Ensure that the same device memory address is used for multiple task updates.");
+                    ". Ensure that the same device memory address is used for multiple task updates");
         }
         return cce::runtime::LaunchSqeUpdateTask(src, cnt, sqId, pos, curStm);
     } else {

@@ -1630,7 +1630,7 @@ rtError_t ApiImpl::StreamSynchronize(Stream* const stm, const int32_t timeout)
         curStm->GetCurrentRunningTaskInfo(taskId, taskType, taskTypeName);
         RT_LOG_OUTER_MSG(
             RT_STREAM_SYNC_TIMEOUT_INNER_ERROR,
-            "Stream synchronize timeout, the current task is task_type=%s(%d), device_id=%u, stream_id=%d, task_id=%u",
+            "Stream synchronize timeout, the current task is task_type=%s(%d), device_id=%u, stream_id=%d, task_id=%u.",
             taskTypeName, taskType, curStm->Device_()->Id_(), curStm->Id_(), taskId);
     } else {
         if ((curStm->Device_()->GetIsRingbufferGetErr()) && (curCtx->GetFailureError() == RT_ERROR_NONE) &&

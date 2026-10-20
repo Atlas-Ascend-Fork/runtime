@@ -2806,7 +2806,7 @@ rtError_t ApiErrorDecorator::MemcpyAsyncCheckLocation(
             COND_RETURN_AND_MSG_OUTER(
                 true, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1006,
                 "Checking pinned memory for asynchronous memory copy", "Pinned memory checking",
-                "The driver does not support querying the pinning status of host memory.");
+                "The driver does not support querying the pinning status of host memory");
         } else {
             /*
              * 用户未指定CHECK_MEMORY_PINNED，如果驱动不支持GET_USER_MALLOC_ATTR，则打印Info，流程继续。
