@@ -25,6 +25,12 @@ extern "C" {
 
 STATIC uint32_t g_ioctlGlobalPrintNum = 0;
 
+#ifdef _LOG_UT_
+STATIC void (*g_dlogLevelInitGateHook)(void) = NULL;
+
+void DlogLevelInitSetGateHook(void (*hook)(void)) { g_dlogLevelInitGateHook = hook; }
+#endif
+
 /**
  * @brief        : get module loglevel by IAM
  */
@@ -114,11 +120,26 @@ STATIC void DlogLevelInitCallBack(void)
     if (!DlogCheckAttrSystem()) { // APP
         return;
     }
+#ifdef _LOG_UT_
+    if (g_dlogLevelInitGateHook != NULL) {
+        g_dlogLevelInitGateHook();
+    }
+#endif
 
-    // get global_level
-    GetGlobalLogLevelByIam();
-    // get module loglevel
-    GetModuleLogLevelByIam();
+    /* Mutually exclusive with the type flipping of DlogSetUserAttr (reusing the attr lock).
+     * The type is reviewed within the lock to avoid the TOCTOU race: after the entry check
+     * passes, the main thread may flip the type to APPLICATION and apply ASCEND_GLOBAL_EVENT_ENABLE
+     * (the ENV level), then the IAM level (enableEvent, etc.) would overwrite it. Re-checking
+     * under the lock makes the IAM path either run completely before the flip (ENV overwrites
+     * IAM) or abandon entirely once the type has become APPLICATION. */
+    DlogAttrWriteLock();
+    if (DlogCheckAttrSystem()) {
+        // get global_level
+        GetGlobalLogLevelByIam();
+        // get module loglevel
+        GetModuleLogLevelByIam();
+    }
+    DlogAttrUnlock();
 }
 
 /**

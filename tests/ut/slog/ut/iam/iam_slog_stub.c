@@ -44,6 +44,7 @@ static int32_t g_timerLoadRet = LOG_SUCCESS;
 static uint32_t g_timerAddRet = 0;
 static uint32_t g_timerRemoveRet = 0;
 static char g_lastWarningLog[512] = {0};
+static void (*g_ioctlGlobalLevelHook)(void) = NULL;
 
 void IamSlogStubReset(void)
 {
@@ -61,6 +62,7 @@ void IamSlogStubReset(void)
     g_timerAddRet = 0;
     g_timerRemoveRet = 0;
     g_lastWarningLog[0] = '\0';
+    g_ioctlGlobalLevelHook = NULL;
 }
 
 void IamSlogStubSetServicePreparation(bool ready) { g_servicePrepared = ready; }
@@ -81,6 +83,8 @@ void IamSlogStubSetIoctlLevels(int32_t globalLevel, int32_t eventLevel, int32_t 
     g_eventLevel = eventLevel;
     g_moduleLevel = moduleLevel;
 }
+
+void IamSlogStubSetIoctlHook(void (*hook)(void)) { g_ioctlGlobalLevelHook = hook; }
 
 void IamSlogStubNotifyResource(enum IAMResourceStatus status)
 {
@@ -163,6 +167,9 @@ int ioctl(int fd, unsigned long request, ...)
     if ((g_ioctlRet == SYS_OK) && (request == IAM_CMD_GET_LEVEL) && (arg != NULL) && (arg->argData != NULL)) {
         LogLevelConfInfo* levelInfo = (LogLevelConfInfo*)arg->argData;
         if (strcmp(levelInfo->configName, "global_level") == 0) {
+            if (g_ioctlGlobalLevelHook != NULL) {
+                g_ioctlGlobalLevelHook();
+            }
             levelInfo->configValue[0] = g_globalLevel;
             levelInfo->configValue[1] = g_eventLevel;
         } else {

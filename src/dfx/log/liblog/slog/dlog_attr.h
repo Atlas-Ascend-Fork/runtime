@@ -30,6 +30,8 @@ typedef enum {
 void DlogGetUserAttr(LogAttr* attr);
 void DlogSetUserAttr(const LogAttr* logAttr);
 bool DlogCheckAttrSystem(void);
+void DlogAttrWriteLock(void);
+void DlogAttrUnlock(void);
 ProcessType DlogGetProcessType(void);
 uint32_t DlogGetAttrDeviceId(void);
 

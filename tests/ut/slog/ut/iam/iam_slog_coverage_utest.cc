@@ -10,11 +10,13 @@
 
 #include "gtest/gtest.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstring>
 #include <cstdlib>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -42,6 +44,8 @@ void IamSlogStubSetRegisterRet(int32_t ret);
 void IamSlogStubSetUnregisterRet(int32_t ret);
 void IamSlogStubSetIoctlResult(int32_t ret, int32_t errorCode);
 void IamSlogStubSetIoctlLevels(int32_t globalLevel, int32_t eventLevel, int32_t moduleLevel);
+void IamSlogStubSetIoctlHook(void (*hook)(void));
+void DlogLevelInitSetGateHook(void (*hook)(void));
 void IamSlogStubNotifyResource(enum IAMResourceStatus status);
 void IamSlogStubFirePeriodicTimer(void);
 void IamSlogStubSetTimerLoadRet(int32_t ret);
@@ -202,6 +206,8 @@ protected:
 
     void TearDown() override
     {
+        IamSlogStubSetIoctlHook(nullptr);
+        DlogLevelInitSetGateHook(nullptr);
         if (DlogIamServiceIsValid()) {
             IamSlogStubNotifyResource(IAM_RESOURCE_READY);
         }
@@ -314,4 +320,142 @@ TEST_F(IamSlogCoverageUtest, InitializesSystemLevelsFromIam)
 
     IamSlogStubSetIoctlResult(SYS_ERROR, EBUSY);
     DlogLevelInitCallBack();
+}
+
+TEST_F(IamSlogCoverageUtest, LevelCallBackSkipsForApplicationProcess)
+{
+    LogAttr attr = {};
+    attr.type = APPLICATION;
+    DlogSetUserAttr(&attr);
+    SetGlobalLogTypeLevelVar(DLOG_DEBUG, DLOG_GLOBAL_TYPE_MASK);
+    SetGlobalEnableEventVar(true);
+
+    CreateIamService();
+    EXPECT_EQ(SYS_OK, DlogIamInit());
+    IamSlogStubSetIoctlLevels(DLOG_WARN, EVENT_DISABLE_VALUE, DLOG_ERROR);
+    IamSlogStubNotifyResource(IAM_RESOURCE_READY);
+    // The READY notify does not invoke the level callback (it is registered by DlogLevelInit,
+    // which is not called here), so invoke it directly to actually run the APPLICATION branch.
+    DlogLevelInitCallBack();
+    // The IAM level callback must not apply to an application process (type gating),
+    // so the levels set before must be kept unchanged.
+    EXPECT_EQ(DLOG_DEBUG, GetGlobalLogTypeLevelVar(DLOG_GLOBAL_TYPE_MASK));
+    EXPECT_TRUE(GetGlobalEnableEventVar());
+}
+
+namespace {
+std::atomic<bool> g_ioctlEntered{false};
+std::atomic<bool> g_mainDone{false};
+std::atomic<bool> g_gateEntered{false};
+std::atomic<bool> g_gateDone{false};
+
+// Runs on the IAM callback thread inside the "global_level" ioctl, i.e. after the callback has
+// passed the entry check and acquired the level lock. It lets the main thread attempt the type
+// flip + ENV write; with the lock held the main thread is blocked until the IAM write completes,
+// so the ENV value wins.
+void IoctlGlobalLevelSyncHook(void)
+{
+    g_ioctlEntered.store(true);
+    for (int32_t i = 0; (i < 500) && (!g_mainDone.load()); ++i) {
+        (void)usleep(1000);
+    }
+}
+
+// Runs on the IAM callback thread between the entry check and taking the level lock. It lets the
+// main thread flip the type to APPLICATION and write the ENV level; the callback must then abandon
+// on the in-lock re-check.
+void EntryGateSyncHook(void)
+{
+    g_gateEntered.store(true);
+    for (int32_t i = 0; (i < 500) && (!g_gateDone.load()); ++i) {
+        (void)usleep(1000);
+    }
+}
+} // namespace
+
+// Guards the level lock: the callback holds it while reading the IAM levels. The main thread's
+// type flip + ENV write must be serialised after the IAM write, so the ENV value wins. Without
+// the lock the IAM value (enableEvent=1) would land after the ENV write.
+TEST_F(IamSlogCoverageUtest, LevelCallBackDoesNotOverwriteEnvOnTypeFlipRace)
+{
+    LogAttr systemAttr = {};
+    systemAttr.type = SYSTEM;
+    DlogSetUserAttr(&systemAttr);
+    SetGlobalEnableEventVar(true);
+
+    // Open the IAM service before registering the level callback, so the READY notification
+    // below only opens the fd and does not run the (not yet registered) level callback.
+    CreateIamService();
+    EXPECT_EQ(SYS_OK, DlogIamInit());
+    IamSlogStubNotifyResource(IAM_RESOURCE_READY);
+    DlogLevelInit();
+    IamSlogStubSetIoctlLevels(DLOG_WARN, EVENT_ENABLE_VALUE, DLOG_ERROR);
+
+    g_ioctlEntered.store(false);
+    g_mainDone.store(false);
+    IamSlogStubSetIoctlHook(IoctlGlobalLevelSyncHook);
+
+    std::thread iamThread([]() { DlogLevelInitCallBack(); });
+
+    // Wait until the callback has passed the SYSTEM gating and entered the ioctl.
+    int32_t spin = 0;
+    while ((!g_ioctlEntered.load()) && (spin < 2000)) {
+        (void)usleep(1000);
+        spin++;
+    }
+    ASSERT_TRUE(g_ioctlEntered.load());
+    // The callback holds the level lock here. The type flip + ENV write must be blocked until the
+    // IAM write is done, so the ENV value wins.
+    LogAttr appAttr = {};
+    appAttr.type = APPLICATION;
+    DlogSetUserAttr(&appAttr);
+    SetGlobalEnableEventVar(false);
+    g_mainDone.store(true);
+
+    iamThread.join();
+    IamSlogStubSetIoctlHook(nullptr);
+
+    EXPECT_FALSE(GetGlobalEnableEventVar());
+}
+
+// Guards the in-lock type re-check: the callback passed the entry check as SYSTEM, then the type
+// flips to APPLICATION before it takes the lock. It must abandon and keep the ENV value; without
+// the re-check the IAM value (enableEvent=1) would overwrite it.
+TEST_F(IamSlogCoverageUtest, LevelCallBackAbandonsWhenTypeFlipsBeforeLock)
+{
+    LogAttr systemAttr = {};
+    systemAttr.type = SYSTEM;
+    DlogSetUserAttr(&systemAttr);
+    SetGlobalEnableEventVar(true);
+
+    CreateIamService();
+    EXPECT_EQ(SYS_OK, DlogIamInit());
+    IamSlogStubNotifyResource(IAM_RESOURCE_READY);
+    DlogLevelInit();
+    IamSlogStubSetIoctlLevels(DLOG_WARN, EVENT_ENABLE_VALUE, DLOG_ERROR);
+
+    g_gateEntered.store(false);
+    g_gateDone.store(false);
+    DlogLevelInitSetGateHook(EntryGateSyncHook);
+
+    std::thread iamThread([]() { DlogLevelInitCallBack(); });
+
+    int32_t spin = 0;
+    while ((!g_gateEntered.load()) && (spin < 2000)) {
+        (void)usleep(1000);
+        spin++;
+    }
+    ASSERT_TRUE(g_gateEntered.load());
+    // The callback passed the entry check as SYSTEM but has not taken the lock yet. Flip the type
+    // and apply the ENV event level; the lock re-check must then abandon and keep the ENV value.
+    LogAttr appAttr = {};
+    appAttr.type = APPLICATION;
+    DlogSetUserAttr(&appAttr);
+    SetGlobalEnableEventVar(false);
+    g_gateDone.store(true);
+
+    iamThread.join();
+    DlogLevelInitSetGateHook(nullptr);
+
+    EXPECT_FALSE(GetGlobalEnableEventVar());
 }

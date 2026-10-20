@@ -41,9 +41,9 @@ typedef struct DlogAttr {
 
 STATIC DlogAttr g_dlogAttr = {TOOL_MUTEX_INITIALIZER, {-1, 0, AOS_GEA, 0, 0}, {APPLICATION, 0, 0, 0, ""}};
 
-static inline void DlogAttrWriteLock(void) { LOCK_WARN_LOG(&g_dlogAttr.rwlock); }
+void DlogAttrWriteLock(void) { LOCK_WARN_LOG(&g_dlogAttr.rwlock); }
 
-static inline void DlogAttrUnlock(void) { UNLOCK_WARN_LOG(&g_dlogAttr.rwlock); }
+void DlogAttrUnlock(void) { UNLOCK_WARN_LOG(&g_dlogAttr.rwlock); }
 
 /**
  * @brief       : init aos type
