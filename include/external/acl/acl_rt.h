@@ -4381,7 +4381,8 @@ ACL_FUNC_VISIBILITY aclError aclrtSwitchStream(
  * @ingroup AscendCL
  * @brief get kernel name
  * @param func [in]      function handle or kernel function symbol
- * @param maxLen [in]    max length of kernel name
+ * @param maxLen [in]    buffer capacity in bytes; must be at least the kernel name length in bytes plus one
+ *                       for the terminating null character
  * @param name [out]     kernel name
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
