@@ -1891,10 +1891,10 @@ ACL_FUNC_VISIBILITY aclError aclrtEventElapsedTime(float* ms, aclrtEvent startEv
 
 /**
  * @ingroup AscendCL
- * @brief get syscnt when event recorded.
+ * @brief get the event record timestamp in microseconds since AI processor startup.
  *
  * @param event [IN]          event to be record
- * @param timestamp [OUT]     syscnt
+ * @param timestamp [OUT]     event record timestamp in microseconds
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
