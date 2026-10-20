@@ -929,25 +929,25 @@ aclError aclrtGetThreadLastTaskIdAndStreamId(uint32_t *taskId, uint32_t *streamI
 ### 产品支持情况
 
 <!-- npu="950" id3340 -->
-- Ascend 950PR/Ascend 950DT：支持
+- Ascend 950PR&950DT系列产品：支持
 <!-- end id3340 -->
 <!-- npu="A3" id3341 -->
-- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+- Atlas A3系列产品：支持
 <!-- end id3341 -->
 <!-- npu="910b" id3342 -->
-- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+- Atlas A2系列产品：支持
 <!-- end id3342 -->
 <!-- npu="310b" id3343 -->
-- Atlas 200I/500 A2 推理产品：支持
+- Atlas 200I/500 A2推理产品：支持
 <!-- end id3343 -->
 <!-- npu="310p" id3344 -->
-- Atlas 推理系列产品：支持
+- Atlas推理系列产品：支持
 <!-- end id3344 -->
 <!-- npu="910" id3345 -->
-- Atlas 训练系列产品：支持
+- Atlas训练系列产品：支持
 <!-- end id3345 -->
 <!-- npu="IPV350" id3346 -->
-- IPV350：支持
+- IPV350：不支持
 <!-- end id3346 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id20 -->
 
@@ -965,3 +965,5 @@ aclError aclrtGetThreadLastTaskIdAndStreamId(uint32_t *taskId, uint32_t *streamI
 ### 返回值说明
 
 返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
+
+若当前线程从未下发过任务，则接口返回成功，taskId为0xFFFFFFFF（UINT32_MAX），streamId为0xFFFF（UINT16_MAX）。
