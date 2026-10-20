@@ -4821,7 +4821,9 @@ ACL_FUNC_VISIBILITY aclError aclmdlRICaptureGetInfo(
  * @ingroup AscendCL
  * @brief end the stream capture and obtain the corresponding model
  * @param stream [IN] stream to be ended
- * @param modelRI [OUT] return the model runtime instance
+ * @param modelRI [OUT] return the model runtime instance; must not be nullptr for capture started by
+ *        aclmdlRICaptureBegin. May be nullptr for submodel capture started by aclmdlRICaptureToModelRIBegin,
+ *        as its modelRI argument already specifies the model runtime instance, which need not be obtained again.
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */

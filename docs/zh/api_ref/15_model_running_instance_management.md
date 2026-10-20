@@ -262,7 +262,7 @@ aclError aclmdlRICaptureEnd(aclrtStream stream, aclmdlRI *modelRI)
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | stream | 输入 | 指定Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。 |
-| modelRI | 输出 | 模型运行实例，该模型用于暂存所捕获的任务。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。 |
+| modelRI | 输出 | 模型运行实例，该模型用于暂存所捕获的任务。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。<br>如果使用[aclmdlRICaptureBegin](#aclmdlRICaptureBegin)开始捕获，结束时必须传入非空指针，用于接收模型运行实例。<br>如果使用[aclmdlRICaptureToModelRIBegin](#aclmdlRICaptureToModelRIBegin)开始捕获，由于该接口入参中已指定modelRI，因此结束捕获时无需再次获取模型运行实例，可以传入nullptr。 |
 
 ### 返回值说明
 
