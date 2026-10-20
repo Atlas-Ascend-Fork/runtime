@@ -146,7 +146,7 @@ set(torinoCpuDetectTestSrcFiles
 set(libcpudetecttestSrcFiles ${milanCpuDetectTestSrcFiles})
 set(CPU_DETECT_STL_MARCH "-march=armv8.3-a+crc+crypto+fp16")
 if(PRODUCT)
-    if((${PRODUCT} STREQUAL "ascend950") OR (${PRODUCT} STREQUAL "ascend350"))
+    if((${PRODUCT} STREQUAL "ascend950") OR (${PRODUCT} STREQUAL "ascend350") OR (${PRODUCT} STREQUAL "ascend960") OR (${PRODUCT} STREQUAL "ascend960esl"))
         set(libcpudetecttestSrcFiles ${torinoCpuDetectTestSrcFiles})
         set(CPU_DETECT_STL_MARCH "-march=armv8.3-a+crc+fp+simd+lse+fp16+crypto")
     endif()
@@ -231,6 +231,8 @@ target_compile_definitions(cpu_detect_share
         OS_TYPE=0
         $<$<STREQUAL:${PRODUCT},ascend950>:CPU_DETECT_LINX_CORE>
         $<$<STREQUAL:${PRODUCT},ascend350>:CPU_DETECT_LINX_CORE>
+        $<$<STREQUAL:${PRODUCT},ascend960>:CPU_DETECT_LINX_CORE>
+        $<$<STREQUAL:${PRODUCT},ascend960esl>:CPU_DETECT_LINX_CORE>
 )
 set_target_properties(cpu_detect_share
     PROPERTIES
