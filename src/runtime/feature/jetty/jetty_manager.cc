@@ -129,9 +129,11 @@ rtError_t JettyManager::FreeJettyByHandle(uint64_t handle, JettyAllocMode allocM
     }
     const rtError_t error = jettyPool_->FreeJetty(handle, allocMode, type);
     ERROR_RETURN_MSG_INNER(
-        error, "Release jetty by handle failed, handle=%lu, type=%s(%d), retCode=%#x.", handle, JettyTypeName(type),
-        static_cast<int32_t>(type), error);
-    RT_LOG(RT_LOG_INFO, "Release jetty by handle success, handle=%lu, type=%d.", handle, static_cast<int32_t>(type));
+        error, "Release jetty by handle failed, handle=%" PRIu64 ", type=%s(%d), retCode=%#x.", handle,
+        JettyTypeName(type), static_cast<int32_t>(type), error);
+    RT_LOG(
+        RT_LOG_INFO, "Release jetty by handle success, handle=%" PRIu64 ", type=%d.", handle,
+        static_cast<int32_t>(type));
     return RT_ERROR_NONE;
 }
 

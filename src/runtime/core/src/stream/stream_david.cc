@@ -1219,8 +1219,8 @@ rtError_t DavidStream::ResClear(uint64_t timeout)
             if (timeout > 0ULL && tryCount % perDetectTimes == 0ULL) {
                 COND_RETURN_AND_MSG_INNER(
                     (timeCost >= timeout), RT_ERROR_WAIT_TIMEOUT,
-                    "TaskReclaimByStream timeout, device_id=%u, stream_id=%d, time=%lu us", device_->Id_(), streamId_,
-                    timeCost);
+                    "TaskReclaimByStream timeout, device_id=%u, stream_id=%d, time=%" PRIu64 " us.", device_->Id_(),
+                    streamId_, timeCost);
                 (void)mmSleep(1U);
             }
         }
@@ -1265,7 +1265,7 @@ rtError_t DavidStream::StreamRecoverAbort()
         count = GetTimeInterval(beginTime);
         COND_RETURN_AND_MSG_INNER(
             (count >= static_cast<uint64_t>(RT_ABORT_STREAM_TIMEOUT)), RT_ERROR_WAIT_TIMEOUT,
-            "Abort query timeout, device_id=%u, stream_id=%d, time=%lums", device_->Id_(), streamId_, count);
+            "Abort query timeout, device_id=%u, stream_id=%d, time=%" PRIu64 " ms.", device_->Id_(), streamId_, count);
         (void)mmSleep(1U);
     } while (result == TS_ERROR_APP_QUEUE_FULL);
 
@@ -1284,7 +1284,7 @@ rtError_t DavidStream::StreamRecoverAbort()
         count = GetTimeInterval(beginTime);
         COND_RETURN_AND_MSG_INNER(
             (count >= static_cast<uint64_t>(RT_ABORT_STREAM_TIMEOUT)), RT_ERROR_WAIT_TIMEOUT,
-            "Abort query timeout, device_id=%u, stream_id=%d, time=%lums", device_->Id_(), streamId_, count);
+            "Abort query timeout, device_id=%u, stream_id=%d, time=%" PRIu64 " ms.", device_->Id_(), streamId_, count);
         (void)mmSleep(5U);
     } while (true);
 
@@ -1715,7 +1715,8 @@ rtError_t DavidStream::HandleTaskUpdate(TaskInfo* workTask, Model* model, uint8_
     const auto ret = memcpy_s(dstSqeAddr, sqeSize, static_cast<void*>(sqeBuffer.data), sqeSize);
     COND_RETURN_ERROR_MSG_INNER(
         ret != EOK, RT_ERROR_INVALID_VALUE,
-        "Failed to call memcpy_s, dest=%p, dest_max=%lu, src=%p, sqe_num=%u, retCode=%d, device_id=%u, stream_id=%d, "
+        "Failed to call memcpy_s, dest=%p, dest_max=%" PRIu64
+        ", src=%p, sqe_num=%u, retCode=%d, device_id=%u, stream_id=%d, "
         "task_id=%hu, task_type=%d(%s).",
         dstSqeAddr, sqeSize, sqeBuffer.data, sendSqeNum, ret, device_->Id_(), streamId_, workTask->id, workTask->type,
         workTask->typeName);
@@ -1762,7 +1763,8 @@ rtError_t DavidStream::HandleTaskDefault(
     const auto ret = memcpy_s(dstSqeAddr, sqeSize, RtPtrToPtr<void*>(oldhostSqeAddr), sqeSize);
     COND_RETURN_ERROR_MSG_INNER(
         ret != EOK, RT_ERROR_INVALID_VALUE,
-        "Failed to call memcpy_s, dest=%p, dest_max=%lu, src=%p, sqe_num=%u, retCode=%d, device_id=%u, stream_id=%d, "
+        "Failed to call memcpy_s, dest=%p, dest_max=%" PRIu64
+        ", src=%p, sqe_num=%u, retCode=%d, device_id=%u, stream_id=%d, "
         "task_id=%hu, task_type=%d(%s).",
         dstSqeAddr, sqeSize, oldhostSqeAddr, sendSqeNum, ret, device_->Id_(), streamId_, workTask->id, workTask->type,
         workTask->typeName);

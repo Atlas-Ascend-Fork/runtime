@@ -455,8 +455,8 @@ static rtError_t WriteAutoSplitSqeToHostBuffer(const TaskInfo* taskInfo, const S
     const errno_t ret = memcpy_s(hostSqPos, sqeSize, sqeAddr, sqeSize);
     COND_RETURN_AND_MSG_INNER(
         ret != EOK, RT_ERROR_INVALID_VALUE,
-        "Failed to call memcpy_s to copy sqeAddr, src=%p, dest=%p, dest_max=%lu, sqe_num=%u, retCode=%#x.", sqeAddr,
-        hostSqPos, sqeSize, taskInfo->sqeNum, ret);
+        "Failed to call memcpy_s to copy sqeAddr, src=%p, dest=%p, dest_max=%" PRIu64 ", sqe_num=%u, retCode=%#x.",
+        sqeAddr, hostSqPos, sqeSize, taskInfo->sqeNum, ret);
     RT_LOG(
         RT_LOG_DEBUG, "Auto-split SQE written to host buffer, stream_id=%d, task_id=%u, sqeNum=%u, hostPos=%u",
         stm->Id_(), taskInfo->id, taskInfo->sqeNum, hostPos);
@@ -513,7 +513,7 @@ rtError_t DavidSendTask(TaskInfo* taskInfo, Stream* const stm)
             RT_LOG_INNER_MSG(
                 RT_LOG_ERROR,
                 "Failed to call memcpy_s to copy sqeAddr, src=%p, dest=%p,"
-                " dest_max=%lu, sqe_num=%u, device_id=%u, ts_id=%u, sq_id=%u, cq_id=%u, stream_id=%d,"
+                " dest_max=%" PRIu64 ", sqe_num=%u, device_id=%u, ts_id=%u, sq_id=%u, cq_id=%u, stream_id=%d,"
                 " task_id=%hu, task_type=%u(%s), retCode=%#x.",
                 sqeAddr, hostSqeAddr, sqeSize, taskInfo->sqeNum, devId, tsId, sqId, cqId, stm->Id_(), taskInfo->id,
                 static_cast<uint32_t>(taskInfo->type), taskInfo->typeName, ret);

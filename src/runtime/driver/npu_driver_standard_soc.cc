@@ -344,7 +344,9 @@ rtError_t NpuDriver::QueryUbInfo(const uint32_t deviceId, rtUbDevQueryCmd cmd, v
         drvRet == DRV_ERROR_NOT_SUPPORT, RT_GET_DRV_ERRCODE(drvRet), "[drv api] halMemGetInfo does not support");
     if (drvRet != DRV_ERROR_NONE) {
         DRV_ERROR_PROCESS(
-            drvRet, "Call driver api halMemGetInfo failed, drvRetCode=%d, drvDevId=%u, type=%u, va=%lu, size=%lu.",
+            drvRet,
+            "Call driver api halMemGetInfo failed, drvRetCode=%d, drvDevId=%u, type=%u, va=%" PRIu64 ", size=%" PRIu64
+            ".",
             static_cast<int32_t>(drvRet), deviceId, type, tokenInfo->va, tokenInfo->size);
         return RT_GET_DRV_ERRCODE(drvRet);
     }
@@ -692,8 +694,8 @@ rtError_t NpuDriver::AsyncDmaJettyDestroy(const uint32_t devId, const uint64_t h
     const drvError_t drvRet = halAsyncDmaJettyDestroy(devId, &param);
     if (drvRet != DRV_ERROR_NONE) {
         DRV_ERROR_PROCESS(
-            drvRet, "[drv api] halAsyncDmaJettyDestroy failed: handle=%lu, drvDevId=%u, drvRetCode=%d", handle, devId,
-            static_cast<int32_t>(drvRet));
+            drvRet, "[drv api] halAsyncDmaJettyDestroy failed: handle=%" PRIu64 ", drvDevId=%u, drvRetCode=%d", handle,
+            devId, static_cast<int32_t>(drvRet));
     }
     return RT_GET_DRV_ERRCODE(drvRet);
 }
@@ -710,8 +712,8 @@ rtError_t NpuDriver::AsyncDmaJettyQuery(
     const drvError_t drvRet = halAsyncDmaJettyQuery(devId, &in, &out);
     if (drvRet != DRV_ERROR_NONE) {
         DRV_ERROR_PROCESS(
-            drvRet, "[drv api] halAsyncDmaJettyQuery failed: handle=%lu, drvDevId=%u, drvRetCode=%d", handle, devId,
-            static_cast<int32_t>(drvRet));
+            drvRet, "[drv api] halAsyncDmaJettyQuery failed: handle=%" PRIu64 ", drvDevId=%u, drvRetCode=%d", handle,
+            devId, static_cast<int32_t>(drvRet));
     }
     if (drvRet == DRV_ERROR_NONE) {
         dieId = out.dieId;

@@ -224,7 +224,7 @@ rtError_t DeviceTaskSendResume(const int32_t devId, const uint64_t timeRemain)
     count = ClockGetTimeIntervalUs(startTime);
     COND_RETURN_AND_MSG_INNER(
         ((timeRemain != 0U) && (count >= timeRemain)), RT_ERROR_WAIT_TIMEOUT,
-        "A timeout occurred when restoring the runtime status of Runtime, device_id=%d, time cost=%" PRIu64 "us.",
+        "A timeout occurred when restoring the running status of Runtime, device_id=%d, time cost=%" PRIu64 "us.",
         devId, count);
     RT_LOG(RT_LOG_INFO, "DeviceResume[%u] end, time cost=%" PRIu64 "us.", devId, count);
     return error;

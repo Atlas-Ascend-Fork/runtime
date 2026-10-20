@@ -10,6 +10,7 @@
 
 #include "json_parser.h"
 
+#include <cinttypes>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -130,7 +131,7 @@ bool JsonParser::IsValidFileName(const char_t* const fileName)
     }
     if (pathStat.st_size > MAX_CONFIG_FILE_BYTE) {
         std::string reason = acl::AclErrorLogManager::FormatStr(
-            "file size %ld exceeds maximum allowed size %ld", pathStat.st_size, MAX_CONFIG_FILE_BYTE);
+            "file size %ld exceeds maximum allowed size %" PRId64, pathStat.st_size, MAX_CONFIG_FILE_BYTE);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_FILE_MSG, std::vector<const char*>({"path", "reason"}),
             std::vector<const char*>({trustedPath, reason.c_str()}));

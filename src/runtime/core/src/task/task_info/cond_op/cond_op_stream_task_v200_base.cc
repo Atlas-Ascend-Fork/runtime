@@ -188,7 +188,8 @@ void Construct3rdDavidSqeForCaptureConditionTask(TaskInfo* const taskInfo, rtDav
         sqe.header.type = RT_STARS_SQE_TYPE_INVALID;
         RT_LOG_INNER_MSG(
             RT_LOG_ERROR,
-            "Failed to call MemCopySync to copy function call mem. dest=%p, dest_max=%lu, count=%lu, retCode=%#x.",
+            "Failed to call MemCopySync to copy function call mem. dest=%p, dest_max=%" PRIu64 ", count=%" PRIu64
+            ", retCode=%#x.",
             condTaskInfo->jumpBackFuncCallSvmMem, condTaskInfo->jumpBackFunCallMemSize, funcCallSize,
             static_cast<uint32_t>(ret));
         return;

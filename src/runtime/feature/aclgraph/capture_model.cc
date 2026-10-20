@@ -791,8 +791,8 @@ rtError_t CaptureModel::AllocateExternalRefreshTable()
         externalEventRefreshDeviceBase_ = nullptr;
         externalEventRefreshLayout_ = {};
         ERROR_RETURN_MSG_INNER(
-            error, "Allocate external refresh device table failed, model_id=%u, size=%lu(bytes), retCode=%#x.", Id_(),
-            totalSize, error);
+            error, "Allocate external refresh device table failed, model_id=%u, size=%" PRIu64 "(bytes), retCode=%#x.",
+            Id_(), totalSize, error);
     }
     return RT_ERROR_NONE;
 }
