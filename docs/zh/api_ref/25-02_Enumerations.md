@@ -2211,7 +2211,7 @@ typedef enum {
 
 | 枚举项 | 说明 |
 | --- | --- |
-| ACL_MDL_ATTR_SCH_MODE_INT32 | 调度模式属性，属性值为int32_t类型：0表示默认调度，1表示独占调度。 |
+| ACL_MDL_ATTR_SCH_MODE_INT32 | 调度模式属性，属性值为int32_t类型：0表示串行调度（默认调度方式），1表示独占调度，即该模型独占调度执行权，其他模型任务需等待该模型执行结束后才能运行。 |
 | ACL_MDL_ATTR_RESERVED | 预留值。 |
 
 <br>

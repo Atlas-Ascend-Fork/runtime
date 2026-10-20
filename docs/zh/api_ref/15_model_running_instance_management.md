@@ -1240,27 +1240,27 @@ aclError aclmdlRISetAttribute(aclmdlRI modelRI, aclrtModelAttr mdlAttrType, void
 <!-- npu="IPV350" id8507 -->
 - IPV350：不支持
 <!-- end id8507 -->
+<!-- @ref: runtime/res/docs/zh/api_ref/15_model_running_instance_management_res.md#id40 -->
 
 ### 功能说明
 
-设置模型运行实例的属性。当前仅支持设置调度模式属性（ACL_MDL_ATTR_SCH_MODE_INT32），用于配置模型以默认调度或独占调度模式执行。
-
-使用约束：
-- 需在模型执行前（例如调用[aclmdlRIExecute](#aclmdlRIExecute)或[aclmdlRIExecuteAsync](#aclmdlRIExecuteAsync)接口前）完成属性设置。
-- 若针对同一个模型运行实例设置多次，以最后一次为准。
-- 仅在软件调度场景下生效。
+设置模型运行实例的属性。若针对同一个模型运行实例设置多次，以最后一次为准。
 
 ### 参数说明
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
-| modelRI | 输入 | 模型运行实例。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。<br>modelRI支持通过以下方式获取：<br><br>  - 调用[aclmdlRICaptureBegin](#aclmdlRICaptureBegin)接口捕获Stream上下发的任务后，可通过[aclmdlRICaptureGetInfo](#aclmdlRICaptureGetInfo)接口获取模型运行实例，再传入本接口。<br>  - 调用[aclmdlRIBuildBegin](#aclmdlRIBuildBegin)、[aclmdlRIBuildEnd](#aclmdlRIBuildEnd)等接口构建模型运行实例，再传入本接口。 |
+| modelRI | 输入 | 模型运行实例。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。<br>modelRI支持通过以下方式获取：<br><br>  - 调用[aclmdlRIBuildBegin](#aclmdlRIBuildBegin)、[aclmdlRIBuildEnd](#aclmdlRIBuildEnd)等接口构建模型运行实例，再传入本接口。 |
 | mdlAttrType | 输入 | 属性类型，当前仅支持配置为ACL_MDL_ATTR_SCH_MODE_INT32（调度模式属性）。类型定义请参见[aclrtModelAttr](25-02_Enumerations.md#aclrtModelAttr)。 |
-| value | 输入 | 属性值指针。当mdlAttrType为ACL_MDL_ATTR_SCH_MODE_INT32时，指向int32_t类型的数据，取值范围：0表示默认调度，1表示独占调度。 |
+| value | 输入 | 属性值指针。当mdlAttrType为ACL_MDL_ATTR_SCH_MODE_INT32时，指向int32_t类型的数据，取值范围：0表示串行调度（默认调度方式）；1表示独占调度，即该模型独占调度执行权，其他模型任务需等待该模型执行结束后才能运行。 |
 
 ### 返回值说明
 
 返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
+
+### 约束说明
+- 需在模型执行前（例如调用[aclmdlRIExecute](#aclmdlRIExecute)或[aclmdlRIExecuteAsync](#aclmdlRIExecuteAsync)接口前）完成属性设置。
+<!-- @ref: runtime/res/docs/zh/api_ref/15_model_running_instance_management_res.md#id41 -->
 
 <br>
 <br>

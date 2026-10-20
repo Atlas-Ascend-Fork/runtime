@@ -49,6 +49,7 @@ enum class ModelSerialSchedError : uint32_t {
     kPopError,
     kSqidError,
     kNotifyIdError,
+    kSchedModeError,
 };
 
 static const std::map<uint32_t, std::string> g_modelSerialSchedErrorMapInfo = {
@@ -68,6 +69,7 @@ static const std::map<uint32_t, std::string> g_modelSerialSchedErrorMapInfo = {
     {static_cast<uint32_t>(ModelSerialSchedError::kPopError), "pop error"},
     {static_cast<uint32_t>(ModelSerialSchedError::kSqidError), "sq_id error"},
     {static_cast<uint32_t>(ModelSerialSchedError::kNotifyIdError), "notify_id error"},
+    {static_cast<uint32_t>(ModelSerialSchedError::kSchedModeError), "sched mode error"},
 };
 
 using ModelSerialSchedTaskInitFunc = rtError_t (*)(TaskInfo*, ModelSerialSchedTaskParam*);
