@@ -1974,6 +1974,22 @@ TEST_F(UTEST_ACL_Runtime, aclrtMemsetD32_rt_error)
     aclrtFreeHost(ptr);
 }
 
+TEST_F(UTEST_ACL_Runtime, aclrtMemsetD32_feature_not_support)
+{
+    void* ptr = nullptr;
+    const size_t memSize = sizeof(uint32_t);
+    ASSERT_EQ(aclrtMallocHost(&ptr, memSize), ACL_SUCCESS);
+
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtsPointerGetAttributes(_, _))
+        .WillOnce(Invoke(rtsPointerGetAttributesToHost));
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtMemsetD32(_, _, _, _))
+        .WillOnce(Return(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+
+    const aclError ret = aclrtMemsetD32(ptr, memSize, 0xDEADBEEF, 1);
+    EXPECT_EQ(ret, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    aclrtFreeHost(ptr);
+}
+
 // ==================== 异步接口测试 ====================
 TEST_F(UTEST_ACL_Runtime, aclrtMemsetD32Async_failed_with_nullptr)
 {
@@ -2023,6 +2039,23 @@ TEST_F(UTEST_ACL_Runtime, aclrtMemsetD32Async_rt_error)
 
     aclError ret = aclrtMemsetD32Async(ptr, memSize, 0xDEADBEEF, N, stream);
     EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+    aclrtFreeHost(ptr);
+}
+
+TEST_F(UTEST_ACL_Runtime, aclrtMemsetD32Async_feature_not_support)
+{
+    void* ptr = nullptr;
+    aclrtStream stream = reinterpret_cast<aclrtStream>(0x10);
+    const size_t memSize = sizeof(uint32_t);
+    ASSERT_EQ(aclrtMallocHost(&ptr, memSize), ACL_SUCCESS);
+
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtsPointerGetAttributes(_, _))
+        .WillOnce(Invoke(rtsPointerGetAttributesToHost));
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtMemsetD32Async(_, _, _, _, _))
+        .WillOnce(Return(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+
+    const aclError ret = aclrtMemsetD32Async(ptr, memSize, 0xDEADBEEF, 1, stream);
+    EXPECT_EQ(ret, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     aclrtFreeHost(ptr);
 }
 

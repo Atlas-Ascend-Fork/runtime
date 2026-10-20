@@ -541,7 +541,7 @@ aclError aclrtNotifySetImportPidInterServer(aclrtNotify notify, aclrtServerPid *
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | notify | 输入 | 指定Notify。类型定义请参见[aclrtNotify](25-05_Typedefs.md#aclrtNotify)。<br>必须先调用[aclrtNotifyGetExportKey](#aclrtNotifyGetExportKey)接口获取指定Notify的共享名称，再作为入参传入。 |
-| serverPids | 输入 | 白名单信息数组。类型定义请参见[aclrtServerPid](25-04_Structs.md#aclrtServerPid)。 |
+| serverPids | 输入 | 白名单信息数组。类型定义请参见[aclrtServerPid](25-04_Structs.md#aclrtServerPid)。数组中的每个元素仅支持设置一个PID，因此serverPids[i].num值必须为1。 |
 | num | 输入 | serverPids数组的大小。 |
 
 ### 返回值说明

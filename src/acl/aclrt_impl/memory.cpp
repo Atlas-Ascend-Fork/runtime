@@ -893,6 +893,7 @@ aclError aclrtMemsetD32Impl(void* ptr, size_t memSize, uint32_t value, size_t N)
     const rtError_t rtErr = rtMemsetD32(ptr, static_cast<uint64_t>(memSize), value, N);
     if (rtErr == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
         ACL_LOG_WARN("rtMemsetD32 does not support this feature, runtime result = %d", rtErr);
+        return ACL_GET_ERRCODE_RTS(rtErr);
     } else if (rtErr != RT_ERROR_NONE) {
         return ACL_GET_ERRCODE_RTS(rtErr);
     }
@@ -964,6 +965,7 @@ aclError aclrtMemsetD32AsyncImpl(void* ptr, size_t memSize, uint32_t value, size
         rtMemsetD32Async(ptr, static_cast<uint64_t>(memSize), value, N, static_cast<rtStream_t>(stream));
     if (rtErr == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
         ACL_LOG_WARN("rtMemsetD32Async does not support this feature, runtime result = %d", rtErr);
+        return ACL_GET_ERRCODE_RTS(rtErr);
     } else if (rtErr != RT_ERROR_NONE) {
         return ACL_GET_ERRCODE_RTS(rtErr);
     }
