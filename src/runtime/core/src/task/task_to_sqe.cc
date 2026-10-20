@@ -112,6 +112,7 @@ rtError_t ConstructHostFuncParamSqe(const rtTaskInput_t* const taskInput, uint32
             strerror(ret), ss.str().c_str());
         return RT_ERROR_SEC_HANDLE;
     }
+    *taskLen = paramBufDesc.bufSize;
 
     RT_LOG(RT_LOG_INFO, "Construct host func prefetch Sqe success. taskLen=%u.", *taskLen);
     return RT_ERROR_NONE;
