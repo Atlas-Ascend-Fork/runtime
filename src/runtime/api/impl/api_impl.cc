@@ -1330,7 +1330,7 @@ rtError_t ApiImpl::AicpuInfoLoad(const void* const aicpuInfo, const uint32_t len
 
 rtError_t ApiImpl::SetupArgument(const void* const setupArg, const uint32_t size, const uint32_t offset)
 {
-    RT_LOG(RT_LOG_DEBUG, "size=%u, offset=%u.", size, offset);
+    RT_LOG(RT_LOG_DEBUG, "size=%u(bytes), offset=%u(bytes).", size, offset);
     constexpr uint32_t argCountLimit = (ARG_ENTRY_SIZE / MIN_ARG_SIZE);
     LaunchArgment& launchArg = ThreadLocalContainer::GetLaunchArg();
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(

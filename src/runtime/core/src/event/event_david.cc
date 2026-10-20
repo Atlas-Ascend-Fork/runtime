@@ -160,7 +160,7 @@ bool DavidEvent::WaitSendCheck(const Stream* const stm, int32_t& eventId)
     // new mode
     if (isNewMode_) {
         if (status_ == DavidEventState_t::EVT_RECORDED) {
-            RT_LOG(RT_LOG_INFO, "wait first, return suc. device_id=%u, event_id=%d", device_->Id_(), eventId_);
+            RT_LOG(RT_LOG_INFO, "wait first, return success. device_id=%u, event_id=%d", device_->Id_(), eventId_);
             return false;
         }
         if (eventId == INVALID_EVENT_ID) {

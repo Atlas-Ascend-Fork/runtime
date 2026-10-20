@@ -17,7 +17,7 @@ ArgsBufferGuard::~ArgsBufferGuard()
 {
     if (buffer_ != nullptr) {
         free(buffer_);
-        RT_LOG(RT_LOG_DEBUG, "free args buffer, size=%llu.", size_);
+        RT_LOG(RT_LOG_DEBUG, "free args buffer, size=%llu(bytes).", size_);
         buffer_ = nullptr;
         size_ = 0ULL;
     }
@@ -40,7 +40,7 @@ void* ArgsBufferGuard::EnsureCapacity(uint64_t requiredSize)
     COND_RETURN_AND_MSG_OUTER(buffer_ == nullptr, nullptr, ErrorCode::EE1013, allocSize, "malloc");
 
     size_ = allocSize;
-    RT_LOG(RT_LOG_DEBUG, "alloc args buffer success, size=%llu.", allocSize);
+    RT_LOG(RT_LOG_DEBUG, "alloc args buffer success, size=%llu(bytes).", allocSize);
     return buffer_;
 }
 

@@ -169,7 +169,7 @@ rtError_t ApiImplVmm::MallocPhysical(rtDrvMemHandle* handle, size_t size, rtDrvM
     }
     Runtime::Instance()->CallApiBegin(RT_PROF_API_DEV_MALLOC);
     /* 输出参数handle在上下文中作为一个整体使用, 内部的devid不用进行转换 */
-    RT_LOG(RT_LOG_INFO, "Start to MallocPhysical, size=%zu", size);
+    RT_LOG(RT_LOG_INFO, "start to MallocPhysical, size=%zu(bytes)", size);
     error = NpuDriver::MallocPhysical(handle, size, prop, flags);
     if (error == RT_ERROR_NONE) {
         const uint64_t addr = (handle == nullptr) ? 0U : RtPtrToValue(*handle);

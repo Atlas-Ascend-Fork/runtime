@@ -1159,7 +1159,8 @@ rtError_t DeviceErrorProc::PrintStreamTimeoutSnapshotInfo()
     }
 
     device_->SetSnapshotFlag(false);
-    RT_LOG(RT_LOG_INFO, "get stream wait timeout snapshot suc, snapshotFlag=%d", device_->GetSnapshotFlag());
+    RT_LOG(
+        RT_LOG_INFO, "obtained stream wait timeout snapshot successfully, snapshotFlag=%d", device_->GetSnapshotFlag());
     return RT_ERROR_NONE;
 }
 

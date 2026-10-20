@@ -641,7 +641,7 @@ bool Event::WaitSendCheck(const Stream* const stm, int32_t& eventId)
     // new mode
     if (isNewMode_) {
         if (!HasRecord()) {
-            RT_LOG(RT_LOG_INFO, "wait first, return suc. device_id=%u, event_id=%d", device_->Id_(), eventId_);
+            RT_LOG(RT_LOG_INFO, "wait first, return success. device_id=%u, event_id=%d", device_->Id_(), eventId_);
             return false;
         }
         if ((latestRecord_.streamId == stm->Id_()) && (HasRecord())) {
@@ -760,7 +760,7 @@ rtError_t Event::Wait(Stream* const stm, const uint32_t timeout)
     }
     int32_t eventId = INVALID_EVENT_ID;
     if (!WaitSendCheck(stm, eventId)) {
-        RT_LOG(RT_LOG_INFO, "no need wait, return suc. device_id=%u, event_id=%d", device_->Id_(), eventId);
+        RT_LOG(RT_LOG_INFO, "no need to wait; return success. device_id=%u, event_id=%d", device_->Id_(), eventId);
         return RT_ERROR_NONE;
     }
     const uint32_t recDevId = device_->Id_();
@@ -1079,7 +1079,7 @@ rtError_t Event::Setup()
     }
     isIdAllocFromDrv_ = true;
     isNotify_ = true;
-    RT_LOG(RT_LOG_DEBUG, "Setup suc device_id=%u, event_id=%d", deviceId, eventId_);
+    RT_LOG(RT_LOG_DEBUG, "event setup succeeded. device_id=%u, event_id=%d", deviceId, eventId_);
     return RT_ERROR_NONE;
 }
 
