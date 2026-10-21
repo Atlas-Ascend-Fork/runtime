@@ -52,7 +52,11 @@ static void ConstructSqeForRingBufferMaintainTask(TaskInfo* taskInfo, void* cons
     const rtError_t error = taskInfo->stream->Device_()->Driver_()->MemAddressTranslate(
         static_cast<int32_t>(taskInfo->stream->Device_()->Id_()),
         RtPtrToValue<void*>(ringBufMtTsk->deviceRingBufferAddr), &offset);
-    COND_RETURN_VOID(error != RT_ERROR_NONE, "RingBufferMaintainTask address error=%d", error);
+    if (error != RT_ERROR_NONE) {
+        RT_LOG(RT_LOG_ERROR, "RingBufferMaintainTask address error=%d", error);
+        sqe->type = RT_STARS_SQE_TYPE_INVALID;
+        return;
+    }
 
     sqe->u.ring_buffer_control_info.ringbuffer_offset = offset;
     sqe->u.ring_buffer_control_info.total_len = ringBufMtTsk->bufferLen;

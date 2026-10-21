@@ -889,16 +889,61 @@ TEST_F(StarsTaskTest, DoCompleteStarsSdmaError)
 
 TEST_F(StarsTaskTest, RingBufferMaintain)
 {
-    TaskInfo maintainceTask = {};
-    TaskInfo* task = &maintainceTask;
+    TaskInfo task = {};
     rtStarsSqe_t sqe = {};
+    uint64_t offset = 0x123400U;
+    InitByStream(&task, stream_);
+    ASSERT_EQ(RingBufferMaintainTaskInit(&task, reinterpret_cast<void*>(0x100U), 0, 10), RT_ERROR_NONE);
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemAddressTranslate)
+        .expects(once())
+        .with(eq(static_cast<int32_t>(dev_->Id_())), eq(uint64_t{0x100U}), outBoundP(&offset))
+        .will(returnValue(RT_ERROR_NONE));
 
-    InitByStream(&maintainceTask, stream_);
-    rtError_t ret = RingBufferMaintainTaskInit(&maintainceTask, (void*)0x100, 0, 10);
-    EXPECT_EQ(ret, RT_ERROR_NONE);
+    ToConstructSqe(&task, &sqe, TaskSqeInfo{0ULL, 0ULL});
 
-    ToConstructSqe(task, &sqe, TaskSqeInfo{0ULL, 0ULL});
     EXPECT_EQ(sqe.phSqe.pre_p, 1U);
+    EXPECT_EQ(sqe.phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.ringbuffer_offset, offset);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.total_len, 10U);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.ringbuffer_del_flag, 0U);
+}
+
+TEST_F(StarsTaskTest, RingBufferMaintainAddressTranslateFailure)
+{
+    TaskInfo task = {};
+    rtStarsSqe_t sqe = {};
+    InitByStream(&task, stream_);
+    ASSERT_EQ(RingBufferMaintainTaskInit(&task, reinterpret_cast<void*>(0x100U), 0, 10), RT_ERROR_NONE);
+    sqe.phSqe.u.ring_buffer_control_info.ringbuffer_offset = 0xABCDU;
+    sqe.phSqe.u.ring_buffer_control_info.total_len = 20U;
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemAddressTranslate)
+        .expects(once())
+        .with(eq(static_cast<int32_t>(dev_->Id_())), eq(uint64_t{0x100U}), mockcpp::any())
+        .will(returnValue(RT_ERROR_DRV_ERR));
+
+    ToConstructSqe(&task, &sqe, TaskSqeInfo{0ULL, 0ULL});
+
+    EXPECT_EQ(sqe.phSqe.type, RT_STARS_SQE_TYPE_INVALID);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.ringbuffer_offset, 0xABCDU);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.total_len, 20U);
+}
+
+TEST_F(StarsTaskTest, RingBufferMaintainDeleteSkipsAddressTranslate)
+{
+    TaskInfo task = {};
+    rtStarsSqe_t sqe = {};
+    InitByStream(&task, stream_);
+    ASSERT_EQ(RingBufferMaintainTaskInit(&task, reinterpret_cast<void*>(0x100U), 1, 10), RT_ERROR_NONE);
+    sqe.phSqe.u.ring_buffer_control_info.ringbuffer_offset = 0xABCDU;
+    sqe.phSqe.u.ring_buffer_control_info.total_len = 20U;
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemAddressTranslate).expects(never());
+
+    ToConstructSqe(&task, &sqe, TaskSqeInfo{0ULL, 0ULL});
+
+    EXPECT_EQ(sqe.phSqe.type, RT_STARS_SQE_TYPE_PLACE_HOLDER);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.ringbuffer_offset, 0U);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.total_len, 0U);
+    EXPECT_EQ(sqe.phSqe.u.ring_buffer_control_info.ringbuffer_del_flag, RINGBUFFER_NEED_DEL);
 }
 
 TEST_F(StarsTaskTest, SetStarsEventWaitTask)

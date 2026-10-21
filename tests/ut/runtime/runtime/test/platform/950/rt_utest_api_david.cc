@@ -11760,6 +11760,45 @@ TEST_F(ApiDavidTest, StreamWriteValuePtr_UnalignedAddr)
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
 }
 
+TEST_F(ApiDavidTest, StreamWriteValuePtr_UnalignedAddressRejectedBeforeCopy)
+{
+    uint8_t value[32] = {};
+    rtWriteValueInfo_t info = {0x1000U, WRITE_VALUE_SIZE_TYPE_16BIT, value};
+    MOCKER_CPP_VIRTUAL(stream_->Device_()->Driver_(), &Driver::MemCopySync).expects(never());
+
+    for (uint32_t size = WRITE_VALUE_SIZE_TYPE_16BIT; size <= WRITE_VALUE_SIZE_TYPE_256BIT; ++size) {
+        SCOPED_TRACE(size);
+        info.size = static_cast<rtWriteValueSizeType_t>(size);
+        const uint64_t alignment = 1ULL << (size - 1U);
+        for (uint64_t offset = 1U; offset < alignment; ++offset) {
+            SCOPED_TRACE(offset);
+            info.addr = 0x1000U + offset;
+            EXPECT_EQ(StreamWriteValuePtr(&info, stream_, nullptr), RT_ERROR_INVALID_VALUE);
+        }
+    }
+    GlobalMockObject::verify();
+}
+
+TEST_F(ApiDavidTest, StreamWriteValuePtr_AlignedAddressReachesCopy)
+{
+    uint8_t value[32] = {};
+    rtWriteValueInfo_t info = {0x1000U, WRITE_VALUE_SIZE_TYPE_16BIT, value};
+    RtDavidStarsWriteValueSqe sqe = {};
+    MOCKER_CPP_VIRTUAL(stream_->Device_()->Driver_(), &Driver::MemCopySync)
+        .expects(exactly(5))
+        .with(
+            eq(static_cast<void*>(&sqe)), eq(uint64_t{64U}), mockcpp::any(), eq(uint64_t{64U}),
+            eq(RT_MEMCPY_HOST_TO_DEVICE))
+        .will(returnValue(RT_ERROR_DRV_ERR));
+
+    for (uint32_t size = WRITE_VALUE_SIZE_TYPE_16BIT; size <= WRITE_VALUE_SIZE_TYPE_256BIT; ++size) {
+        SCOPED_TRACE(size);
+        info.size = static_cast<rtWriteValueSizeType_t>(size);
+        EXPECT_EQ(StreamWriteValuePtr(&info, stream_, &sqe), RT_ERROR_DRV_ERR);
+    }
+    GlobalMockObject::verify();
+}
+
 TEST_F(ApiDavidTest, MemWriteValue_Success)
 {
     ApiImplDavid apiImpl;
