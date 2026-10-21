@@ -346,11 +346,11 @@ inline void ConstructMixSqeCommonForDavinciTask(TaskInfo* const taskInfo, SqeTyp
     const uint64_t addr = RtPtrToValue(aicTaskInfo->comm.args) + aicTaskInfo->simtParamOffset;
     const Kernel* kernel = aicTaskInfo->kernel;
     uint8_t mixType = (kernel != nullptr) ? kernel->GetMixType() : static_cast<uint8_t>(NO_MIX);
-    uint8_t taskRation = (kernel != nullptr) ? static_cast<uint8_t>(kernel->GetTaskRation()) : 0U;
     ConstructMixSqePart(aicTaskInfo, sqe, mixType, addr, stm);
 
     sqe->ratio = 1U; // only ratio is 1.
     if (sqe->mix == 1U) {
+        const uint8_t taskRation = (kernel != nullptr) ? static_cast<uint8_t>(kernel->GetTaskRation()) : 0U;
         sqe->ratio = taskRation;
         static const uint32_t defaultTaskRatio = Runtime::Instance()->GetCurChipProperties().defaultTaskRatio;
         if ((sqe->header.type == RT_DAVID_SQE_TYPE_AIC) && (sqe->ratio == defaultTaskRatio)) {

@@ -44,8 +44,8 @@ rtError_t CheckAndGetTotalShareMemorySize(
     */
     const uint32_t kernelVfType = kernel->KernelVfType_();
     bool canUseSimt = (kernelVfType != 0);
-    bool simtFlag = (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMT_VF_ONLY)) ||
-                    (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMD_SIMT_MIX_VF));
+    const bool simtFlag = (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMT_VF_ONLY)) ||
+                          (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMD_SIMT_MIX_VF));
     const uint32_t simtUbSize = stm->Device_()->GetDevProperties().simtUbSize;
     const uint32_t ubSize = (simtUbSize != 0U) ? simtUbSize : RT_SIMT_UB_SIZE;
     uint32_t totalSmSize = kernel->ShareMemSize_() + dynamicShareMemSize;
