@@ -507,6 +507,12 @@ aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *siz
 
 template <typename T, typename U>
 aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *sizes, size_t numBatches, aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes, size_t numAttrs, aclrtStream stream)
+
+template <typename T, typename U>
+aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *sizes, size_t numBatches, aclrtMemcpyBatchAttr attr, size_t *failIndex, aclrtStream stream)
+
+template <typename T, typename U>
+aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *sizes, size_t numBatches, aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes, size_t numAttrs, size_t *failIndex, aclrtStream stream)
 ```
 
 ### 产品支持情况
@@ -540,7 +546,7 @@ aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *siz
 
 本接口中的Host内存支持锁页内存（例如通过aclrtMallocHost接口申请的内存）、非锁页内存（通过malloc接口申请的内存）。当Host内存是非锁页内存时，本接口在内存复制任务完成后才返回；当Host内存是锁页内存时，本接口是异步接口，调用接口成功仅表示任务下发成功，不表示任务执行成功，调用本接口后，需调用同步等待接口（例如，[aclrtSynchronizeStream](06_stream_management.md#aclrtSynchronizeStream)）确保内存复制的任务已执行完成。
 
-本接口为封装接口，仅适用于C++程序，接口内部调用C接口[aclrtMemcpyBatchAsyncV2](11-03_memory_copy_and_set.md#aclrtMemcpyBatchAsyncV2)。
+本接口为封装接口，仅适用于C++程序。不传入`failIndex`参数的重载，内部调用C接口[aclrtMemcpyBatchAsyncV2](11-03_memory_copy_and_set.md#aclrtMemcpyBatchAsyncV2)；传入`failIndex`参数的重载，内部调用C接口[aclrtMemcpyBatchAsync](11-03_memory_copy_and_set.md#aclrtMemcpyBatchAsync)。
 
 ### 参数说明
 
@@ -555,6 +561,7 @@ aclError aclrtMemcpyBatchAsync(T **dsts, size_t *destMaxs, U **srcs, size_t *siz
 | attrs | 输入 | 内存复制属性数组。针对每一段内存，使用对应的内存复制属性。<br>类型定义请参见[aclrtMemcpyBatchAttr](25-04_Structs.md#aclrtMemcpyBatchAttr)。 |
 | attrsIndexes | 输入 | 内存复制属性索引数组，用于指定attrs数组中每个条目适用的复制范围。attrs[k]中指定的属性将应用于从attrsIndexes[k]到attrsIndexes[k+1] - 1的复制操作，同时attrs[numAttrs-1]将应用于从attrsIndexes[numAttrs-1]到numBatches - 1的复制操作。 |
 | numAttrs | 输入 | attrs和attrsIndexes数组的长度。 |
+| failIndex | 输出 | 用于发生错误时指示出错的复制项下标（仅支持对内存属性和复制方向的校验）。若错误不涉及特定复制操作，该值将为SIZE_MAX。 |
 | stream | 输入 | 指定执行内存复制任务的Stream。类型定义请参见[aclrtStream](25-05_Typedefs.md#aclrtStream)。 |
 
 ### 返回值说明
