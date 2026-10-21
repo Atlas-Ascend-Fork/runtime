@@ -284,7 +284,7 @@ public:
     const TaskGroup* GetTaskGroup(uint16_t streamId, uint16_t taskId);
     void BackupArgHandle(const uint16_t streamId, const uint16_t taskId);
     rtError_t Update(void);
-    void ProcessExternalRecordNormalCqe(TaskInfo* taskInfo, const rtCqReport_t& logicCq);
+    void ProcessExternalRecordNormalCqe(TaskInfo* const taskInfo, const rtCqReport_t& logicCq);
 
     rtError_t ReleaseNotifyId(uint32_t& releaseNum);
     rtError_t UpdateNotifyId(Stream* const exeStream);
@@ -400,7 +400,7 @@ private:
     std::shared_ptr<uint8_t[]> externalEventRefreshHostTemplate_{nullptr};
     // 每次replay的Event资源owner在execute期间由此中转，并由主endGraph notify接管。
     std::vector<EventResource>* curReplayExternalEventsRes_{nullptr};
-    GraphUpdateInfo updateInfo_;
+    GraphUpdateInfo updateInfo_{};
     std::map<Stream*, std::vector<Stream*>> addStreamMap_; // key为add进来的stream，value为隐式创建的stream
     std::vector<Notify*> addStreamNotifyList_;
     std::vector<Notify*> executeNotifyList_;

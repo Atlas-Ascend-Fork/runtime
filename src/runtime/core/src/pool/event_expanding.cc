@@ -35,16 +35,13 @@ static void ReleaseEventBuffer(Device* const dev, void* const addr, const bool i
 }
 
 EventExpandingPool::EventExpandingPool(Device* const dev)
-    : NoCopy(), device_(dev), eventIdCount_(EVENT_INIT_VALUE), lastEventId_(0U), poolIndex_(0U)
+    : NoCopy(), device_(dev), eventAllocator_{}, eventIdCount_(EVENT_INIT_VALUE), lastEventId_(0U), poolIndex_(0U)
 {
     uint32_t capability = RT_CAPABILITY_NOT_SUPPORT;
     const uint64_t size = static_cast<uint64_t>(EVENT_INIT_CNT) * sizeof(uint8_t);
     const bool need4KAsync = size <= HUGE_PAGE_MEM_CRITICAL_VALUE;
     (void)device_->Driver_()->CheckSupportPcieBarCopy(device_->Id_(), capability, need4KAsync);
     barSupported_ = (capability == RT_CAPABILITY_SUPPORT);
-    for (int i = 0; i < MAX_POOL_CNT; ++i) {
-        eventAllocator_[i] = nullptr;
-    }
 }
 
 EventExpandingPool::~EventExpandingPool()

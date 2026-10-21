@@ -1005,7 +1005,7 @@ void DavidStream::StarsShowPublicQueueDfxInfo(void)
         taskPublicBuff_[headIndex[3U]], taskPublicBuff_[headIndex[4U]], taskPublicBuff_[headIndex[5U]]);
 
     RT_LOG(
-        RT_LOG_EVENT, "public tail info, tailStart=%u, public_pos_id::%u, %u, %u, %u, %u, %u.", tailIndex,
+        RT_LOG_EVENT, "public tail info, tailStart=%u, public_pos_id::%u, %u, %u, %u, %u, %u.", tailStart,
         taskPublicBuff_[tailIndex[0U]], taskPublicBuff_[tailIndex[1U]], taskPublicBuff_[tailIndex[2U]],
         taskPublicBuff_[tailIndex[3U]], taskPublicBuff_[tailIndex[4U]], taskPublicBuff_[tailIndex[5U]]);
 }

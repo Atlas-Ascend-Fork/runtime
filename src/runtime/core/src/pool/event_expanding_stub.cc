@@ -13,7 +13,7 @@
 namespace cce {
 namespace runtime {
 EventExpandingPool::EventExpandingPool(Device* const dev)
-    : NoCopy(), device_(dev), eventIdCount_(EVENT_INIT_VALUE), lastEventId_(0U), poolIndex_(0U)
+    : NoCopy(), device_(dev), eventAllocator_{}, eventIdCount_(EVENT_INIT_VALUE), lastEventId_(0U), poolIndex_(0U)
 {}
 
 EventExpandingPool::~EventExpandingPool() {}

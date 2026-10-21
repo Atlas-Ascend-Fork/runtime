@@ -327,7 +327,7 @@ void ConstrucModelExeCheckSqFsm(rtStarsModelExeFuncCallPara_t& funcCallPara, RtS
     /* r1 = r4 */
     ConstructOpImmAndi(r4, r1, 0, RT_STARS_COND_ISA_OP_IMM_FUNC3_ADDI, checkSqFsm.addi);
     const rtChipType_t chipType = Runtime::Instance()->GetChipType();
-    DevProperties prop;
+    DevProperties prop{};
     const rtError_t error = GET_DEV_PROPERTIES(chipType, prop);
     RT_LOG(RT_LOG_DEBUG, "go to offset1:%" PRIu64 ", GetDevProperties, ret = %u", offset1, error);
     const uint32_t shamt = prop.rtsqShamt;

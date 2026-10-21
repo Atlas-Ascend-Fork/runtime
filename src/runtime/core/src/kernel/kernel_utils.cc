@@ -275,7 +275,7 @@ rtError_t UpdateKernelParams(TaskInfo* const taskInfo, KernelTaskUpdateInfo* con
         stm->Id_(), taskInfo->id);
 
     const rtKernelAttrType kernelAttrType = kernel->GetKernelAttrType();
-    bool isNeedAllocSqeDevBuf = false;
+    const bool isNeedAllocSqeDevBuf = false;
     AicTaskInit(
         taskInfo, kernel, kernelAttrType, static_cast<uint16_t>(kernelUpdateInfo->numBlocks),
         &(kernelUpdateInfo->taskCfg), isNeedAllocSqeDevBuf);

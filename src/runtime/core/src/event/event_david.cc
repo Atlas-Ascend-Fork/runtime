@@ -114,7 +114,7 @@ rtError_t DavidEvent::GenEventId()
     return error;
 }
 
-rtError_t DavidEvent::AllocEventIdResource(Stream* const stm, int32_t& eventId)
+rtError_t DavidEvent::AllocEventIdResource(Stream* const stm, int32_t& newEventId)
 {
     rtError_t error = RT_ERROR_NONE;
     if (IsEventWithoutWaitTask()) { // stream mark or timeline
@@ -122,9 +122,9 @@ rtError_t DavidEvent::AllocEventIdResource(Stream* const stm, int32_t& eventId)
         return error;
     }
 
-    stm->GetCntNotifyId(eventId);
-    if (eventId == MAX_INT32_NUM) {
-        (void)stm->ApplyCntNotifyId(eventId);
+    stm->GetCntNotifyId(newEventId);
+    if (newEventId == MAX_INT32_NUM) {
+        (void)stm->ApplyCntNotifyId(newEventId);
         return RT_ERROR_NONE;
     }
 

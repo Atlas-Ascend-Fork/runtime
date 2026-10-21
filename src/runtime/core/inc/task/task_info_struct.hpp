@@ -10,9 +10,13 @@
 #ifndef CCE_RUNTIME_TASK_INFO_STRUCT_HPP
 #define CCE_RUNTIME_TASK_INFO_STRUCT_HPP
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <set>
+#include <vector>
 
 #include "args/args_inner.h"
 #include "dev.h"

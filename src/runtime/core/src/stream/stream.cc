@@ -848,7 +848,11 @@ rtError_t Stream::Setup()
 
     SetMaxTaskId(isDisableThread);
     if (GetIsSupportASyncRecycle() && isHasPcieBar_) {
-        static_cast<void>(CreateArgRecycleList(STREAM_PUBLIC_TASK_BUFF_SIZE));
+        error = CreateArgRecycleList(STREAM_PUBLIC_TASK_BUFF_SIZE);
+        COND_RETURN_ERROR_MSG_INNER(
+            error != RT_ERROR_NONE, RT_ERROR_STREAM_NEW,
+            "Failed to create args recycle list, stream_id=%d, size=%u, retCode=%#x.", streamId_,
+            STREAM_PUBLIC_TASK_BUFF_SIZE, static_cast<uint32_t>(error));
     }
 
     isFlowCtrl = false;
@@ -4679,7 +4683,7 @@ bool Stream::IsExistCqe(void) const
     if (sqId == UINT32_MAX) {
         return false;
     }
-    rtError_t error = device_->Driver_()->GetCqeStatus(device_->Id_(), tsId, sqId, status);
+    const rtError_t error = device_->Driver_()->GetCqeStatus(device_->Id_(), tsId, sqId, status);
     if (error != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_DEBUG, "Get cqe status failed, retCode=%#x.", error);
     }

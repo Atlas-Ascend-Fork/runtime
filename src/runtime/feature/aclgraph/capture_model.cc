@@ -106,7 +106,7 @@ static rtError_t InitExternalRecordTask(TaskInfo* taskInfo, Event* event, const 
 
 CaptureModel::CaptureModel(ModelType type) : Model(type) { beginCaptureTimeStamp_ = MsprofSysCycleTime(); }
 
-void CaptureModel::InsertGraphUpdateTask(TaskInfo* taskInfo) { (void)updateInfo_.updateTask.insert(taskInfo); }
+void CaptureModel::InsertGraphUpdateTask(TaskInfo* const taskInfo) { (void)updateInfo_.updateTask.insert(taskInfo); }
 
 void CaptureModel::ClearGraphUpdateTask() { updateInfo_.updateTask.clear(); }
 // 写到capture_utils 里面
