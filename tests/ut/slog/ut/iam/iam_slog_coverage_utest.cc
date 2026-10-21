@@ -9,6 +9,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "mockcpp/mockcpp.hpp"
 
 #include <atomic>
 #include <cstdarg>
@@ -45,7 +46,6 @@ void IamSlogStubSetUnregisterRet(int32_t ret);
 void IamSlogStubSetIoctlResult(int32_t ret, int32_t errorCode);
 void IamSlogStubSetIoctlLevels(int32_t globalLevel, int32_t eventLevel, int32_t moduleLevel);
 void IamSlogStubSetIoctlHook(void (*hook)(void));
-void DlogLevelInitSetGateHook(void (*hook)(void));
 void IamSlogStubNotifyResource(enum IAMResourceStatus status);
 void IamSlogStubFirePeriodicTimer(void);
 void IamSlogStubSetTimerLoadRet(int32_t ret);
@@ -207,7 +207,7 @@ protected:
     void TearDown() override
     {
         IamSlogStubSetIoctlHook(nullptr);
-        DlogLevelInitSetGateHook(nullptr);
+        GlobalMockObject::reset();
         if (DlogIamServiceIsValid()) {
             IamSlogStubNotifyResource(IAM_RESOURCE_READY);
         }
@@ -348,6 +348,7 @@ std::atomic<bool> g_ioctlEntered{false};
 std::atomic<bool> g_mainDone{false};
 std::atomic<bool> g_gateEntered{false};
 std::atomic<bool> g_gateDone{false};
+std::atomic<int32_t> g_checkAttrCount{0};
 
 // Runs on the IAM callback thread inside the "global_level" ioctl, i.e. after the callback has
 // passed the entry check and acquired the level lock. It lets the main thread attempt the type
@@ -361,15 +362,19 @@ void IoctlGlobalLevelSyncHook(void)
     }
 }
 
-// Runs on the IAM callback thread between the entry check and taking the level lock. It lets the
-// main thread flip the type to APPLICATION and write the ENV level; the callback must then abandon
-// on the in-lock re-check.
-void EntryGateSyncHook(void)
+// Mock of DlogCheckAttrSystem(): the first (lockless entry) call injects the sync point and reports
+// SYSTEM so the callback proceeds; the second (in-lock re-check) call reflects the type the main
+// thread has flipped in between, so the callback must abandon.
+bool MockCheckAttrSystemForTypeFlip(void)
 {
-    g_gateEntered.store(true);
-    for (int32_t i = 0; (i < 500) && (!g_gateDone.load()); ++i) {
-        (void)usleep(1000);
+    if (g_checkAttrCount.fetch_add(1) == 0) {
+        g_gateEntered.store(true);
+        for (int32_t i = 0; (i < 500) && (!g_gateDone.load()); ++i) {
+            (void)usleep(1000);
+        }
+        return true;
     }
+    return (DlogGetProcessType() == SYSTEM);
 }
 } // namespace
 
@@ -436,7 +441,8 @@ TEST_F(IamSlogCoverageUtest, LevelCallBackAbandonsWhenTypeFlipsBeforeLock)
 
     g_gateEntered.store(false);
     g_gateDone.store(false);
-    DlogLevelInitSetGateHook(EntryGateSyncHook);
+    g_checkAttrCount.store(0);
+    MOCKER(DlogCheckAttrSystem).stubs().will(invoke(MockCheckAttrSystemForTypeFlip));
 
     std::thread iamThread([]() { DlogLevelInitCallBack(); });
 
@@ -455,7 +461,6 @@ TEST_F(IamSlogCoverageUtest, LevelCallBackAbandonsWhenTypeFlipsBeforeLock)
     g_gateDone.store(true);
 
     iamThread.join();
-    DlogLevelInitSetGateHook(nullptr);
 
     EXPECT_FALSE(GetGlobalEnableEventVar());
 }

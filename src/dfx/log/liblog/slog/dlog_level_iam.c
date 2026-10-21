@@ -25,12 +25,6 @@ extern "C" {
 
 STATIC uint32_t g_ioctlGlobalPrintNum = 0;
 
-#ifdef _LOG_UT_
-STATIC void (*g_dlogLevelInitGateHook)(void) = NULL;
-
-void DlogLevelInitSetGateHook(void (*hook)(void)) { g_dlogLevelInitGateHook = hook; }
-#endif
-
 /**
  * @brief        : get module loglevel by IAM
  */
@@ -120,11 +114,6 @@ STATIC void DlogLevelInitCallBack(void)
     if (!DlogCheckAttrSystem()) { // APP
         return;
     }
-#ifdef _LOG_UT_
-    if (g_dlogLevelInitGateHook != NULL) {
-        g_dlogLevelInitGateHook();
-    }
-#endif
 
     /* Mutually exclusive with the type flipping of DlogSetUserAttr (reusing the attr lock).
      * The type is reviewed within the lock to avoid the TOCTOU race: after the entry check
