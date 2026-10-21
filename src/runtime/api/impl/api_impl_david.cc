@@ -1893,8 +1893,7 @@ rtError_t ApiImplDavid::LaunchDvppTask(const void* sqe, uint32_t sqeLen, Stream*
 
     bool isCmdListNotFree = false;
     rtError_t error = GetIsCmdListNotFreeValByDvppCfg(cfg, isCmdListNotFree);
-    ERROR_RETURN_MSG_INNER(
-        error, "Failed to get dvpp cmdlist not free flag, streamId=%u, retCode=%#x", curStm->Id_(), error);
+    ERROR_RETURN(error, "Failed to get dvpp cmdlist not free flag, streamId=%u, retCode=%#x", curStm->Id_(), error);
 
     const uint32_t flag = isCmdListNotFree ? RT_KERNEL_CMDLIST_NOT_FREE : RT_KERNEL_DEFAULT;
     COND_RETURN_WARN(

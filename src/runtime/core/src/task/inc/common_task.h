@@ -34,6 +34,9 @@ rtError_t StarsCommonTaskInit(TaskInfo* taskInfo, const T& sqe, const uint32_t f
     const uint16_t sqeType = sqe.sqeHeader.type;
     if (!IsSupportType(sqeType)) {
         RT_LOG(RT_LOG_ERROR, "StarsCommonTask does not support type[%hu]", sqeType);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1006, "Delivering tasks to a specified stream", RtFmtMsg("SQE type %hu", sqeType),
+            "Use an SQE type supported by the current device");
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     }
 
@@ -41,7 +44,7 @@ rtError_t StarsCommonTaskInit(TaskInfo* taskInfo, const T& sqe, const uint32_t f
     const errno_t error = memcpy_s(
         &starsCommTask->commonStarsSqe.commonSqe, sizeof(starsCommTask->commonStarsSqe.commonSqe), &sqe, sizeof(sqe));
     if (error != EOK) {
-        RT_LOG(
+        RT_LOG_INNER_MSG(
             RT_LOG_ERROR, "copy to starsSqe failed,ret=%d,src size=%zu,dst size=%zu", error, sizeof(sqe),
             sizeof(starsCommTask->commonStarsSqe.commonSqe));
         return RT_ERROR_SEC_HANDLE;
@@ -60,6 +63,9 @@ rtError_t StarsCommonTaskInit(TaskInfo* taskInfo, const T& sqe, const uint32_t f
         ((cmdListAddrHigh << UINT32_BIT_NUM) & 0xFFFFFFFF00000000ULL) | (cmdListAddrLow & 0x00000000FFFFFFFFULL));
     if (starsCommTask->cmdList == nullptr) {
         RT_LOG(RT_LOG_ERROR, "cmdList addr is null.");
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1011, "Delivering a DVPP task", "0", "sqe.cmdListAddress",
+            "The DVPP SQE must contain a valid command list address");
         return RT_ERROR_INVALID_VALUE;
     }
     if ((starsCommTask->flag & RT_KERNEL_CMDLIST_NOT_FREE) == 0U) {

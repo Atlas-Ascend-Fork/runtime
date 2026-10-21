@@ -79,6 +79,38 @@ bool DlogRecordContains(const std::string& keyword);
 using namespace testing;
 using namespace cce::runtime;
 
+class EventWorkModeTest : public testing::Test {
+protected:
+    void SetUp() override
+    {
+        originalMode_ = GlobalContainer::GetEventWorkMode();
+        originalRefCount_ = GlobalContainer::GetEventModeRefCount();
+        GlobalContainer::SetEventModeRefCount(0U);
+    }
+
+    void TearDown() override
+    {
+        GlobalContainer::SetEventWorkMode(originalMode_);
+        GlobalContainer::SetEventModeRefCount(originalRefCount_);
+    }
+
+private:
+    uint8_t originalMode_ = 0U;
+    uint64_t originalRefCount_ = 0U;
+};
+
+TEST_F(EventWorkModeTest, RepeatedSetReportsErrorAndPreservesMode)
+{
+    ApiImpl api;
+    ASSERT_EQ(api.EventWorkModeSet(0U), RT_ERROR_NONE);
+
+    ClearLastDlogRecordLine();
+    EXPECT_EQ(api.EventWorkModeSet(1U), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(GlobalContainer::GetEventWorkMode(), 0U);
+    EXPECT_EQ(GlobalContainer::GetEventModeRefCount(), 1U);
+    EXPECT_TRUE(DlogRecordContains("repeatedly set work mode, eventModeInitRefCount: 1"));
+}
+
 namespace {
 using NothrowNewFunc = void* (*)(size_t, const std::nothrow_t&);
 

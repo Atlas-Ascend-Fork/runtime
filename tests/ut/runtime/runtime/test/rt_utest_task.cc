@@ -44,6 +44,7 @@
 #include <thread>
 #include <chrono>
 #include <limits>
+#include <cerrno>
 #include "ctrl_stream.hpp"
 #include "ctrl_stream.hpp"
 #include "runtime.hpp"
@@ -2178,13 +2179,15 @@ TEST_F(TaskTest, StarsCommonTask_ConstructSqe)
 
     cce::runtime::rtStarsCommonSqe_t vpcSqe = {};
     vpcSqe.sqeHeader.type = RT_STARS_SQE_TYPE_FFTS;
-    StarsCommonTaskInit(&dvppTask, vpcSqe, 0);
+    EXPECT_EQ(StarsCommonTaskInit(&dvppTask, vpcSqe, 0), RT_ERROR_FEATURE_NOT_SUPPORT);
 
     vpcSqe.sqeHeader.type = RT_STARS_SQE_TYPE_CDQM;
-    StarsCommonTaskInit(&dvppTask, vpcSqe, 0);
+    EXPECT_EQ(StarsCommonTaskInit(&dvppTask, vpcSqe, 0), RT_ERROR_NONE);
 
     vpcSqe.sqeHeader.type = RT_STARS_SQE_TYPE_VPC;
-    StarsCommonTaskInit(&dvppTask, vpcSqe, 0);
+    EXPECT_EQ(StarsCommonTaskInit(&dvppTask, vpcSqe, 0), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(dvppTask.u.starsCommTask.cmdList, nullptr);
+    EXPECT_FALSE(dvppTask.needPostProc);
 
     rtStarsSqe_t sqe = {};
     ToConstructSqe(&dvppTask, &sqe, TaskSqeInfo{0ULL, 0ULL});
@@ -2194,6 +2197,25 @@ TEST_F(TaskTest, StarsCommonTask_ConstructSqe)
 
     delete stream;
     delete device;
+}
+
+TEST_F(TaskTest, StarsCommonTaskInit_CopyFailure)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    cce::runtime::rtStarsCommonSqe_t sqe = {};
+    sqe.sqeHeader.type = RT_STARS_SQE_TYPE_VPC;
+    MOCKER(memcpy_s)
+        .stubs()
+        .with(
+            eq(static_cast<void*>(&task.u.starsCommTask.commonStarsSqe.commonSqe)), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
+        .will(returnValue(EINVAL));
+
+    EXPECT_EQ(StarsCommonTaskInit(&task, sqe, RT_KERNEL_CMDLIST_NOT_FREE), RT_ERROR_SEC_HANDLE);
+    EXPECT_EQ(task.u.starsCommTask.flag, RT_KERNEL_CMDLIST_NOT_FREE);
+    EXPECT_EQ(task.u.starsCommTask.cmdList, nullptr);
+    EXPECT_FALSE(task.needPostProc);
 }
 
 TEST_F(TaskTest, GetDevMsgTask_ConstructSqe)

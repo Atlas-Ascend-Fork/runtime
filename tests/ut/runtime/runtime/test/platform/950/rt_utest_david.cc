@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mockcpp.hpp"
 #include "securec.h"
+#include <cerrno>
 #include <regex.h>
 #include <cinttypes>
 #define protected public
@@ -1464,6 +1465,78 @@ TEST_F(DavidTaskTest, construct_davidsqe_for_common_task)
     ToConstructSqe(&dvppTask, static_cast<void*>(&sqe1), sqeInfo);
     EXPECT_EQ(sqe1.commonSqe.sqeHeader.type, RT_DAVID_SQE_TYPE_VPC);
 }
+
+TEST_F(DavidTaskTest, StarsCommonTaskInit_UnsupportedSqeType)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    rtDavidStarsCommonSqe_t sqe = {};
+    sqe.sqeHeader.type = RT_DAVID_SQE_TYPE_PLACE_HOLDER;
+
+    ClearLastDlogRecordLine();
+    EXPECT_EQ(StarsCommonTaskInit(&task, sqe, RT_KERNEL_CMDLIST_NOT_FREE), RT_ERROR_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(task.u.starsCommTask.flag, RT_KERNEL_DEFAULT);
+    EXPECT_EQ(task.u.starsCommTask.cmdList, nullptr);
+    EXPECT_FALSE(task.needPostProc);
+    EXPECT_TRUE(DlogRecordContains("StarsCommonTask does not support type["));
+}
+
+TEST_F(DavidTaskTest, StarsCommonTaskInit_NullCmdList)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    rtDavidStarsCommonSqe_t sqe = {};
+    sqe.sqeHeader.type = RT_DAVID_SQE_TYPE_VPC;
+
+    ClearLastDlogRecordLine();
+    EXPECT_EQ(StarsCommonTaskInit(&task, sqe, RT_KERNEL_CMDLIST_NOT_FREE), RT_ERROR_INVALID_VALUE);
+    EXPECT_EQ(task.u.starsCommTask.flag, RT_KERNEL_CMDLIST_NOT_FREE);
+    EXPECT_EQ(task.u.starsCommTask.cmdList, nullptr);
+    EXPECT_FALSE(task.needPostProc);
+    EXPECT_TRUE(DlogRecordContains("cmdList addr is null."));
+}
+
+TEST_F(DavidTaskTest, StarsCommonTaskInit_CopyFailure)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    rtDavidStarsCommonSqe_t sqe = {};
+    sqe.sqeHeader.type = RT_DAVID_SQE_TYPE_VPC;
+    MOCKER(memcpy_s)
+        .stubs()
+        .with(
+            eq(static_cast<void*>(&task.u.starsCommTask.commonStarsSqe.commonSqe)), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
+        .will(returnValue(EINVAL));
+
+    ClearLastDlogRecordLine();
+    const rtError_t error = StarsCommonTaskInit(&task, sqe, RT_KERNEL_CMDLIST_NOT_FREE);
+    EXPECT_EQ(error, RT_ERROR_SEC_HANDLE);
+    EXPECT_EQ(task.u.starsCommTask.cmdList, nullptr);
+    EXPECT_FALSE(task.needPostProc);
+    EXPECT_TRUE(DlogRecordContains("copy to starsSqe failed"));
+}
+
+class DavidDvppConfigTest : public DavidTaskTest, public testing::WithParamInterface<rtDvppAttrId> {};
+
+TEST_P(DavidDvppConfigTest, RejectsInvalidAttributeWithoutChangingFlag)
+{
+    rtDvppAttr_t attr = {};
+    attr.id = GetParam();
+    attr.value.isCmdListNotFree = false;
+    rtDvppCfg_t cfg = {&attr, 1U};
+    bool isCmdListNotFree = true;
+
+    ClearLastDlogRecordLine();
+    EXPECT_EQ(GetIsCmdListNotFreeValByDvppCfg(&cfg, isCmdListNotFree), RT_ERROR_INVALID_VALUE);
+    EXPECT_TRUE(isCmdListNotFree);
+    const std::string attrName = (GetParam() == RT_DVPP_MAX) ? "DVPP_MAX" : "UNKNOWN";
+    EXPECT_TRUE(DlogRecordContains(
+        "dvpp cfg attr id=" + attrName + "(" + std::to_string(static_cast<int32_t>(GetParam())) + ") is invalid"));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidAttributeIds, DavidDvppConfigTest, testing::Values(RT_DVPP_MAX, static_cast<rtDvppAttrId>(0U)));
 
 static rtError_t StubGetDeviceFaultEventsWithRasEvent(
     const uint32_t deviceId, rtDmsFaultEvent* const faultEventInfo, uint32_t& eventCount, bool needLog)

@@ -27,6 +27,8 @@
 #undef private
 #undef protected
 #include "model_c.hpp"
+#include "program.hpp"
+#include "task.hpp"
 #include "securec.h"
 #include "npu_driver.hpp"
 #include "../../rt_utest_config_define.hpp"
@@ -469,3 +471,94 @@ TEST_F(TaskTestDavidModelC, TestModelLoadCompleteByStream_SubmitLoadCompleteDire
     stream_->SetModel(nullptr);
     DestroyModel(model);
 }
+
+class ModelTaskUpdateMissingTaskTest : public TaskTestDavidModelC, public testing::WithParamInterface<bool> {
+protected:
+    void SetUp() override
+    {
+        TaskTestDavidModelC::SetUp();
+        oldSplitCtx_ = stream_->GetAutoSplitCtx();
+        oldAutoSplit_ = stream_->IsAutoSplitSq();
+        oldIsSlave_ = stream_->IsSlaveStream();
+        slaveHandle_ = CreateExtraStream();
+        slave_ = rt_ut::UnwrapOrNull<Stream>(slaveHandle_);
+        ASSERT_NE(slave_, nullptr);
+        // Normal David streams do not allocate the map used by model-update task recording.
+        ASSERT_GT(slave_->GetSqDepth(), 2U);
+        ASSERT_EQ(slave_->AllocPosToTaskIdMap(), RT_ERROR_NONE);
+    }
+
+    void TearDown() override
+    {
+        stream_->SetAutoSplitCtx(oldSplitCtx_);
+        stream_->SetAutoSplitSq(oldAutoSplit_);
+        stream_->SetIsSlaveStream(oldIsSlave_);
+        // Restore real task allocation and lookup before destroying either stream.
+        GlobalMockObject::verify();
+        if (slave_ != nullptr) {
+            // The recorded IDs belong to injected lookup results, not allocated tasks.
+            slave_->ResetHostResourceForPersistentStream();
+            DestroyExtraStream(slaveHandle_);
+        }
+        TaskTestDavidModelC::TearDown();
+    }
+
+    rtStream_t slaveHandle_ = nullptr;
+    Stream* slave_ = nullptr;
+    AutoSplitSqContext* oldSplitCtx_ = nullptr;
+    bool oldAutoSplit_ = false;
+    bool oldIsSlave_ = false;
+    AutoSplitSqContext splitCtx_ = {};
+    TaskInfo updateTask_ = {};
+    TaskInfo missingTask_ = {};
+    TaskInfo matchingTask_ = {};
+};
+
+TEST_P(ModelTaskUpdateMissingTaskTest, SkipsMissingTasksAndSelectsDestinationStream)
+{
+    constexpr uint32_t targetTaskSn = 123U;
+    InitByStream(&missingTask_, slave_);
+    missingTask_.id = 10U;
+    InitByStream(&matchingTask_, slave_);
+    matchingTask_.id = 11U;
+    matchingTask_.taskSn = targetTaskSn;
+    ASSERT_EQ(slave_->StarsAddTaskToStreamForModelUpdate(&missingTask_, 1U), RT_ERROR_NONE);
+    ASSERT_EQ(slave_->StarsAddTaskToStreamForModelUpdate(&matchingTask_, 1U), RT_ERROR_NONE);
+    ASSERT_NE(stream_->Id_(), slave_->Id_());
+
+    splitCtx_.slaveStreams.push_back(slave_);
+    stream_->SetAutoSplitCtx(&splitCtx_);
+    stream_->SetAutoSplitSq(true);
+    stream_->SetIsSlaveStream(false);
+    MOCKER_CPP(&TaskFactory::GetTask)
+        .expects(once())
+        .with(eq(slave_->Id_()), eq(missingTask_.id))
+        .will(returnValue(static_cast<TaskInfo*>(nullptr)));
+    TaskInfo* followingTask = GetParam() ? &matchingTask_ : nullptr;
+    MOCKER_CPP(&TaskFactory::GetTask)
+        .expects(once())
+        .with(eq(slave_->Id_()), eq(matchingTask_.id))
+        .will(returnValue(followingTask));
+
+    PlainProgram program;
+    Program* programBase = &program;
+    rtMdlTaskUpdateInfo_t para = {};
+    para.hdl = rt_ut::InitAndExportHandle<rtBinHandle>(programBase);
+    MOCKER_CPP(&Program::CopyTilingTabToDev).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
+    InitByStream(&updateTask_, stream_);
+    MOCKER_CPP(static_cast<TaskInfo* (Stream::*)(TaskInfo*, tsTaskType_t, rtError_t&, uint32_t, UpdateTaskFlag)>(
+                   &Stream::AllocTask))
+        .stubs()
+        .will(returnValue(&updateTask_));
+    MOCKER(DavidSendTask).expects(once()).with(eq(&updateTask_), eq(stream_)).will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(MdlTaskUpdate(stream_, targetTaskSn, stream_, &para), RT_ERROR_NONE);
+    EXPECT_EQ(updateTask_.type, TS_TASK_TYPE_MODEL_TASK_UPDATE);
+    const uint16_t expectedStreamId = static_cast<uint16_t>(GetParam() ? slave_->Id_() : stream_->Id_());
+    EXPECT_EQ(updateTask_.u.mdlUpdateTask.desStreamId, expectedStreamId);
+    EXPECT_EQ(updateTask_.u.mdlUpdateTask.destaskId, targetTaskSn);
+    EXPECT_EQ(updateTask_.u.mdlUpdateTask.exeStreamId, static_cast<uint16_t>(stream_->Id_()));
+}
+
+INSTANTIATE_TEST_SUITE_P(NullTaskLookup, ModelTaskUpdateMissingTaskTest, testing::Values(true, false));

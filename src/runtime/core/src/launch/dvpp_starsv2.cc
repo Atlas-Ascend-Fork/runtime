@@ -90,7 +90,7 @@ rtError_t StarsLaunch(const void* const sqe, const uint32_t sqeLen, Stream* cons
     dstStm = starsTask->stream;
     ScopeGuard tskErrRecycle(errRecycle);
     error = StarsCommonTaskInit(starsTask, *commonSqe, flag);
-    ERROR_RETURN_MSG_INNER(
+    ERROR_RETURN(
         error, "Failed to initialize stars common task, stream_id=%d, retCode=%#x.", streamId,
         static_cast<uint32_t>(error));
     starsTask->stmArgPos = static_cast<DavidStream*>(dstStm)->GetArgPos();

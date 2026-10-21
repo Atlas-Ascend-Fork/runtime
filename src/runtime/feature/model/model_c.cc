@@ -152,6 +152,9 @@ static uint32_t GetRealStreamId(const Stream* const desStm, uint32_t desTaskId)
             for (uint16_t i = 0U; i < taskIds.size(); i++) {
                 const uint16_t taskId = taskIds[i];
                 TaskInfo* task = desStm->Device_()->GetTaskFactory()->GetTask(slave->Id_(), taskId);
+                if (task == nullptr) {
+                    continue;
+                }
                 if (desTaskId == task->taskSn) {
                     realStreamId = slave->Id_();
                     isFind = true;

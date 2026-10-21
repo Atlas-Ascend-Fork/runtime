@@ -71,7 +71,7 @@ rtError_t StarsLaunch(const void* const sqe, const uint32_t sqeLen, Stream* cons
     const uint16_t sqeType = commonSqe->sqeHeader.type;
 
     rtError_t error = StarsCommonTaskInit(rtStarsCommonTask, *commonSqe, flag);
-    ERROR_GOTO_MSG_INNER(
+    ERROR_GOTO(
         error, ERROR_RECYCLE, "Stars common task init failed, stream_id=%d, task_id=%hu, retCode=%#x.", streamId,
         rtStarsCommonTask->id, error);
 

@@ -442,6 +442,9 @@ rtError_t ApiImpl::EventWorkModeSet(uint8_t mode)
     const uint64_t eventModeInitRefCount = GlobalContainer::GetEventModeRefCount();
     if (eventModeInitRefCount > 0U) {
         RT_LOG(RT_LOG_ERROR, "repeatedly set work mode, eventModeInitRefCount: %lu", eventModeInitRefCount);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1018, "Setting the event working mode",
+            "The event working mode has already been set and cannot be set repeatedly");
         return RT_ERROR_INVALID_VALUE;
     }
 
