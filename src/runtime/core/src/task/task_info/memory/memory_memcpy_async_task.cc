@@ -183,9 +183,13 @@ rtError_t AllocCpyTmpMemForDavid(
             RtPtrToValue(memcpyAsyncTaskInfo->srcPtr) + static_cast<uint64_t>(asyncMemoryAlignSize) -
             (RtPtrToValue(memcpyAsyncTaskInfo->srcPtr) % static_cast<uint64_t>(asyncMemoryAlignSize));
         error = driver->MemCopySync(RtPtrToPtr<void*>(offset), addrSize, srcAddr, addrSize, RT_MEMCPY_HOST_TO_HOST);
-        COND_PROC_RETURN_ERROR(
-            error != RT_ERROR_NONE, error, (void)driver->HostMemFree(memcpyAsyncTaskInfo->srcPtr),
-            "MemCopySync failed, retCode is %d, size is %" PRIu64, error, addrSize);
+        if (error != RT_ERROR_NONE) {
+            const rtError_t freeError = driver->HostMemFree(memcpyAsyncTaskInfo->srcPtr);
+            if (freeError == RT_ERROR_NONE) {
+                memcpyAsyncTaskInfo->srcPtr = nullptr;
+            }
+        }
+        ERROR_RETURN(error, "MemCopySync failed, retCode is %d, size is %" PRIu64, error, addrSize);
         srcAddr = RtPtrToPtr<void*>(offset);
     } else if (cpyType == RT_MEMCPY_DEVICE_TO_HOST_EX) {
         cpyType = RT_MEMCPY_DEVICE_TO_HOST;

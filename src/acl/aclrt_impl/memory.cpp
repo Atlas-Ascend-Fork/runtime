@@ -1393,6 +1393,7 @@ aclError aclrtMemSetPidToShareableHandleImpl(uint64_t shareableHandle, int32_t* 
     ACL_LOG_DEBUG("start to execute aclrtMemSetPidToShareableHandle");
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(pid);
     ACL_REQUIRES_POSITIVE_REPORT(pidNum);
+    ACL_CHECK_INVALID_VALUE_WITH_EXPECT(pidNum <= static_cast<size_t>(UINT32_MAX), pidNum, "(0, UINT32_MAX]");
     ACL_REQUIRES_RTS_OK(rtMemSetPidToShareableHandle(shareableHandle, pid, static_cast<uint32_t>(pidNum)));
     return ACL_SUCCESS;
 }
@@ -1405,6 +1406,7 @@ aclError aclrtMemSetPidToShareableHandleV2Impl(
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(shareableHandle);
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(pid);
     ACL_REQUIRES_POSITIVE_REPORT(pidNum);
+    ACL_CHECK_INVALID_VALUE_WITH_EXPECT(pidNum <= static_cast<size_t>(UINT32_MAX), pidNum, "(0, UINT32_MAX]");
 
     ACL_REQUIRES_RTS_OK(rtMemSetPidToShareableHandleV2(
         shareableHandle, static_cast<rtMemSharedHandleType>(shareType), pid, static_cast<uint32_t>(pidNum)));
@@ -1649,7 +1651,7 @@ aclError aclrtGetBufUserDataImpl(const aclrtMbuf buf, void* dataPtr, size_t size
 {
     ACL_PROFILING_REG(acl::AclProfType::AclrtGetBufUserData);
     // The current default private data area size is 96B, if offset+size exceeds 96, an error is reported
-    if (size + offset > MEM_SIZE_MAX) {
+    if ((offset > MEM_SIZE_MAX) || (size > MEM_SIZE_MAX - offset)) {
         ACL_LOG_ERROR(
             "%s failed because the sum of size and offset is greater than %u, size=%zu, offset=%zu.", __func__,
             MEM_SIZE_MAX, size, offset);
@@ -1695,7 +1697,7 @@ aclError aclrtSetBufUserDataImpl(aclrtMbuf buf, const void* dataPtr, size_t size
 {
     ACL_PROFILING_REG(acl::AclProfType::AclrtSetBufUserData);
     // The current default private data area size is 96B, if offset+size exceeds 96, an error is reported
-    if (size + offset > MEM_SIZE_MAX) {
+    if ((offset > MEM_SIZE_MAX) || (size > MEM_SIZE_MAX - offset)) {
         ACL_LOG_ERROR(
             "%s failed because the sum of size and offset is greater than %u, size=%zu, offset=%zu.", __func__,
             MEM_SIZE_MAX, size, offset);

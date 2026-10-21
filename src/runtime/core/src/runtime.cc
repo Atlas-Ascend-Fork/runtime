@@ -5338,6 +5338,11 @@ rtError_t Runtime::GetKernelBinByFileName(
 
     (void)file.seekg(0, std::ios::beg);
     (void)file.read(*buffer, static_cast<int64_t>(filelength));
+    if (!file) {
+        DELETE_A(*buffer);
+        file.close();
+        return RT_ERROR_INVALID_VALUE;
+    }
     *length = filelength;
     file.close();
     return RT_ERROR_NONE;

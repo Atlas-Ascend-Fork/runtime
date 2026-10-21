@@ -213,6 +213,16 @@ Stream::~Stream()
         FinalizeHostStateOnExit();
         return;
     }
+    const auto releaseHostBuffers = [this]() {
+        try {
+            DELETE_A(taskPublicBuff_);
+            DELETE_A(davinciTaskList_);
+            DELETE_A(posToTaskIdMap_);
+            DELETE_A(wrRecordQueue_.queue);
+            DELETE_A(sqeBuffer_);
+        } catch (...) {
+        }
+    };
     if (device_ != nullptr) {
         if ((device_->GetDevStatus() != RT_ERROR_NONE) && (this->GetBindFlag())) {
             RT_LOG(
@@ -220,6 +230,8 @@ Stream::~Stream()
                 "Device fault and the model binds this stream, device_id=%u, stream_id=%d, "
                 "Cannot delete.",
                 device_->Id_(), streamId_);
+            DestroyArgRecycleList(static_cast<uint32_t>(argRecycleListSize_));
+            releaseHostBuffers();
             return;
         }
 
@@ -321,14 +333,7 @@ Stream::~Stream()
     taskIdToTaskTagMap_.clear();
 
     DELETE_O(lastHalfRecord_);
-    try {
-        DELETE_A(taskPublicBuff_);
-        DELETE_A(davinciTaskList_);
-        DELETE_A(posToTaskIdMap_);
-        DELETE_A(wrRecordQueue_.queue);
-        DELETE_A(sqeBuffer_);
-    } catch (...) {
-    }
+    releaseHostBuffers();
 }
 
 void Stream::FreeStreamId() const
