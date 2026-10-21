@@ -3897,7 +3897,7 @@ rtError_t ApiErrorDecorator::ModelAttrSet(Model* const mdl, const rtModelAttr at
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         attrId != RT_MODEL_ATTR_SCH_MODE, RT_ERROR_INVALID_VALUE, "Setting a model attribute", attrId,
         std::to_string(static_cast<int32_t>(RT_MODEL_ATTR_SCH_MODE)));
-    const rtMdlSchMode schMode = *RtPtrToPtr<rtMdlSchMode*>(value);
+    const rtMdlSchMode schMode = *(static_cast<rtMdlSchMode*>(value));
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         (schMode != RT_MDL_SCH_DEFAULT) && (schMode != RT_MDL_SCH_EXCLUSIVE), RT_ERROR_INVALID_VALUE,
         "Setting a model attribute", schMode,

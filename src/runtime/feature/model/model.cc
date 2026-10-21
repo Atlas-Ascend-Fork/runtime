@@ -500,7 +500,7 @@ rtError_t Model::EnterBindStream(Stream* const streamIn, const uint32_t flag)
             error);
 
         streamIn->SetModel(this);
-        streamIn->SetBindFlag(true); // set bind flag for alloc task resource;
+        streamIn->SetBindFlag(true); // set bind flag for alloc task resource
         return RT_ERROR_NONE;
     }
 }

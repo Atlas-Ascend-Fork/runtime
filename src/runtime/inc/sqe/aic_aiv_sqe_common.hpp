@@ -345,7 +345,7 @@ inline void ConstructMixSqeCommonForDavinciTask(TaskInfo* const taskInfo, SqeTyp
     AicTaskInfo* aicTaskInfo = &(taskInfo->u.aicTaskInfo);
     const uint64_t addr = RtPtrToValue(aicTaskInfo->comm.args) + aicTaskInfo->simtParamOffset;
     const Kernel* kernel = aicTaskInfo->kernel;
-    uint8_t mixType = (kernel != nullptr) ? kernel->GetMixType() : static_cast<uint8_t>(NO_MIX);
+    const uint8_t mixType = (kernel != nullptr) ? kernel->GetMixType() : static_cast<uint8_t>(NO_MIX);
     ConstructMixSqePart(aicTaskInfo, sqe, mixType, addr, stm);
 
     sqe->ratio = 1U; // only ratio is 1.
