@@ -224,29 +224,7 @@ int main() {
 aclError aclrtMemPoolCreate(aclrtMemPool *memPool, const aclrtMemPoolProps *poolProps)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id3039 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id3039 -->
-<!-- npu="A3" id3040 -->
-- Atlas A3系列产品：不支持
-<!-- end id3040 -->
-<!-- npu="910b" id3041 -->
-- Atlas A2系列产品：支持
-<!-- end id3041 -->
-<!-- npu="310b" id3042 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id3042 -->
-<!-- npu="310p" id3043 -->
-- Atlas推理系列产品：不支持
-<!-- end id3043 -->
-<!-- npu="910" id3044 -->
-- Atlas训练系列产品：不支持
-<!-- end id3044 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id1 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -275,29 +253,7 @@ aclError aclrtMemPoolCreate(aclrtMemPool *memPool, const aclrtMemPoolProps *pool
 aclError aclrtMemPoolDestroy(const aclrtMemPool memPool)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id1555 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id1555 -->
-<!-- npu="A3" id1556 -->
-- Atlas A3系列产品：不支持
-<!-- end id1556 -->
-<!-- npu="910b" id1557 -->
-- Atlas A2系列产品：支持
-<!-- end id1557 -->
-<!-- npu="310b" id1558 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id1558 -->
-<!-- npu="310p" id1559 -->
-- Atlas推理系列产品：不支持
-<!-- end id1559 -->
-<!-- npu="910" id1560 -->
-- Atlas训练系列产品：不支持
-<!-- end id1560 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id2 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -325,29 +281,7 @@ aclError aclrtMemPoolDestroy(const aclrtMemPool memPool)
 aclError aclrtMemPoolSetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *value)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id1485 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id1485 -->
-<!-- npu="A3" id1486 -->
-- Atlas A3系列产品：不支持
-<!-- end id1486 -->
-<!-- npu="910b" id1487 -->
-- Atlas A2系列产品：支持
-<!-- end id1487 -->
-<!-- npu="310b" id1488 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id1488 -->
-<!-- npu="310p" id1489 -->
-- Atlas推理系列产品：不支持
-<!-- end id1489 -->
-<!-- npu="910" id1490 -->
-- Atlas训练系列产品：不支持
-<!-- end id1490 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id3 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -379,29 +313,7 @@ aclError aclrtMemPoolSetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *
 aclError aclrtMemPoolGetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *value)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id1695 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id1695 -->
-<!-- npu="A3" id1696 -->
-- Atlas A3系列产品：不支持
-<!-- end id1696 -->
-<!-- npu="910b" id1697 -->
-- Atlas A2系列产品：支持
-<!-- end id1697 -->
-<!-- npu="310b" id1698 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id1698 -->
-<!-- npu="310p" id1699 -->
-- Atlas推理系列产品：不支持
-<!-- end id1699 -->
-<!-- npu="910" id1700 -->
-- Atlas训练系列产品：不支持
-<!-- end id1700 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id4 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -433,29 +345,7 @@ aclError aclrtMemPoolGetAttr(aclrtMemPool memPool, aclrtMemPoolAttr attr, void *
 aclError aclrtMemPoolMallocAsync(void **ptr, size_t size, aclrtMemPool memPool, aclrtStream stream)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id1569 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id1569 -->
-<!-- npu="A3" id1570 -->
-- Atlas A3系列产品：不支持
-<!-- end id1570 -->
-<!-- npu="910b" id1571 -->
-- Atlas A2系列产品：支持
-<!-- end id1571 -->
-<!-- npu="310b" id1572 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id1572 -->
-<!-- npu="310p" id1573 -->
-- Atlas推理系列产品：不支持
-<!-- end id1573 -->
-<!-- npu="910" id1574 -->
-- Atlas训练系列产品：不支持
-<!-- end id1574 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id5 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -486,29 +376,7 @@ aclError aclrtMemPoolMallocAsync(void **ptr, size_t size, aclrtMemPool memPool, 
 aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id512 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id512 -->
-<!-- npu="A3" id513 -->
-- Atlas A3系列产品：不支持
-<!-- end id513 -->
-<!-- npu="910b" id514 -->
-- Atlas A2系列产品：支持
-<!-- end id514 -->
-<!-- npu="310b" id515 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id515 -->
-<!-- npu="310p" id516 -->
-- Atlas推理系列产品：不支持
-<!-- end id516 -->
-<!-- npu="910" id517 -->
-- Atlas训练系列产品：不支持
-<!-- end id517 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id6 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
@@ -537,29 +405,7 @@ aclError aclrtMemPoolFreeAsync(void *ptr, aclrtStream stream)
 aclError aclrtMemPoolTrimTo(aclrtMemPool memPool, size_t minBytesToKeep)
 ```
 
-**须知：本接口为试验特性，后续版本可能会存在变更，不支持应用于生产环境中。**
-
-### 产品支持情况
-
-<!-- npu="950" id1030 -->
-- Ascend 950PR&950DT系列产品：不支持
-<!-- end id1030 -->
-<!-- npu="A3" id1031 -->
-- Atlas A3系列产品：不支持
-<!-- end id1031 -->
-<!-- npu="910b" id1032 -->
-- Atlas A2系列产品：支持
-<!-- end id1032 -->
-<!-- npu="310b" id1033 -->
-- Atlas 200I/500 A2推理产品：不支持
-<!-- end id1033 -->
-<!-- npu="310p" id1034 -->
-- Atlas推理系列产品：不支持
-<!-- end id1034 -->
-<!-- npu="910" id1035 -->
-- Atlas训练系列产品：不支持
-<!-- end id1035 -->
-<!-- @ref: runtime/res/docs/zh/api_ref/11-10_ordered_stream_memory_allocation_res.md#id7 -->
+**须知：本接口为预留接口，暂不支持。**
 
 ### 功能说明
 
