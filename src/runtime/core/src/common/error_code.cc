@@ -11,6 +11,7 @@
 #include "error_code.h"
 #include "errcode_manage.hpp"
 #include "thread_local_container.hpp"
+#include "device/device_error_info.hpp"
 
 namespace cce {
 namespace runtime {
@@ -313,6 +314,17 @@ const TsErrCode g_tsErrCodeMap[] = {
     {TS_ERROR_FFTSPLUS_TASK_TRAP, RT_ERROR_TSFW_FFTS_PLUS_TRAP_EXCEPTION, ERR_MODULE_RTS,
      "fftsplus task trap exception"},
     {TS_ERROR_TS_CLOSED, RT_ERROR_TSFW_TS_CLOSED, ERR_MODULE_RTS, "TS is closed"},
+
+    // DQS condition func-call error codes reported by cond ISA through CQE errorCode
+    {DQS_COND_GQM_EMPTY, RT_ERROR_TSFW_RESERVED, ERR_MODULE_RTS, "dqs gqm queue is empty"},
+
+    {DQS_COND_MBUF_INVALID, RT_ERROR_TSFW_RESERVED, ERR_MODULE_RTS, "dqs mbuf handle is invalid"},
+
+    {DQS_COND_QUEUE_NOT_ENABLE, RT_ERROR_TSFW_RESERVED, ERR_MODULE_RTS, "dqs enqueue queue is not enabled"},
+
+    {DQS_COND_OW_NOT_ENABLE, RT_ERROR_TSFW_RESERVED, ERR_MODULE_RTS, "dqs overwrite is not enabled"},
+
+    {DQS_COND_INVALID_CONDITION, RT_ERROR_TSFW_RESERVED, ERR_MODULE_RTS, "dqs condition value is invalid"},
 };
 
 uint32_t GetTsErrModuleType(const uint32_t type)

@@ -200,6 +200,16 @@ enum rtAICPUErrorType : std::uint16_t {
     AICPU_CUST_RESERVED = 22200                    // reserved: inner error
 };
 
+// DQS condition func-call error codes. The cond ISA writes these codes into the CQE status register
+// when a func-call fails, and they are reported to host through rtCqReport_t::errorCode.
+enum rtDqsCondErrorType : std::uint32_t {
+    DQS_COND_GQM_EMPTY = 0x5A5A,        // gqm queue is empty when dequeue
+    DQS_COND_MBUF_INVALID = 0x5B5B,     // mbuf handle is invalid when dequeue
+    DQS_COND_QUEUE_NOT_ENABLE = 0x6A6A, // enqueue target queue is not enabled
+    DQS_COND_OW_NOT_ENABLE = 0x6B6B,    // overwrite is not enabled when enqueue
+    DQS_COND_INVALID_CONDITION = 0x7A7B // condition value is invalid when condition copy
+};
+
 struct RingBufferElementInfo {
     uint64_t pid;
     uint32_t infoLen;

@@ -43,12 +43,13 @@ namespace cce {
 namespace runtime {
 
 static const std::vector<std::string> DavidCqeErrorDesc_ = {
-    "task exception", "bus error", "task timeout", "sqe error", "resource conflict error", "sq sw status error"};
+    "task exception",          "bus error",          "task timeout", "sqe error",
+    "resource conflict error", "sq sw status error", "warning"};
 
 static const char_t* g_davidSqeTypeStr[] = {
     "aic",         "aiv",         "fusion", "place holder", "aicpu_h", "aicpu_d", "notify record",
     "notify wait", "write value", "ubdma",  "asyncdma",     "sdma",    "vpc",     "jpege",
-    "jpegd",       "cmo",         "ccu",    "rsv",          "rsv",     "rsv",     "condition",
+    "jpegd",       "cmo",         "ccu",    "rsv",          "nsc",     "dss",     "condition",
 };
 
 // =================================================== static 函数区 ======================================== //
@@ -316,7 +317,7 @@ void ProcCqReportException(
         RT_LOG(
             RT_LOG_WARNING,
             "CQE warning, device_id=%u, stream_id=%u, pos=%hu, sqe_type=%u(%s), errType=%#x(%s), sqSwStatus=%#x.",
-            dev->Id_(), streamId, pos, static_cast<uint32_t>(logicCq.sqeType), GetSqeDescByType(logicCq.sqeType),
+            dev->Id_(), streamId, pos, static_cast<uint32_t>(logicCq.sqeType), GetDavidSqeDescByType(logicCq.sqeType),
             errType, errMsg.c_str(), logicCq.errorCode);
     } else {
         // no operation

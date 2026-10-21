@@ -13,6 +13,7 @@
 #include "stars_cond_isa_batch_struct.hpp"
 #include "stars_cond_isa_struct.hpp"
 #include "tsch_cmd.h"
+#include "device/device_error_info.hpp"
 
 namespace cce {
 namespace runtime {
@@ -24,11 +25,6 @@ constexpr uint64_t dqsPoolIdBlkIdMask = 0x1FFFFULL; // pool_id_block_id in mbuf_
 constexpr uint8_t dqsErrCodeRightShift = 61U;       // error code in mbuf handle. bit[31:29]
 constexpr uint64_t dqsErrorQueueNotEnable = 0x2ULL; // queue is not enable
 constexpr uint64_t dqsErrorOWNotEnable = 0x3ULL;    // overWrite is not enable
-constexpr uint64_t gqmEmptyErrCode = 0x5A5AULL;
-constexpr uint64_t mbufInvalidErrCode = 0x5B5BULL;
-constexpr uint64_t QUEUE_NOT_ENABLE_ERR_CODE = 0x6A6AULL;
-constexpr uint64_t OW_NOT_ENABLE_ERR_CODE = 0x6B6BULL;
-constexpr uint64_t INVALID_CONDITION_ERR_CODE = 0x7A7BULL;
 constexpr uint64_t AXI_USER_VA_CFG_MASK = 0x900000009ULL;
 constexpr uint64_t BATCH_DEQUE_DOT_DEFAULT_VAL = 0xFFULL;
 constexpr uint64_t DQS_ALLOC_ERROR_CODE_DEFAULT_VAL = 0xFFULL;
@@ -552,13 +548,13 @@ void ConstructDqsEnqueueFc(RtStarsDqsEnqueueFc& fc, const RtStarsDqsFcPara& func
     ConstructBranch(r0, r0, RT_STARS_COND_ISA_BRANCH_FUNC3_BEQ, static_cast<uint8_t>(offset), fc.beq3);
 
     // error instr1
-    ConstructLLWI(r7, QUEUE_NOT_ENABLE_ERR_CODE, fc.llwi9);
-    ConstructLHWI(r7, QUEUE_NOT_ENABLE_ERR_CODE, fc.lhwi9);
+    ConstructLLWI(r7, DQS_COND_QUEUE_NOT_ENABLE, fc.llwi9);
+    ConstructLHWI(r7, DQS_COND_QUEUE_NOT_ENABLE, fc.lhwi9);
     ConstructSystemCsr(r7, r0, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm1);
     ConstructErrorInstr(fc.err1);
     // error instr2
-    ConstructLLWI(r8, OW_NOT_ENABLE_ERR_CODE, fc.llwi10);
-    ConstructLHWI(r8, OW_NOT_ENABLE_ERR_CODE, fc.lhwi10);
+    ConstructLLWI(r8, DQS_COND_OW_NOT_ENABLE, fc.llwi10);
+    ConstructLHWI(r8, DQS_COND_OW_NOT_ENABLE, fc.lhwi10);
     ConstructSystemCsr(r8, r0, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm2);
     ConstructErrorInstr(fc.err2);
 
@@ -638,11 +634,11 @@ void ConstructDqsDequeueFc(RtStarsDqsDequeueFc& fc, const RtStarsDqsFcPara& func
     ConstructBranch(r0, r0, RT_STARS_COND_ISA_BRANCH_FUNC3_BEQ, static_cast<uint8_t>(offset), fc.beq1);
 
     /* error code cqe status*/
-    ConstructLLWI(r4, gqmEmptyErrCode, fc.llwi5);
+    ConstructLLWI(r4, DQS_COND_GQM_EMPTY, fc.llwi5);
     ConstructSystemCsr(r4, r1, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm1);
     ConstructErrorInstr(fc.err1);
 
-    ConstructLLWI(r4, mbufInvalidErrCode, fc.llwi6);
+    ConstructLLWI(r4, DQS_COND_MBUF_INVALID, fc.llwi6);
     ConstructSystemCsr(r4, r1, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm2);
     ConstructErrorInstr(fc.err2);
 
@@ -1451,8 +1447,8 @@ void ConstructConditionCopyFc(RtStarsDqsConditionCopyFc& fc, const RtStarsDqsCon
     ConstructBranch(r0, r0, RT_STARS_COND_ISA_BRANCH_FUNC3_BEQ, offset, fc.beq3);
 
     // err_code
-    ConstructLLWI(r7, INVALID_CONDITION_ERR_CODE, fc.llwi6);
-    ConstructLHWI(r7, INVALID_CONDITION_ERR_CODE, fc.lhwi6);
+    ConstructLLWI(r7, DQS_COND_INVALID_CONDITION, fc.llwi6);
+    ConstructLHWI(r7, DQS_COND_INVALID_CONDITION, fc.lhwi6);
     ConstructSystemCsr(r7, r1, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm1);
     ConstructErrorInstr(fc.err);
 
@@ -1801,14 +1797,14 @@ void ConstructDqsInterChipPostProcFc(
     ConstructBranch(r0, r0, RT_STARS_COND_ISA_BRANCH_FUNC3_BEQ, static_cast<uint8_t>(offset), fc.beq3);
 
     // error1
-    ConstructLLWI(r2, QUEUE_NOT_ENABLE_ERR_CODE, fc.llwi11);
-    ConstructLHWI(r2, QUEUE_NOT_ENABLE_ERR_CODE, fc.lhwi11);
+    ConstructLLWI(r2, DQS_COND_QUEUE_NOT_ENABLE, fc.llwi11);
+    ConstructLHWI(r2, DQS_COND_QUEUE_NOT_ENABLE, fc.lhwi11);
     ConstructSystemCsr(r2, r0, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm1);
     ConstructErrorInstr(fc.err1);
 
     // error2
-    ConstructLLWI(r3, OW_NOT_ENABLE_ERR_CODE, fc.llwi12);
-    ConstructLHWI(r3, OW_NOT_ENABLE_ERR_CODE, fc.lhwi12);
+    ConstructLLWI(r3, DQS_COND_OW_NOT_ENABLE, fc.llwi12);
+    ConstructLHWI(r3, DQS_COND_OW_NOT_ENABLE, fc.lhwi12);
     ConstructSystemCsr(r3, r0, RT_STARS_COND_CSR_CSQ_STATUS_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRW, fc.dfxFsm2);
     ConstructErrorInstr(fc.err2);
 

@@ -16,6 +16,7 @@
 #include "rt_log.h"
 #include "runtime_handle_guard.h"
 #include "api_handle_guard.h"
+#include "device/device_error_info.hpp"
 extern std::string g_lastDlogRecordLine;
 void ClearLastDlogRecordLine();
 bool DlogRecordContains(const std::string& keyword);
@@ -59,6 +60,23 @@ TEST_F(RtErrorCodeTest, GetTsErrCodeDescNotFind)
     RecordErrorLog(__FILE__, __LINE__, __FUNCTION__, "%s", "unknown error");
     RecordLog(DLOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, "%s", "unknown error");
     EXPECT_EQ(strcmp(GetTsErrCodeDesc(TS_ERROR_RESERVED + 1), "unknown error"), 0);
+}
+
+// DQS cond ISA 上报的错误码应有明确描述，而不是 unknown error
+TEST_F(RtErrorCodeTest, GetTsErrCodeDescDqsCondError)
+{
+    EXPECT_EQ(strcmp(GetTsErrCodeDesc(DQS_COND_GQM_EMPTY), "dqs gqm queue is empty"), 0);
+    EXPECT_EQ(strcmp(GetTsErrCodeDesc(DQS_COND_MBUF_INVALID), "dqs mbuf handle is invalid"), 0);
+    EXPECT_EQ(strcmp(GetTsErrCodeDesc(DQS_COND_QUEUE_NOT_ENABLE), "dqs enqueue queue is not enabled"), 0);
+    EXPECT_EQ(strcmp(GetTsErrCodeDesc(DQS_COND_OW_NOT_ENABLE), "dqs overwrite is not enabled"), 0);
+    EXPECT_EQ(strcmp(GetTsErrCodeDesc(DQS_COND_INVALID_CONDITION), "dqs condition value is invalid"), 0);
+}
+
+TEST_F(RtErrorCodeTest, GetTsErrCodeMapDqsCondError)
+{
+    rtError_t rtErr = RT_ERROR_NONE;
+    EXPECT_EQ(strcmp(GetTsErrCodeMap(DQS_COND_INVALID_CONDITION, &rtErr), "dqs condition value is invalid"), 0);
+    EXPECT_EQ(rtErr, RT_ERROR_TSFW_RESERVED);
 }
 
 TEST_F(RtErrorCodeTest, GetTsErrDescByRtErr)
