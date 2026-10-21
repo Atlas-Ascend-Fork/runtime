@@ -40,6 +40,8 @@ private:
     std::multimap<aclRegisterCallbackType, std::pair<aclInitCallbackFunc, void*>> initCallbackMap_;
     std::multimap<aclRegisterCallbackType, std::pair<aclFinalizeCallbackFunc, void*>> finalizeCallbackMap_;
     std::recursive_mutex mutex_;
+    size_t initCallbackNotifyDepth_ = 0U;
+    size_t finalizeCallbackNotifyDepth_ = 0U;
 };
 } // namespace acl
 

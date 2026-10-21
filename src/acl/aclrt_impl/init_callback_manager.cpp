@@ -11,12 +11,46 @@
 #include "init_callback_manager.h"
 #include "acl/acl_base.h"
 #include "acl_rt_impl_base.h"
+#include <algorithm>
 
 namespace acl {
 namespace {
+template <typename CallbackMapT>
+class CallbackNotifyGuard {
+public:
+    CallbackNotifyGuard(CallbackMapT& callbackMap, size_t& notifyDepth)
+        : callbackMap_(callbackMap), notifyDepth_(notifyDepth)
+    {
+        ++notifyDepth_;
+    }
+
+    ~CallbackNotifyGuard()
+    {
+        if (--notifyDepth_ != 0U) {
+            return;
+        }
+        // Nested notifications may still hold iterators to unregistered entries.
+        for (auto it = callbackMap_.begin(); it != callbackMap_.end();) {
+            if (it->second.first == nullptr) {
+                it = callbackMap_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    CallbackNotifyGuard(const CallbackNotifyGuard&) = delete;
+    CallbackNotifyGuard& operator=(const CallbackNotifyGuard&) = delete;
+
+private:
+    CallbackMapT& callbackMap_;
+    size_t& notifyDepth_;
+};
+
 template <typename CallbackMapT, typename CallbackFuncT>
 aclError UnregisterCallbackImpl(
-    CallbackMapT& callbackMap, std::recursive_mutex& mutex, aclRegisterCallbackType type, CallbackFuncT cbFunc)
+    CallbackMapT& callbackMap, std::recursive_mutex& mutex, const size_t& notifyDepth, aclRegisterCallbackType type,
+    CallbackFuncT cbFunc)
 {
     if (cbFunc == nullptr) {
         return ACL_ERROR_INVALID_PARAM;
@@ -28,22 +62,39 @@ aclError UnregisterCallbackImpl(
     const auto range = callbackMap.equal_range(type);
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second.first == cbFunc) {
-            (void)callbackMap.erase(it);
+            if (notifyDepth != 0U) {
+                // Invalidate the registration immediately, but keep traversal iterators valid.
+                it->second.first = nullptr;
+            } else {
+                (void)callbackMap.erase(it);
+            }
             return ACL_SUCCESS;
         }
     }
     return ACL_ERROR_INTERNAL_ERROR;
 }
 
+template <typename CallbackMapT>
+bool HasRegisteredCallback(const CallbackMapT& callbackMap, aclRegisterCallbackType type)
+{
+    const auto range = callbackMap.equal_range(type);
+    return std::any_of(range.first, range.second, [](const auto& entry) { return entry.second.first != nullptr; });
+}
+
 template <typename CallbackMapT, typename NotifyInvokerT>
 aclError NotifyCallbackImpl(
-    CallbackMapT& callbackMap, std::recursive_mutex& mutex, aclRegisterCallbackType type,
+    CallbackMapT& callbackMap, std::recursive_mutex& mutex, size_t& notifyDepth, aclRegisterCallbackType type,
     const NotifyInvokerT& notifyInvoker)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex);
+    CallbackNotifyGuard<CallbackMapT> guard(callbackMap, notifyDepth);
     const auto range = callbackMap.equal_range(type);
     for (auto it = range.first; it != range.second; ++it) {
-        const aclError ret = notifyInvoker(it->second);
+        const auto callback = it->second;
+        if (callback.first == nullptr) {
+            continue;
+        }
+        const aclError ret = notifyInvoker(callback);
         if (ret != ACL_SUCCESS) {
             return ret;
         }
@@ -68,7 +119,7 @@ aclError InitCallbackManager::RegInitCallback(aclRegisterCallbackType type, aclI
         return ACL_ERROR_INVALID_PARAM;
     }
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    if (type != ACL_REG_TYPE_OTHER && initCallbackMap_.count(type) != 0U) {
+    if (type != ACL_REG_TYPE_OTHER && HasRegisteredCallback(initCallbackMap_, type)) {
         return ACL_ERROR_INTERNAL_ERROR;
     }
     initCallbackMap_.insert({type, {cbFunc, userData}});
@@ -82,13 +133,14 @@ aclError InitCallbackManager::RegInitCallback(aclRegisterCallbackType type, aclI
 
 aclError InitCallbackManager::UnRegInitCallback(aclRegisterCallbackType type, aclInitCallbackFunc cbFunc)
 {
-    return UnregisterCallbackImpl(initCallbackMap_, mutex_, type, cbFunc);
+    return UnregisterCallbackImpl(initCallbackMap_, mutex_, initCallbackNotifyDepth_, type, cbFunc);
 }
 
 aclError InitCallbackManager::NotifyInitCallback(aclRegisterCallbackType type, const char* configStr, size_t len)
 {
     return NotifyCallbackImpl(
-        initCallbackMap_, mutex_, type, [configStr, len](const std::pair<aclInitCallbackFunc, void*>& callbackEntry) {
+        initCallbackMap_, mutex_, initCallbackNotifyDepth_, type,
+        [configStr, len](const std::pair<aclInitCallbackFunc, void*>& callbackEntry) {
             return callbackEntry.first(configStr, len, callbackEntry.second);
         });
 }
@@ -100,7 +152,7 @@ aclError InitCallbackManager::RegFinalizeCallback(
         return ACL_ERROR_INVALID_PARAM;
     }
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    if (type != ACL_REG_TYPE_OTHER && finalizeCallbackMap_.count(type) != 0U) {
+    if (type != ACL_REG_TYPE_OTHER && HasRegisteredCallback(finalizeCallbackMap_, type)) {
         return ACL_ERROR_INTERNAL_ERROR;
     }
     finalizeCallbackMap_.insert({type, {cbFunc, userData}});
@@ -109,13 +161,14 @@ aclError InitCallbackManager::RegFinalizeCallback(
 
 aclError InitCallbackManager::UnRegFinalizeCallback(aclRegisterCallbackType type, aclFinalizeCallbackFunc cbFunc)
 {
-    return UnregisterCallbackImpl(finalizeCallbackMap_, mutex_, type, cbFunc);
+    return UnregisterCallbackImpl(finalizeCallbackMap_, mutex_, finalizeCallbackNotifyDepth_, type, cbFunc);
 }
 
 aclError InitCallbackManager::NotifyFinalizeCallback(aclRegisterCallbackType type)
 {
     return NotifyCallbackImpl(
-        finalizeCallbackMap_, mutex_, type, [](const std::pair<aclFinalizeCallbackFunc, void*>& callbackEntry) {
+        finalizeCallbackMap_, mutex_, finalizeCallbackNotifyDepth_, type,
+        [](const std::pair<aclFinalizeCallbackFunc, void*>& callbackEntry) {
             return callbackEntry.first(callbackEntry.second);
         });
 }

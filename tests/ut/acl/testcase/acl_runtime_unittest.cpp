@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <functional>
+#include <memory>
 #include <sys/mman.h>
 #include <unistd.h>
 #include "mmpa/mmpa_api.h"
@@ -186,9 +188,39 @@ public:
 
 private:
     InitCallbackManager& cbMgr_;
-    std::multimap<aclRegisterCallbackType, std::pair<aclInitCallbackFunc, void*>> initCallbackMap_;
-    std::multimap<aclRegisterCallbackType, std::pair<aclFinalizeCallbackFunc, void*>> finalizeCallbackMap_;
+    decltype(InitCallbackManager::initCallbackMap_) initCallbackMap_;
+    decltype(InitCallbackManager::finalizeCallbackMap_) finalizeCallbackMap_;
 };
+} // namespace
+
+namespace {
+struct LifecycleCallbackData {
+    std::function<aclError()> operation;
+    aclError operationResult = ACL_SUCCESS;
+    aclError callbackResult = ACL_SUCCESS;
+};
+
+aclError InvokeLifecycleOperation(void* userData)
+{
+    auto& data = *static_cast<LifecycleCallbackData*>(userData);
+    g_callbackOrder.push_back(1);
+    if (data.operation) {
+        data.operationResult = data.operation();
+        if (data.operationResult != ACL_SUCCESS) {
+            return data.operationResult;
+        }
+    }
+    return data.callbackResult;
+}
+
+aclError InitCallback_LifecycleOperation(const char* configStr, size_t len, void* userData)
+{
+    (void)configStr;
+    (void)len;
+    return InvokeLifecycleOperation(userData);
+}
+
+aclError FinalizeCallback_LifecycleOperation(void* userData) { return InvokeLifecycleOperation(userData); }
 } // namespace
 
 aclError InitCallback_RecordOrder(const char* configStr, size_t len, void* userData)
@@ -204,6 +236,444 @@ aclError FinalizeCallback_RecordOrder(void* userData)
     g_callbackOrder.push_back(static_cast<int>(reinterpret_cast<intptr_t>(userData)));
     return ACL_SUCCESS;
 }
+
+class UTEST_ACL_LifecycleCallback : public UTEST_ACL_Runtime, public testing::WithParamInterface<bool> {
+protected:
+    void SetUp() override
+    {
+        UTEST_ACL_Runtime::SetUp();
+        // No public API can enumerate and restore callbacks owned by other tests.
+        callbackMapGuard_ = std::make_unique<CallbackMapGuard>(InitCallbackManager::GetInstance());
+        savedInitRefCount_ = GetAclInitRefCount();
+        GetAclInitRefCount() = 0U;
+    }
+
+    void TearDown() override
+    {
+        callbackMapGuard_.reset();
+        GetAclInitRefCount() = savedInitRefCount_;
+        UTEST_ACL_Runtime::TearDown();
+    }
+
+    aclError RegisterOperation(LifecycleCallbackData& data, aclRegisterCallbackType type = ACL_REG_TYPE_OTHER)
+    {
+        return GetParam() ? aclInitCallbackRegister(type, InitCallback_LifecycleOperation, &data) :
+                            aclFinalizeCallbackRegister(type, FinalizeCallback_LifecycleOperation, &data);
+    }
+
+    aclError UnregisterOperation(aclRegisterCallbackType type = ACL_REG_TYPE_OTHER)
+    {
+        return GetParam() ? aclInitCallbackUnRegister(type, InitCallback_LifecycleOperation) :
+                            aclFinalizeCallbackUnRegister(type, FinalizeCallback_LifecycleOperation);
+    }
+
+    aclError RegisterTracked(int marker, aclRegisterCallbackType type = ACL_REG_TYPE_OTHER)
+    {
+        auto* userData = reinterpret_cast<void*>(static_cast<intptr_t>(marker));
+        return GetParam() ? aclInitCallbackRegister(type, InitCallback_RecordOrder, userData) :
+                            aclFinalizeCallbackRegister(type, FinalizeCallback_RecordOrder, userData);
+    }
+
+    aclError UnregisterTracked(aclRegisterCallbackType type = ACL_REG_TYPE_OTHER)
+    {
+        return GetParam() ? aclInitCallbackUnRegister(type, InitCallback_RecordOrder) :
+                            aclFinalizeCallbackUnRegister(type, FinalizeCallback_RecordOrder);
+    }
+
+    aclError Notify(aclRegisterCallbackType type = ACL_REG_TYPE_OTHER)
+    {
+        auto& manager = InitCallbackManager::GetInstance();
+        return GetParam() ? manager.NotifyInitCallback(type, nullptr, 0U) : manager.NotifyFinalizeCallback(type);
+    }
+
+private:
+    std::unique_ptr<CallbackMapGuard> callbackMapGuard_;
+    uint64_t savedInitRefCount_ = 0U;
+};
+
+TEST_P(UTEST_ACL_LifecycleCallback, SelfUnregisterContinuesDispatch)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterOperation(); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, OnlyCallbackCanUnregisterItself)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterOperation(); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_TRUE(g_callbackOrder.empty());
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterPendingCallbackSkipsIt)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterTracked(); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterAllPendingCallbacksSkipsThem)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() {
+        const auto ret = UnregisterTracked();
+        return ret == ACL_SUCCESS ? UnregisterTracked() : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterThenReregisterRunsReplacementAtEnd)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() {
+        const auto ret = UnregisterTracked();
+        return ret == ACL_SUCCESS ? RegisterTracked(2) : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 3, 2));
+    ASSERT_EQ(UnregisterOperation(), ACL_SUCCESS);
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(3, 2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RegisterDuringDispatchRunsNewCallback)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(3); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2, 3));
+    ASSERT_EQ(UnregisterOperation(), ACL_SUCCESS);
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2, 3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, DuplicateRegistrationsRemainDistinct)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterTracked(); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2, 3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, SelfUnregisterPreservesCallbackError)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterOperation(); };
+    data.callbackResult = ACL_ERROR_FAILURE;
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_ERROR_FAILURE);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, CallbackFailureStopsDispatch)
+{
+    LifecycleCallbackData data;
+    data.callbackResult = ACL_ERROR_FAILURE;
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_ERROR_FAILURE);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, SelfReregistrationRunsAtEnd)
+{
+    LifecycleCallbackData data;
+    bool reregistered = false;
+    data.operation = [this, &data, &reregistered]() {
+        if (reregistered) {
+            return ACL_SUCCESS;
+        }
+        reregistered = true;
+        const auto ret = UnregisterOperation();
+        return ret == ACL_SUCCESS ? RegisterOperation(data) : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2, 1));
+    EXPECT_EQ(UnregisterOperation(), ACL_SUCCESS);
+    EXPECT_EQ(UnregisterOperation(), ACL_ERROR_INTERNAL_ERROR);
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, LastCallbackCanAppendAnotherCallback)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(2); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, NonOtherSelfReregistrationRunsInCurrentDispatch)
+{
+    LifecycleCallbackData data;
+    bool reregistered = false;
+    data.operation = [this, &data, &reregistered]() {
+        if (reregistered) {
+            return ACL_SUCCESS;
+        }
+        reregistered = true;
+        const auto ret = UnregisterOperation(ACL_REG_TYPE_ACL_MODEL);
+        return ret == ACL_SUCCESS ? RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL) : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 1));
+    EXPECT_EQ(RegisterTracked(2, ACL_REG_TYPE_ACL_MODEL), ACL_ERROR_INTERNAL_ERROR);
+    EXPECT_EQ(UnregisterOperation(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_EQ(UnregisterOperation(ACL_REG_TYPE_ACL_MODEL), ACL_ERROR_INTERNAL_ERROR);
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, NestedDispatchPreservesLiveRegistrationOrder)
+{
+    LifecycleCallbackData data;
+    bool nested = false;
+    data.operation = [this, &nested]() {
+        if (!nested) {
+            nested = true;
+            return Notify();
+        }
+        const auto ret = UnregisterTracked();
+        return ret == ACL_SUCCESS ? RegisterTracked(4) : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 1, 3, 4, 3, 4));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, NestedSelfUnregisterKeepsOuterTraversalValid)
+{
+    LifecycleCallbackData data;
+    bool nested = false;
+    data.operation = [this, &nested]() {
+        if (!nested) {
+            nested = true;
+            return Notify();
+        }
+        return UnregisterOperation();
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 1, 2, 2));
+    EXPECT_EQ(UnregisterOperation(), ACL_ERROR_INTERNAL_ERROR);
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterAlreadyExecutedCallbackDoesNotRepeatIt)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterTracked(); };
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2, 1, 3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterTakesEffectBeforeNestedDispatch)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() {
+        const auto ret = UnregisterOperation();
+        EXPECT_EQ(UnregisterOperation(), ACL_ERROR_INTERNAL_ERROR);
+        return ret == ACL_SUCCESS ? Notify() : ret;
+    };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2, 2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RemovedBoundaryDoesNotDispatchOtherType)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterTracked(ACL_REG_TYPE_ACL_DVPP); };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2, ACL_REG_TYPE_ACL_DVPP), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RegistrationBeforeSavedBoundaryIsVisited)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(2, ACL_REG_TYPE_ACL_DVPP); };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(3), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RegistrationBeforeCurrentPositionIsNotRevisited)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(3, ACL_REG_TYPE_ACL_MODEL); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1, 2));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RegistrationAfterSavedBoundaryIsNotVisited)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(3); };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2, ACL_REG_TYPE_ACL_DVPP), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, CallbackFailurePreservesNewRegistration)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return RegisterTracked(3); };
+    data.callbackResult = ACL_ERROR_FAILURE;
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(), ACL_ERROR_FAILURE);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    ASSERT_EQ(UnregisterOperation(), ACL_SUCCESS);
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(2, 3));
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, UnregisterRangeBoundaryCallback)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterTracked(); };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    ASSERT_EQ(RegisterTracked(2), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_TRUE(g_callbackOrder.empty());
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, EmptyCallbackTypeSucceeds)
+{
+    EXPECT_EQ(Notify(), ACL_SUCCESS);
+    EXPECT_TRUE(g_callbackOrder.empty());
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, NonOtherCallbackCanUnregisterItself)
+{
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterOperation(ACL_REG_TYPE_ACL_MODEL); };
+    ASSERT_EQ(RegisterOperation(data, ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    g_callbackOrder.clear();
+    EXPECT_EQ(Notify(ACL_REG_TYPE_ACL_MODEL), ACL_SUCCESS);
+    EXPECT_TRUE(g_callbackOrder.empty());
+}
+
+TEST_P(UTEST_ACL_LifecycleCallback, RegistrationAfterInitializationSupportsSelfUnregister)
+{
+    GetAclInitRefCount() = 1U;
+    LifecycleCallbackData data;
+    data.operation = [this]() { return UnregisterOperation(); };
+    ASSERT_EQ(RegisterOperation(data), ACL_SUCCESS);
+    if (GetParam()) {
+        EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    } else {
+        EXPECT_TRUE(g_callbackOrder.empty());
+        EXPECT_EQ(Notify(), ACL_SUCCESS);
+        EXPECT_THAT(g_callbackOrder, ElementsAre(1));
+    }
+    EXPECT_EQ(data.operationResult, ACL_SUCCESS);
+    EXPECT_EQ(UnregisterOperation(), ACL_ERROR_INTERNAL_ERROR);
+}
+
+INSTANTIATE_TEST_SUITE_P(InitAndFinalize, UTEST_ACL_LifecycleCallback, testing::Bool(), [](const auto& info) {
+    return info.param ? "Init" : "Finalize";
+});
 
 TEST_F(UTEST_ACL_Runtime, aclrtSetDeviceFailedTest)
 {
