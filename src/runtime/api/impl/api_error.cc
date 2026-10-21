@@ -3158,9 +3158,7 @@ rtError_t ApiErrorDecorator::MemGetInfoEx(
         "Obtaining the memory information of the current device", MemInfoTypeToString(memInfoType), "memInfoType",
         "[" + std::to_string(RT_MEMORYINFO_DDR) + ", " + std::to_string(RT_MEMORYINFO_P2P_HUGE1G) + "]");
     const rtError_t error = impl_->MemGetInfoEx(memInfoType, freeSize, totalSize);
-    ERROR_RETURN(
-        error, "Get Memory extend info failed, memInfoType=%s, free=%zu bytes, total=%zu bytes.",
-        MemInfoTypeToString(memInfoType).c_str(), *freeSize, *totalSize);
+    ERROR_RETURN(error, "Get Memory extend info failed, memInfoType=%s.", MemInfoTypeToString(memInfoType).c_str());
     return error;
 }
 
