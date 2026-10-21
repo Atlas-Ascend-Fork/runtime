@@ -16,6 +16,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "base.hpp"
+#include "rt_external_mem.h"
 #include "crypto/cc_crypto.h"
 
 namespace cce {

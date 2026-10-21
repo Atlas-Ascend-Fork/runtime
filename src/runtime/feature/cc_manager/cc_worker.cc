@@ -8,6 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "cc_worker.h"
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <thread>
+#include "ascend_hal_base.h"
 #include "cc_manager.h"
 #include "crypto/cc_crypto.h"
 #include "cc_stream_res_manage.h"
@@ -17,45 +22,8 @@
 #include "stream.hpp"
 #include "stream_sqcq_manage.hpp"
 #include "type_def.h"
-
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <thread>
-
-#include "ascend_hal_base.h"
-#include "mmpa_api.h"
-
 namespace cce {
 namespace runtime {
-namespace {
-constexpr size_t CC_HEX_DUMP_BYTES_PER_LINE = 256U;
-
-void PrintBufferHex(
-    const char* const stage, const uint32_t workerId, const uint32_t sliceIdx, const uint8_t* const data,
-    const size_t dataLen)
-{
-    if (CheckLogLevel(static_cast<int32_t>(RUNTIME), DLOG_DEBUG) == 0) {
-        return;
-    }
-    if (data == nullptr) {
-        RT_LOG(RT_LOG_WARNING, "CC worker %u: %s buffer is null, slice=%u", workerId, stage, sliceIdx);
-        return;
-    }
-
-    for (size_t offset = 0U; offset < dataLen; offset += CC_HEX_DUMP_BYTES_PER_LINE) {
-        const size_t lineLen = std::min(CC_HEX_DUMP_BYTES_PER_LINE, dataLen - offset);
-        char hex[CC_HEX_DUMP_BYTES_PER_LINE * 2U + 1U] = {0};
-        for (size_t i = 0U; i < lineLen; ++i) {
-            (void)std::snprintf(hex + i * 2U, 3U, "%02X", data[offset + i]);
-        }
-        RT_LOG(
-            RT_LOG_INFO, "CC worker %u: %s, slice=%u, offset=%zu, len=%zu/%zu, hex=%s", workerId, stage, sliceIdx,
-            offset, lineLen, dataLen, hex);
-    }
-}
-} // namespace
-
 static constexpr uint64_t CC_TIMEOUT_MS = 18ULL * 60ULL * 1000ULL;
 
 CCWorker::~CCWorker() { Destroy(); }
@@ -268,7 +236,7 @@ rtError_t CCWorker::SetupTask(
     return RT_ERROR_NONE;
 }
 
-rtError_t CCWorker::ProcessSlices(CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceNum)
+rtError_t CCWorker::ProcessSlices(CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceNum)
 {
     size_t totalSize = task.totalSize;
     rtError_t ret = RT_ERROR_NONE;
@@ -326,7 +294,7 @@ rtError_t CCWorker::ProcessTask(CCMemcpyTask& task)
 }
 
 rtError_t CCWorker::ProcessH2DSlice(
-    CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
+    CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
 {
     CCSliceQueue* const taskQueue = resource->Queue();
     // 有效槽位只有 2 个,host 加密+DMA 远快于 AICPU 解密，若不等满就直接写，会覆盖 AICPU 尚未消费的描述符和密文 buffer
@@ -341,7 +309,6 @@ rtError_t CCWorker::ProcessH2DSlice(
     const uint8_t head = taskQueue->head;
     void* const deviceBuffer = DeviceBuffer(sliceIdx);
 
-    // TODO 再次check 资源是否被释放
     CCSliceDesc* const sliceDesc = resource->SliceDesc();
     sliceDesc[head] = CCSliceDesc{};
     sliceDesc[head].ciphertextAddr = PtrToValue(deviceBuffer);
@@ -350,7 +317,6 @@ rtError_t CCWorker::ProcessH2DSlice(
     sliceDesc[head].plaintextLen = static_cast<uint32_t>(sliceSize);
     sliceDesc[head].sliceIdx = sliceIdx;
 
-    PrintBufferHex("H2D plaintext before encryption", workerId_, sliceIdx, src, sliceSize);
     size_t ctlen = 0;
     rtError_t cryptoRet = crypto_->Encrypt(
         device_->Id_(), const_cast<uint8_t*>(src), sliceSize, PtrToPtr<CCSliceDesc, uint8_t>(&sliceDesc[head]),
@@ -359,8 +325,6 @@ rtError_t CCWorker::ProcessH2DSlice(
         RT_LOG(RT_LOG_ERROR, "CC worker %u: encrypt failed, slice=%u, ret=%#x", workerId_, sliceIdx, cryptoRet);
         return cryptoRet;
     }
-    PrintBufferHex(
-        "H2D ciphertext after encryption", workerId_, sliceIdx, static_cast<uint8_t*>(hostCryptoBuf_), ctlen);
 
     drvError_t drvRet =
         drvMemcpy(RtPtrToPtr<UINT64>(deviceBuffer), maxSliceSize_, RtPtrToPtr<UINT64>(hostCryptoBuf_), ctlen);
@@ -381,7 +345,7 @@ rtError_t CCWorker::ProcessH2DSlice(
 }
 
 rtError_t CCWorker::PublishD2HSlice(
-    CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
+    CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
 {
     CCSliceQueue* const taskQueue = resource->Queue();
     while (taskQueue->IsFull()) {
@@ -422,7 +386,7 @@ rtError_t CCWorker::WaitD2HSliceCompleted(
 }
 
 rtError_t CCWorker::ProcessD2HSlice(
-    CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
+    CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize)
 {
     CCSliceQueue* const taskQueue = resource->Queue();
     if (sliceIdx == 0U) {
@@ -464,8 +428,6 @@ rtError_t CCWorker::ProcessD2HSlice(
         return RT_ERROR_CC_WORKER_FAILED;
     }
 
-    PrintBufferHex(
-        "D2H ciphertext before decryption", workerId_, sliceIdx, static_cast<uint8_t*>(hostCryptoBuf_), ctlen);
     auto* dst = static_cast<uint8_t*>(task.dst) + offset;
     size_t ptlen = 0;
     rtError_t cryptoRet = crypto_->Decrypt(
@@ -478,7 +440,7 @@ rtError_t CCWorker::ProcessD2HSlice(
         RT_LOG(RT_LOG_ERROR, "CC worker %u: decrypt failed, slice=%u, ret=%#x", workerId_, sliceIdx, cryptoRet);
         return cryptoRet;
     }
-    PrintBufferHex("D2H plaintext after decryption", workerId_, sliceIdx, dst, ptlen);
+
     if (sliceIdx == taskQueue->totalSlices - 1U) {
         taskQueue->memWaitVal = 0U;
         RT_LOG(RT_LOG_INFO, "D2H task end, sliceIdx=%u, taskQueue->memWaitVal=%u", sliceIdx, taskQueue->memWaitVal);

@@ -45,7 +45,7 @@ rtError_t CCStreamResManage::Init(Device* device)
     barRegistered_ = true;
     barHostAddr_ = (mappedAddr == nullptr) ? barDeviceAddr_ : mappedAddr;
 
-    (void)std::memset(barHostAddr_, 0, CC_BAR_RESOURCE_SIZE);
+    (void)memset_s(barHostAddr_, CC_BAR_RESOURCE_SIZE, 0, CC_BAR_RESOURCE_SIZE);
     CCSliceQueue* const queue = Queue();
     queue->depth = static_cast<uint8_t>(CC_SLICE_DESC_SLOT_NUM);
     return RT_ERROR_NONE;
@@ -74,7 +74,7 @@ void CCStreamResManage::Destroy()
     device_ = nullptr;
 }
 
-void CCStreamResManage::Reset()
+void CCStreamResManage::Reset() const
 {
     CCSliceQueue* const queue = Queue();
     CCSliceDesc* const sliceDesc = SliceDesc();

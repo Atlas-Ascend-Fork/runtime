@@ -28,14 +28,14 @@ class CCrypto;
 class CCWorker : public ThreadRunnable {
 public:
     CCWorker() = default;
-    ~CCWorker();
+    ~CCWorker() override;
 
     rtError_t Init(
         uint32_t workerId, uint32_t sliceSize, CCMemcpyTaskQueue* taskQueue, Device* device, CCrypto* crypto);
     void Destroy();
 
     void* GetHostCryptoBuf() const { return hostCryptoBuf_; }
-    void* DeviceBuffer(uint32_t sliceIdx) const;
+    void* DeviceBuffer(const uint32_t sliceIdx) const;
 
     void Run(const void* param) override;
 
@@ -43,17 +43,17 @@ private:
     void WorkerLoop();
     rtError_t SetupTask(
         CCMemcpyTask& task, std::shared_ptr<Stream>& stream, CCStreamResManage*& resource, uint32_t& sliceNum);
-    rtError_t ProcessSlices(CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceNum);
+    rtError_t ProcessSlices(CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceNum);
     rtError_t ProcessTask(CCMemcpyTask& task);
     rtError_t ProcessH2DSlice(
-        CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
+        CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
     rtError_t PublishD2HSlice(
-        CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
-    rtError_t WaitD2HSliceCompleted(uint32_t streamId, const CCSliceQueue* sliceQueue, uint8_t expectedTail);
+        CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
+    rtError_t WaitD2HSliceCompleted(const uint32_t streamId, const CCSliceQueue* sliceQueue, uint8_t expectedTail);
     rtError_t ProcessD2HSlice(
-        CCMemcpyTask& task, CCStreamResManage* resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
-    rtError_t WaitH2DConsumed(uint32_t streamId, CCSliceQueue* sliceQueue);
-    bool ShouldWorkerExit(uint32_t streamId);
+        CCMemcpyTask& task, CCStreamResManage* const resource, uint32_t sliceIdx, size_t offset, size_t sliceSize);
+    rtError_t WaitH2DConsumed(const uint32_t streamId, CCSliceQueue* sliceQueue);
+    bool ShouldWorkerExit(const uint32_t streamId);
 
     uint32_t workerId_{0};
     uint32_t maxSliceSize_{0};

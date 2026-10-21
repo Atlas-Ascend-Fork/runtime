@@ -68,17 +68,17 @@ public:
     ~CCrypto();
 
     rtError_t InitKey(uint32_t deviceId);
-    rtError_t ReleaseKey(uint32_t deviceId);
+    rtError_t ReleaseKey(uint32_t deviceId) const;
 
     rtError_t Encrypt(
         uint32_t deviceId, const uint8_t* plaintext, size_t ptLen, const uint8_t* aad, size_t aadLen,
-        uint8_t* ciphertext, size_t* ctLen);
+        uint8_t* ciphertext, size_t* ctLen) const;
     rtError_t Decrypt(
         uint32_t deviceId, const uint8_t* ciphertext, size_t ctLen, const uint8_t* aad, size_t aadLen,
-        uint8_t* plaintext, size_t* ptLen);
+        uint8_t* plaintext, size_t* ptLen) const;
 
-    rtError_t BuildDeviceCryptoParam(uint32_t deviceId, CC_CRYPTO_MODE mode, CCCryptoKernelParam* param);
-    rtError_t BuildLoadKeyParam(CCLoadKeyKernelParam* param);
+    rtError_t BuildDeviceCryptoParam(uint32_t deviceId, CC_CRYPTO_MODE mode, CCCryptoKernelParam* param) const;
+    rtError_t BuildLoadKeyParam(CCLoadKeyKernelParam* param) const;
 
 private:
     struct KeyCtx;

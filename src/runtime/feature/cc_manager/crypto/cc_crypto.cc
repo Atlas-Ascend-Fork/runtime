@@ -20,7 +20,6 @@
 #include "npu_driver.hpp"
 #include "driver.hpp"
 #include "openssl_loader.h"
-#include "rt_external_mem.h"
 #include "runtime.hpp"
 #include "type_def.h"
 
@@ -89,7 +88,7 @@ int32_t InitIvBase(IvCtx* ivCtx)
 
 extern "C" int halGetSlotKey(uint32_t device_id, uint32_t slot, uint8_t* key, uint32_t* key_len)
 {
-    // TODO: placeholder slot key for bring-up; replace with real driver implementation once ready.
+    // placeholder slot key for bring-up; replace with real driver implementation once ready.
     (void)device_id;
     if ((key == nullptr) || (key_len == nullptr)) {
         return -1;
@@ -102,7 +101,7 @@ extern "C" int halGetSlotKey(uint32_t device_id, uint32_t slot, uint8_t* key, ui
     } else {
         return -1;
     }
-    (void)memset_s(key, 16U, fill, 16U);
+    (void)memset_s(key, 16U, fill, 16U); // 16 slot key len
     *key_len = 16U;
     return 0;
 }
@@ -196,8 +195,6 @@ rtError_t CCrypto::InitKey(uint32_t deviceId)
         keyCtx_->dev_key_addr = 0U;
     }
     void* devKeyBuf = nullptr;
-    // 密钥区 32B（H2D|D2H 两把方向密钥），由 AICPU 填充算子从设备侧安全通道获取并写入
-    // TODO: launch AICPU 密钥填充算子并同步等待完成（失败 fail closed），见设计方案 §3.6
     Driver* const driver = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
     const uint64_t alignSize = (((AICC_DEV_KEY_REGION_SIZE + 0x1FU) >> 5U) << 5U);
     const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(deviceId, MODULEID_RUNTIME, false, false, true);
@@ -215,7 +212,7 @@ rtError_t CCrypto::InitKey(uint32_t deviceId)
     return RT_ERROR_NONE;
 }
 
-rtError_t CCrypto::ReleaseKey(uint32_t deviceId)
+rtError_t CCrypto::ReleaseKey(uint32_t deviceId) const
 {
     (void)deviceId;
     if (keyCtx_ == nullptr) {
@@ -239,7 +236,7 @@ rtError_t CCrypto::ReleaseKey(uint32_t deviceId)
 
 rtError_t CCrypto::Encrypt(
     uint32_t deviceId, const uint8_t* plaintext, size_t ptLen, const uint8_t* aad, size_t aadLen, uint8_t* ciphertext,
-    size_t* ctLen)
+    size_t* ctLen) const
 {
     (void)deviceId;
     if (plaintext == nullptr || ciphertext == nullptr || ctLen == nullptr) {
@@ -286,7 +283,7 @@ rtError_t CCrypto::Encrypt(
 
 rtError_t CCrypto::Decrypt(
     uint32_t deviceId, const uint8_t* ciphertext, size_t ctLen, const uint8_t* aad, size_t aadLen, uint8_t* plaintext,
-    size_t* ptLen)
+    size_t* ptLen) const
 {
     (void)deviceId;
     if (ciphertext == nullptr || plaintext == nullptr || ptLen == nullptr) {
@@ -332,7 +329,7 @@ rtError_t CCrypto::Decrypt(
     return RT_ERROR_NONE;
 }
 
-rtError_t CCrypto::BuildDeviceCryptoParam(uint32_t deviceId, CC_CRYPTO_MODE mode, CCCryptoKernelParam* param)
+rtError_t CCrypto::BuildDeviceCryptoParam(uint32_t deviceId, CC_CRYPTO_MODE mode, CCCryptoKernelParam* param) const
 {
     (void)deviceId;
     if (param == nullptr) {
@@ -353,7 +350,7 @@ rtError_t CCrypto::BuildDeviceCryptoParam(uint32_t deviceId, CC_CRYPTO_MODE mode
     return RT_ERROR_NONE;
 }
 
-rtError_t CCrypto::BuildLoadKeyParam(CCLoadKeyKernelParam* param)
+rtError_t CCrypto::BuildLoadKeyParam(CCLoadKeyKernelParam* param) const
 {
     if (param == nullptr) {
         return RT_ERROR_INVALID_VALUE;

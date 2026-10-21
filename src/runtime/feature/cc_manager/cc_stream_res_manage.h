@@ -27,7 +27,7 @@ public:
 
     rtError_t Init(Device* device);
     void Destroy();
-    void Reset();
+    void Reset() const;
 
     CCSliceQueue* Queue() const;
     CCSliceDesc* SliceDesc() const;
