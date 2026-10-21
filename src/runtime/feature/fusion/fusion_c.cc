@@ -89,7 +89,10 @@ void FusionKernelTaskInit(TaskInfo* taskInfo)
 
     taskInfo->type = TS_TASK_TYPE_FUSION_KERNEL;
     taskInfo->typeName = const_cast<char_t*>("FUSION_KERNEL");
-    fusionTaskInfo->argHandle = nullptr;
+    // 更新场景，不清空，保留旧handle，后续回收旧handle使用
+    if (taskInfo->isUpdateSinkSqe == 0U) {
+        fusionTaskInfo->argHandle = nullptr;
+    }
     fusionTaskInfo->argsInfo = nullptr;
     return;
 }
@@ -388,9 +391,9 @@ static void SetArgsFusionKernel(
 
     // only for aclgraph
     fusionKernelTask->oldArgHandle = fusionKernelTask->argHandle;
+    fusionKernelTask->argHandle = result->handle;
 
     if (result->handle != nullptr) {
-        fusionKernelTask->argHandle = result->handle;
         taskInfo->needPostProc = true;
     }
     taskInfo->stmArgPos = static_cast<DavidStream*>(taskInfo->stream)->GetArgPos();

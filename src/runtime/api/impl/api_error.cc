@@ -4313,7 +4313,7 @@ rtError_t ApiErrorDecorator::LabelGoto(Label* const lbl, Stream* const stm)
     Stream* curStm = Runtime::Instance()->GetCurStream(stm);
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(lbl, RT_ERROR_INVALID_VALUE, "Label redirection");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(curStm, RT_ERROR_INVALID_VALUE, "Label redirection");
-    const rtError_t error = impl_->LabelSet(lbl, curStm);
+    const rtError_t error = impl_->LabelGoto(lbl, curStm);
     ERROR_RETURN(error, "Label goto failed.");
     return error;
 }
