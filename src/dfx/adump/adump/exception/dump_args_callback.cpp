@@ -49,6 +49,9 @@ int32_t DumpArgsCallback::DumpKernelBin()
     ret = collector.DumpHostKernelBin(dumpPath_, hostOPath);
     IDE_CTRL_VALUE_WARN(
         ret == ADUMP_SUCCESS, return ADUMP_FAILED, "DumpHostKernelBin failed, kernelName=%s.", kernelName.c_str());
+    // 记录真实落盘路径（含幂等跳过时的回填），供 DumpKernelErrorSymbols 直接消费；
+    // 前置跳过/失败时为空串，符号化回退按算子名推导，正常名行为不变。
+    hostOPath_ = hostOPath;
 
     ret = collector.StartCollectKernel(dumpPath_);
     IDE_CTRL_VALUE_WARN(
@@ -70,13 +73,17 @@ int32_t DumpArgsCallback::DumpKernelErrorSymbols(ErrorLocation& outLocation)
         "KernelSymbolLocator InitFromBinHandle failed for callback exception. ret=%d", ret);
     locator.UpdateStartPCFromDeviceAddr(info_.bin);
 
-    // 回调路径的 _host.o 已由 DumpKernelBin 同步落盘，此处复用其路径决定 symbolize 用的 .o。
+    // 回调路径的 _host.o 已由 DumpKernelBin 同步落盘，优先复用其回传的真实路径（超长名为哈希路径）；
+    // 未落盘（路径为空）时回退按算子名推导逻辑路径，正常名行为不变。
     // kernelName 是定长数组成员，不会为 nullptr；std::string 构造依赖其内部 '\0' 结尾。
-    KernelInfoCollector collector;
-    if (collector.InitFromBinHandle(info_.bin, std::string(info_.kernelName)) == ADUMP_SUCCESS) {
-        const std::string hostOPath = collector.GetHostOFilePath(dumpPath_);
-        locator.SetOFilePath(KernelSymbolLocator::ResolveOFilePath(hostOPath));
+    std::string hostOPath = hostOPath_;
+    if (hostOPath.empty()) {
+        KernelInfoCollector collector;
+        if (collector.InitFromBinHandle(info_.bin, std::string(info_.kernelName)) == ADUMP_SUCCESS) {
+            hostOPath = collector.GetHostOFilePath(dumpPath_);
+        }
     }
+    locator.SetOFilePath(KernelSymbolLocator::ResolveOFilePath(hostOPath));
 
     ExceptionRegInfo exceptionRegInfo{0, nullptr};
     ret = ExceptionInfoCommon::GetExceptionRegInfo(exception_, exceptionRegInfo);

@@ -11,6 +11,8 @@
 #include <fstream>
 #include <functional>
 #include <thread>
+#include <dirent.h>
+#include <sys/stat.h>
 #include "mockcpp/mockcpp.hpp"
 #include "case_workspace.h"
 #include "dump_args.h"
@@ -2311,6 +2313,90 @@ TEST_F(DumpArgsUtest, Test_DumpHostKernelBin_TruncatedFileRewrite)
     std::ifstream rewritten(hostBinPath.GetString(), std::ios::binary);
     std::string content((std::istreambuf_iterator<char>(rewritten)), std::istreambuf_iterator<char>());
     EXPECT_EQ(content, g_idemHostBinContent);
+}
+
+// 算子名超长时，File 会把 _host.o 降级为 hash 文件名；DumpHostKernelBin 必须返回真实落盘路径，
+// 否则后续 llvm-symbolizer 仍按原始超长路径查找 .o，导致源码定位被跳过。
+TEST_F(DumpArgsUtest, Test_DumpHostKernelBin_LongKernelNameReturnsRealPath)
+{
+    Tools::CaseWorkspace ws("Test_DumpHostKernelBin_LongKernelNameReturnsRealPath");
+    const std::string kernelName(260U, 'K');
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForIdem));
+
+    KernelInfoCollector collector;
+    char fakeHandle[] = "fake_bin_handle";
+    ASSERT_EQ(collector.InitFromBinHandle(static_cast<rtBinHandle>(fakeHandle), kernelName), ADUMP_SUCCESS);
+
+    std::string hostOPath;
+    EXPECT_EQ(collector.DumpHostKernelBin(ws.Root(), hostOPath), ADUMP_SUCCESS);
+    EXPECT_FALSE(hostOPath.empty());
+    Path actualHostBinPath(hostOPath);
+    EXPECT_TRUE(actualHostBinPath.Exist());
+    std::ifstream dumped(actualHostBinPath.GetString(), std::ios::binary);
+    std::string content((std::istreambuf_iterator<char>(dumped)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(content, g_idemHostBinContent);
+}
+
+// 超长算子名重复落盘（多核回调场景）：非 root 下第二次落盘旧逻辑因 0400 权限 EACCES 失败
+// （cherry-pick 后 mmChmod 置 400 且旧预检只查逻辑长路径，长名恒 ENAMETOOLONG 未命中，
+// 二次以 O_WRONLY|O_CREAT|O_TRUNC 重开 0400 哈希文件必被拒）；修复后预检经
+// File::GetDowngradeFileName 预测降级真实路径并命中跳过。禁止 stub mmChmod——必须让 chmod 真实发生；
+// 注：UT 链接的 mmpa_stub 将 mmChmod 实现为 no-op，故下方显式 chmod 0400 还原生产首次落盘后的
+// 权限状态，使旧逻辑的二次重开在本用例中同样真实地经 EACCES 失败。
+TEST_F(DumpArgsUtest, Test_DumpHostKernelBin_LongKernelNameRepeatedDumpSafe)
+{
+    Tools::CaseWorkspace ws("Test_DumpHostKernelBin_LongKernelNameRepeatedDumpSafe");
+    const std::string kernelName(260U, 'K');
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForIdem));
+
+    // 第一次落盘：超长名经 File::Open 降级为哈希文件落盘并 chmod 400，出参为真实降级路径。
+    KernelInfoCollector collectorA;
+    char fakeHandle[] = "fake_bin_handle";
+    ASSERT_EQ(collectorA.InitFromBinHandle(static_cast<rtBinHandle>(fakeHandle), kernelName), ADUMP_SUCCESS);
+    std::string hostOPath1;
+    EXPECT_EQ(collectorA.DumpHostKernelBin(ws.Root(), hostOPath1), ADUMP_SUCCESS);
+    EXPECT_FALSE(hostOPath1.empty());
+    EXPECT_TRUE(Path(hostOPath1).Exist());
+    std::ifstream firstDump(hostOPath1, std::ios::binary);
+    std::string content((std::istreambuf_iterator<char>(firstDump)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(content, g_idemHostBinContent);
+
+    // 还原生产 mmChmod(realPath, M_IRUSR) 置 400 的效果（UT 链接层 mmpa_stub 的 mmChmod 为 no-op）：
+    // 非 root 下二次以写模式重开该哈希文件必 EACCES。
+    ASSERT_EQ(chmod(hostOPath1.c_str(), S_IRUSR), 0);
+
+    // 二次落盘：模拟多核回调用新 collector 实例重复落同名 _host.o。即使 File::Write 不允许被调用，
+    // 幂等预检也必须命中降级真实路径并跳过，返回成功。
+    MOCKER_CPP(&File::Write).expects(never());
+    KernelInfoCollector collectorB;
+    ASSERT_EQ(collectorB.InitFromBinHandle(static_cast<rtBinHandle>(fakeHandle), kernelName), ADUMP_SUCCESS);
+    std::string hostOPath2;
+    EXPECT_EQ(collectorB.DumpHostKernelBin(ws.Root(), hostOPath2), ADUMP_SUCCESS);
+    EXPECT_FALSE(hostOPath2.empty());
+    EXPECT_TRUE(Path(hostOPath2).Exist());
+    EXPECT_EQ(hostOPath2, hostOPath1);
+
+    // 盘上该目录内恰一个 _host.o 落盘文件（唯一哈希文件，降级旁路产生的 mapping.csv 除外），
+    // 且其大小与待写内容一致，证明第二次调用未重开/未追加。
+    std::string uniqueDumpFile;
+    uint32_t dumpFileCount = 0;
+    DIR* dir = opendir(ws.Root().c_str());
+    ASSERT_TRUE(dir != nullptr);
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        const std::string name = entry->d_name;
+        if (name == "." || name == ".." || name == "mapping.csv") {
+            continue;
+        }
+        ++dumpFileCount;
+        uniqueDumpFile = ws.Root() + "/" + name;
+    }
+    (void)closedir(dir);
+    ASSERT_EQ(dumpFileCount, 1U);
+    struct stat dumpedStat = {};
+    ASSERT_EQ(stat(uniqueDumpFile.c_str(), &dumpedStat), 0);
+    EXPECT_EQ(static_cast<uint64_t>(dumpedStat.st_size), static_cast<uint64_t>(g_idemHostBinContent.size()));
+    GlobalMockObject::verify();
 }
 
 // 落盘不完整(写后文件大小不足全长)应经 stat 校验判失败并返回 ADUMP_FAILED，避免截断文件被后续幂等误判为完整。

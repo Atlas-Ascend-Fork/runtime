@@ -82,6 +82,15 @@ int32_t File::EnsureOpen()
 
 File::~File() { (void)Close(); }
 
+std::string File::GetDowngradeFileName(const std::string& fileName)
+{
+    constexpr size_t FILE_NAME_MAX_LEN = 255U; // Linux NAME_MAX，与 dump_core.cpp 的 255U 一致
+    if (fileName.size() <= FILE_NAME_MAX_LEN) {
+        return fileName;
+    }
+    return std::to_string(std::hash<std::string>{}(fileName));
+}
+
 int32_t File::Open(int32_t flag, mmMode_t mode)
 {
     Path filePath(filePath_);
@@ -95,6 +104,7 @@ int32_t File::Open(int32_t flag, mmMode_t mode)
     std::string realFilePath = parentPath.Concat(fileName).GetString();
     fd_ = mmOpen2(realFilePath.c_str(), flag, mode);
     if (fd_ >= 0) {
+        realFilePath_ = realFilePath;
         return ADUMP_SUCCESS;
     }
     if (mmGetErrorCode() != ENAMETOOLONG) {
@@ -106,20 +116,26 @@ int32_t File::Open(int32_t flag, mmMode_t mode)
         IDE_LOGE("Real long name file path failed, file: %s", filePath_.c_str());
         return ADUMP_FAILED;
     }
-    std::string hashName = std::to_string(std::hash<std::string>{}(fileName));
+    std::string hashName = GetDowngradeFileName(fileName);
     if (AddMapping(parentPath.GetString(), fileName, hashName) != ADUMP_SUCCESS) {
         IDE_LOGE("Add mapping item [ %s ] failed", hashName.c_str());
     }
     realFilePath = parentPath.Concat(hashName).GetString();
+    realFilePath_ = realFilePath;
     IDE_LOGW(
         "File name [ %s ] too long rename as [ %s ] and the mapping record in %s", fileName.c_str(),
         realFilePath.c_str(), MAPPING_FILE_NAME.c_str());
-    fd_ = mmOpen2(realFilePath.c_str(), O_APPEND | M_RDWR | M_CREAT, M_IREAD | M_IWRITE);
-    IDE_CTRL_VALUE_FAILED(fd_ >= 0, return ADUMP_FAILED, "Open hash file failed, fd: %d", fd_);
+    fd_ = mmOpen2(realFilePath.c_str(), flag, mode);
+    if (fd_ < 0) {
+        realFilePath_.clear();
+        return ADUMP_FAILED;
+    }
     return ADUMP_SUCCESS;
 }
 
 int32_t File::GetFileDiscriptor() const { return fd_; }
+
+const std::string& File::GetRealFilePath() const { return realFilePath_; }
 
 int32_t File::IsFileOpen() const
 {

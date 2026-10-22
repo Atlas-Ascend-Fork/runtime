@@ -616,3 +616,30 @@ TEST_F(CommonFileUtest, Test_Open_LongFilename_WriteReturnZero_Not_Hang)
     (void)file;
     EXPECT_TRUE(true);
 }
+
+// 超长名降级后的哈希文件以 M_TRUNC 重开时必须尊重调用方 flags：正确截断而非追加。
+// 旧实现降级分支硬编码 O_APPEND，第二次写入会追加成 "AAAABB"，损坏落盘数据。
+// 真实文件系统验证（禁止 stub mmOpen2/mmChmod）；降级路径在父目录写 mapping.csv，属预期副作用。
+TEST_F(CommonFileUtest, Test_File_LongNameDowngradeHonorsTruncate)
+{
+    Tools::CaseWorkspace ws("Test_LongNameDowngradeHonorsTruncate");
+    // 260 字节文件名组件 > Linux NAME_MAX(255)，触发 ENAMETOOLONG 降级为哈希名
+    std::string longName(260, 'x');
+    longName += ".txt";
+    const std::string filePath = ws.Root() + "/" + longName;
+
+    {
+        File f1(filePath, M_CREAT | M_WRONLY | M_TRUNC);
+        ASSERT_EQ(f1.IsFileOpen(), ADUMP_SUCCESS);
+        ASSERT_EQ(f1.Write("AAAA", 4), 4);
+        ASSERT_EQ(f1.Close(), ADUMP_SUCCESS);
+    }
+
+    File f2(filePath, M_CREAT | M_WRONLY | M_TRUNC);
+    ASSERT_EQ(f2.IsFileOpen(), ADUMP_SUCCESS);
+    ASSERT_EQ(f2.Write("BB", 2), 2);
+    ASSERT_EQ(f2.Close(), ADUMP_SUCCESS);
+
+    // 读回降级后的真实落盘路径，内容必须恰为 "BB" 而非 "AAAABB"
+    EXPECT_EQ(ReadWholeFile(f2.GetRealFilePath()), "BB");
+}

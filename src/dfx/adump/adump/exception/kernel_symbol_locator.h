@@ -75,6 +75,13 @@ public:
     static void DumpErrorSymbols(const rtExceptionInfo& exception, const std::string& dumpPath);
     static void DumpErrorSymbols(
         const rtExceptionInfo& exception, ExceptionRegInfo& exceptionRegInfo, const std::string& dumpPath);
+    // preDumpedHostOPath 为调用方提前落盘回传的真实 _host.o 路径（超长名为哈希路径）；
+    // 为空时内部回退按算子名推导逻辑路径，正常名行为不变。
+    static void DumpErrorSymbols(
+        const rtExceptionInfo& exception, const std::string& dumpPath, const std::string& preDumpedHostOPath);
+    static void DumpErrorSymbols(
+        const rtExceptionInfo& exception, ExceptionRegInfo& exceptionRegInfo, const std::string& dumpPath,
+        const std::string& preDumpedHostOPath);
     // 依据 _host.o 是否含 .debug_line 决定实际 symbolize 用的 .o，无调试信息时返回空串。
     static std::string ResolveOFilePath(const std::string& hostOPath);
 

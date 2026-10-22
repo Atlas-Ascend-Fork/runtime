@@ -46,6 +46,9 @@ private:
     std::vector<DumpWorkspace> workspaces_;
     ExceptionDumpInfo info_;
     std::string dumpPath_;
+    // DumpKernelBin 落盘回传的真实 _host.o 路径（超长名为哈希路径），供 DumpKernelErrorSymbols 复用；
+    // 未落盘/失败时为空，符号化回退按算子名推导。
+    std::string hostOPath_;
     std::string dumpFilePath_;
     DumpFile dumpFile_;
     std::vector<uint8_t> dfxBuffer_;

@@ -361,25 +361,27 @@ bool ExceptionDumper::FindExceptionOperator(const rtExceptionInfo& exception, Du
     return false;
 }
 
-void ExceptionDumper::DumpHostKernelBinBeforeSymbolize(
+std::string ExceptionDumper::DumpHostKernelBinBeforeSymbolize(
     const rtExceptionInfo& exception, const std::string& dumpPath) const
 {
     rtExceptionArgsInfo_t exceptionArgsInfo{};
     int32_t ret = ExceptionInfoCommon::GetExceptionInfo(exception, exceptionArgsInfo);
     IDE_CTRL_VALUE_WARN(
-        ret == ADUMP_SUCCESS, return, "Get exception args info failed, skip early dump host kernel bin.");
+        ret == ADUMP_SUCCESS, return "", "Get exception args info failed, skip early dump host kernel bin.");
 
     KernelInfoCollector collector;
     collector.LoadKernelInfo(exceptionArgsInfo);
     ret = collector.LoadKernelBinBuffer();
     IDE_CTRL_VALUE_WARN(
-        ret == ADUMP_SUCCESS, return, "Load kernel bin buffer failed, skip early dump host kernel bin.");
+        ret == ADUMP_SUCCESS, return "", "Load kernel bin buffer failed, skip early dump host kernel bin.");
 
     // 提前无条件同步落 _host.o（只依赖 kernel bin buffer，不依赖 ELF 符号解析），
     // 保证符号表损坏等场景下 _host.o 仍能落盘供事后分析；DumpHostKernelBin 幂等，
     // 后续 symbolize/慢搜索路径复用已落盘文件不会重复写。
+    // 回传真实落盘路径（超长名为哈希路径）供符号化消费；前置跳过/失败为空串，由调用方回退推导。
     std::string hostOPath;
     (void)collector.DumpHostKernelBin(dumpPath, hostOPath);
+    return hostOPath;
 }
 
 int32_t ExceptionDumper::DumpNormalException(const rtExceptionInfo& exception, const std::string& dumpPath)
@@ -392,9 +394,10 @@ int32_t ExceptionDumper::DumpNormalExceptionDefault(const rtExceptionInfo& excep
     IDE_CTRL_VALUE_WARN(
         ExceptionInfoCommon::IsSupportDefaultExceptionDump(exception), return ADUMP_FAILED,
         "Exception does not support default dump.");
-    // 先无条件提前落 _host.o，再符号化（symbolize 复用已落盘文件，不重复落盘）。
-    DumpHostKernelBinBeforeSymbolize(exception, dumpPath);
-    KernelSymbolLocator::DumpErrorSymbols(exception, dumpPath);
+    // 先无条件提前落 _host.o，再符号化（symbolize 复用已落盘文件，不重复落盘）；
+    // 传递真实落盘路径（超长名为哈希路径），符号化不再按算子名推导。
+    const std::string hostOPath = DumpHostKernelBinBeforeSymbolize(exception, dumpPath);
+    KernelSymbolLocator::DumpErrorSymbols(exception, dumpPath, hostOPath);
     DumpOperator excOp;
     bool find = FindExceptionOperator(exception, excOp);
     if (!find) {
@@ -422,9 +425,10 @@ int32_t ExceptionDumper::DumpArgsExceptionDefault(const rtExceptionInfo& excepti
     IDE_CTRL_VALUE_WARN(
         ExceptionInfoCommon::IsSupportDefaultExceptionDump(exception), return ADUMP_FAILED,
         "Exception does not support default dump.");
-    // 先无条件提前落 _host.o，再符号化（symbolize 复用已落盘文件，不重复落盘）。
-    DumpHostKernelBinBeforeSymbolize(exception, dumpPath);
-    KernelSymbolLocator::DumpErrorSymbols(exception, dumpPath);
+    // 先无条件提前落 _host.o，再符号化（symbolize 复用已落盘文件，不重复落盘）；
+    // 传递真实落盘路径（超长名为哈希路径），符号化不再按算子名推导。
+    const std::string hostOPath = DumpHostKernelBinBeforeSymbolize(exception, dumpPath);
+    KernelSymbolLocator::DumpErrorSymbols(exception, dumpPath, hostOPath);
     DumpArgs args;
     if (args.LoadArgsExceptionInfo(exception) != ADUMP_SUCCESS) {
         return ADUMP_FAILED;

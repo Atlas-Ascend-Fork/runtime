@@ -68,7 +68,8 @@ private:
         const rtExceptionInfo& exception, const std::string& dumpPath,
         int32_t (ExceptionDumper::*defaultDump)(const rtExceptionInfo&, const std::string&));
     // 在符号化(DumpErrorSymbols)之前，提前同步把 _host.o 落盘，供后续按错误 PC 解析源码行使用。best-effort。
-    void DumpHostKernelBinBeforeSymbolize(const rtExceptionInfo& exception, const std::string& dumpPath) const;
+    // 返回真实落盘路径（超长名为哈希路径）供符号化消费；前置跳过/失败返回空串，由调用方回退按算子名推导。
+    std::string DumpHostKernelBinBeforeSymbolize(const rtExceptionInfo& exception, const std::string& dumpPath) const;
     int32_t LoadTensorPluginLib();
     bool InitArgsExceptionMemory() const;
     std::string GetDumpSceneName() const;

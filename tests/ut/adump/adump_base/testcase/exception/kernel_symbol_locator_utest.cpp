@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <elf.h>
+#include <fstream>
 #include <limits>
 #include <string>
 #include <vector>
@@ -19,9 +20,12 @@
 #include "adump_dsmi.h"
 #include "adump_platform_manager.h"
 #include "adump_pub.h"
+#include "case_workspace.h"
 #include "exception_info_common.h"
+#include "kernel_info_collector.h"
 #include "kernel_symbol_locator.h"
 #include "kernel_pc_fixer.h"
+#include "path.h"
 #include "runtime/base.h"
 #include "runtime/rts/rts_kernel.h"
 #include "acc_error_info.h"
@@ -293,6 +297,24 @@ int32_t MockGetBinDataFromHandle(rtBinHandle binHandle, std::string& binData, ui
     binData = g_mockElf;
     binSize = static_cast<uint32_t>(g_mockElf.size());
     return ADUMP_SUCCESS;
+}
+
+// 预落盘用的 bin 内容（等价复刻 dump_args_utest.cpp 的 StubGetBinDataForIdem 模式）。
+const std::string g_preDumpHostBinContent = "host kernel bin content for locator pre-dump test";
+int32_t StubGetBinDataForPreDump(rtBinHandle binHandle, std::string& binData, uint32_t& binSize)
+{
+    (void)binHandle;
+    binData = g_preDumpHostBinContent;
+    binSize = static_cast<uint32_t>(g_preDumpHostBinContent.size());
+    return ADUMP_SUCCESS;
+}
+
+// 捕获 KernelSymbolLocator::ResolveOFilePath 入参（符号化实际消费的 _host.o 路径），返回空串阻断后续 symbolize。
+std::string g_capturedOFilePath;
+std::string StubCaptureResolveOFilePath(const std::string& hostOPath)
+{
+    g_capturedOFilePath = hostOPath;
+    return "";
 }
 
 rtError_t RtsBinaryGetDevAddressSuccess(const rtBinHandle binHandle, void** bin, uint32_t* binSize)
@@ -636,4 +658,41 @@ TEST_F(KernelSymbolLocatorUTest, DumpErrorSymbolsCoversFailureAndSuccessPaths)
 
     MOCKER_CPP(&ExceptionInfoCommon::GetExceptionRegInfo).stubs().will(returnValue(ADUMP_FAILED));
     KernelSymbolLocator::DumpErrorSymbols(exception, dumpPath);
+}
+
+// 超长算子名：预落盘拿真实哈希路径后，新 3 参重载必须消费该真实落盘路径做符号化，
+// 不再按算子名推导逻辑长路径（盘上不存在，符号化丢源码行）；既有 2 参签名保持回退推导（兼容行为）。
+TEST_F(KernelSymbolLocatorUTest, Test_DumpErrorSymbols_UsesPreDumpedRealPath)
+{
+    Tools::CaseWorkspace ws("Test_DumpErrorSymbols_UsesPreDumpedRealPath");
+    g_capturedOFilePath.clear();
+    const std::string kernelName(260U, 'K');
+    char fakeHandle[] = "fake_bin_handle";
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForPreDump));
+
+    // 预落盘 260 字节名的 _host.o：File 降级为哈希文件，拿到真实落盘路径。
+    KernelInfoCollector preDumpCollector;
+    ASSERT_EQ(preDumpCollector.InitFromBinHandle(static_cast<rtBinHandle>(fakeHandle), kernelName), ADUMP_SUCCESS);
+    std::string hostOPathReal;
+    ASSERT_EQ(preDumpCollector.DumpHostKernelBin(ws.Root(), hostOPathReal), ADUMP_SUCCESS);
+    ASSERT_FALSE(hostOPathReal.empty());
+    ASSERT_TRUE(Path(hostOPathReal).Exist());
+
+    rtExceptionInfo exception = {};
+    InitAicoreException(exception, static_cast<rtBinHandle>(fakeHandle), kernelName);
+
+    // 符号解析打桩成功以推进到 .o 路径选择段（预落盘内容非 ELF，真实解析必失败）；ResolveOFilePath 捕获入参。
+    MOCKER_CPP(&KernelSymbolLocator::InitFromBinBuffer).stubs().will(returnValue(static_cast<int32_t>(ADUMP_SUCCESS)));
+    MOCKER_CPP(&KernelSymbolLocator::ResolveOFilePath).stubs().will(invoke(StubCaptureResolveOFilePath));
+
+    // 既有 2 参签名（无预落盘路径可传）保持回退：按算子名推导逻辑长路径，盘上不存在，兼容行为不变。
+    KernelSymbolLocator::DumpErrorSymbols(exception, ws.Root());
+    EXPECT_NE(g_capturedOFilePath, hostOPathReal);
+    EXPECT_FALSE(Path(g_capturedOFilePath).Exist());
+
+    // 新 3 参重载消费预落盘真实路径：捕获 == 盘上真实哈希文件且存在。
+    KernelSymbolLocator::DumpErrorSymbols(exception, ws.Root(), hostOPathReal);
+    EXPECT_FALSE(g_capturedOFilePath.empty());
+    EXPECT_EQ(g_capturedOFilePath, hostOPathReal);
+    EXPECT_TRUE(Path(g_capturedOFilePath).Exist());
 }

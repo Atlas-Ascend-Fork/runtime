@@ -9,10 +9,12 @@
  */
 
 #include <gtest/gtest.h>
+#include <fstream>
 #include <vector>
 #include "mockcpp/mockcpp.hpp"
 #include "securec.h"
 #include "case_workspace.h"
+#include "path.h"
 #include "dump_args_callback.h"
 #include "dfx_args_parser.h"
 #include "dump_manager.h"
@@ -119,6 +121,24 @@ rtError_t RtFunctionGetIsTikMetaInfoFailed(
         return RT_ERROR_NONE;
     }
     return static_cast<rtError_t>(-1);
+}
+
+// 真实落盘用的 bin 内容（等价复刻 dump_args_utest.cpp 的 StubGetBinDataForIdem 模式）。
+const std::string g_callbackHostBinContent = "host kernel bin content for callback symbolize test";
+int32_t StubGetBinDataForCallbackTest(rtBinHandle binHandle, std::string& binData, uint32_t& binSize)
+{
+    (void)binHandle;
+    binData = g_callbackHostBinContent;
+    binSize = static_cast<uint32_t>(g_callbackHostBinContent.size());
+    return ADUMP_SUCCESS;
+}
+
+// 捕获 KernelSymbolLocator::ResolveOFilePath 入参（符号化实际消费的 _host.o 路径），返回空串阻断后续 symbolize。
+std::string g_capturedHostOPath;
+std::string StubCaptureResolveOFilePath(const std::string& hostOPath)
+{
+    g_capturedHostOPath = hostOPath;
+    return "";
 }
 } // namespace
 
@@ -401,6 +421,62 @@ TEST_F(DumpArgsCallbackUtest, Test_DumpKernelErrorSymbols_LocateSuccess)
     DumpArgsCallback callback(exception, info, ws.Root());
     ErrorLocation location;
     EXPECT_EQ(callback.DumpKernelErrorSymbols(location), ADUMP_SUCCESS);
+}
+
+// 超长算子名（回调路径）：DumpKernelBin 真实落盘为哈希文件后，DumpKernelErrorSymbols 必须消费
+// DumpHostKernelBin 回传的真实落盘路径，而非按算子名重新推导逻辑长路径——后者在盘上不存在，
+// 符号化会因拿不到 _host.o 而丢源码行。回调路径文件直接落 dumpPath_（ws.Root()）。
+TEST_F(DumpArgsCallbackUtest, Test_DumpKernelErrorSymbols_LongKernelNameUsesRealPath)
+{
+    Tools::CaseWorkspace ws("Test_DumpKernelErrorSymbols_LongKernelNameUsesRealPath");
+    g_capturedHostOPath.clear();
+    rtExceptionInfo exception = {0};
+    InitExceptionInfo(exception);
+    ExceptionDumpInfo info = {0};
+    info.bin = (rtBinHandle)0x5f;
+    SetKernelName(info, std::string(260U, 'K'));
+
+    // DumpKernelBin 真实落盘：GetBinDataFromHandle 回传 bin 内容，_host.o 经 File 降级为哈希文件。
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForCallbackTest));
+    // locator 初始化打桩成功以推进到 .o 路径选择段；ResolveOFilePath 捕获入参，后续定位结果不断言。
+    MOCKER(&KernelSymbolLocator::InitFromBinHandle).stubs().will(returnValue(ADUMP_SUCCESS));
+    MOCKER_CPP(&KernelSymbolLocator::ResolveOFilePath).stubs().will(invoke(StubCaptureResolveOFilePath));
+
+    DumpArgsCallback callback(exception, info, ws.Root());
+    // 真实落盘 260 字节名（StartCollectKernel 慢搜索结果不影响本断言，不断言其返回值）。
+    (void)callback.DumpKernelBin();
+    ErrorLocation location;
+    (void)callback.DumpKernelErrorSymbols(location);
+
+    // 符号化消费的必须是盘上真实存在的哈希文件且内容完整（接线前捕获为逻辑长路径，文件不存在）。
+    EXPECT_FALSE(g_capturedHostOPath.empty());
+    EXPECT_TRUE(Path(g_capturedHostOPath).Exist());
+    std::ifstream dumped(g_capturedHostOPath, std::ios::binary);
+    std::string content((std::istreambuf_iterator<char>(dumped)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(content, g_callbackHostBinContent);
+}
+
+// 回退回归（正常名）：未先调 DumpKernelBin（无已落盘路径）时，符号化按算子名推导 _host.o 逻辑路径，
+// 行为与既有版本一致（接线对正常名零变化）。
+TEST_F(DumpArgsCallbackUtest, Test_DumpKernelErrorSymbols_FallbackWhenHostOPathEmpty)
+{
+    Tools::CaseWorkspace ws("Test_DumpKernelErrorSymbols_FallbackWhenHostOPathEmpty");
+    g_capturedHostOPath.clear();
+    rtExceptionInfo exception = {0};
+    InitExceptionInfo(exception);
+    ExceptionDumpInfo info = {0};
+    InitKernelBinInfo(info); // 正常名 "test_kernel"，不先调 DumpKernelBin
+
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForCallbackTest));
+    MOCKER(&KernelSymbolLocator::InitFromBinHandle).stubs().will(returnValue(ADUMP_SUCCESS));
+    MOCKER_CPP(&KernelSymbolLocator::ResolveOFilePath).stubs().will(invoke(StubCaptureResolveOFilePath));
+
+    DumpArgsCallback callback(exception, info, ws.Root());
+    ErrorLocation location;
+    (void)callback.DumpKernelErrorSymbols(location);
+
+    // 回退推导值与 KernelInfoCollector::GetHostOFilePath 的构造一致。
+    EXPECT_EQ(g_capturedHostOPath, Path(ws.Root()).Concat("test_kernel_host.o").GetString());
 }
 
 TEST_F(DumpArgsCallbackUtest, Test_DumpDfxArgs_QueryDfxInfoGetFunctionFailed)

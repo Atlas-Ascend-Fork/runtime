@@ -256,13 +256,25 @@ int32_t KernelInfoCollector::DumpHostKernelBin(const std::string& dumpPath, std:
         return ADUMP_FAILED;
     }
     std::string hostKernelBinPath = GetHostOFilePath(dumpPath);
-    // 幂等:_host.o 可能已由调用方在符号化前提前同步落盘。仅当磁盘上文件大小与待写入一致时才跳过，
-    // 避免上次部分写(如磁盘满)残留的截断/空文件被 Exist() 误判为已完成而永久跳过重写。
+    // 幂等预检候选：正常名命中逻辑路径；超长名还需检查 File::Open 降级后的真实哈希路径
+    // （降级文件名来自 File::GetDowngradeFileName 单一事实源，命名规则不变，仅复用预测）。
+    Path logicalBinPath(hostKernelBinPath);
+    const std::string downgradeName = File::GetDowngradeFileName(logicalBinPath.GetFileName());
+    const bool mayDowngrade = (downgradeName != logicalBinPath.GetFileName());
+    std::string downgradeBinPath;
+    if (mayDowngrade && !logicalBinPath.ParentPath().Empty()) {
+        downgradeBinPath = logicalBinPath.ParentPath().Concat(downgradeName).GetString();
+    }
     struct stat hostBinStat;
-    if (stat(hostKernelBinPath.c_str(), &hostBinStat) == 0 &&
-        static_cast<uint64_t>(hostBinStat.st_size) == static_cast<uint64_t>(kernelBinSize_)) {
-        IDE_LOGI("[Dump][Exception] host kernel bin already dumped, skip. file: %s", hostKernelBinPath.c_str());
-        outHostOPath = hostKernelBinPath;
+    const bool logicalHit = stat(hostKernelBinPath.c_str(), &hostBinStat) == 0 &&
+                            static_cast<uint64_t>(hostBinStat.st_size) == static_cast<uint64_t>(kernelBinSize_);
+    const bool downgradeHit = !logicalHit && !downgradeBinPath.empty() &&
+                              stat(downgradeBinPath.c_str(), &hostBinStat) == 0 &&
+                              static_cast<uint64_t>(hostBinStat.st_size) == static_cast<uint64_t>(kernelBinSize_);
+    if (logicalHit || downgradeHit) {
+        const std::string& dumpedPath = logicalHit ? hostKernelBinPath : downgradeBinPath;
+        IDE_LOGI("[Dump][Exception] host kernel bin already dumped, skip. file: %s", dumpedPath.c_str());
+        outHostOPath = dumpedPath;
         return ADUMP_SUCCESS;
     }
     File hostKernelBinFile(hostKernelBinPath, M_WRONLY | M_CREAT | M_TRUNC);
@@ -284,7 +296,8 @@ int32_t KernelInfoCollector::DumpHostKernelBin(const std::string& dumpPath, std:
     }
     // File::Write 已返回累计写入长度(短写/截断时返回负错误码)，这里再做一次写后 stat 校验作为兜底：
     // 覆盖本进程之外的干扰(如并发截断),截断时文件大小不足即判失败,避免残留截断文件被幂等误判为完整。
-    if (stat(hostKernelBinPath.c_str(), &hostBinStat) != 0 ||
+    const std::string& realHostKernelBinPath = hostKernelBinFile.GetRealFilePath();
+    if (stat(realHostKernelBinPath.c_str(), &hostBinStat) != 0 ||
         static_cast<uint64_t>(hostBinStat.st_size) != static_cast<uint64_t>(kernelBinSize_)) {
         // 同上:残留的截断文件不主动删除,靠下次大小校验重写;此处打印告警提醒盘上存在不完整的 _host.o。
         IDE_LOGE(
@@ -294,8 +307,8 @@ int32_t KernelInfoCollector::DumpHostKernelBin(const std::string& dumpPath, std:
         return ADUMP_FAILED;
     }
     IDE_LOGE("[Dump][Exception] dump host kernel to file, file: %s", hostKernelBinPath.c_str());
-    (void)mmChmod(hostKernelBinPath.c_str(), M_IRUSR); // 安全要求,落盘文件置为最小权限:用户只读, 400
-    outHostOPath = hostKernelBinPath;
+    (void)mmChmod(realHostKernelBinPath.c_str(), M_IRUSR); // 安全要求,落盘文件置为最小权限:用户只读, 400
+    outHostOPath = realHostKernelBinPath;
 
     return ADUMP_SUCCESS;
 }

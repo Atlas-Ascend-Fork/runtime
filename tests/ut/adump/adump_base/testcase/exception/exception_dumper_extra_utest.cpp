@@ -1011,6 +1011,14 @@ int32_t StubGetBinDataForSymFail(rtBinHandle binHandle, std::string& binData, ui
     binSize = static_cast<uint32_t>(g_hostBinContentForSymFail.size());
     return ADUMP_SUCCESS;
 }
+
+// 捕获 KernelSymbolLocator::ResolveOFilePath 入参（符号化实际消费的 _host.o 路径），返回空串阻断后续 symbolize。
+std::string g_capturedOFilePathForLongName;
+std::string StubCaptureResolveOFilePath(const std::string& hostOPath)
+{
+    g_capturedOFilePathForLongName = hostOPath;
+    return "";
+}
 } // namespace
 
 // 编排层端到端回归：DumpException(args 默认路径) 先无条件 DumpHostKernelBinBeforeSymbolize 落 _host.o，
@@ -1062,5 +1070,79 @@ TEST_F(ExceptionDumperExtraUtest, DumpArgsException_HostBinDroppedWhenSymbolizeF
     std::ifstream dumped(hostBinPath.GetString(), std::ios::binary);
     std::string content((std::istreambuf_iterator<char>(dumped)), std::istreambuf_iterator<char>());
     EXPECT_EQ(content, g_hostBinContentForSymFail);
+    GlobalMockObject::verify();
+}
+
+// 编排层端到端（超长算子名）：默认编排路径先经 DumpHostKernelBinBeforeSymbolize 落 _host.o
+// （超长名经 File 降级为哈希文件，落设备级目录 <root>/extra-info/data-dump/<deviceId>），
+// 符号化必须消费该真实落盘路径，而非按算子名推导逻辑长路径（盘上不存在）。同时校验
+// mapping.csv 记录了哈希映射（只读取既有机制，命名规则零变化）。
+TEST_F(ExceptionDumperExtraUtest, DumpArgsException_HostBinDroppedWhenSymbolizeFails_LongName)
+{
+    const uint32_t deviceId = 0U;
+    const std::string dumpRoot = "/tmp/adump_hostbin_longname_test";
+    const std::string kernelName(260U, 'K');
+    g_capturedOFilePathForLongName.clear();
+
+    ExceptionDumper dumper;
+    DumpConfig config;
+    config.dumpStatus = "on";
+    config.dumpPath = dumpRoot;
+    ASSERT_EQ(dumper.ExceptionDumperInit(DumpType::ARGS_EXCEPTION, config), ADUMP_SUCCESS);
+
+    // 落盘链依赖 GetBinDataFromHandle 返回 bin buffer，打桩成功以确保 _host.o 能落盘且内容可校验。
+    MOCKER_CPP(&ExceptionInfoCommon::GetBinDataFromHandle).stubs().will(invoke(StubGetBinDataForSymFail));
+    // 关键差异（对比 HostBinDroppedWhenSymbolizeFails）：符号解析 SUCCESS，使 DumpErrorSymbols
+    // 走到 .o 路径选择段，真实路径消费才会发生；ResolveOFilePath 捕获入参。
+    MOCKER_CPP(&KernelSymbolLocator::InitFromBinBuffer).stubs().will(returnValue(static_cast<int32_t>(ADUMP_SUCCESS)));
+    MOCKER_CPP(&KernelSymbolLocator::ResolveOFilePath).stubs().will(invoke(StubCaptureResolveOFilePath));
+
+    char hostKernel[] = "host kernel bin file stub";
+    rtExceptionInfo exception = {};
+    exception.deviceid = deviceId;
+    exception.taskid = 1U;
+    exception.streamid = 2U;
+    exception.expandInfo.type = RT_EXCEPTION_AICORE;
+    auto& kernelInfo = exception.expandInfo.u.aicoreInfo.exceptionArgs.exceptionKernelInfo;
+    kernelInfo.bin = static_cast<rtBinHandle>(hostKernel);
+    kernelInfo.binSize = sizeof(hostKernel);
+    kernelInfo.kernelName = const_cast<char*>(kernelName.data());
+    kernelInfo.kernelNameSize = kernelName.size();
+
+    // 最终返回值不作断言：后续 args 解析在无真实 device args 时可能失败，
+    // 但那发生在 _host.o 落盘与符号化路径选择之后，不影响本用例守护的路径不变量。
+    (void)dumper.DumpException(exception);
+
+    // 默认编排路径落设备级目录（<root>/extra-info/data-dump/<deviceId>），RealPath 归一后比对。
+    Path deviceDumpPath(dumpRoot);
+    deviceDumpPath.Append("/extra-info/data-dump/").Append(std::to_string(deviceId));
+    ASSERT_TRUE(deviceDumpPath.Exist());
+    ASSERT_TRUE(deviceDumpPath.RealPath());
+
+    // 捕获的符号化 .o 路径必须是设备级目录下真实存在的哈希文件且内容完整。
+    EXPECT_FALSE(g_capturedOFilePathForLongName.empty());
+    EXPECT_TRUE(Path(g_capturedOFilePathForLongName).Exist());
+    EXPECT_EQ(Path(g_capturedOFilePathForLongName).ParentPath().GetString(), deviceDumpPath.GetString());
+    std::ifstream dumped(g_capturedOFilePathForLongName, std::ios::binary);
+    std::string content((std::istreambuf_iterator<char>(dumped)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(content, g_hostBinContentForSymFail);
+
+    // 哈希降级命名与 mapping.csv 记录：逻辑名 = 去混跑后缀 + INVALID 字符替换({' ','.','/','\\'}→'_')
+    // 后拼 _host.o；hash 对文件名组件（含 _host.o 后缀）用 std::hash 重算，与 File::GetDowngradeFileName 一致。
+    std::string cleanedName = ExceptionInfoCommon::GetKernelNameWithoutMixSuffix(kernelName);
+    for (char& c : cleanedName) {
+        if (c == ' ' || c == '.' || c == '/' || c == '\\') {
+            c = '_';
+        }
+    }
+    const std::string logicalFileName = cleanedName + "_host.o";
+    const std::string expectedHashName = std::to_string(std::hash<std::string>{}(logicalFileName));
+    EXPECT_EQ(Path(g_capturedOFilePathForLongName).GetFileName(), expectedHashName);
+    Path mappingFile(deviceDumpPath);
+    mappingFile.Concat("mapping.csv");
+    ASSERT_TRUE(mappingFile.Exist());
+    std::ifstream mappingStream(mappingFile.GetString());
+    std::string mappingContent((std::istreambuf_iterator<char>(mappingStream)), std::istreambuf_iterator<char>());
+    EXPECT_NE(mappingContent.find(expectedHashName + "," + logicalFileName + "\n"), std::string::npos);
     GlobalMockObject::verify();
 }

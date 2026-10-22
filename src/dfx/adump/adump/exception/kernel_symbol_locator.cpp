@@ -919,7 +919,8 @@ std::string KernelSymbolLocator::ResolveOFilePath(const std::string& hostOPath)
 }
 
 void KernelSymbolLocator::DumpErrorSymbols(
-    const rtExceptionInfo& exception, ExceptionRegInfo& exceptionRegInfo, const std::string& dumpPath)
+    const rtExceptionInfo& exception, ExceptionRegInfo& exceptionRegInfo, const std::string& dumpPath,
+    const std::string& preDumpedHostOPath)
 {
     rtExceptionArgsInfo_t exceptionArgsInfo{};
     int32_t ret = ExceptionInfoCommon::GetExceptionInfo(exception, exceptionArgsInfo);
@@ -937,11 +938,15 @@ void KernelSymbolLocator::DumpErrorSymbols(
     locator.UpdateStartPCFromDeviceAddr(kernelInfo.bin);
 
     // _host.o 已由调用方（DumpHostKernelBinBeforeSymbolize / 回调路径）提前无条件落盘，
-    // 此处只复用其路径决定实际 symbolize 用的 .o，不再重复落盘：避免把落盘可靠性绑定到
+    // 此处优先消费其回传的真实落盘路径（超长名为哈希路径），不再重复落盘：避免把落盘可靠性绑定到
     // 本函数前面的符号解析步骤（GetBinData/InitFromBinBuffer 失败时提前 return 会漏落盘）。
-    KernelInfoCollector collector;
-    collector.LoadKernelInfo(exceptionArgsInfo);
-    std::string hostOPath = collector.GetHostOFilePath(dumpPath);
+    // preDumpedHostOPath 为空（前置跳过/失败）时回退按算子名推导逻辑路径，正常名行为不变。
+    std::string hostOPath = preDumpedHostOPath;
+    if (hostOPath.empty()) {
+        KernelInfoCollector collector;
+        collector.LoadKernelInfo(exceptionArgsInfo);
+        hostOPath = collector.GetHostOFilePath(dumpPath);
+    }
     // hostOPath 为空说明 kernelName 缺失/路径拼接失败，符号解析将无 .o 可用，仅告警不阻断后续流程。
     if (hostOPath.empty()) {
         IDE_LOGW("Host .o path is empty, symbolize may fall back without source location.");
@@ -958,12 +963,24 @@ void KernelSymbolLocator::DumpErrorSymbols(
     }
 }
 
-void KernelSymbolLocator::DumpErrorSymbols(const rtExceptionInfo& exception, const std::string& dumpPath)
+void KernelSymbolLocator::DumpErrorSymbols(
+    const rtExceptionInfo& exception, const std::string& dumpPath, const std::string& preDumpedHostOPath)
 {
     ExceptionRegInfo exceptionRegInfo{0, nullptr};
     if (ExceptionInfoCommon::GetExceptionRegInfo(exception, exceptionRegInfo) == ADUMP_SUCCESS) {
-        DumpErrorSymbols(exception, exceptionRegInfo, dumpPath);
+        DumpErrorSymbols(exception, exceptionRegInfo, dumpPath, preDumpedHostOPath);
     }
+}
+
+void KernelSymbolLocator::DumpErrorSymbols(
+    const rtExceptionInfo& exception, ExceptionRegInfo& exceptionRegInfo, const std::string& dumpPath)
+{
+    DumpErrorSymbols(exception, exceptionRegInfo, dumpPath, "");
+}
+
+void KernelSymbolLocator::DumpErrorSymbols(const rtExceptionInfo& exception, const std::string& dumpPath)
+{
+    DumpErrorSymbols(exception, dumpPath, "");
 }
 
 } // namespace Adx
