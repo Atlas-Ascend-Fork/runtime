@@ -5406,7 +5406,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCtxGetFloatOverflowAddr(void** overflowAddr);
 /**
  * @ingroup AscendCL
  * @brief get Saturation Status task
- * @param [in] outputAddr  pointer to op output addr
+ * @param [in, out] outputAddr  pointer to op output addr
  * @param [in] outputSize  op output size
  * @param [in] stream  associated stream
  * @retval ACL_SUCCESS The function is successfully executed.
@@ -5426,7 +5426,7 @@ ACL_FUNC_VISIBILITY aclError aclrtResetFloatOverflowStatus(aclrtStream stream);
 /**
  * @ingroup AscendCL
  * @brief launch npu get float status task
- * @param [in] outputAddr  pointer to op output addr
+ * @param [in, out] outputAddr  pointer to op output addr
  * @param [in] outputSize  op output size
  * @param [in] checkMode  check mode
  * @param [in] stream  associated stream
