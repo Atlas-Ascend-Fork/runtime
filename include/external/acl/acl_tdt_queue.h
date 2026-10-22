@@ -335,7 +335,7 @@ ACL_FUNC_VISIBILITY aclError acltdtGetBufFromChain(acltdtBuf headBuf, uint32_t i
  * @brief get private data buf address and size
  *
  * @param buf [IN] acltdtBuf
- * @param dataPtr [IN/OUT] pointer to the user ptr
+ * @param dataPtr [OUT] pointer to the user ptr
  * @param size [IN] the current private data area size, less than or equal to 96B
  * @param offset [IN] address offset, less than or equal to 96B
  *
