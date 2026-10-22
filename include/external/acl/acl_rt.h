@@ -2069,7 +2069,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemManagedGetAttrs(
  * @param ptr [IN]     memory pointer
  * @param size [IN]    memory size
  * @param type [IN]    memory register type
- * @param ptr [OUT]    pointer to allocated memory on device
+ * @param devPtr [OUT] pointer to the device-accessible address mapped from host memory
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
