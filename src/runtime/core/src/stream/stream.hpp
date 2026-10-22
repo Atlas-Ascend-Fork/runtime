@@ -986,7 +986,7 @@ private:
 
 public:
     bool isDeviceSyncFlag = false;
-    uint32_t streamResId;
+    uint32_t streamResId{RTS_INVALID_RES_ID};
     bool isModelExcel = false;
     bool isModelComplete = false;
     bool isForceRecycle_ = false;
@@ -1085,7 +1085,7 @@ private:
     uint32_t streamGeOpTag_;
     bool isSupportASyncRecycle_{false};
     static __THREAD_LOCAL__ bool isNeedStreamAsyncRecycle_;
-    bool isFlowCtrl;                    // Indicating has flow ctrl in this stream
+    bool isFlowCtrl{false};             // Indicating has flow ctrl in this stream
     Atomic<uint32_t> taskPosHead_;      // only for stars
     Atomic<uint32_t> taskPosTail_;      // only for stars
     Atomic<uint64_t> modeConfig_{0ULL}; // 遇错即停开关
