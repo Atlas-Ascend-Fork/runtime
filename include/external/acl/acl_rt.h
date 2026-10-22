@@ -1332,9 +1332,9 @@ ACL_FUNC_VISIBILITY aclError aclrtGetFuncHandleFromExceptionInfo(const aclrtExce
  * @ingroup AscendCL
  * @brief Set exception information callback handle to binHandle
  *
- * @param info [IN]   binary bin handle
- * @param info [IN]   exception callback of binary bin handle
- * @param info [IN]   exception userData of binary bin handle
+ * @param binHandle [IN]   binary bin handle
+ * @param callback [IN]   exception callback of binary bin handle
+ * @param userData [IN]   exception userData of binary bin handle
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
