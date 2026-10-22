@@ -370,7 +370,7 @@ RTS_API rtError_t rtXpuSetTaskFailCallback(rtXpuDevType devType, const char_t* m
 
 /**
  * @ingroup dvrt_dev
- * @brief Setting Scheduling Type of Graph
+ * @brief Get the TS Device ID for the current thread
  * @param [out] tsId   the ts id
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
