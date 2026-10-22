@@ -43,9 +43,41 @@ rtError_t CondLabelDestroy(Label* delLabel)
     if (delLabel == nullptr) {
         return RT_ERROR_NONE;
     }
+    Stream* const stm = const_cast<Stream*>(delLabel->Stream_());
+    if (stm != nullptr) {
+        stm->RemoveLabelList(delLabel);
+    }
     ResetEmbeddedInnerHandle<Label>(delLabel);
     DELETE_O(delLabel);
     return RT_ERROR_NONE;
+}
+
+void Stream::RemoveLabelList(Label* const label)
+{
+    if (label == nullptr) {
+        return;
+    }
+
+    labelLock_.Lock();
+    labels_.remove(label);
+    labelLock_.Unlock();
+}
+
+bool Stream::RecycleLabel(const uint16_t labelId)
+{
+    labelLock_.Lock();
+    for (auto iter = labels_.begin(); iter != labels_.end(); ++iter) {
+        Label* const label = *iter;
+        if ((label != nullptr) && (label->Id_() == labelId)) {
+            label->ResetLabelDevAddr();
+            label->SetSetFlag(false);
+            labels_.remove(label);
+            labelLock_.Unlock();
+            return true;
+        }
+    }
+    labelLock_.Unlock();
+    return false;
 }
 
 rtError_t CondLabelListCpy(

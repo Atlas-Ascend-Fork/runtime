@@ -219,21 +219,7 @@ void RecycleLabelInfoWithModel(TaskInfo* labeltask)
 {
     Stream* stm = labeltask->stream;
     COND_RETURN_NORMAL((stm == nullptr), "Stream is null");
-    COND_RETURN_NORMAL((stm->labels_.empty() == true), "Labels is empty");
-    Label* targetLabel = nullptr;
-    for (Label* label : stm->labels_) {
-        COND_RETURN_NORMAL((label == nullptr), "Label clean done");
-        if (labeltask->u.labelSetTask.labelId == label->Id_()) {
-            targetLabel = label;
-            break;
-        }
-    }
-
-    if (targetLabel != nullptr) {
-        targetLabel->ResetLabelDevAddr();
-        targetLabel->SetSetFlag(false);
-        stm->labels_.remove(targetLabel);
-    } else {
+    if (stm->RecycleLabel(labeltask->u.labelSetTask.labelId) == false) {
         RT_LOG(RT_LOG_WARNING, "Label with id %d is not found.", labeltask->u.labelSetTask.labelId);
     }
 }
