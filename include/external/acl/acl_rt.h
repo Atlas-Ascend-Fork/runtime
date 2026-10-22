@@ -5493,10 +5493,10 @@ ACL_FUNC_VISIBILITY aclError aclrtRegStreamStateCallback(
 
 /**
  * @ingroup AscendCL
- * @brief register callback func for device id by position
+ * @brief register callback func for device state
  * @param [in] regName  register name
  * @param [in] callback  callback func
- * @param [in] notifyPos  callback notify position
+ * @param [in] args  user data passed to callback
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
