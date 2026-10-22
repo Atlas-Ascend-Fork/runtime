@@ -544,7 +544,7 @@ aclError aclrtGetDeviceUtilizationRate(int32_t deviceId, aclrtUtilizationInfo *u
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | deviceId | 输入 | Device ID。<br>用户调用[aclrtGetDeviceCount](#aclrtGetDeviceCount)接口获取可用的Device数量后，这个Device ID的取值范围：[0, (可用的Device数量-1)] |
-| utilizationInfo | 输出 | 利用率信息结构体指针。类型定义请参见[aclrtUtilizationInfo](25-04_Structs.md#aclrtUtilizationInfo)。 |
+| utilizationInfo | 输出 | 利用率信息结构体指针。类型定义请参见[aclrtUtilizationInfo](25-04_Structs.md#aclrtUtilizationInfo)。其中 `utilizationExtend` 为保留参数，必须设置为 NULL。 |
 
 ### 返回值说明
 
@@ -552,6 +552,7 @@ aclError aclrtGetDeviceUtilizationRate(int32_t deviceId, aclrtUtilizationInfo *u
 
 ### 约束说明
 
+- `utilizationInfo->utilizationExtend` 为保留参数，必须为 NULL；传入非 NULL 指针时返回 `ACL_ERROR_INVALID_PARAM`。
 - 当使用本接口查询Vector利用率时，如果查询结果为-1，则表示Vector不存在。
 - 当前版本不支持查询Device内存利用率，若通过本接口查询内存利用率，返回的利用率为-1。
 - 开启Profiling功能时，不支持调用本接口查询利用率，接口返回值无实际意义。
