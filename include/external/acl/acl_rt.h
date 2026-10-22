@@ -5663,7 +5663,7 @@ ACL_FUNC_VISIBILITY aclError aclmdlRICaptureToModelRIBegin(
  * @brief count notify record
  * @param cntNotify [in]                count notify object
  * @param stream [in]                   stream
- * @param aclrtCntNotifyRecordInfo [in] count notify record info
+ * @param info [in]                     count notify record info
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
@@ -5675,7 +5675,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCntNotifyRecord(
  * @brief count notify wait with timeout
  * @param cntNotify [in]                count notify object
  * @param stream [in]                   stream
- * @param aclrtCntNotifyWaitInfo [in]   count notify wait info
+ * @param info [in]                     count notify wait info
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
