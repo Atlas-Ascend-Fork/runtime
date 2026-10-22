@@ -3511,7 +3511,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCmoAsync(void* src, size_t size, aclrtCmoType 
  * @ingroup AscendCL
  * @brief get the mem uce info
  * @param [in] deviceId
- * @param [in/out] memUceInfoArray
+ * @param [out] memUceInfoArray
  * @param [in] arraySize
  * @param [out] retSize
  * @retval ACL_SUCCESS The function is successfully executed.

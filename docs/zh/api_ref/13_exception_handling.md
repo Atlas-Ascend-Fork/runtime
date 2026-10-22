@@ -845,7 +845,7 @@ aclError aclrtGetMemUceInfo(int32_t deviceId, aclrtMemUceInfo *memUceInfoArray, 
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | deviceId | 输入 | Device ID。<br>与[aclrtSetDevice](04_device_management.md#aclrtSetDevice)接口中Device ID保持一致。 |
-| memUceInfoArray | 输入&输出 | aclrtMemUceInfo数组的指针。类型定义请参见[aclrtMemUceInfo](25-04_Structs.md#aclrtMemUceInfo)。 |
+| memUceInfoArray | 输出 | aclrtMemUceInfo数组的指针。类型定义请参见[aclrtMemUceInfo](25-04_Structs.md#aclrtMemUceInfo)。 |
 | arraySize | 输入 | 传入aclrtMemUceInfo数组的长度。 |
 | retSize | 输出 | 实际返回的aclrtMemUceInfo数组的有效长度。 |
 
