@@ -303,6 +303,7 @@ set(libruntime_other_files
 set(libruntime_src_files
     ${RUNTIME_CORE_DIR}/src/common/enum_desc.cc
     ${RUNTIME_CORE_DIR}/src/common/api_enum_desc.cc
+    ${RUNTIME_CORE_DIR}/src/common/optional_enum_desc.cc
     ${runtime_src_pool_list}
     ${libruntime_callback_files}
     ${runtime_src_aclgraph_list}
