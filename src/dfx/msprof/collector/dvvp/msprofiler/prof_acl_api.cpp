@@ -267,8 +267,8 @@ aclError aclprofStop(ACL_PROF_CONFIG_CONST_PTR profilerConfig)
 /**
  * @brief profiler layer of aclprofSetConfig, not support in hisi pack now
  * @param configType [IN] config type
- * @param val [IN] pointer to config
- * @param valLen [IN] length of config
+ * @param config [IN] pointer to config
+ * @param configLength [IN] length of config
  */
 aclError aclprofSetConfig(aclprofConfigType configType, const char* config, size_t configLength)
 {

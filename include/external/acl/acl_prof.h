@@ -231,8 +231,8 @@ MSVP_PROF_API aclError aclprofStop(const aclprofConfig* profilerConfig);
  * @brief set config value, not support in hisi pack now
  *
  * @param configType [IN] config type
- * @param val [IN] pointer to config
- * @param valLen [IN] length of config
+ * @param config [IN] pointer to config
+ * @param configLength [IN] length of config
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
