@@ -2753,7 +2753,7 @@ ACL_FUNC_VISIBILITY aclError aclrtDestroyStreamConfigHandle(aclrtStreamConfigHan
  * @ingroup AscendCL
  * @brief set config for stream
  *
- * @param handle [OUT]    pointer to stream config handle
+ * @param handle [IN/OUT] pointer to a stream config handle created by aclrtCreateStreamConfigHandle
  * @param attr [IN]       config attr in stream config handle to be set
  * @param attrValue [IN]  pointer to stream config value
  * @param valueSize [IN]  memory size of attrValue

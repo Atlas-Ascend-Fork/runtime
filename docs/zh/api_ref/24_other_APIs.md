@@ -1025,7 +1025,7 @@ aclError aclrtSetStreamConfigOpt(aclrtStreamConfigHandle *handle, aclrtStreamCon
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
-| handle | 输入 | Stream配置对象的指针。类型定义请参见[aclrtStreamConfigHandle](25-03_Operation_APIs.md#aclrtStreamConfigHandle)。<br>需提前调用[aclrtCreateStreamConfigHandle](25-03_Operation_APIs.md#aclrtCreateStreamConfigHandle)接口创建该对象。 |
+| handle | 输入/输出 | Stream配置对象的指针。类型定义请参见[aclrtStreamConfigHandle](25-03_Operation_APIs.md#aclrtStreamConfigHandle)。<br>需提前调用[aclrtCreateStreamConfigHandle](25-03_Operation_APIs.md#aclrtCreateStreamConfigHandle)接口创建该对象。 |
 | attr | 输入 | 指定需设置的属性。类型定义请参见[aclrtStreamConfigAttr](25-02_Enumerations.md#aclrtStreamConfigAttr)。 |
 | attrValue | 输入 | 指向属性值的指针，attr对应的属性取值。<br>如果属性值本身是指针，则传入该指针的地址。 |
 | valueSize | 输入 | attrValue对应属性值的数据长度。attrValue的类型为const void *，请根据属性实际类型变量计算sizeof，例如sizeof(priority)、sizeof(workSize)、sizeof(flag)或sizeof(workPtr)，不要对attrValue解引用后计算sizeof（错误示例：sizeof(*attrValue)）。 |

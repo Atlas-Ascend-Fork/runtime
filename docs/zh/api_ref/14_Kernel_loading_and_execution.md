@@ -468,7 +468,7 @@ aclError aclrtBinarySetExceptionCallback(aclrtBinHandle binHandle, aclrtOpExcept
 | --- | :---: | --- |
 | binHandle | 输入 | 算子二进制句柄。<br>调用[aclrtBinaryLoadFromFile](#aclrtBinaryLoadFromFile)接口或[aclrtBinaryLoadFromData](#aclrtBinaryLoadFromData)接口获取算子二进制句柄，再将其作为入参传入本接口。<br>取值详见[aclrtBinHandle](25-05_Typedefs.md#aclrtBinHandle)。 |
 | callback | 输入 | 指定要注册的回调函数。<br>回调函数的函数原型为：<br>typedef void (*aclrtOpExceptionCallback)(aclrtExceptionInfo*exceptionInfo, void *userData); |
-| userData | 输入 | 待传递给回调函数的用户数据的指针。 |
+| userData | 输入 | 待传递给回调函数的用户数据的指针。<br>userData由调用方管理，Runtime仅保存并透传指针，不复制、不释放其指向的数据。调用方需保证回调访问期间数据有效；更换回调不会终止正在分发的异常通知，待所有可能访问旧userData的回调返回后，方可释放或复用该内存。 |
 
 ### 返回值说明
 
