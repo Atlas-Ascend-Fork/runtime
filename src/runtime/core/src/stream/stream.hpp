@@ -405,10 +405,6 @@ public:
         labelLock_.Unlock();
     }
 
-    void RemoveLabelList(Label* const label);
-
-    bool RecycleLabel(uint16_t labelId);
-
     bool IsTaskSink() const { return GetBindFlag() && ((Flags() & RT_STREAM_AICPU) == 0); }
 
     bool IsSteamNeedFastCq() const { return needFastcqFlag_; }

@@ -27,7 +27,6 @@
 #include "task_res_da.hpp"
 #include "stream_sqcq_manage.hpp"
 #include "rt_unwrap.h"
-#include <atomic>
 #include <thread>
 #include <chrono>
 #include "stream.hpp"
@@ -37,7 +36,6 @@
 #include "driver/ascend_hal.h"
 #include "osal.hpp"
 #include "api.hpp"
-#include "label_c.hpp"
 #include "notify_task.h"
 #include "memory_task.h"
 #include "model_execute_task.h"
@@ -1351,146 +1349,6 @@ TEST_F(DavidTaskRecycleTest, RecycleModeLabel)
 
     error = rtModelDestroy(model);
     EXPECT_EQ(error, RT_ERROR_NONE);
-    ((Runtime*)Runtime::Instance())->DeviceRelease(device);
-}
-
-TEST_F(DavidTaskRecycleTest, RecycleModeLabelAfterDestroy)
-{
-    Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
-    uint32_t support = RT_CAPABILITY_SUPPORT;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::CheckSupportPcieBarCopy)
-        .stubs()
-        .with(mockcpp::any(), outBound(support), mockcpp::any())
-        .will(returnValue(RT_ERROR_NONE));
-
-    void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
-        .stubs()
-        .with(
-            outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
-            mockcpp::any())
-        .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
-
-    rtStream_t stream = nullptr;
-    rtError_t error = rtStreamCreate(&stream, 0);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    Stream* const streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
-    streamObj->SetSqMemAttr(false);
-
-    rtModel_t model;
-    rtLabel_t label;
-    error = rtModelCreate(&model, 0);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    error = rtLabelCreateV2(&label, model);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-
-    uint32_t val = 0x123;
-    Model* const realModel = rt_ut::UnwrapOrNull<Model>(model);
-    Label* const realLabel = rt_ut::UnwrapOrNull<Label>(label);
-    realLabel->SetLabelDevAddr(&val);
-    realLabel->ForceSetStream(streamObj);
-    streamObj->SetModel(realModel);
-    streamObj->InsertLabelList(realLabel);
-
-    uint32_t pos = UINT32_MAX;
-    TaskInfo* task = nullptr;
-    TaskResManageDavid* const taskResMang = static_cast<TaskResManageDavid*>(streamObj->taskResMang_);
-    error = taskResMang->AllocTaskInfoAndPos(1U, pos, &task);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    EXPECT_EQ(pos, 0U);
-    task->stream = streamObj;
-    task->sqeNum = 1U;
-    task->type = TS_TASK_TYPE_LABEL_SET;
-    task->u.labelSetTask.labelId = realLabel->Id_();
-
-    error = rtLabelDestroy(label);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    EXPECT_TRUE(streamObj->labels_.empty());
-
-    RecycleModelBindStreamAllTask(streamObj, true);
-    streamObj->SetModel(nullptr);
-    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
-    EXPECT_EQ(rtModelDestroy(model), RT_ERROR_NONE);
-    ((Runtime*)Runtime::Instance())->DeviceRelease(device);
-}
-
-TEST_F(DavidTaskRecycleTest, RecycleModeLabelConcurrentDestroy)
-{
-    Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
-    uint32_t support = RT_CAPABILITY_SUPPORT;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::CheckSupportPcieBarCopy)
-        .stubs()
-        .with(mockcpp::any(), outBound(support), mockcpp::any())
-        .will(returnValue(RT_ERROR_NONE));
-
-    void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
-        .stubs()
-        .with(
-            outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
-            mockcpp::any())
-        .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
-
-    rtStream_t stream = nullptr;
-    rtError_t error = rtStreamCreate(&stream, 0);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    Stream* const streamObj = rt_ut::UnwrapOrNull<Stream>(stream);
-    streamObj->SetSqMemAttr(false);
-
-    rtModel_t model;
-    rtLabel_t label;
-    error = rtModelCreate(&model, 0);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    error = rtLabelCreateV2(&label, model);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-
-    uint32_t val = 0x123;
-    Model* const realModel = rt_ut::UnwrapOrNull<Model>(model);
-    Label* const realLabel = rt_ut::UnwrapOrNull<Label>(label);
-    realLabel->SetLabelDevAddr(&val);
-    realLabel->ForceSetStream(streamObj);
-    streamObj->SetModel(realModel);
-    streamObj->InsertLabelList(realLabel);
-
-    uint32_t pos = UINT32_MAX;
-    TaskInfo* task = nullptr;
-    TaskResManageDavid* const taskResMang = static_cast<TaskResManageDavid*>(streamObj->taskResMang_);
-    error = taskResMang->AllocTaskInfoAndPos(1U, pos, &task);
-    EXPECT_EQ(error, RT_ERROR_NONE);
-    EXPECT_EQ(pos, 0U);
-    task->stream = streamObj;
-    task->sqeNum = 1U;
-    task->type = TS_TASK_TYPE_LABEL_SET;
-    task->u.labelSetTask.labelId = realLabel->Id_();
-
-    std::atomic<uint32_t> ready(0U);
-    std::atomic<bool> start(false);
-    rtError_t destroyError = RT_ERROR_NONE;
-    std::thread destroyThread([&]() {
-        ready.fetch_add(1U, std::memory_order_release);
-        while (!start.load(std::memory_order_acquire)) {
-        }
-        destroyError = CondLabelDestroy(realLabel);
-    });
-    std::thread recycleThread([&]() {
-        ready.fetch_add(1U, std::memory_order_release);
-        while (!start.load(std::memory_order_acquire)) {
-        }
-        RecycleModelBindStreamAllTask(streamObj, true);
-    });
-    while (ready.load(std::memory_order_acquire) != 2U) {
-    }
-    start.store(true, std::memory_order_release);
-    destroyThread.join();
-    recycleThread.join();
-
-    EXPECT_EQ(destroyError, RT_ERROR_NONE);
-    EXPECT_TRUE(streamObj->labels_.empty());
-    streamObj->SetModel(nullptr);
-    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
-    EXPECT_EQ(rtModelDestroy(model), RT_ERROR_NONE);
     ((Runtime*)Runtime::Instance())->DeviceRelease(device);
 }
 
