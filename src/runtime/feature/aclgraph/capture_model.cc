@@ -469,8 +469,9 @@ void CaptureModel::ClearCachedAllSubModels() { cachedAllSubModels_.clear(); }
 
 rtError_t CaptureModel::InitAllSubCaptureModelCondTaskByDefValue(Stream* const stm)
 {
+    rtError_t error = RT_ERROR_NONE;
     for (const auto& it : condHandleTaskMap_) {
-        rtError_t error = it.second->InitCondTaskByDefValue(stm);
+        error = it.second->InitCondTaskByDefValue(stm);
         ERROR_RETURN(
             error, "Init cond task default value failed, model_id=%u, retCode=%#x.", Id_(),
             static_cast<uint32_t>(error));
@@ -479,7 +480,7 @@ rtError_t CaptureModel::InitAllSubCaptureModelCondTaskByDefValue(Stream* const s
     auto& allSubModels = GetAllSubCaptureModels();
     for (CaptureModel* subModel : allSubModels) {
         for (const auto& it : subModel->condHandleTaskMap_) {
-            rtError_t error = it.second->InitCondTaskByDefValue(stm);
+            error = it.second->InitCondTaskByDefValue(stm);
             ERROR_RETURN(
                 error, "Sub model init cond task default value failed, root model_id=%u, sub model_id=%u, retCode=%#x.",
                 Id_(), subModel->Id_(), static_cast<uint32_t>(error));
