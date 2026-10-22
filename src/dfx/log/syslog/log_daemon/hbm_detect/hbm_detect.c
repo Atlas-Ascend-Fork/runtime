@@ -26,8 +26,8 @@
 
 #define HBM_THREAD_ATTR              \
     {                                \
-        1, 0, 0, 0, 0, 1, 128 * 1024 \
-    } // Default ThreadSize(128KB)
+        0, 0, 0, 0, 0, 1, 128 * 1024 \
+    } // joinable thread, Default ThreadSize(128KB)
 #define NON_DOCKER 1
 #define VM_NON_DOCKER 3
 
@@ -35,6 +35,7 @@
 #define HBM_THREAD_STATUS_RUN 1
 #define HBM_THREAD_STATUS_WAIT_EXIT 2
 STATIC uint32_t g_hbmThreadStatus = HBM_THREAD_STATUS_INIT;
+STATIC ToolThread g_hbmMonitorTid = 0;
 
 #define HBM_REPLY_PROHIBIT_CONTAINER "prohibit container operate hbmtester"
 #define HBM_REPLY_PROHIBIT_CONCURRENT "prohibit concurrent hbmtester execution"
@@ -85,6 +86,10 @@ STATIC int32_t HbmDetectCheckInfoValid(const AmlHbmDetectInfo* hbmInfo)
     }
     if (hbmInfo->version < HBM_AML_VERSION) {
         SELF_LOG_ERROR("check field version failed, configure: %u, current: %u", HBM_AML_VERSION, hbmInfo->version);
+        return LOG_FAILURE;
+    }
+    if (hbmInfo->num > MAX_NUM_OF_ADDR) {
+        SELF_LOG_ERROR("check field num failed, configure: %u, current: %u", MAX_NUM_OF_ADDR, hbmInfo->num);
         return LOG_FAILURE;
     }
     return LOG_SUCCESS;
@@ -306,7 +311,17 @@ STATIC int32_t HbmDetectStartDetectMonitor(const CommHandle* handle)
         SELF_LOG_ERROR("create thread failed, result=%d.", ret);
         return LOG_FAILURE;
     }
+    g_hbmMonitorTid = tid;
     return LOG_SUCCESS;
+}
+
+STATIC void HbmDetectJoinMonitor(void)
+{
+    if (g_hbmMonitorTid != 0) {
+        int32_t ret = ToolJoinTask(&g_hbmMonitorTid);
+        NO_ACT_WARN_LOG(ret != SYS_OK, "join hbm monitor thread failed, ret=%d.", ret);
+        g_hbmMonitorTid = 0;
+    }
 }
 
 STATIC int32_t HbmDetectOperateDetect(const CommHandle* handle, const AmlHbmDetectInfo* hbmInfo)
@@ -333,9 +348,16 @@ STATIC int32_t HbmDetectOperateDetect(const CommHandle* handle, const AmlHbmDete
     ONE_ACT_NO_LOG(ret == LOG_FAILURE, return ret);
 
     ret = HbmDetectPopenCommand(handle, hbmCommand, NULL, -1);
-    ONE_ACT_ERR_LOG(ret == LOG_FAILURE, return LOG_FAILURE, "hbmtester run failed");
-
+    // stop and join the monitor thread on every path before returning: a surviving thread keeps
+    // executing code of this library after RunProcessTask finishes, which is invisible to
+    // AdxWaitComponentDrained (it only counts RunProcessTask threads) and races with the
+    // release of task->handle
     g_hbmThreadStatus = HBM_THREAD_STATUS_WAIT_EXIT;
+    HbmDetectJoinMonitor();
+    if (ret == LOG_FAILURE) {
+        SELF_LOG_ERROR("hbmtester run failed");
+        return LOG_FAILURE;
+    }
 
     int32_t detectResult = HbmDetectGetResult(handle);
     if (detectResult == LOG_SUCCESS) {
@@ -378,7 +400,7 @@ int32_t HbmDetectProcess(const CommHandle* handle, const void* value, uint32_t l
         HbmDetectReplyMsg(handle, HBM_REPLY_INVLAID_INPUT, strlen(HBM_REPLY_INVLAID_INPUT));
         return LOG_FAILURE;
     }
-    if (len < sizeof(LogDataMsg)) {
+    if (len < sizeof(LogDataMsg) + sizeof(AmlHbmDetectInfo)) {
         SELF_LOG_ERROR("invalid input, length of value is %u", len);
         HbmDetectReplyMsg(handle, HBM_REPLY_INVLAID_INPUT, strlen(HBM_REPLY_INVLAID_INPUT));
         return LOG_FAILURE;

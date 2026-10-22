@@ -169,7 +169,9 @@ int32_t LogGetFile::Process(const CommHandle& handle, const std::shared_ptr<MsgP
             CONTAINER_NO_SUPPORT_MESSAGE.length() + 1);
         return SYS_OK;
     }
-    std::string logType(reinterpret_cast<IdeString>(proto->data));
+    // the payload is not guaranteed to be NUL terminated, bound the read by sliceLen
+    std::string logType(
+        reinterpret_cast<IdeString>(proto->data), strnlen(reinterpret_cast<IdeString>(proto->data), proto->sliceLen));
     std::vector<std::string> list;
     int32_t pid = 0;
     err = LogIdeGetPidBySession(reinterpret_cast<HDC_SESSION>(handle.session), &pid);

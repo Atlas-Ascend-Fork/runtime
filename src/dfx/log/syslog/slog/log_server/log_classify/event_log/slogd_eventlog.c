@@ -188,6 +188,7 @@ STATIC int32_t SlogdEventlogFlush(void* buffer, uint32_t bufferLen, bool flushFl
     (void)flushFlag;
     StLogFileList* logList = GetGlobalLogFileList();
     ONE_ACT_WARN_LOG(logList == NULL, return LOG_FAILURE, "loglist is null.");
+    ONE_ACT_ERR_LOG(buffer == NULL, return LOG_FAILURE, "input buffer is NULL.");
     if (logList->eventLogList.storage.period != 0) {
         logList->eventLogList.storage.curTime++;
         LogFileMgrStorage(&logList->eventLogList);

@@ -41,6 +41,7 @@ static int32_t g_dirNum = 0;
 typedef struct StackcoreFileSyncArg {
     char fileName[MAX_FILENAME_LEN];
     int32_t dirIndex;
+    bool cancelled;
     struct StackcoreFileSyncArg* next;
 } StackcoreFileSyncArg;
 
@@ -557,6 +558,14 @@ static void StackcoreDeleteArgList(void)
 static void StackcoreFileSyncProc(void* arg)
 {
     StackcoreFileSyncArg* syncArg = (StackcoreFileSyncArg*)arg;
+    (void)ToolMutexLock(&g_stackcoreMonitor.argListLock);
+    if (syncArg->cancelled) {
+        // the monitor stopped before this delayed event fired: skip the sync and self-remove
+        StackcoreArgDelete(syncArg, &g_stackcoreMonitor.argList);
+        (void)ToolMutexUnLock(&g_stackcoreMonitor.argListLock);
+        return;
+    }
+    (void)ToolMutexUnLock(&g_stackcoreMonitor.argListLock);
 
     // Upload the newly created stackcore file
     StackcoreSyncSingleFile(syncArg->dirIndex, syncArg->fileName);
@@ -588,6 +597,7 @@ static void StackcoreNotifyCreateEvent(struct inotify_event* event)
     StackcoreFileSyncArg* arg = (StackcoreFileSyncArg*)LogMalloc(sizeof(StackcoreFileSyncArg));
     ONE_ACT_ERR_LOG(
         arg == NULL, return, "malloc for bbox file sync arg failed, strerr = %s.", strerror(ToolGetErrorCode()));
+    arg->cancelled = false;
 
     errno_t err = EOK;
     err = strcpy_s(arg->fileName, MAX_FILENAME_LEN, event->name);
@@ -595,7 +605,6 @@ static void StackcoreNotifyCreateEvent(struct inotify_event* event)
 
     arg->dirIndex = i;
 
-    // this event handle will be released immediately after trigger and no need to be saved.
     EventAttr attr = {DELAY_TIME_EVENT, STACKCORE_DELAY_TIME};
     EventHandle handle = EventAdd(StackcoreFileSyncProc, (void*)arg, &attr);
     if (handle == NULL) {
@@ -706,6 +715,10 @@ void StackcoreMonitorExit(void)
     // first delete the event for aging stackcore files
     StackcoreMonitorScanStop();
 
+    // the event thread is already joined before the exit path reaches here, no delayed
+    // callback can run anymore and the remaining args can be freed directly
+    StackcoreDeleteArgList();
+
     // then release the dynamic memory
     ToolPathListFree(g_stackcorePath, g_dirNum);
     g_stackcorePath = NULL;
@@ -778,6 +791,17 @@ int32_t StackcoreMonitorStart(void)
  * @param [in]     : -
  * @return         : LOG_SUCCESS success; LOG_FAILURE failed
  */
+// Same cancellation protocol as BboxCancelPendingArgs: mark the pending delayed-sync args
+// cancelled, their callbacks self-remove. No EventDelete on stale delay handles (ABA).
+static void StackcoreCancelPendingArgs(void)
+{
+    (void)ToolMutexLock(&g_stackcoreMonitor.argListLock);
+    for (StackcoreFileSyncArg* node = g_stackcoreMonitor.argList; node != NULL; node = node->next) {
+        node->cancelled = true;
+    }
+    (void)ToolMutexUnLock(&g_stackcoreMonitor.argListLock);
+}
+
 int32_t StackcoreMonitorStop(void)
 {
     int32_t ret = 0;
@@ -794,7 +818,7 @@ int32_t StackcoreMonitorStop(void)
 
     StackcoreStopNotifyMonitor(g_dirNum);
 
-    StackcoreDeleteArgList();
+    StackcoreCancelPendingArgs();
 
     return LOG_SUCCESS;
 }

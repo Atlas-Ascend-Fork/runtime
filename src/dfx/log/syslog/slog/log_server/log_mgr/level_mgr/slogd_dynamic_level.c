@@ -813,7 +813,7 @@ STATIC void ReceiveAndProcessLogLevel(void)
                 "can not create message queue, then try to create again, strerr=%s.", strerror(ToolGetErrorCode()));
         }
 
-        result = MsgQueueRecv(queueId, (void*)(&data), MSG_MAX_LEN, false, FORWARD_MSG_TYPE);
+        result = MsgQueueRecv(queueId, (void*)(&data), MSG_MAX_LEN, true, FORWARD_MSG_TYPE);
         if (result != LOG_SUCCESS) {
             // Interrupted system call
             ONE_ACT_NO_LOG(ToolGetErrorCode() == EINTR, continue);

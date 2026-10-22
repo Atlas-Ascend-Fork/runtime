@@ -27,10 +27,13 @@
 typedef struct BboxFileSyncArg {
     char watchPath[MAX_FULLPATH_LEN];
     char fileName[MAX_FILENAME_LEN];
+    bool cancelled;
     struct BboxFileSyncArg* next;
 } BboxFileSyncArg;
 
 static FileMonitor g_bboxMonitor = {0};
+
+static void BboxDeleteArgList(void);
 
 int32_t BboxMonitorInit(FileMonitorSyncFunc func)
 {
@@ -45,6 +48,9 @@ int32_t BboxMonitorInit(FileMonitorSyncFunc func)
 void BboxMonitorExit(void)
 {
     BboxMonitorStop();
+    // the event thread is already joined before the exit path reaches here, no delayed
+    // callback can run anymore and the remaining args can be freed directly
+    BboxDeleteArgList();
     g_bboxMonitor.eventMonitor.fileSyncFunc = NULL;
 }
 
@@ -111,6 +117,14 @@ static void BboxArgAddToList(BboxFileSyncArg* node, void** list)
 static void BboxFileSyncProc(void* arg)
 {
     BboxFileSyncArg* syncArg = (BboxFileSyncArg*)arg;
+    (void)ToolMutexLock(&g_bboxMonitor.argListLock);
+    if (syncArg->cancelled) {
+        // the monitor stopped before this delayed event fired: skip the sync and self-remove
+        BboxArgDelete(syncArg, &g_bboxMonitor.argList);
+        (void)ToolMutexUnLock(&g_bboxMonitor.argListLock);
+        return;
+    }
+    (void)ToolMutexUnLock(&g_bboxMonitor.argListLock);
     BboxNotifySyncFile(syncArg->watchPath, syncArg->fileName, MAX_FOLDER_DEPTH);
     BboxNotifySyncFile(syncArg->watchPath, BBOX_HISTORY_FILE_NAME, 0);
     (void)ToolMutexLock(&g_bboxMonitor.argListLock);
@@ -131,6 +145,7 @@ static void BboxNotifyCreateEvent(struct inotify_event* event)
     BboxFileSyncArg* arg = (BboxFileSyncArg*)LogMalloc(sizeof(BboxFileSyncArg));
     ONE_ACT_ERR_LOG(
         arg == NULL, return, "malloc for bbox file sync arg failed, strerr = %s.", strerror(ToolGetErrorCode()));
+    arg->cancelled = false;
     int32_t ret = 0;
     ret = sprintf_s(arg->watchPath, MAX_FULLPATH_LEN, "%s", g_bboxMonitor.eventMonitor.notifyMonitor.event[i].fileName);
     TWO_ACT_ERR_LOG(ret == -1, XFREE(arg), return, "sprintf failed, get watch path failed.");
@@ -320,9 +335,22 @@ static void BboxDeleteArgList(void)
     (void)ToolMutexUnLock(&g_bboxMonitor.argListLock);
 }
 
+// Mark all pending delayed-sync args cancelled: their delayed callbacks check the flag first
+// and then remove and free themselves. No EventDelete is used on the delay handles at all -
+// a fired (self deleted) event node can be recycled by a new EventAdd and deleting a stale
+// handle would then cancel an unrelated event (ABA), so the events are left to fire harmlessly.
+static void BboxCancelPendingArgs(void)
+{
+    (void)ToolMutexLock(&g_bboxMonitor.argListLock);
+    for (BboxFileSyncArg* node = (BboxFileSyncArg*)g_bboxMonitor.argList; node != NULL; node = node->next) {
+        node->cancelled = true;
+    }
+    (void)ToolMutexUnLock(&g_bboxMonitor.argListLock);
+}
+
 void BboxMonitorStop(void)
 {
     BboxRmNotifyMonitor();
-    BboxDeleteArgList();
+    BboxCancelPendingArgs();
     return;
 }

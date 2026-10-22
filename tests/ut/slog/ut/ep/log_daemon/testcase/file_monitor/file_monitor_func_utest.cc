@@ -113,6 +113,17 @@ static int32_t ToolCondTimedWaitStub(ToolCond* cond, ToolMutex* mutex, UINT32 mi
     return 0;
 }
 
+// 1ms variant for tests that mock a persistent failure in the aging scan: with the 1us stub the
+// event thread spins at ~1000 passes/s, the 30s scan period elapses ~3 times per millisecond and
+// every pass re-attempts the mocked remove over all files, flooding the log at ~6K lines/s
+// (CI console capture cannot keep up and the step times out). 1ms still lets the scan fire
+// several times within the test window, so the failure path stays covered.
+static int32_t ToolCondTimedWaitMsStub(ToolCond* cond, ToolMutex* mutex, UINT32 milliSecond)
+{
+    usleep(1000);
+    return 0;
+}
+
 TEST_F(EP_FILE_MONITOR_FUNC_UTEST, StackcoreMonitorAging)
 {
     AddStackcoreFile();
@@ -145,7 +156,7 @@ TEST_F(EP_FILE_MONITOR_FUNC_UTEST, StackcoreMonitorAging)
 TEST_F(EP_FILE_MONITOR_FUNC_UTEST, StackcoreMonitorAgingRemoveFailed)
 {
     AddStackcoreFile();
-    MOCKER(ToolCondTimedWait).stubs().will(invoke(ToolCondTimedWaitStub));
+    MOCKER(ToolCondTimedWait).stubs().will(invoke(ToolCondTimedWaitMsStub));
     MOCKER(ServerSyncFile).expects(exactly(200)).will(returnValue(0));
     MOCKER(ServerSyncFile).stubs().will(returnValue(0));
     MOCKER(static_cast<int (*)(const char*)>(remove)).stubs().will(returnValue(-1));

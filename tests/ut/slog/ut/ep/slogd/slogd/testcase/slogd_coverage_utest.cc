@@ -98,7 +98,8 @@ static void SendLevelCmd(toolMsgid qid, const char* cmd, uint32_t sleepUs)
     usleep(sleepUs);
     LogCmdMsg resp;
     (void)memset_s(&resp, sizeof(resp), 0, sizeof(resp));
-    while (MsgQueueRecv(qid, (Buff*)&resp, MSG_MAX_LEN, true, FEEDBACK_MSG_TYPE) == LOG_SUCCESS) {
+    // drain must be non-blocking: isWait=true blocks msgrcv after the last feedback and hangs the test
+    while (MsgQueueRecv(qid, (Buff*)&resp, MSG_MAX_LEN, false, FEEDBACK_MSG_TYPE) == LOG_SUCCESS) {
         (void)memset_s(&resp, sizeof(resp), 0, sizeof(resp));
     }
 }

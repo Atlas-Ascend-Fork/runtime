@@ -40,6 +40,7 @@ public:
     void SetMode(int32_t loadMode);
     void SetDeviceId(int32_t deviceId);
     bool WaitServerInitted() const;
+    bool WaitComponentDrained(ComponentType comp, uint32_t timeoutMs);
 
 private:
     using RequestClock = std::chrono::steady_clock;
@@ -98,8 +99,13 @@ private:
     std::mutex linkMtx_;
     std::atomic<bool> serverInittedFlag_{false};
     uint32_t processingNum_;
+    // per-component in-flight process counter, guarded by processMtx_ together with processingNum_
+    uint32_t compProcessingNum_[ComponentType::NR_COMPONENTS];
     mutable std::mutex processMtx_;
     std::condition_variable processCv_;
+
+    void IncCompProcessing(ComponentType comp);
+    void DecCompProcessing(ComponentType comp);
 };
 } // namespace Adx
 #endif

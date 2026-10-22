@@ -29,6 +29,11 @@ int32_t AdxUnRegisterService(int32_t serverType, ComponentType componentType)
     return AdxComponentServerCleanup(static_cast<drvHdcServiceType>(serverType), componentType);
 }
 
+int32_t AdxWaitComponentDrained(int32_t serverType, ComponentType componentType, uint32_t timeoutMs)
+{
+    return ServerRegister::Instance().WaitComponentDrained(serverType, componentType, timeoutMs);
+}
+
 int32_t AdxServiceStartup(ServerInitInfo info) { return AdxComponentServerStartup(info); }
 
 int32_t AdxServiceCleanup(int32_t serverType)

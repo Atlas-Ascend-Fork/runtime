@@ -120,7 +120,7 @@ LogStatus MsgQueueSend(toolMsgid queueId, const Buff* data, uint32_t length, boo
     ONE_ACT_NO_LOG(data == NULL, return LOG_INVALID_DATA);
     ONE_ACT_NO_LOG(length == 0, return LOG_INVALID_DATA);
 
-    int32_t msgFlag = (isWait == false) ? 0 : M_MSG_NOWAIT;
+    int32_t msgFlag = (isWait == true) ? 0 : M_MSG_NOWAIT;
     if (ToolMsgSnd(queueId, data, length, msgFlag) != 0) {
         return LOG_FAILURE_SEND_MSG;
     }
@@ -142,7 +142,7 @@ LogStatus MsgQueueRecv(toolMsgid queueId, Buff* recvData, uint32_t bufLen, bool 
     ONE_ACT_NO_LOG(recvData == NULL, return LOG_INVALID_DATA);
     ONE_ACT_NO_LOG(bufLen == 0, return LOG_INVALID_DATA);
 
-    int32_t msgFlag = (isWait == false) ? 0 : M_MSG_NOWAIT;
+    int32_t msgFlag = (isWait == true) ? 0 : M_MSG_NOWAIT;
     if (ToolMsgRcv(queueId, (void*)recvData, bufLen, msgFlag, msgType) == -1) {
         return LOG_FAILURE_RECV_MSG;
     }

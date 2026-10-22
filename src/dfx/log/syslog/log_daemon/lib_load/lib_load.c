@@ -14,6 +14,8 @@
 #include "library_load.h"
 #include "server_mgr.h"
 #include "ascend_hal.h"
+#include "adx_component_api_c.h"
+#include "adcore_api.h"
 #include "dlfcn.h"
 
 #define LIB_LOAD_REPLY_INVALID_INPUT "check input validity failed"
@@ -30,6 +32,12 @@
 #define LIB_LOAD_VERSION 0x1000U
 #define LIB_LOAD_MAX_FILE_LEN 1024
 #define LIB_LOAD_MAX_VERSION_LEN 256
+// a normal hbmtester run (--run -t 8) already takes about 8s: the upgrade drain must cover it,
+// otherwise every upgrade concurrent with a normal detection would fail
+#define LIB_LOAD_UPGRADE_DRAIN_TIMEOUT_MS 15000U
+// the destroy path runs at daemon exit: keep the shutdown delay bounded, an undrained library
+// is simply kept mapped (leaking at process exit is harmless, unloading it would crash slogd)
+#define LIB_LOAD_DESTROY_DRAIN_TIMEOUT_MS 5000U
 
 typedef int32_t (*DfxDetectInit)(void*);
 typedef void (*DfxDetectExit)(void);
@@ -100,8 +108,11 @@ STATIC void LibLoadDlclose(void** handle, DfxDetectExit* libExit)
 
 int32_t LibLoadServerInit(void)
 {
+    // initialize the mutex before any registration action
+    int32_t ret = ToolMutexInit(&g_libLoadMutex);
+    ONE_ACT_ERR_LOG(ret != SYS_OK, return LOG_FAILURE, "Lib load mutex init failed.");
+
     // dlopen default_detect.so
-    int32_t ret = LOG_SUCCESS;
     char path[LIB_LOAD_MAX_FILE_LEN] = {0};
     for (size_t i = 0U; i < sizeof(g_libRecord) / sizeof(LibOpenInfo); ++i) {
         (void)memset_s(path, (size_t)LIB_LOAD_MAX_FILE_LEN, 0, (size_t)LIB_LOAD_MAX_FILE_LEN);
@@ -129,9 +140,11 @@ int32_t LibLoadServerInit(void)
     g_libRecord[1].libExit = (DfxDetectExit)dlsym(g_libRecord[1].dlHandle, "CpuDetectServerExit");
     ONE_ACT_ERR_LOG(g_libRecord[1].libExit == NULL, ret = LOG_FAILURE, "Dlsym api CpuDetectServerExit failed.");
 
-    g_libRecord[0].init(ServerCreateEx);
-    g_libRecord[1].init(ServerCreate);
-    ONE_ACT_ERR_LOG(ToolMutexInit(&g_libLoadMutex) != SYS_OK, ret = LOG_FAILURE, "Lib load mutex init failed.");
+    // call init only when all symbols are resolved, otherwise the null function pointer crashes slogd
+    if (ret == LOG_SUCCESS) {
+        g_libRecord[0].init(ServerCreateEx);
+        g_libRecord[1].init(ServerCreate);
+    }
     if (ret == LOG_FAILURE) {
         LibLoadDlclose(&g_libRecord[0].dlHandle, &g_libRecord[0].libExit);
         LibLoadDlclose(&g_libRecord[1].dlHandle, &g_libRecord[1].libExit);
@@ -141,14 +154,27 @@ int32_t LibLoadServerInit(void)
 
 int32_t LibLoadServerDestroy(void)
 {
+    int32_t ret = LOG_SUCCESS;
     for (uint32_t i = 0U; i < sizeof(g_libRecord) / sizeof(LibOpenInfo); ++i) {
-        LibLoadDlclose(&g_libRecord[i].dlHandle, &g_libRecord[i].libExit);
+        // release and drain before dlclose: in-flight process threads may still run inside the library
         ServerRelease(g_libRecord[i].type);
+        int32_t drainRet = AdxWaitComponentDrained(
+            (int32_t)HDC_SERVICE_TYPE_IDE_FILE_TRANS, g_libRecord[i].type, LIB_LOAD_DESTROY_DRAIN_TIMEOUT_MS);
+        if (drainRet != IDE_DAEMON_OK) {
+            // keep the still busy library mapped: leaking at process exit is harmless,
+            // unloading it would crash the exiting daemon
+            SELF_LOG_ERROR(
+                "component(%d) not drained after %ums, skip dlclose of %s.", (int32_t)g_libRecord[i].type,
+                LIB_LOAD_DESTROY_DRAIN_TIMEOUT_MS, g_libRecord[i].name);
+            ret = LOG_FAILURE;
+        } else {
+            LibLoadDlclose(&g_libRecord[i].dlHandle, &g_libRecord[i].libExit);
+        }
         (void)memset_s(g_libRecord[i].version, (size_t)LIB_LOAD_MAX_VERSION_LEN, 0, (size_t)LIB_LOAD_MAX_VERSION_LEN);
         g_libRecord[i].size = 0U;
     }
     (void)ToolMutexDestroy(&g_libLoadMutex);
-    return LOG_SUCCESS;
+    return ret;
 }
 
 /**
@@ -206,6 +232,18 @@ STATIC int32_t LibLoadUpgradeLibrary(LibOpenInfo* openInfo, char* path, char* ve
 {
     SELF_LOG_INFO("library %s upgrade", openInfo->name);
     ServerRelease(openInfo->type);
+    // drain the in-flight process threads of this component before dlclose, otherwise the threads
+    // keep executing code in the library that is about to be unloaded (use-after-free)
+    int32_t drainRet = AdxWaitComponentDrained(
+        (int32_t)HDC_SERVICE_TYPE_IDE_FILE_TRANS, openInfo->type, LIB_LOAD_UPGRADE_DRAIN_TIMEOUT_MS);
+    if (drainRet != IDE_DAEMON_OK) {
+        // unloading a still busy library crashes slogd: keep the old library mapped and fail this
+        // upgrade instead, the next upgrade attempt retries once the component is idle again
+        SELF_LOG_ERROR(
+            "component(%d) not drained after %ums, keep library %s loaded, upgrade aborted.", (int32_t)openInfo->type,
+            LIB_LOAD_UPGRADE_DRAIN_TIMEOUT_MS, openInfo->name);
+        return LOG_FAILURE;
+    }
     LibLoadDlclose(&openInfo->dlHandle, &openInfo->libExit);
     (void)memset_s(openInfo->version, (size_t)LIB_LOAD_MAX_VERSION_LEN, 0, (size_t)LIB_LOAD_MAX_VERSION_LEN);
     openInfo->size = 0U;

@@ -23,6 +23,9 @@
 // global zone
 STATIC SessionNode* g_sessionPidDevIdList = NULL;
 STATIC SessionNode* g_sessionPidDevIdDeletedList = NULL;
+// node currently being processed by HandleDeletedSessionNode, published under g_sessionMutex
+// so that SendDataToSessionNode can find it while the deleted list itself is popped out
+STATIC SessionNode* g_sessionProcessingNode = NULL;
 STATIC AdxCommHandle g_continuousExportSession = NULL;
 STATIC uint32_t g_singleExportCounter = 0U;
 STATIC ToolMutex g_sessionMutex = TOOL_MUTEX_INITIALIZER;
@@ -38,6 +41,8 @@ STATIC ToolThread g_contExpMonitorTid = 0;
 #define CONT_EXP_MONITOR_INTERVAL 1000U
 
 STATIC void* SessionMgrContExpMonitor(void* args);
+static SessionNode* GetSessionNodeByList(uint32_t pid, uint32_t devId, SessionNode* list);
+STATIC SessionNode* GetDeletedSessionNodeUnlocked(uint32_t pid, uint32_t devId);
 
 LogRt InitSessionList(void)
 {
@@ -96,6 +101,7 @@ void FreeSessionList(void)
     }
     g_sessionPidDevIdList = NULL;
     g_sessionPidDevIdDeletedList = NULL;
+    g_sessionProcessingNode = NULL;
     UNLOCK_WARN_LOG(&g_sessionMutex);
     (void)ToolMutexDestroy(&g_sessionMutex);
     return;
@@ -212,12 +218,20 @@ void HandleInvalidSessionNode(void)
 
 int32_t SendDataToSessionNode(uint32_t pid, uint32_t devId, const char* buf, size_t bufLen)
 {
-    SessionNode* node = GetDeletedSessionNode(pid, devId);
+    // snapshot the session handle under the lock: the node may be freed by HandleDeletedSessionNode
+    // right after the lock is released, the raw node pointer must not escape this critical section
+    LOCK_WARN_LOG(&g_sessionMutex);
+    SessionNode* node = GetDeletedSessionNodeUnlocked(pid, devId);
     if (node == NULL) {
-        node = GetSessionNode(pid, devId);
-        ONE_ACT_WARN_LOG(node == NULL, return ARGV_NULL, "can not get session info");
+        node = GetSessionNodeByList(pid, devId, g_sessionPidDevIdList);
     }
-    int32_t ret = DrvBufWrite((HDC_SESSION)node->session, buf, bufLen);
+    uintptr_t session = (node != NULL) ? node->session : (uintptr_t)0;
+    UNLOCK_WARN_LOG(&g_sessionMutex);
+    if (session == (uintptr_t)0) {
+        SELF_LOG_WARN("can not get session info, pid=%u, devId=%u.", pid, devId);
+        return ARGV_NULL;
+    }
+    int32_t ret = DrvBufWrite((HDC_SESSION)session, buf, bufLen);
     NO_ACT_ERR_LOG(ret != LOG_SUCCESS, "write data to hdc failed");
     return ret;
 }
@@ -256,9 +270,16 @@ void HandleDeletedSessionNode(LogSeverSendDataFunc func)
     while (sessionNode != NULL) {
         // traverse each node
         sessionNode->timeout -= ONE_SECOND;
-        g_sessionPidDevIdDeletedList = sessionNode;
+        // publish the current node for SendDataToSessionNode lookup; never touch the global
+        // deleted list here without the lock, otherwise a concurrent PushDeletedSessionNode
+        // loses its node (leak) or gets chained into this private chain (use-after-free)
+        LOCK_WARN_LOG(&g_sessionMutex);
+        g_sessionProcessingNode = sessionNode;
+        UNLOCK_WARN_LOG(&g_sessionMutex);
         func((uint32_t)sessionNode->pid, (uint32_t)sessionNode->devId, sessionNode->timeout);
-        g_sessionPidDevIdDeletedList = NULL;
+        LOCK_WARN_LOG(&g_sessionMutex);
+        g_sessionProcessingNode = NULL;
+        UNLOCK_WARN_LOG(&g_sessionMutex);
         if (sessionNode->timeout <= 0) {
             // session node is timeout, the timeout value is notified by client (libalog.so)
             // delete node from list
@@ -316,6 +337,16 @@ static SessionNode* GetSessionNodeByList(uint32_t pid, uint32_t devId, SessionNo
     return NULL;
 }
 
+// caller must hold g_sessionMutex
+STATIC SessionNode* GetDeletedSessionNodeUnlocked(uint32_t pid, uint32_t devId)
+{
+    SessionNode* tmp = GetSessionNodeByList(pid, devId, g_sessionPidDevIdDeletedList);
+    if (tmp == NULL) {
+        tmp = GetSessionNodeByList(pid, devId, g_sessionProcessingNode);
+    }
+    return tmp;
+}
+
 SessionNode* GetSessionNode(uint32_t pid, uint32_t devId)
 {
     ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return NULL, "invalid device id for node searching: %u", devId);
@@ -331,7 +362,7 @@ SessionNode* GetDeletedSessionNode(uint32_t pid, uint32_t devId)
     ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return NULL, "invalid device id for node searching: %u", devId);
 
     LOCK_WARN_LOG(&g_sessionMutex);
-    SessionNode* tmp = GetSessionNodeByList(pid, devId, g_sessionPidDevIdDeletedList);
+    SessionNode* tmp = GetDeletedSessionNodeUnlocked(pid, devId);
     UNLOCK_WARN_LOG(&g_sessionMutex);
     return tmp;
 }

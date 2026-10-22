@@ -25,6 +25,17 @@ int32_t ServerRegister::UnRegisterComponent(int32_t serverType, ComponentType cm
     return services_[serverType].ComponentErase(cmpt) ? IDE_DAEMON_OK : IDE_DAEMON_ERROR;
 }
 
+int32_t ServerRegister::WaitComponentDrained(int32_t serverType, ComponentType cmpt, uint32_t timeoutMs)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    auto it = services_.find(serverType);
+    if (it == services_.end()) {
+        IDE_LOGE("Find server failed, serverType:%d", serverType);
+        return IDE_DAEMON_ERROR;
+    }
+    return it->second.WaitComponentDrained(cmpt, timeoutMs) ? IDE_DAEMON_OK : IDE_DAEMON_ERROR;
+}
+
 int32_t ServerRegister::ComponentServerStartup(ServerInitInfo info) const
 {
     return ServerRegister::Instance().ServerManagerInit(info) ? IDE_DAEMON_OK : IDE_DAEMON_ERROR;

@@ -138,6 +138,7 @@ std::shared_ptr<MsgProto> MakeFileRequest(MsgType type, const char* logType)
         return nullptr;
     }
     proto->msgType = type;
+    proto->sliceLen = static_cast<uint32_t>(dataLen);
     if (logType != nullptr) {
         (void)strcpy_s(reinterpret_cast<char*>(proto->data), dataLen, logType);
     }

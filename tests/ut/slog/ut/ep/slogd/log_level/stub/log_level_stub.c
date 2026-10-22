@@ -21,7 +21,7 @@ int32_t shmgetStub(key_t key, size_t size, int32_t shmflg)
     system("rm " SHMEM_FILE);
     system("> " SHMEM_FILE);
     if (g_shmFd == -1) {
-        g_shmFd = open(SHMEM_FILE, O_CREAT | O_RDWR);
+        g_shmFd = open(SHMEM_FILE, O_CREAT | O_RDWR, 0666);
     }
     return g_shmFd;
 }

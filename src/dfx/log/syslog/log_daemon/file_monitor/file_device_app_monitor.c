@@ -21,12 +21,15 @@
 typedef struct DeviceAppFileSyncArg {
     char watchPath[MAX_FULLPATH_LEN]; // debug | run
     char fileName[MAX_FILENAME_LEN];  // device-app-xx
+    bool cancelled;
     struct DeviceAppFileSyncArg* next;
 } DeviceAppFileSyncArg;
 
 static FileMonitor g_devAppMonitor = {0};
 static const char* g_logType[LOG_TYPE_NUM] = {DEBUG_DIR_NAME, SECURITY_DIR_NAME, RUN_DIR_NAME};
 static char g_scanPath[MAX_FULLPATH_LEN] = {0}; // /var/log/npu/slog/(run | debug)
+
+static void DeviceAppDeleteArgList(void);
 
 int32_t DeviceAppMonitorInit(FileMonitorSyncFunc func)
 {
@@ -43,6 +46,9 @@ int32_t DeviceAppMonitorInit(FileMonitorSyncFunc func)
 void DeviceAppMonitorExit(void)
 {
     DeviceAppMonitorStop();
+    // the event thread is already joined before the exit path reaches here, no delayed
+    // callback can run anymore and the remaining args can be freed directly
+    DeviceAppDeleteArgList();
     g_devAppMonitor.eventMonitor.fileSyncFunc = NULL;
 }
 
@@ -186,19 +192,34 @@ static void DeviceAppMonitorAddWatch(void)
 static void DeviceAppFileSyncProc(void* arg)
 {
     DeviceAppFileSyncArg* syncArg = (DeviceAppFileSyncArg*)arg;
+    (void)ToolMutexLock(&g_devAppMonitor.argListLock);
+    if (syncArg->cancelled) {
+        // the monitor stopped before this delayed event fired: skip the sync and self-remove
+        DeviceAppArgDelete(syncArg, &g_devAppMonitor.argList);
+        (void)ToolMutexUnLock(&g_devAppMonitor.argListLock);
+        return;
+    }
+    (void)ToolMutexUnLock(&g_devAppMonitor.argListLock);
     char srcPath[MAX_FULLPATH_LEN] = {0}; // /var/log/npu/slog/(debug | run)/device-app-xxx
     char dstPath[MAX_FULLPATH_LEN] = {0}; // slog/dev-os-xx/(debug | run)/device-app-xxx
-    int32_t ret = 0;
-    ret = sprintf_s(srcPath, MAX_FULLPATH_LEN, "%s/%s/%s", LogGetRootPath(), syncArg->watchPath, syncArg->fileName);
-    ONE_ACT_ERR_LOG(ret == -1, return, "sprintf_s failed, get notify src path failed.");
-    ret = sprintf_s(
-        dstPath, MAX_FULLPATH_LEN, "slog/%s/%s/%s", FileMonitorGetMasterIdStr(), syncArg->watchPath, syncArg->fileName);
-    ONE_ACT_ERR_LOG(ret == -1, return, "sprintf_s failed, get notify dst path failed.");
-    ToolStat fileStat = {0};
-    if ((ToolStatGet(srcPath, &fileStat) == SYS_OK) && S_ISDIR(fileStat.st_mode)) {
-        ret = FileMonitorSyncFileList(
-            srcPath, dstPath, g_devAppMonitor.eventMonitor.fileSyncFunc, MAX_DEVICE_APP_FOLDER_DEPTH);
-        NO_ACT_ERR_LOG(ret != LOG_SUCCESS, "sync file failed, ret = %d.", ret);
+    int32_t ret =
+        sprintf_s(srcPath, MAX_FULLPATH_LEN, "%s/%s/%s", LogGetRootPath(), syncArg->watchPath, syncArg->fileName);
+    if (ret == -1) {
+        SELF_LOG_ERROR("sprintf_s failed, get notify src path failed.");
+    } else {
+        ret = sprintf_s(
+            dstPath, MAX_FULLPATH_LEN, "slog/%s/%s/%s", FileMonitorGetMasterIdStr(), syncArg->watchPath,
+            syncArg->fileName);
+        if (ret == -1) {
+            SELF_LOG_ERROR("sprintf_s failed, get notify dst path failed.");
+        } else {
+            ToolStat fileStat = {0};
+            if ((ToolStatGet(srcPath, &fileStat) == SYS_OK) && S_ISDIR(fileStat.st_mode)) {
+                ret = FileMonitorSyncFileList(
+                    srcPath, dstPath, g_devAppMonitor.eventMonitor.fileSyncFunc, MAX_DEVICE_APP_FOLDER_DEPTH);
+                NO_ACT_ERR_LOG(ret != LOG_SUCCESS, "sync file failed, ret = %d.", ret);
+            }
+        }
     }
     (void)ToolMutexLock(&g_devAppMonitor.argListLock);
     DeviceAppArgDelete(syncArg, &g_devAppMonitor.argList);
@@ -218,6 +239,7 @@ static void DeviceAppNotifyCreateEvent(struct inotify_event* event)
     DeviceAppFileSyncArg* arg = (DeviceAppFileSyncArg*)LogMalloc(sizeof(DeviceAppFileSyncArg));
     ONE_ACT_ERR_LOG(
         arg == NULL, return, "malloc for device app file sync arg failed, strerr = %s.", strerror(ToolGetErrorCode()));
+    arg->cancelled = false;
 
     errno_t err =
         strcpy_s(arg->watchPath, MAX_FULLPATH_LEN, g_devAppMonitor.eventMonitor.notifyMonitor.event[i].fileName);
@@ -300,8 +322,19 @@ int32_t DeviceAppMonitorStart(void)
     return LOG_SUCCESS;
 }
 
+// Same cancellation protocol as BboxCancelPendingArgs: mark the pending delayed-sync args
+// cancelled, their callbacks self-remove. No EventDelete on stale delay handles (ABA).
+static void DeviceAppCancelPendingArgs(void)
+{
+    (void)ToolMutexLock(&g_devAppMonitor.argListLock);
+    for (DeviceAppFileSyncArg* node = (DeviceAppFileSyncArg*)g_devAppMonitor.argList; node != NULL; node = node->next) {
+        node->cancelled = true;
+    }
+    (void)ToolMutexUnLock(&g_devAppMonitor.argListLock);
+}
+
 void DeviceAppMonitorStop(void)
 {
     DeviceAppRmNotifyMonitor();
-    DeviceAppDeleteArgList();
+    DeviceAppCancelPendingArgs();
 }

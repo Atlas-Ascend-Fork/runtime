@@ -23,7 +23,7 @@ STATIC int32_t LogCmdRecvLogMsg(LogCmdMsg* rcvMsg, int32_t queueId)
     int32_t rcvRes = -1;
     int32_t retryTimes = 0;
     do {
-        rcvRes = MsgQueueRecv(queueId, (void*)rcvMsg, MSG_MAX_LEN, true, FEEDBACK_MSG_TYPE);
+        rcvRes = MsgQueueRecv(queueId, (void*)rcvMsg, MSG_MAX_LEN, false, FEEDBACK_MSG_TYPE);
         if (rcvRes == LOG_SUCCESS) {
             break;
         }
@@ -70,14 +70,14 @@ int32_t LogCmdSendLogMsg(LogCmdMsg* rcvMsg, const char* msg, uint16_t devId)
     LOCK_WARN_LOG(&g_logconfigLock);
     // clear message queue
     do {
-        int32_t rcvRes = MsgQueueRecv(queueId, (void*)(rcvMsg), MSG_MAX_LEN, true, FEEDBACK_MSG_TYPE);
+        int32_t rcvRes = MsgQueueRecv(queueId, (void*)(rcvMsg), MSG_MAX_LEN, false, FEEDBACK_MSG_TYPE);
         if ((rcvRes != LOG_SUCCESS) && (ToolGetErrorCode() != EINTR)) {
             break;
         }
     } while (true);
 
     // send message to notify the slog
-    if (MsgQueueSend(queueId, (void*)(&stMsg), MSG_MAX_LEN, true) != LOG_SUCCESS) {
+    if (MsgQueueSend(queueId, (void*)(&stMsg), MSG_MAX_LEN, false) != LOG_SUCCESS) {
         SELF_LOG_ERROR("Send level info to slogd failed, strerr=%s.", strerror(ToolGetErrorCode()));
         UNLOCK_WARN_LOG(&g_logconfigLock);
         return CONFIG_LOG_MSGQUEUE_FAILED;

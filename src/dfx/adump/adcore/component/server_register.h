@@ -24,6 +24,7 @@ public:
     int32_t UnRegisterComponent(int32_t serverType, ComponentType cmpt);
     int32_t ComponentServerStartup(ServerInitInfo info) const;
     int32_t ComponentServerCleanup(int32_t serverType);
+    int32_t WaitComponentDrained(int32_t serverType, ComponentType cmpt, uint32_t timeoutMs);
 
 private:
     bool ServerManagerInit(const ServerInitInfo info);

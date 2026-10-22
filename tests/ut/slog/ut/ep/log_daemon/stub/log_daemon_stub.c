@@ -271,3 +271,11 @@ int AdxRegisterService(
 }
 
 int AdxUnRegisterService(int32_t serverType, ComponentType componentType) { return 0; }
+
+int AdxWaitComponentDrained(int32_t serverType, ComponentType componentType, uint32_t timeoutMs)
+{
+    (void)serverType;
+    (void)componentType;
+    (void)timeoutMs;
+    return 0;
+}

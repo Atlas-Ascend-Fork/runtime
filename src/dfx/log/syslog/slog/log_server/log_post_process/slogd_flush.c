@@ -121,6 +121,7 @@ void SlogdFlushToFile(bool flushFlag)
     void* buffer = LogMalloc(bufSize);
     if (buffer == NULL) {
         SELF_LOG_ERROR("malloc failed, strerr = %s", strerror(ToolGetErrorCode()));
+        return;
     }
     SlogdFlushProcess(buffer, bufSize, flushFlag);
     XFREE(buffer);
@@ -133,6 +134,7 @@ void SlogdFlushGet(SessionItem* handle)
     void* buffer = LogMalloc(bufferLen);
     if (buffer == NULL) {
         SELF_LOG_ERROR("malloc failed, strerr = %s", strerror(ToolGetErrorCode()));
+        return;
     }
 
     // common get
@@ -188,7 +190,9 @@ STATIC void* SlogdFlushCommonProcess(void* args)
         }
     }
     // force to flush when thread is to exit
-    SlogdFlushProcess(buffer, bufSize, true);
+    if (buffer != NULL) {
+        SlogdFlushProcess(buffer, bufSize, true);
+    }
     SELF_LOG_ERROR("Thread(flushCommonLog) quit, signal=%d.", LogGetSigNo());
     XFREE(buffer);
     return (void*)NULL;

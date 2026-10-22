@@ -32,6 +32,9 @@ AdxServerManager::AdxServerManager() noexcept
       processingNum_(0)
 {
     servers_.clear();
+    for (size_t i = 0; i < static_cast<size_t>(ComponentType::NR_COMPONENTS); i++) {
+        compProcessingNum_[i] = 0U;
+    }
 }
 
 AdxServerManager::AdxServerManager(int32_t loadMode, int32_t deviceId) noexcept
@@ -45,6 +48,9 @@ AdxServerManager::AdxServerManager(int32_t loadMode, int32_t deviceId) noexcept
       processingNum_(0)
 {
     servers_.clear();
+    for (size_t i = 0; i < static_cast<size_t>(ComponentType::NR_COMPONENTS); i++) {
+        compProcessingNum_[i] = 0U;
+    }
 }
 
 AdxServerManager::~AdxServerManager() { (void)Exit(); }
@@ -422,8 +428,16 @@ void AdxServerManager::ReleaseComponentLink(ComponentType comp)
 
 bool AdxServerManager::LaunchComponentProcess(CommHandle& handle, SharedPtr<MsgProto>& msgPtr, ComponentType comp)
 {
+    if ((comp < ComponentType::COMPONENT_GETD_FILE) || (comp >= ComponentType::NR_COMPONENTS)) {
+        IDE_LOGE("invalid component type(%d) to launch process", static_cast<int32_t>(comp));
+        return false;
+    }
+    // Count before touching the component map so that WaitComponentDrained() also covers the window
+    // between the map lookup and the actual execution of the component code (e.g. before dlclose).
+    IncCompProcessing(comp);
     const std::shared_ptr<AdxComponent> component = GetComponent(comp);
     if (component == nullptr) {
+        DecCompProcessing(comp);
         IDE_LOGE("Unable to find the corresponding component type(%d)", static_cast<int32_t>(comp));
         return false;
     }
@@ -431,11 +445,13 @@ bool AdxServerManager::LaunchComponentProcess(CommHandle& handle, SharedPtr<MsgP
     handle.comp = comp;
     const HDC_SESSION session = reinterpret_cast<HDC_SESSION>(handle.session);
     if (!AcquireComponentLink(comp, session)) {
+        DecCompProcessing(comp);
         return false;
     }
 
     AdxCommHandle processHandle = static_cast<AdxCommHandle>(IdeXmalloc(sizeof(CommHandle)));
     if (processHandle == nullptr) {
+        DecCompProcessing(comp);
         ReleaseComponentLink(comp);
         return false;
     }
@@ -443,6 +459,7 @@ bool AdxServerManager::LaunchComponentProcess(CommHandle& handle, SharedPtr<MsgP
 
     std::unique_ptr<ProcessTask> task(new (std::nothrow) ProcessTask{this, processHandle, msgPtr, comp, true});
     if (task == nullptr) {
+        DecCompProcessing(comp);
         IDE_XFREE_AND_SET_NULL(processHandle);
         ReleaseComponentLink(comp);
         return false;
@@ -463,20 +480,26 @@ bool AdxServerManager::LaunchComponentProcess(CommHandle& handle, SharedPtr<MsgP
             --processingNum_;
             processCv_.notify_all();
         }
+        DecCompProcessing(comp);
         IDE_XFREE_AND_SET_NULL(task->handle);
         ReleaseComponentLink(comp);
         return false;
     }
+    // from here the per-component counter is owned by the process thread and released in RunProcessTask
     task.release();
     return true;
 }
 
 void AdxServerManager::RunProcessTask(ProcessTask& task)
 {
-    const std::shared_ptr<void> processGuard(nullptr, [this](void*) {
+    const ComponentType comp = task.comp;
+    const std::shared_ptr<void> processGuard(nullptr, [this, comp](void*) {
         std::lock_guard<std::mutex> lck(this->processMtx_);
         if (this->processingNum_ > 0U) {
             --this->processingNum_;
+        }
+        if (this->compProcessingNum_[static_cast<size_t>(comp)] > 0U) {
+            --this->compProcessingNum_[static_cast<size_t>(comp)];
         }
         this->processCv_.notify_all();
     });
@@ -675,6 +698,39 @@ void AdxServerManager::WaitProcessDrained()
             "still have %u component process threads running after waiting %ums", processingNum_,
             MAX_PROCESS_DRAIN_TIMEOUT);
     }
+}
+
+void AdxServerManager::IncCompProcessing(ComponentType comp)
+{
+    std::lock_guard<std::mutex> lck(processMtx_);
+    ++compProcessingNum_[static_cast<size_t>(comp)];
+}
+
+void AdxServerManager::DecCompProcessing(ComponentType comp)
+{
+    std::lock_guard<std::mutex> lck(processMtx_);
+    if (compProcessingNum_[static_cast<size_t>(comp)] > 0U) {
+        --compProcessingNum_[static_cast<size_t>(comp)];
+    }
+    processCv_.notify_all();
+}
+
+bool AdxServerManager::WaitComponentDrained(ComponentType comp, uint32_t timeoutMs)
+{
+    if ((comp < ComponentType::COMPONENT_GETD_FILE) || (comp >= ComponentType::NR_COMPONENTS)) {
+        IDE_LOGE("invalid component type(%d) to drain", static_cast<int32_t>(comp));
+        return false;
+    }
+    std::unique_lock<std::mutex> lck(processMtx_);
+    const bool drained = processCv_.wait_for(lck, std::chrono::milliseconds(timeoutMs), [this, comp]() {
+        return this->compProcessingNum_[static_cast<size_t>(comp)] == 0U;
+    });
+    if (!drained) {
+        IDE_LOGW(
+            "component(%d) still has %u process threads running after waiting %ums", static_cast<int32_t>(comp),
+            compProcessingNum_[static_cast<size_t>(comp)], timeoutMs);
+    }
+    return drained;
 }
 
 void AdxServerManager::SetMode(int32_t loadMode) { loadMode_ = loadMode; }
