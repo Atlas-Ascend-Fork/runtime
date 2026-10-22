@@ -129,20 +129,20 @@ aclrtMemcpyAsync(hostPtr, hostSize, devPtr, devSize,
 aclError error = aclrtSynchronizeStream(stream);
 if (error != ACL_RT_SUCCESS) {
     // 查询Event状态，定位失败任务
-    aclrtEventStatus status1, status2, status3;
+    aclrtEventRecordedStatus status1, status2, status3;
 
-    aclrtEventQuery(event1, &status1);
-    aclrtEventQuery(event2, &status2);
-    aclrtEventQuery(event3, &status3);
+    aclrtQueryEventStatus(event1, &status1);
+    aclrtQueryEventStatus(event2, &status2);
+    aclrtQueryEventStatus(event3, &status3);
 
     printf("Event status: event1=%d, event2=%d, event3=%d\n",
            status1, status2, status3);
 
-    // ACL_RT_EVENT_COMPLETE = 1, ACL_RT_EVENT_NOT_READY = 0
+    // ACL_EVENT_RECORDED_STATUS_COMPLETE = 1, ACL_EVENT_RECORDED_STATUS_NOT_READY = 0
     // 最后一个完成的Event之后的任务为失败任务
-    if (status1 == ACL_RT_EVENT_COMPLETE && status2 == ACL_RT_EVENT_NOT_READY) {
+    if (status1 == ACL_EVENT_RECORDED_STATUS_COMPLETE && status2 == ACL_EVENT_RECORDED_STATUS_NOT_READY) {
         printf("Task failed between event1 and event2 (kernel1 failed)\n");
-    } else if (status2 == ACL_RT_EVENT_COMPLETE && status3 == ACL_RT_EVENT_NOT_READY) {
+    } else if (status2 == ACL_EVENT_RECORDED_STATUS_COMPLETE && status3 == ACL_EVENT_RECORDED_STATUS_NOT_READY) {
         printf("Task failed between event2 and event3 (kernel2 failed)\n");
     }
 
