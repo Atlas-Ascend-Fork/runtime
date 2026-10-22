@@ -150,10 +150,9 @@ uint32_t BqsClient::BindQueue(
         const auto bindQueEndIter = bindQueueVec.end();
         uint32_t bindNum = 0U;
         while (bindQueueIter != bindQueEndIter) {
-            auto tempBindQueEndIter = bindQueueIter + MAX_PAGED_QUEUE_RELATION;
-            if (tempBindQueEndIter > bindQueEndIter) {
-                tempBindQueEndIter = bindQueEndIter;
-            }
+            const auto tempBindQueEndIter = (bindQueEndIter - bindQueueIter > MAX_PAGED_QUEUE_RELATION) ?
+                                                bindQueueIter + MAX_PAGED_QUEUE_RELATION :
+                                                bindQueEndIter;
             std::vector<BQSBindQueueItem> bindQueue(bindQueueIter, tempBindQueEndIter);
             std::vector<BQSBindQueueResult> bindResult;
             bindNum += DoBindQueue(bindQueue, bindResult);
@@ -195,10 +194,9 @@ uint32_t BqsClient::UnbindQueue(
         const auto bindQueEndIter = bqsQueryParaVec.end();
         uint32_t bindNum = 0U;
         while (bindQueueIter != bindQueEndIter) {
-            auto tempBindQueEndIter = bindQueueIter + MAX_PAGED_QUEUE_RELATION;
-            if (tempBindQueEndIter > bindQueEndIter) {
-                tempBindQueEndIter = bindQueEndIter;
-            }
+            const auto tempBindQueEndIter = (bindQueEndIter - bindQueueIter > MAX_PAGED_QUEUE_RELATION) ?
+                                                bindQueueIter + MAX_PAGED_QUEUE_RELATION :
+                                                bindQueEndIter;
             std::vector<BQSQueryPara> bindQueue(bindQueueIter, tempBindQueEndIter);
             std::vector<BQSBindQueueResult> bindResult;
             bindNum += DoUnbindQueue(bindQueue, bindResult);

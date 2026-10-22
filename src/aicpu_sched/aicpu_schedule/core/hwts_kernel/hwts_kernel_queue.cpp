@@ -121,7 +121,6 @@ int32_t CreateQueueTsKernel::CreateGrp() const
             aicpusd_err("Create group failed in aicpusd[%d], result[%d]", curPid, drvRet);
             return AICPU_SCHEDULE_ERROR_DRV_ERR;
         }
-
         // 2.add current process to new group
         drvRet = halGrpAddProc(groupName.c_str(), curPid, GROUP_WITH_ALL_ATTR);
         if (drvRet != DRV_ERROR_NONE) {

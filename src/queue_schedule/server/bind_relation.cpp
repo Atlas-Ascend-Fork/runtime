@@ -694,7 +694,7 @@ BqsStatus BindRelation::CreateEntity(const EntityInfo& src, const EntityInfo& ds
     if ((dstRet != BQS_STATUS_OK) && (dstRet != BQS_STATUS_ENTITY_EXIST)) {
         // roolback
         (void)DeleteEntity(dst, false, resIndex);
-        if (srcRet == BQS_STATUS_ENTITY_EXIST) {
+        if (srcRet == BQS_STATUS_OK) {
             (void)DeleteEntity(src, true, resIndex);
         }
         return dstRet;

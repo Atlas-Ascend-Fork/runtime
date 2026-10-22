@@ -406,9 +406,6 @@ int32_t AicpuQueueEventProcess::ProcessQueueEventWithMbuf(
     Mbuf* buff = nullptr;
     ret = AllocMbufAndEnqueue(routeHead, static_cast<size_t>(routeHead->length), &buff);
     if (ret != AICPU_SCHEDULE_OK) {
-        if (buff != nullptr) {
-            (void)halMbufFree(buff);
-        }
         return ret;
     }
 
@@ -621,9 +618,20 @@ int32_t AicpuQueueEventProcess::AllocMbufAndEnqueue(
 {
     int32_t drvRet = halMbufAlloc(size, buff);
     if ((drvRet != DRV_ERROR_NONE) || (*buff == nullptr)) {
+        if (*buff != nullptr) {
+            (void)halMbufFree(*buff);
+            *buff = nullptr;
+        }
         aicpusd_err("Failed to alloc mbuf, size[%u], ret[%d].", size, drvRet);
         return AICPU_SCHEDULE_ERROR_DRV_ERR;
     }
+    bool enqueueSuccess = false;
+    const ScopeGuard mbufGuard([buff, &enqueueSuccess]() {
+        if (!enqueueSuccess && (*buff != nullptr)) {
+            (void)halMbufFree(*buff);
+            *buff = nullptr;
+        }
+    });
     drvRet = halMbufSetDataLen(*buff, static_cast<uint64_t>(size));
     if (drvRet != DRV_ERROR_NONE) {
         aicpusd_err("Failed to set data len[%zu] for mbuf, ret[%d]", size, drvRet);
@@ -651,6 +659,7 @@ int32_t AicpuQueueEventProcess::AllocMbufAndEnqueue(
         aicpusd_err("Call halQueueEnQueue error, queue id[%u], ret=[%d]", pipelineQueueId_, drvRet);
         return AICPU_SCHEDULE_ERROR_DRV_ERR;
     }
+    enqueueSuccess = true;
     aicpusd_info("Call halQueueEnQueue success, queue id[%u], ret=[%d]", pipelineQueueId_, drvRet);
     return AICPU_SCHEDULE_OK;
 }
@@ -702,15 +711,15 @@ int32_t AicpuQueueEventProcess::CreateGroupForMaster(
         aicpusd_err("Attach group[%s] for master aicpusd[%d] failed, ret[%d]", groupName.c_str(), curPid_, drvRet);
         return drvRet;
     }
-    outGroupName = groupName;
-    grpName_ = groupName;
-    type_ = CpType::MASTER;
     BuffCfg buffConfig = {};
     drvRet = halBuffInit(&buffConfig);
     if (drvRet != DRV_ERROR_NONE) {
         aicpusd_err("Buffer initialization failed for master aicpusd[%d], ret[%d]", curPid_, drvRet);
         return drvRet;
     }
+    outGroupName = groupName;
+    grpName_ = groupName;
+    type_ = CpType::MASTER;
     aicpusd_info("Create new group[%s] for master aicpusd[%d] success", groupName.c_str(), curPid_);
     return AICPU_SCHEDULE_OK;
 }

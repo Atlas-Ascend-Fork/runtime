@@ -319,12 +319,18 @@ BqsStatus BindCpuUtils::GetDevCpuInfo(
     } else {
         int64_t aicpuNumTmp = 0;
         int64_t aicpuBitMap = 0;
-        if (FeatureCtrl::IsVfModeCheckedByDeviceId(deviceId)) {
-            ret = halGetDeviceInfo(deviceId, MODULE_TYPE_AICPU, INFO_TYPE_PF_CORE_NUM, &aicpuNumTmp) +
-                  halGetDeviceInfo(deviceId, MODULE_TYPE_AICPU, INFO_TYPE_PF_OCCUPY, &aicpuBitMap);
-        } else {
-            ret = halGetDeviceInfo(deviceId, MODULE_TYPE_AICPU, INFO_TYPE_CORE_NUM, &aicpuNumTmp) +
-                  halGetDeviceInfo(deviceId, MODULE_TYPE_AICPU, INFO_TYPE_OCCUPY, &aicpuBitMap);
+        const bool isVfMode = FeatureCtrl::IsVfModeCheckedByDeviceId(deviceId);
+        ret = halGetDeviceInfo(
+            deviceId, MODULE_TYPE_AICPU, isVfMode ? INFO_TYPE_PF_CORE_NUM : INFO_TYPE_CORE_NUM, &aicpuNumTmp);
+        if (ret != DRV_ERROR_NONE) {
+            BQS_LOG_ERROR("get device[%u] aicpu core num failed, ret[%u].", deviceId, ret);
+            return BQS_STATUS_DRIVER_ERROR;
+        }
+        ret = halGetDeviceInfo(
+            deviceId, MODULE_TYPE_AICPU, isVfMode ? INFO_TYPE_PF_OCCUPY : INFO_TYPE_OCCUPY, &aicpuBitMap);
+        if (ret != DRV_ERROR_NONE) {
+            BQS_LOG_ERROR("get device[%u] aicpu bitmap failed, ret[%u].", deviceId, ret);
+            return BQS_STATUS_DRIVER_ERROR;
         }
         BQS_LOG_INFO(
             "get device[%u] aicpu cpu info success, aicpuBitMap[%ld], aicpuNum[%ld]", deviceId, aicpuBitMap,

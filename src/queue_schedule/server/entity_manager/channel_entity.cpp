@@ -116,6 +116,7 @@ FsmStatus ChannelEntity::CreateAndSubscribeCompletedQueue()
     }
     const auto subscriber = GetSubscriber();
     if (subscriber == nullptr) {
+        (void)bqs::QueueManager::GetInstance().DestroyQueue(compReqQueueId_, deviceId_);
         return FsmStatus::FSM_FAILED;
     }
     bqsRet = subscriber->Subscribe(compReqQueueId_);
@@ -123,6 +124,7 @@ FsmStatus ChannelEntity::CreateAndSubscribeCompletedQueue()
         DGW_LOG_ERROR(
             "Subscribe completed queue failed, queueName[%s], queueId[%u], ret[%d].", queueName.c_str(),
             compReqQueueId_, static_cast<int32_t>(bqsRet));
+        (void)bqs::QueueManager::GetInstance().DestroyQueue(compReqQueueId_, deviceId_);
         return FsmStatus::FSM_FAILED;
     }
     return FsmStatus::FSM_SUCCESS;

@@ -381,6 +381,7 @@ int32_t AicpuDrvManager::InitDrvSchedModule(const uint32_t grpId, const std::map
         DeployContext deployCtx = DeployContext::DEVICE;
         const StatusCode status = GetAicpuDeployContext(deployCtx);
         if (status != AICPU_SCHEDULE_OK) {
+            (void)DettachAllDevice(i);
             aicpusd_err("Get current deploy ctx failed.");
             return status;
         }

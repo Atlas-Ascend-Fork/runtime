@@ -816,7 +816,9 @@ EntityInfoPtr ConfigInfoOperator::CreateEntityInfo(const Endpoint& endpoint, con
             "Create entity info ptr failed, id[%u], type[%s(%d)].", id, dgw::GetEnumName(eType).c_str(),
             static_cast<int32_t>(eType));
     }
-
+    if (entityPtr == nullptr) {
+        return nullptr;
+    }
     BQS_LOG_INFO("Create entity success: %s", entityPtr->ToString().c_str());
     return entityPtr;
 }
@@ -1388,6 +1390,12 @@ BqsStatus ConfigInfoOperator::ProcessInitDynamicSched() const
     inPutParam.inBuff = static_cast<void*>(&inPut);
     inPutParam.inLen = static_cast<uint32_t>(sizeof(QueueSetInput));
     drvRet = halQueueSet(0U, QUEUE_SET_WORK_MODE, &inPutParam);
+    if (drvRet != DRV_ERROR_NONE) {
+        BQS_LOG_ERROR(
+            "Fail to set queue[%u] work mode, ret[%d]", schedCfgInfo.responseQue.queueId, static_cast<int32_t>(drvRet));
+        resultVec[0UL]->retCode = static_cast<int32_t>(BQS_STATUS_DRIVER_ERROR);
+        return BQS_STATUS_DRIVER_ERROR;
+    }
     BQS_LOG_RUN_INFO("Set queue[%u] work mode to push for dynamic schedule.", schedCfgInfo.responseQue.queueId);
 
     if ((SubscribeQueueEvent(

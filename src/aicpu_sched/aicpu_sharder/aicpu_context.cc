@@ -378,7 +378,7 @@ void SetStreamDvppBuffBychlType(const AicpuDvppChlType chlType, const uint64_t b
         return;
     }
 
-    (void)pthread_rwlock_rdlock(&g_streamAndChannelMapLock[chlType]);
+    (void)pthread_rwlock_wrlock(&g_streamAndChannelMapLock[chlType]);
     const std::map<uint32_t, AicpuStreamDvpp>::iterator iter = g_streamAndChannelMap[chlType].find(streamId);
     if (iter != g_streamAndChannelMap[chlType].end()) {
         iter->second.dvppBuff = buff;
@@ -399,7 +399,7 @@ void SetStreamDvppBuffByStreamId(
         return;
     }
 
-    (void)pthread_rwlock_rdlock(&g_streamAndChannelMapLock[chlType]);
+    (void)pthread_rwlock_wrlock(&g_streamAndChannelMapLock[chlType]);
     const std::map<uint32_t, AicpuStreamDvpp>::iterator iter = g_streamAndChannelMap[chlType].find(streamId);
     if (iter != g_streamAndChannelMap[chlType].end()) {
         iter->second.dvppBuff = buff;

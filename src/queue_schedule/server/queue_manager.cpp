@@ -96,7 +96,7 @@ BqsStatus QueueManager::CreateQueue(
     const drvError_t drvRet = halQueueAttach(deviceId, queueId, 0);
     if (drvRet != DRV_ERROR_NONE) {
         BQS_LOG_ERROR("Fail to attach queue[%ud], result[%d]", queueId, static_cast<int32_t>(drvRet));
-        (void)DestroyQueue(queueId);
+        (void)DestroyQueue(queueId, deviceId);
         return BQS_STATUS_DRIVER_ERROR;
     }
     BQS_LOG_RUN_INFO("Create buff queue[%s] on device[%u] success, queue[%u].", nameStr.c_str(), deviceId, queueId);
