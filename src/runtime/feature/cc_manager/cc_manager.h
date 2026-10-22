@@ -14,6 +14,7 @@
 #include <mutex>
 
 #include "base.hpp"
+#include "rt_external_mem.h"
 #include "spec/base_info.hpp"
 #include "cc_res_manage.h"
 #include "dev_info.h"
@@ -25,7 +26,7 @@ public:
     static CCManager& Instance();
 
     static rtError_t InitDeviceResource(Device* device);
-    static void ReleaseDeviceResource(uint32_t deviceId);
+    static void ReleaseDeviceResource(const uint32_t deviceId);
     static void DestroyStreamResource(Stream* stm);
 
     static rtError_t CCDevMalloc(
@@ -53,8 +54,8 @@ public:
         const uint64_t height, const rtMemcpyKind_t kind = RT_MEMCPY_RESERVED,
         const rtMemcpyKind newKind = RT_MEMCPY_KIND_MAX);
     static rtError_t CCMemcpyBatch(
-        void** dsts, void** srcs, size_t* sizes, size_t count, rtMemcpyBatchAttr* attrs, size_t* attrsIdxs,
-        size_t numAttrs, size_t* failIdx);
+        void** const dsts, void** const srcs, size_t* const sizes, const size_t count, rtMemcpyBatchAttr* const attrs,
+        size_t* const attrsIdxs, const size_t numAttrs, size_t* const failIdx);
     static rtError_t CCDevMemSetAsync(
         Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount);
     static rtError_t CCDevMemSetD32(
@@ -68,15 +69,16 @@ private:
     std::unique_ptr<CCResManage> resources_[RT_MAX_DEV_NUM]{};
     std::mutex resourceMutex_; // 解决同一进程 多线程SetDevice同一Device场景
     static rtError_t SubmitCcMemcpyTask(
-        void* dst, const void* src, uint64_t count, rtMemcpyKind_t kind, Stream* stm,
+        void* const dst, const void* const src, const uint64_t count, const rtMemcpyKind_t kind, Stream* const stm,
         std::shared_ptr<void> guardMem = nullptr);
     static void SubmitCcTaskCallback(void* userData);
     static rtError_t SubmitCcMemcpy2DTasks(
-        void* dst, uint64_t dstPitch, const void* src, uint64_t srcPitch, uint64_t width, uint64_t height, Stream* stm,
-        rtMemcpyKind_t kind);
+        void* const dst, const uint64_t dstPitch, const void* const src, const uint64_t srcPitch, const uint64_t width,
+        const uint64_t height, Stream* const stm, const rtMemcpyKind_t kind);
     static rtError_t SubmitCcMemcpyBatchTasks(
-        void** dsts, const size_t* destMaxs, void** srcs, const size_t* sizes, size_t count,
-        const rtMemcpyBatchAttr* attrs, const size_t* attrsIdxs, size_t numAttrs, size_t* failIdx, Stream* stm);
+        void** const dsts, const size_t* const destMaxs, void** const srcs, const size_t* const sizes,
+        const size_t count, const rtMemcpyBatchAttr* const attrs, const size_t* const attrsIdxs, const size_t numAttrs,
+        size_t* const failIdx, Stream* const stm);
     static rtError_t CCDevMemSet(
         Stream* const stm, void* const dst, const uint64_t totalCnt, const uint32_t value, bool isByteFill);
 };

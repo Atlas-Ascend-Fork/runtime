@@ -29,7 +29,7 @@ class Device;
 struct DevProperties;
 struct rtD2DAddrCfgInfo_t;
 
-rtError_t RegCCManagerProcFunc(rtChipType_t chipType);
+rtError_t RegCCManagerProcFunc(const rtChipType_t chipType);
 
 using DEV_PROPS_UPDATE_FUNC = void (*)(DevProperties&);
 using DEV_RAS_PRE_CHECK_FUNC = bool (*)(uint32_t devId);
