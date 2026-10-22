@@ -4937,7 +4937,7 @@ ACL_FUNC_VISIBILITY aclError aclmdlRICaptureTaskUpdateEnd(aclrtStream stream);
 /**
  * @ingroup AscendCL
  * @brief create model
- * @param [in] modelRI  model
+ * @param [out] modelRI  model created by Runtime
  * @param [in] flag     reserved, must be 0
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure

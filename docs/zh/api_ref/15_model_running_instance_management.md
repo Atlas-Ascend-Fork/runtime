@@ -662,7 +662,7 @@ aclError aclmdlRIBuildBegin(aclmdlRI *modelRI, uint32_t flag)
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
-| modelRI | 输入 | 模型运行实例，该模型用于暂存所编译的任务。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。 |
+| modelRI | 输出 | 模型运行实例句柄，由Runtime创建并写回。调用成功后可将其传入后续模型运行实例接口。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。 |
 | flag | 输入 | 预留参数。当前固定配置为0。 |
 
 ### 返回值说明
