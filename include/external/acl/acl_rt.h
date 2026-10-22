@@ -5254,9 +5254,9 @@ ACL_FUNC_VISIBILITY aclError aclrtGetUserDevIdByLogicDevId(const int32_t logicDe
 
 /**
  * @ingroup AscendCL
- * @brief get logic device id by physical device id
+ * @brief get user device id by physical device id
  * @param [in] phyDevId    physical device id
- * @param [out] logicDevId logic device id
+ * @param [out] logicDevId user device id (the output value is a user device id)
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
