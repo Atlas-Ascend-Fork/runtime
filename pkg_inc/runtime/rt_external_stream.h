@@ -65,9 +65,9 @@ RTS_API rtError_t rtStreamCreateWithFlags(rtStream_t* stm, int32_t priority, uin
 
 /**
  * @ingroup dvrt_stream
- * @brief create stream instance
- * @param [in] stm   stream hadle
- * @param [out] sqId   stream op sqId
+ * @brief get stream SQ ID
+ * @param [in] stm   stream handle
+ * @param [out] sqId   stream SQ ID
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
@@ -75,10 +75,10 @@ RTS_API rtError_t rtStreamGetSqid(const rtStream_t stm, uint32_t* sqId);
 
 /**
  * @ingroup dvrt_stream
- * @brief get stream cq info
- * @param [in] stm   stream hadle
- * @param [out] sqId   stream op cqId
- * @param [out] cqId   stream op logic cqId
+ * @brief get stream CQ IDs
+ * @param [in] stm   stream handle
+ * @param [out] cqId   stream CQ ID
+ * @param [out] logicCqId   stream logical CQ ID
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
