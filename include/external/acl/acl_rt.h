@@ -3238,7 +3238,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetDeviceSatMode(aclrtFloatOverflowMode* mode)
  * to ensure that the tasks in the stream have been completed.
  * @param outputAddr [IN/OUT]  output device addr to store overflow status
  * @param outputSize [IN]  output addr size
- * @param outputSize [IN]  stream
+ * @param stream [IN]  stream to submit the asynchronous overflow-status query
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
