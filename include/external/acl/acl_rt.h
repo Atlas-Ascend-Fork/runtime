@@ -5187,7 +5187,7 @@ ACL_FUNC_VISIBILITY aclError aclInitCallbackRegister(
  * @brief unregister callback func which will be called in aclInit
  *
  * @param type [IN]  register type
- * @cbFunc cbFunc [IN]  register callback function pointer
+ * @param cbFunc [IN]  register callback function pointer
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval ACL_ERROR_INVALID_FILE Failure
  */
@@ -5211,8 +5211,7 @@ ACL_FUNC_VISIBILITY aclError aclFinalizeCallbackRegister(
  * @brief unregister callback func which will be called in aclFinalize
  *
  * @param type [IN]  register type
- * @cbFunc cbFunc [IN]  register callback function pointer
- * @param userData[IN]  param for cbFunc when called
+ * @param cbFunc [IN]  register callback function pointer
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval ACL_ERROR_INVALID_FILE Failure
  */
