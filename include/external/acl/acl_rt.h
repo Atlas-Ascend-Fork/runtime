@@ -3328,7 +3328,7 @@ ACL_FUNC_VISIBILITY aclrtBinary aclrtCreateBinary(const void* data, size_t dataL
  * @ingroup AscendCL
  * @brief Destroy data of type aclrtBinary
  *
- * @param modelDesc [IN]   aclrtBinary to be destroyed
+ * @param binary [IN]   aclrtBinary to be destroyed
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
