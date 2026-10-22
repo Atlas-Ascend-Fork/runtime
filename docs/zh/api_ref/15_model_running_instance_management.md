@@ -1145,7 +1145,7 @@ aclError aclmdlRIGetName(aclmdlRI modelRI, uint32_t maxLen, char *name)
 | --- | :---: | --- |
 | modelRI | 输入 | 模型运行实例。类型定义请参见[aclmdlRI](25-05_Typedefs.md#aclmdlRI)。 |
 | maxLen | 输入 | 用户申请的用于存放name的最大内存长度，单位Byte。 |
-| name | 输出 | 模型运行实例的名称。<br>name的最大长度为512Byte，超过512Byte的部分将被截断并返回。 |
+| name | 输出 | 模型运行实例的名称。`maxLen`为`name`缓冲区容量（单位Byte），必须至少为名称字节长度加1（包含字符串结束符）；容量不足时返回错误，不会截断返回。 |
 
 ### 返回值说明
 
