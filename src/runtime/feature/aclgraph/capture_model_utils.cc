@@ -136,10 +136,10 @@ rtError_t CheckCaptureStreamThreadIsMatch(const Stream* const stm)
         streamCaptureMode != RT_STREAM_CAPTURE_MODE_RELAXED, RT_ERROR_STREAM_CAPTURE_WRONG_THREAD, ErrorCode::EE1016,
         "Stream end capture",
         RtFmtMsg(
-            "Cross-thread stream end capture is not supported in %s mode (stream_id=%d). "
-            "Call aclmdlRICaptureEnd in the same thread as aclmdlRICaptureBegin, "
+            "Cross-thread stream end capture is not supported in %s mode (stream_id=%d, beginThreadId=%u, "
+            "currentThreadId=%u). Call aclmdlRICaptureEnd in the same thread as aclmdlRICaptureBegin, "
             "or call aclmdlRICaptureBegin with the RELAXED(2) mode",
-            StreamCaptureModeToString(streamCaptureMode).c_str(), stm->Id_()));
+            StreamCaptureModeToString(streamCaptureMode).c_str(), stm->Id_(), threadId, runtime::GetCurrentTid()));
     return RT_ERROR_NONE;
 }
 

@@ -997,7 +997,9 @@ void Profiler::CallApiEnd(const rtError_t retCode, const uint32_t devId) const
         if (!GetApiProfEnable()) {
             return;
         }
-        RT_LOG(RT_LOG_ERROR, "api profiling stack is empty when CallApiEnd.");
+        RT_LOG(
+            RT_LOG_ERROR, "api profiling stack is empty when CallApiEnd, devId=%u, retCode=%#x.", devId,
+            static_cast<uint32_t>(retCode));
         return;
     }
 
