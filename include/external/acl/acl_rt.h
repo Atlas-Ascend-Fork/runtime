@@ -3253,7 +3253,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetOverflowStatus(void* outputAddr, size_t out
  * After calling the aclrtResetOverflowStatus interface,
  * you need to call the aclrtSynchronizeStream interface
  * to ensure that the tasks in the stream have been completed.
- * @param outputSize [IN]  stream
+ * @param stream [IN]  stream
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
