@@ -1879,8 +1879,8 @@ ACL_FUNC_VISIBILITY aclError aclrtSynchronizeEventWithTimeout(aclrtEvent event, 
  * @brief computes the elapsed time between events.
  *
  * @param ms [OUT]     time between start and end in ms
- * @param start [IN]   starting event
- * @param end [IN]     ending event
+ * @param startEvent [IN] starting event
+ * @param endEvent [IN]   ending event
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
