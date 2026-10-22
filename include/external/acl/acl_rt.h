@@ -2618,7 +2618,8 @@ ACL_FUNC_VISIBILITY aclError aclrtMemManagedAdvise(
  * @param virPtr [OUT]    Resulting pointer to start of virtual address range allocated
  * @param size [IN]       Size of the reserved virtual address range requested
  * @param alignment [IN]  Alignment of the reserved virtual address range requested
- * @param expectPtr [IN]  Fixed starting address range requested, must be nullptr
+ * @param expectPtr [IN]  Requested starting address; nullptr lets the system choose. Non-null addresses are experimental
+ *                        and not for production; support and constraints depend on the product. See the API reference.
  * @param flags [IN]      Flag of page type
  *
  * @retval ACL_SUCCESS The function is successfully executed.
