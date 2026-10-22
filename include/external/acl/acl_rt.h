@@ -5696,7 +5696,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCntNotifyReset(aclrtCntNotify cntNotify, aclrt
  * @ingroup AscendCL
  * @brief get count notify id
  * @param cntNotify [in]    count notify object
- * @param stream [in]       stream
+ * @param notifyId [out]    count notify id
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
