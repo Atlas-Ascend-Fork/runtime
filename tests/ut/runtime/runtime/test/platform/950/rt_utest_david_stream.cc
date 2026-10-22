@@ -300,6 +300,18 @@ TEST(DavidStreamErrorMessageTest, reset_david_stream_construct_clears_error_mess
     EXPECT_TRUE(stream.errorMsg_.empty());
 }
 
+TEST(DavidStreamFailureModeTest, ResetDavidStreamConstructRestoresFailureModeAfterAbort)
+{
+    DavidStream stream(nullptr, 0U, 0U, nullptr);
+    for (const uint64_t mode : {CONTINUE_ON_FAILURE, STOP_ON_FAILURE}) {
+        stream.SetMode(mode);
+        stream.SetFailureMode(ABORT_ON_FAILURE);
+        EXPECT_EQ(stream.GetFailureMode(), ABORT_ON_FAILURE);
+        stream.ResetDavidStreamConstruct();
+        EXPECT_EQ(stream.GetFailureMode(), mode);
+    }
+}
+
 TEST_F(DavidStreamTest, Apply_CntValue)
 {
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::NotifyIdAlloc)

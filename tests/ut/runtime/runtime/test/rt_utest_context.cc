@@ -936,7 +936,7 @@ TEST_F(ContextTest, SYNCHRONIZE_TEST)
     ASSERT_NE(stmPtr, nullptr);
     ctx->streams_.push_back(stmPtr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     MOCKER_CPP_VIRTUAL(stmPtr, &Stream::Synchronize)
         .stubs()
@@ -982,7 +982,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_test_timeout)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -1028,7 +1028,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_ctxFailureMode)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -1074,7 +1074,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_deviceTaskAbort)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -1124,7 +1124,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_test_error)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -1166,7 +1166,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_DeviceAbort)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = CONTINUE_ON_FAILURE;
+    stmPtr->failureMode_.Set(CONTINUE_ON_FAILURE);
     ctx->streams_.push_back(stmPtr);
 
     Device* dev = ((Runtime*)Runtime::Instance())->GetDevice(devId, 0);
@@ -1207,7 +1207,7 @@ TEST_F(ContextTest, TaskReclaimforSyncDevice_DeviceAbortStopOnfaliure)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     ctx->streams_.push_back(stmPtr);
 
     Device* dev = ((Runtime*)Runtime::Instance())->GetDevice(devId, 0);
@@ -1239,7 +1239,7 @@ TEST_F(ContextTest, StarsLaunchDvppRRProcess_Test)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     error = StarsLaunchDvppRRProcess(stmPtr);
     TaskResManage mTaskResManage;
@@ -1275,7 +1275,7 @@ TEST_F(ContextTest, SetStreamOverflowSwitch_Test)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     Stream* defaultStream = ctx->defaultStream_;
     ctx->defaultStream_ = stmPtr;
@@ -1319,7 +1319,7 @@ TEST_F(ContextTest, ModelAddEndGraph_Test)
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     Stream* defaultStream = ctx->defaultStream_;
     ctx->defaultStream_ = stmPtr;
@@ -3848,7 +3848,7 @@ TEST_F(ContextTest, NONFAIL_SYNCHRONIZE_TEST)
     ASSERT_EQ(error, RT_ERROR_NONE);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
-    stmPtr->failureMode_ = CONTINUE_ON_FAILURE;
+    stmPtr->failureMode_.Set(CONTINUE_ON_FAILURE);
     stmPtr->flags_ = 0;
     MOCKER_CPP_VIRTUAL(ctx->defaultStream_, &Stream::Synchronize).stubs().will(returnValue(RT_ERROR_STREAM_BASE));
     error = ctx->Synchronize(-1);

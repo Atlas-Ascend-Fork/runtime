@@ -1367,10 +1367,10 @@ TEST_F(ApiTest, send_task_fail)
     TsStreamFailureMode old = (rt_ut::UnwrapOrNull<Stream>(stream_))->Context_()->GetCtxMode();
     (rt_ut::UnwrapOrNull<Stream>(stream_))->Context_()->SetCtxMode(STOP_ON_FAILURE);
     (rt_ut::UnwrapOrNull<Stream>(stream_))->Context_()->SetFailureError(TS_ERROR_AIVEC_OVERFLOW);
-    (rt_ut::UnwrapOrNull<Stream>(stream_))->failureMode_ = ABORT_ON_FAILURE;
+    (rt_ut::UnwrapOrNull<Stream>(stream_))->failureMode_.Set(ABORT_ON_FAILURE);
     error = rtEventRecord(event, NULL);
     EXPECT_EQ(error, RT_ERROR_NONE);
-    (rt_ut::UnwrapOrNull<Stream>(stream_))->failureMode_ = CONTINUE_ON_FAILURE;
+    (rt_ut::UnwrapOrNull<Stream>(stream_))->failureMode_.Set(CONTINUE_ON_FAILURE);
     (rt_ut::UnwrapOrNull<Stream>(stream_))->Context_()->SetFailureError(0);
     (rt_ut::UnwrapOrNull<Stream>(stream_))->Context_()->SetCtxMode(old);
 

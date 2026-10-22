@@ -4837,7 +4837,7 @@ void Stream::ResetStreamConstruct()
     isForceRecycle_ = false;
     errCode_ = 0U;
     drvErr_ = 0U;
-    failureMode_ = GetMode();
+    failureMode_.Set(GetMode());
     SetStreamAsyncRecycleFlag(false);
     ClearErrorMessage();
     taskIdToTaskTagMap_.clear();

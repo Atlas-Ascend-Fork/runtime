@@ -316,20 +316,20 @@ TEST_F(EventTestDavid, TestWaitTask)
         .with(mockcpp::any(), outBound(stmSharedPtr))
         .will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&Stream::WaitTask).stubs().will(returnValue(RT_ERROR_NONE));
-    stm->failureMode_ = STOP_ON_FAILURE;
+    stm->failureMode_.Set(STOP_ON_FAILURE);
     error = evt->WaitTask(false);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    stm->failureMode_ = ABORT_ON_FAILURE;
+    stm->failureMode_.Set(ABORT_ON_FAILURE);
     error = evt->WaitTask(false);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    stm->failureMode_ = CONTINUE_ON_FAILURE;
+    stm->failureMode_.Set(CONTINUE_ON_FAILURE);
     error = evt->WaitTask(false);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     error = rtEventDestroy(event);
-    stm->failureMode_ = mode;
+    stm->failureMode_.Set(mode);
     GlobalMockObject::verify();
     EXPECT_EQ(error, ACL_RT_SUCCESS);
     rtStreamDestroy(stream);

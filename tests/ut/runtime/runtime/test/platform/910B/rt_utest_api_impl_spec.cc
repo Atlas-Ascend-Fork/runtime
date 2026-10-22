@@ -208,7 +208,7 @@ TEST_F(CloudV2ApiImplSpecTest, stream_set_mode)
     Stream* stream = new Stream(device, 0);
     MOCKER_CPP(&Stream::SetFailMode).stubs().with(mockcpp::any()).will(returnValue(RT_ERROR_NONE));
     stream->SetMode(CONTINUE_ON_FAILURE);
-    stream->failureMode_ = ABORT_ON_FAILURE;
+    stream->failureMode_.Set(ABORT_ON_FAILURE);
     error = apiImpl.StreamSetMode(stream, STOP_ON_FAILURE);
     EXPECT_EQ(error, RT_ERROR_STREAM_CONTEXT);
 

@@ -1396,7 +1396,7 @@ TEST_F(CloudV2StarsEngineTest, WaitTask)
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), outBound(recycleTaskId))
         .will(returnValue(RT_ERROR_NONE));
     stream_->Context_()->SetFailureError(2);
-    stream_->failureMode_ = STOP_ON_FAILURE;
+    stream_->failureMode_.Set(STOP_ON_FAILURE);
     TsStreamFailureMode flag = stream_->Context_()->GetCtxMode();
     stream_->Context_()->SetCtxMode(STOP_ON_FAILURE);
     rtError_t error = stream_->WaitTask(true, 2);

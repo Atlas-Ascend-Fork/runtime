@@ -230,7 +230,7 @@ TEST_F(CloudV2ContextTest, SYNCHRONIZE_TEST)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     MOCKER_CPP_VIRTUAL(stream, &Stream::Synchronize)
@@ -272,7 +272,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_test_timeout)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -314,7 +314,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_ctxFailureMode)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -356,7 +356,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_deviceTaskAbort)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -402,7 +402,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_test_error)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     mmTimespec startTime = mmGetTickCount();
@@ -441,7 +441,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_DeviceAbort)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = CONTINUE_ON_FAILURE;
+    stmPtr->failureMode_.Set(CONTINUE_ON_FAILURE);
     ctx->streams_.push_back(stmPtr);
 
     Device* dev = ((Runtime*)Runtime::Instance())->GetDevice(devId, 0);
@@ -478,7 +478,7 @@ TEST_F(CloudV2ContextTest, TaskReclaimforSyncDevice_DeviceAbortStopOnfaliure)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     ctx->streams_.push_back(stmPtr);
 
     Device* dev = ((Runtime*)Runtime::Instance())->GetDevice(devId, 0);
@@ -509,7 +509,7 @@ TEST_F(CloudV2ContextTest, ModelAddEndGraph_Test)
     EXPECT_EQ(error, RT_ERROR_NONE);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
     Stream* defaultStream = ctx->defaultStream_;
@@ -2461,7 +2461,7 @@ TEST_F(CloudV2ContextTest, NONFAIL_SYNCHRONIZE_TEST)
     ASSERT_EQ(error, RT_ERROR_NONE);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
     ASSERT_NE(stmPtr, nullptr);
-    stmPtr->failureMode_ = CONTINUE_ON_FAILURE;
+    stmPtr->failureMode_.Set(CONTINUE_ON_FAILURE);
     stmPtr->flags_ = 0;
     MOCKER_CPP_VIRTUAL(ctx->defaultStream_, &Stream::Synchronize).stubs().will(returnValue(RT_ERROR_STREAM_BASE));
     error = ctx->Synchronize(-1);
@@ -4072,7 +4072,7 @@ TEST_F(CloudV2ContextTest, SyncStreamsWithTimeout_ProcessTimeout)
     error = rtStreamCreate(&stm, 0);
     Stream* stmPtr = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stmPtr->failureMode_ = STOP_ON_FAILURE;
+    stmPtr->failureMode_.Set(STOP_ON_FAILURE);
     stmPtr->flags_ = 0;
     ctx->streams_.push_back(stmPtr);
 

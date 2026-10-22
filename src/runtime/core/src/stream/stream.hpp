@@ -614,14 +614,18 @@ public:
 
     void SetFailureMode(uint64_t mode)
     {
-        modeMutex.lock();
-        if (failureMode_ != ABORT_ON_FAILURE) {
-            failureMode_ = mode;
+        while (true) {
+            const uint64_t current = failureMode_.Value();
+            if (current == ABORT_ON_FAILURE) {
+                return;
+            }
+            if (failureMode_.CompareExchange(current, mode)) {
+                return;
+            }
         }
-        modeMutex.unlock();
     }
 
-    uint64_t GetFailureMode() const { return failureMode_; }
+    uint64_t GetFailureMode() const { return failureMode_.Value(); }
 
     bool AbortedStreamToFull() const;
 
@@ -1151,8 +1155,7 @@ protected:
     bool isCtrlStream_;
     uint32_t sqTailPos_;
     uint32_t sqHeadPos_;
-    std::mutex modeMutex;
-    uint64_t failureMode_; // 遇错即停状态
+    Atomic<uint64_t> failureMode_; // 遇错即停状态
     std::shared_ptr<Stream> myself = nullptr;
     bool isTsBind_{false};
     AutoSplitSqContext* autoSplitCtx_{nullptr}; // 自动切分上下文

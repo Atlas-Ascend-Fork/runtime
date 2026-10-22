@@ -1188,7 +1188,7 @@ TEST_F(ApiTest, context_sync_failMode_stream_failed)
     error = rtStreamCreate(&stm, 0);
     stream = rt_ut::UnwrapOrNull<Stream>(stm);
 
-    stream->failureMode_ = STOP_ON_FAILURE;
+    stream->failureMode_.Set(STOP_ON_FAILURE);
     MOCKER_CPP_VIRTUAL(stream, &Stream::Synchronize).stubs().will(returnValue(RT_ERROR_TSFW_AICORE_TRAP_EXCEPTION));
 
     error = rtStreamDestroy(stm);

@@ -1611,7 +1611,7 @@ TEST_F(StreamTest, stream_EnterFailureAbort)
     device->Init();
     EXPECT_NE(device->engine_, nullptr);
     Stream* stream = new Stream(device, 0);
-    stream->failureMode_ = STOP_ON_FAILURE;
+    stream->failureMode_.Set(STOP_ON_FAILURE);
     stream->EnterFailureAbort();
     EXPECT_EQ(stream->GetFailureMode(), 2);
 
@@ -2167,6 +2167,78 @@ TEST_F(StreamTest, Query_test)
     device->chipType_ = oldchipType;
     Runtime::Instance()->SetDisableThread(olgFlag);
     GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, FailureModeTransitionsPreserveAbort)
+{
+    Stream stream(static_cast<Device*>(nullptr), 0U);
+    EXPECT_EQ(stream.GetFailureMode(), CONTINUE_ON_FAILURE);
+    stream.SetFailureMode(STOP_ON_FAILURE);
+    EXPECT_EQ(stream.GetFailureMode(), STOP_ON_FAILURE);
+    stream.SetFailureMode(CONTINUE_ON_FAILURE);
+    EXPECT_EQ(stream.GetFailureMode(), CONTINUE_ON_FAILURE);
+    stream.SetFailureMode(ABORT_ON_FAILURE);
+    stream.SetFailureMode(STOP_ON_FAILURE);
+    EXPECT_EQ(stream.GetFailureMode(), ABORT_ON_FAILURE);
+    stream.SetFailureMode(CONTINUE_ON_FAILURE);
+    EXPECT_EQ(stream.GetFailureMode(), ABORT_ON_FAILURE);
+}
+
+TEST_F(StreamTest, ConcurrentFailureModeUpdatesPreserveAbort)
+{
+    Stream stream(static_cast<Device*>(nullptr), 0U);
+    for (uint32_t round = 0U; round < 16U; ++round) {
+        stream.failureMode_.Set(CONTINUE_ON_FAILURE);
+        std::promise<void> start;
+        const std::shared_future<void> ready = start.get_future().share();
+        auto updateMode = [&stream, ready](const uint64_t mode) {
+            ready.wait();
+            for (uint32_t i = 0U; i < 10000U; ++i) {
+                stream.SetFailureMode(mode);
+            }
+        };
+        auto stop = std::async(std::launch::async, updateMode, STOP_ON_FAILURE);
+        auto resume = std::async(std::launch::async, updateMode, CONTINUE_ON_FAILURE);
+        auto abort = std::async(std::launch::async, [&stream, ready]() {
+            ready.wait();
+            stream.SetFailureMode(ABORT_ON_FAILURE);
+        });
+        auto reader = std::async(std::launch::async, [&stream, ready]() {
+            ready.wait();
+            bool sawAbort = false;
+            for (uint32_t i = 0U; i < 10000U; ++i) {
+                const uint64_t mode = stream.GetFailureMode();
+                if ((mode != CONTINUE_ON_FAILURE) && (mode != STOP_ON_FAILURE) && (mode != ABORT_ON_FAILURE)) {
+                    return false;
+                }
+                if (sawAbort && (mode != ABORT_ON_FAILURE)) {
+                    return false;
+                }
+                sawAbort = (mode == ABORT_ON_FAILURE);
+            }
+            return true;
+        });
+        start.set_value();
+        stop.get();
+        resume.get();
+        abort.get();
+        EXPECT_TRUE(reader.get());
+        EXPECT_EQ(stream.GetFailureMode(), ABORT_ON_FAILURE);
+    }
+}
+
+TEST_F(StreamTest, ResetStreamConstructRestoresFailureModeAfterAbort)
+{
+    RawDevice device(0U);
+    Stream stream(&device, 0U);
+    for (const uint64_t mode : {CONTINUE_ON_FAILURE, STOP_ON_FAILURE}) {
+        stream.SetMode(mode);
+        stream.SetFailureMode(ABORT_ON_FAILURE);
+        EXPECT_EQ(stream.GetFailureMode(), ABORT_ON_FAILURE);
+        stream.ResetStreamConstruct();
+        EXPECT_EQ(stream.GetFailureMode(), mode);
+    }
+    stream.device_ = nullptr;
 }
 
 TEST_F(StreamTest, SetFailureMode)

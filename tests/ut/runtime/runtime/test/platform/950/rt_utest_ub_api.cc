@@ -500,7 +500,7 @@ TEST_F(ApiTestUb, allocTaskInfo_abort_on_fail)
 
     MOCKER(CheckTaskCanSend).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&TaskResManageDavid::AllocTaskInfoAndPos).stubs().will(returnValue(RT_ERROR_TASKRES_QUEUE_FULL));
-    (rt_ut::UnwrapOrNull<Stream>(stream))->failureMode_ = ABORT_ON_FAILURE;
+    (rt_ut::UnwrapOrNull<Stream>(stream))->failureMode_.Set(ABORT_ON_FAILURE);
     (rt_ut::UnwrapOrNull<Stream>(stream))->abortStatus_ = RT_ERROR_NONE;
     MOCKER_CPP(&Stream::GetError).stubs().will(returnValue(RT_ERROR_NONE));
     (rt_ut::UnwrapOrNull<Stream>(stream))->Context_()->SetCtxMode(STOP_ON_FAILURE);

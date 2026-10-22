@@ -138,7 +138,7 @@ TEST_F(ApiCloudDisableThreadDfxTest, kernel_launch_with_handle_task_full)
     argsInfo.args = &arg;
     argsInfo.argsSize = sizeof(arg);
     rtTaskCfgInfo_t taskCfgInfo = {};
-    stm->failureMode_ = CONTINUE_ON_FAILURE;
+    stm->failureMode_.Set(CONTINUE_ON_FAILURE);
     rtError_t error = rtStreamSynchronize(nullptr);
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
