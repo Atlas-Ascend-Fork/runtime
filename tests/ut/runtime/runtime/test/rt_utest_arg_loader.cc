@@ -1263,6 +1263,7 @@ TEST_F(ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     rtError_t err = argLdr.LoadStreamSwitchNArgs(
         &stream, (void*)valuePtr, valueSize, trueStreamPtr, elementSize, RT_SWITCH_INT32, &result);
     EXPECT_EQ(RT_ERROR_DRV_ERR, err);
+    EXPECT_TRUE(stream.switchNArg_.empty());
 
     GlobalMockObject::verify();
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
@@ -1273,6 +1274,7 @@ TEST_F(ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     err = argLdr.LoadStreamSwitchNArgs(
         &stream, (void*)valuePtr, valueSize, trueStreamPtr, elementSize, RT_SWITCH_INT32, &result);
     EXPECT_EQ(RT_ERROR_DRV_ERR, err);
+    EXPECT_TRUE(stream.switchNArg_.empty());
 }
 
 TEST_F(ArgLoaderTest, find_or_insert_dev_addr)

@@ -318,17 +318,23 @@ TEST_F(Arch5162ArgLoaderTest, LoadStreamSwitchNArgsFailurePaths)
     g_allocResults.push_back({RT_ERROR_DRV_ERR, nullptr});
     EXPECT_EQ(
         loader.LoadStreamSwitchNArgs(&stream, &value, 1U, trueStreams, 1U, RT_SWITCH_INT32, &result), RT_ERROR_DRV_ERR);
+    EXPECT_TRUE(stream.switchNArg_.empty());
+    EXPECT_EQ(g_freeCount, 0U);
 
     g_allocResults.push_back({RT_ERROR_NONE, g_valueMemory.data()});
     g_copyResults.push_back(RT_ERROR_DRV_ERR);
     EXPECT_EQ(
         loader.LoadStreamSwitchNArgs(&stream, &value, 1U, trueStreams, 1U, RT_SWITCH_INT32, &result), RT_ERROR_DRV_ERR);
+    EXPECT_TRUE(stream.switchNArg_.empty());
+    EXPECT_EQ(g_freeCount, 1U);
 
     g_allocResults.push_back({RT_ERROR_NONE, g_valueMemory.data()});
     g_allocResults.push_back({RT_ERROR_DRV_ERR, nullptr});
     g_copyResults.push_back(RT_ERROR_NONE);
     EXPECT_EQ(
         loader.LoadStreamSwitchNArgs(&stream, &value, 1U, trueStreams, 1U, RT_SWITCH_INT32, &result), RT_ERROR_DRV_ERR);
+    EXPECT_TRUE(stream.switchNArg_.empty());
+    EXPECT_EQ(g_freeCount, 2U);
 
     g_allocResults.push_back({RT_ERROR_NONE, g_valueMemory.data()});
     g_allocResults.push_back({RT_ERROR_NONE, g_streamIdMemory.data()});
@@ -336,7 +342,8 @@ TEST_F(Arch5162ArgLoaderTest, LoadStreamSwitchNArgsFailurePaths)
     g_copyResults.push_back(RT_ERROR_DRV_ERR);
     EXPECT_EQ(
         loader.LoadStreamSwitchNArgs(&stream, &value, 1U, trueStreams, 1U, RT_SWITCH_INT32, &result), RT_ERROR_DRV_ERR);
-    EXPECT_GT(g_freeCount, 0U);
+    EXPECT_TRUE(stream.switchNArg_.empty());
+    EXPECT_EQ(g_freeCount, 4U);
 
     DetachStream(trueStream);
     DetachStream(stream);

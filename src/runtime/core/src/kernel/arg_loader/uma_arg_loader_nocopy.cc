@@ -313,8 +313,6 @@ rtError_t UmaArgLoader::LoadStreamSwitchNArgs(
             MemcpyKindToStr(RT_MEMCPY_HOST_TO_DEVICE), static_cast<uint32_t>(error));
         return error;
     }
-    stm->PushbackSwitchNArgs(valueDevAddr);
-
     memType = rtInstance->GetTsMemType(MEM_REQUEST_FEATURE_DEFAULT, streamIdDevSize);
     error = drv_->DevMemAllocWithBackupFlag(
         &streamIdDevAddr, streamIdDevSize, memType, device_->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
@@ -337,6 +335,7 @@ rtError_t UmaArgLoader::LoadStreamSwitchNArgs(
         return error;
     }
 
+    stm->PushbackSwitchNArgs(valueDevAddr);
     stm->PushbackSwitchNArgs(streamIdDevAddr);
     result->valuePtr = valueDevAddr;
     result->trueStreamPtr = streamIdDevAddr;
