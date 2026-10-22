@@ -98,6 +98,35 @@ TEST_F(SymbolTest, SymbolTable_Register_Duplicate)
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
+TEST_F(SymbolTest, SymbolTable_ProgramReleased_RemovesSymbolAndAllowsReregister)
+{
+    Runtime* const runtime = Runtime::Instance();
+    SymbolTable& symbolTable = runtime->GetSymbolTable();
+    int releasedHostVar = 0;
+    ElfProgram* const releasedProgram = CreateMockElfProgram();
+    ASSERT_EQ(runtime->AddProgramToPool(releasedProgram), RT_ERROR_NONE);
+    ASSERT_EQ(
+        symbolTable.Register(releasedProgram, &releasedHostVar, "test_symbol", sizeof(releasedHostVar), 0U),
+        RT_ERROR_NONE);
+
+    runtime->PutProgram(releasedProgram);
+
+    void* devPtr = nullptr;
+    size_t size = 0U;
+    EXPECT_EQ(rtSymbolLookup(&releasedHostVar, &devPtr, &size), ACL_ERROR_RT_INVALID_SYMBOL);
+
+    ElfProgram* const reregisteredProgram = CreateMockElfProgram();
+    ASSERT_EQ(runtime->AddProgramToPool(reregisteredProgram), RT_ERROR_NONE);
+    ASSERT_EQ(
+        symbolTable.Register(reregisteredProgram, &releasedHostVar, "test_symbol", sizeof(releasedHostVar), 0U),
+        RT_ERROR_NONE);
+
+    SymbolEntry entry = {};
+    ASSERT_EQ(symbolTable.Lookup(&releasedHostVar, entry), RT_ERROR_NONE);
+    EXPECT_EQ(entry.binHandle, reregisteredProgram);
+    runtime->PutProgram(reregisteredProgram);
+}
+
 TEST_F(SymbolTest, ApiRegisterVariable_DeviceVarNameTooLong)
 {
     Api* api = Api::Instance();

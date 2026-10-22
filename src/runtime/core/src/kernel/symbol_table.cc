@@ -93,6 +93,22 @@ rtError_t SymbolTable::GetDeviceAddress(const void* hostVar, uint32_t deviceId, 
     return RT_ERROR_NONE;
 }
 
+void SymbolTable::RemoveByProgram(const Program* prog)
+{
+    symbolMapLock_.Lock();
+    for (auto it = symbolMap_.begin(); it != symbolMap_.end();) {
+        if (it->second.binHandle == prog) {
+            RT_LOG(
+                RT_LOG_DEBUG, "Remove symbol, hostVar=%p, deviceVarName=%s, prog=%p.", it->second.hostVar,
+                it->second.deviceVarName, prog);
+            it = symbolMap_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    symbolMapLock_.Unlock();
+}
+
 rtError_t SymbolTable::GetSize(const void* hostVar, size_t* size)
 {
     SymbolEntry entry = {};

@@ -1941,6 +1941,7 @@ void Runtime::PutProgram(const Program* const programPtr, bool isUnRegisterApi)
      * deadlocked with
      * kernelTable_.RemoveAll.
      */
+    symbolTable_.RemoveByProgram(prog);
     funcSymbolTable_.Unregister(prog);
     (void)kernelTable_.RemoveAll(prog);
     ResetEmbeddedInnerHandle<Program>(prog);

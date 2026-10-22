@@ -18,6 +18,8 @@
 namespace cce {
 namespace runtime {
 
+class Program;
+
 struct SymbolEntry {
     void* binHandle;
     const void* hostVar;
@@ -35,6 +37,7 @@ public:
     rtError_t Lookup(const void* hostVar, SymbolEntry& entry);
     rtError_t GetDeviceAddress(const void* hostVar, uint32_t deviceId, void** devPtr);
     rtError_t GetSize(const void* hostVar, size_t* size);
+    void RemoveByProgram(const Program* prog);
 
 private:
     std::map<const void*, SymbolEntry> symbolMap_;

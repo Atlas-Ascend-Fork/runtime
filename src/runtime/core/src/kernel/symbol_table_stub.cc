@@ -38,6 +38,8 @@ rtError_t SymbolTable::GetDeviceAddress(const void* hostVar, uint32_t deviceId, 
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
+void SymbolTable::RemoveByProgram(const Program* prog) { UNUSED(prog); }
+
 rtError_t SymbolTable::GetSize(const void* hostVar, size_t* size)
 {
     UNUSED(hostVar);
