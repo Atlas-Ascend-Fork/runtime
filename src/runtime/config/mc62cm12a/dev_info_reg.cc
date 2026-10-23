@@ -51,7 +51,6 @@ static const std::unordered_set<RtOptionalFeatureType> CHIP_MC62CM12A_FEATURE{
     RtOptionalFeatureType::RT_FEATURE_TASK_MODEL_MAINTAINCE_WITH_VA,
     RtOptionalFeatureType::RT_FEATURE_DFX_TS_GET_DEVICE_MSG,
     RtOptionalFeatureType::RT_FEATURE_DEVICE_AICPUSD_LAZY_START,
-    RtOptionalFeatureType::RT_FEATURE_DEVICE_TSCH_PACAGE_COMPATABLE,
     RtOptionalFeatureType::RT_FEATURE_STREAM_HUGE_DEPTH,
     RtOptionalFeatureType::RT_FEATURE_TASK_OP_EXE_TIMEOUT_CONFIG,
     RtOptionalFeatureType::RT_FEATURE_STREAM_ABORT,
