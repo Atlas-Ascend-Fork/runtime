@@ -5060,7 +5060,7 @@ rtError_t ApiImpl::MemUceRepair(const uint32_t deviceId, rtMemUceInfo* memUceInf
     Device* const dev = Runtime::Instance()->GetDevice(deviceId, 0U, false);
     if (dev != nullptr) {
         dev->SetBaseTime();
-        if (error == RT_ERROR_NONE) {
+        if ((error == RT_ERROR_NONE) && (dev->GetDeviceFaultType() == DeviceFaultType::HBM_UCE_ERROR)) {
             dev->SetDeviceFaultType(DeviceFaultType::NO_ERROR);
         }
     }
