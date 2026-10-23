@@ -101,7 +101,14 @@ int32_t LogGetFile::TransferFile(
         if (GetPathPrefix(tmpFilePath, matchStr, pid) != SYS_OK) {
             break;
         }
-        // remove .tmp and prefixPath
+        // remove .tmp and prefixPath: GetPathPrefix only requires a substring hit, so matchStr
+        // may sit mid string or out length the path, guard both before the unsigned arithmetic
+        // in substr (an underflowing count throws std::out_of_range and kills the daemon)
+        if ((tmpFilePath.length() < (tmpSuffix.length() + matchStr.length())) ||
+            (tmpFilePath.compare(0, matchStr.length(), matchStr) != 0)) {
+            SELF_LOG_ERROR("tmp file path mismatch, path is %s, prefix is %s", tmpFilePath.c_str(), matchStr.c_str());
+            break;
+        }
         std::string truncatedPath =
             tmpFilePath.substr(matchStr.length(), tmpFilePath.length() - tmpSuffix.length() - matchStr.length());
         int32_t err = TransferProcess(handle, logType, tmpFilePath, truncatedPath);

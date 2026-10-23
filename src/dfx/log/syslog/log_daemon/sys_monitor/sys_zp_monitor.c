@@ -60,7 +60,7 @@ STATIC int32_t SysmonitorZpStrToUint(const char* str, uint32_t* num)
 
 STATIC int32_t SysmonitorZpGetInfo(uint32_t* count)
 {
-    const char command[] = {"ps -o stat|grep -e '^[Zz]'|wc -l"}; // the stat value of zombie process is Z
+    const char command[] = {"ps -e -o stat|grep -e '^[Zz]'|wc -l"}; // the stat value of zombie process is Z
     FILE* fp = popen(command, "r");
     ONE_ACT_ERR_LOG(fp == NULL, return LOG_FAILURE, "get zp info failed, strerr=%s", strerror(ToolGetErrorCode()));
 

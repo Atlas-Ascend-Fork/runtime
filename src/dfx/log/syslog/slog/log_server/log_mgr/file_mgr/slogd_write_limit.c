@@ -27,6 +27,12 @@ STATIC LogStatus WriteFileLimitGetSpec(int32_t type, uint32_t totalSize, uint32_
     const uint32_t baseBytes = 102400U;
     uint32_t curr = currSize / baseBytes;
     uint32_t total = totalSize / baseBytes;
+    // MaxSize is valid from 1KB while the unit here is 100KB: a small config makes total 0
+    // and the division below raises SIGFPE, fall back to the type share instead
+    if (total == 0U) {
+        *currSpec = typeSpec;
+        return LOG_SUCCESS;
+    }
     *currSpec = curr * typeSpec / total;
     return LOG_SUCCESS;
 }

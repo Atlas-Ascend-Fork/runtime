@@ -25,6 +25,7 @@
 #define MONITOR_CPU_ALARM_MAX 9U
 #define MONITOR_CPU_ZERO 0U
 #define MONITOR_CPU_RECORD_NUM_MAX 16
+#define CPU_STAT_BUF_SIZE 8192U
 
 typedef struct CpuInfo {
     // in the order of /proc/stat
@@ -69,13 +70,18 @@ STATIC int32_t SysmonitorCpuGetInfo(void)
         return LOG_FAILURE;
     }
 
-    char* buf = (char*)LogMalloc(MONITOR_MESSAGE_MAX_SIZE);
+    // /proc/stat on many-core machines exceeds 1024 bytes: use a dedicated buffer sized for
+    // MONITOR_CPU_RECORD_NUM_MAX + 1 cpu lines (~100 bytes each) plus intr/ctxt lines
+    char* buf = (char*)LogMalloc(CPU_STAT_BUF_SIZE);
     if (buf == NULL) {
         MONITOR_LOGE("malloc buf failed, strerr=%s", strerror(ToolGetErrorCode()));
         (void)ToolClose(fd);
         return LOG_FAILURE;
     }
-    int32_t len = ToolRead(fd, buf, MONITOR_MESSAGE_MAX_SIZE);
+    int32_t len = ToolRead(fd, buf, CPU_STAT_BUF_SIZE - 1U);
+    if (len > 0) {
+        buf[len] = '\0';
+    }
     if (len <= 0) {
         MONITOR_LOGE("read file failed, file=%s, strerr=%s.", MONITOR_CPU_FILE_PATH, strerror(ToolGetErrorCode()));
         (void)ToolClose(fd);
@@ -85,10 +91,16 @@ STATIC int32_t SysmonitorCpuGetInfo(void)
 
     g_cpuNum = 0;
     char* ptr = NULL;
-    char* time = strtok_s(buf, "cpu", &ptr);
-    while (time != NULL) {
+    // parse line by line: the old delimiter "cpu" is a character set {c,p,u}, which strips the
+    // digits of multi digit cpu ids (cpu10+) and shifts every field of the row by one
+    char* line = strtok_s(buf, "\n", &ptr);
+    while (line != NULL) {
+        char* cpuField = strstr(line, "cpu");
+        if (cpuField == NULL) {
+            break;
+        }
         int32_t num = sscanf_s(
-            time, "%*c %llu %llu %llu %llu %llu %llu %llu %llu", &g_cpuInfo[g_cpuNum].usrTime,
+            cpuField, "%*s %llu %llu %llu %llu %llu %llu %llu %llu", &g_cpuInfo[g_cpuNum].usrTime,
             &g_cpuInfo[g_cpuNum].niceTime, &g_cpuInfo[g_cpuNum].systemTime, &g_cpuInfo[g_cpuNum].idleTime,
             &g_cpuInfo[g_cpuNum].iowaitTime, &g_cpuInfo[g_cpuNum].irqTime, &g_cpuInfo[g_cpuNum].softirqTime,
             &g_cpuInfo[g_cpuNum].stealTime);
@@ -100,9 +112,11 @@ STATIC int32_t SysmonitorCpuGetInfo(void)
             MONITOR_LOGW("cpu num exceeds the set maximum value %d", MONITOR_CPU_RECORD_NUM_MAX);
             break;
         }
-        time = strtok_s(NULL, "cpu", &ptr);
+        line = strtok_s(NULL, "\n", &ptr);
     }
-    g_cpuNum--;
+    if (g_cpuNum > 0) {
+        g_cpuNum--;
+    }
     (void)ToolClose(fd);
     LogFree(buf);
     return LOG_SUCCESS;

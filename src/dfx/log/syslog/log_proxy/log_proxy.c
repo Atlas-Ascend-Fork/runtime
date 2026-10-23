@@ -124,6 +124,7 @@ STATIC void FlushIamLog(int32_t himemFd)
     do {
         if (g_iamFd == INVALID) {
             (void)sleep(sleepTime);
+            retryTime++;
             continue;
         }
         n = (int32_t)write(g_iamFd, g_logProxBuf->ringBufferCtrl, g_logProxBuf->logBufSize);

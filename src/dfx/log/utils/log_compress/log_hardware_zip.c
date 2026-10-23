@@ -198,6 +198,25 @@ STATIC LogStatus HardwareCompressProc(int32_t in, uint32_t fileSize, int32_t out
             break;
         }
         if (len == 0) {
+            // EOF: emit the finish block (gzip trailer + CRC) before closing, but only if the
+            // main loop has not already sent FINISH for the last block (size==0 above);
+            // a failure here must fail the whole compression, otherwise the caller unlinks
+            // the source file on a truncated .gz and the original log is lost forever
+            if (size > 0) {
+                (void)memset_s(zippedBuf, zippedBufLen, 0, zippedBufLen);
+                int32_t finLen = HardwareZipProcess(&zipStream, HZIP_FLUSH_TYPE_FINISH, zippedBuf, zippedBufLen);
+                if ((finLen == INVALID) || (finLen <= 0)) {
+                    SELF_LOG_ERROR("emit gzip trailer failed, finLen=%d", finLen);
+                    ret = LOG_FAILURE;
+                    break;
+                }
+                int32_t wret = ToolWrite(out, zippedBuf, finLen);
+                if (wret != finLen) {
+                    SELF_LOG_ERROR("write gzip trailer failed, wret=%d, expect=%d", wret, finLen);
+                    ret = LOG_FAILURE;
+                    break;
+                }
+            }
             break;
         }
         size = size - (uint32_t)len;
@@ -323,6 +342,7 @@ LogStatus HardwareCompressBuffer(const char* source, uint32_t sourceLen, char** 
         }
         dstTmp += length;
         *destLen += (uint32_t)length;
+        destTotalLen -= (uint32_t)length;
     } while (flush != HZIP_FLUSH_TYPE_FINISH);
     HardwareCompressEnd(&zipStream);
     ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, XFREE(*dest), "compress failed.");

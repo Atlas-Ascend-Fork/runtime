@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#define RECV_ERR_MAX_RETRY 100U
+#define RECV_ERR_BACKOFF_MS 100U
+
 #include "slogd_recv_msg.h"
 #include "log_system_api.h"
 #include "log_common.h"
@@ -76,12 +79,23 @@ void SlogdMessageRecv(int32_t devId)
     SELF_LOG_INFO("fileNum is : %u", fileNum);
     char* recvBuf = SlogdGetRecvBuf();
     int32_t logType = DEBUG_LOG;
+    uint32_t errRetry = 0;
     while (LogGetSigNo() == 0) {
         (void)memset_s(recvBuf, MAX_READ - 1U, 0, MAX_READ - 1U);
         int32_t sz = SlogdRmtServerRecv(fileNum, recvBuf, MAX_READ - 1U, &logType);
         TWO_ACT_NO_LOG(sz == SYS_INVALID_PARAM, (void)ToolSleep(10), continue); // sleep 10ms when iam list is null
         // read from socket over MAX_READ
-        ONE_ACT_NO_LOG((sz > (int32_t)MAX_READ || sz == (int32_t)SYS_ERROR), continue);
+        if ((sz > (int32_t)MAX_READ) || (sz == (int32_t)SYS_ERROR)) {
+            // a persistently bad source makes SlogdRmtServerRecv fail every round: back off
+            // instead of spinning the loop at full speed
+            errRetry++;
+            if (errRetry >= RECV_ERR_MAX_RETRY) {
+                (void)ToolSleep(RECV_ERR_BACKOFF_MS);
+                errRetry = 0;
+            }
+            continue;
+        }
+        errRetry = 0;
         if (ProcSyslogBuf(recvBuf, &sz) != SYS_OK) {
             continue;
         }

@@ -17,6 +17,7 @@
 #define UNIT_THOUSAND 1000
 #define LOG_PRINT_LOG_BUF_SZ 1024U
 #define LOG_PRINT_LOG_TIME_STR_SIZE 128U
+#define SELF_LOG_ROTATE_MAX_RETRY 3U
 #define SLOGD_LOG_MAX_SIZE (1U * 1024U * 1024U)
 #define SLOGD_LOG_BUFFIX_LEN 7U
 
@@ -166,6 +167,12 @@ STATIC int GetRingFd(const char* slogdFile, const char* msg)
             }
             break;
         }
+        if (retryTime >= SELF_LOG_ROTATE_MAX_RETRY) {
+            // rotation keeps failing (rename swallowed in SetRingFile): stop looping and keep
+            // appending to the current file instead of spinning open/fstat/close forever
+            getRenameFileFlag = 0;
+            break;
+        }
 
         // get file slog.log Size
         if (fstat(fd, &buf) != 0) {
@@ -178,6 +185,9 @@ STATIC int GetRingFd(const char* slogdFile, const char* msg)
         if ((sum > (unsigned int)buf.st_size) && (sum > (unsigned int)strlen(msg)) &&
             (sum >= (unsigned int)SLOGD_LOG_MAX_SIZE)) {
             LOG_CLOSE_FD(fd);
+            // count every rotation attempt (not just open failures) so the retry cap above
+            // is actually reachable when rename keeps failing
+            retryTime++;
             SetRingFile(slogdFile);
             getRenameFileFlag = 1;
         } else {
