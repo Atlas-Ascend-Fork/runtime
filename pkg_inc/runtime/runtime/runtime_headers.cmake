@@ -35,7 +35,6 @@ if(ENABLE_OPEN_SRC)
         $<BUILD_INTERFACE:${RUNTIME_DIR}/pkg_inc/aicpu_sched>
         $<BUILD_INTERFACE:${RUNTIME_DIR}/pkg_inc/aicpu_sched/common>
         $<BUILD_INTERFACE:${RUNTIME_DIR}/pkg_inc/aicpu_sched/aicpu_schedule>
-        $<BUILD_INTERFACE:${RUNTIME_DIR}/pkg_inc/aicpu_sched/cpu_kernels>
     )
 
     add_library(datagw_headers INTERFACE)

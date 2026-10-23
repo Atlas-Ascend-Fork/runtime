@@ -56,7 +56,6 @@ set(AICPU_TS_C_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/dfx
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${RUNTIME_DIR}/pkg_inc/aicpu_sched/aicpu_schedule
-    ${RUNTIME_DIR}/pkg_inc/aicpu_sched/cpu_kernels
     ${RUNTIME_DIR}/pkg_inc/profiling
     ${RUNTIME_DIR}/pkg_inc/base
     ${RUNTIME_DIR}/include/dfx/base

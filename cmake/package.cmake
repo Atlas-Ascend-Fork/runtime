@@ -297,13 +297,6 @@ install(DIRECTORY
 )
 
 install(DIRECTORY
-    ${RUNTIME_DIR}/pkg_inc/aicpu_sched/cpu_kernels/
-    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu/cpu_kernels
-    ${INSTALL_OPTIONAL}
-    COMPONENT npu-runtime
-)
-
-install(DIRECTORY
     ${RUNTIME_DIR}/pkg_inc/tsd/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu/tsd
     ${INSTALL_OPTIONAL}

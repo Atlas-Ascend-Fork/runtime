@@ -20,7 +20,6 @@
         <path value="$(TARGET_ENV)/include/toolchain"/>
         <path value="$(TARGET_ENV)/pkg_inc/aicpu"/>
         <path value="$(TARGET_ENV)/pkg_inc/aicpu/aicpu_schedule"/>
-        <path value="$(TARGET_ENV)/pkg_inc/aicpu/cpu_kernels"/>
         <path value="$(TARGET_ENV)/pkg_inc/aicpu/common"/>
         <path value="$(TARGET_ENV)/pkg_inc/aicpu/queue_schedule"/>
         <path value="$(TARGET_ENV)/pkg_inc/aicpu/tsd"/>
@@ -236,17 +235,6 @@
         <file value="aicpu_mc2_maintenance_thread.h" install_mod="440" entity="true"/>
         <file value="aicpusd_info.h" install_mod="440" entity="true"/>
         <file value="aicpusd_interface.h" install_mod="440" entity="true"/>
-    </file_info>
-    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu/cpu_kernels" install_path="$(TARGET_ENV)/pkg_inc/aicpu/cpu_kernels" install_type="all">
-        <file value="cpu_attr_value.h" install_mod="440" entity="true"/>
-        <file value="cpu_context.h" install_mod="440" entity="true"/>
-        <file value="cpu_kernel.h" install_mod="440" entity="true"/>
-        <file value="cpu_kernel_register.h" install_mod="440" entity="true"/>
-        <file value="cpu_kernel_utils.h" install_mod="440" entity="true"/>
-        <file value="cpu_node_def.h" install_mod="440" entity="true"/>
-        <file value="cpu_tensor.h" install_mod="440" entity="true"/>
-        <file value="cpu_tensor_shape.h" install_mod="440" entity="true"/>
-        <file value="cpu_types.h" install_mod="440" entity="true"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu/queue_schedule" install_path="$(TARGET_ENV)/pkg_inc/aicpu/queue_schedule" install_type="all">
         <file value="dgw_client.h" install_mod="440" entity="true"/>

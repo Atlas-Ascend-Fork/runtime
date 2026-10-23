@@ -70,7 +70,6 @@ set(LOCAL_C_INCLUDES
     ${AICPU_SCHED_PATH}/extern_include
     ${AICPU_SCHED_PATH}
     ${RUNTIME_DIR}/pkg_inc/aicpu_sched/aicpu_schedule
-    ${RUNTIME_DIR}/pkg_inc/aicpu_sched/cpu_kernels
     ${RUNTIME_DIR}/pkg_inc/profiling
     ${RUNTIME_DIR}/pkg_inc/base
     ${RUNTIME_DIR}/pkg_inc/aicpu_sched/common
