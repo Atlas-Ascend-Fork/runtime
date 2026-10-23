@@ -150,7 +150,7 @@ STATIC int GetRingFd(const char* slogdFile, const char* msg)
 {
     int getRenameFileFlag = 0;
     int fd = 0;
-    int retryTime = 0;
+    uint32_t retryTime = 0;
     struct stat buf = {0};
 
     if ((slogdFile == NULL) || (msg == NULL)) {
