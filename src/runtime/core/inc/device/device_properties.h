@@ -12,7 +12,7 @@
 #include <array>
 #include "dev_info.h"
 #include "runtime/rt_inner_device.h"
-#define USER_BUFFER_SIZE_64M (64U * 1024U * 1024U)
+
 namespace cce {
 namespace runtime {
 
@@ -60,6 +60,7 @@ constexpr uint8_t OVERFLOW_MODE_INFNAN = 0x2U;
 constexpr uint32_t RT_ATOMIC_OPERATION_MAX_VAL = static_cast<uint32_t>(RT_ATOMIC_OPERATION_SIMD_SCALAR_EXCH) + 1U;
 constexpr uint32_t ICACHE_PREFETCH_DEFAULT_UNIT = 2048U;
 constexpr uint32_t RT_SIMT_UB_SIZE_MIN = 0U;
+constexpr uint32_t USER_BUFFER_SIZE_64M = 64U * 1024U * 1024U;
 
 enum class MemsetTaskSupportType : uint8_t {
     MEMSET_TASK_NOT_SUPPORT = 0U,
