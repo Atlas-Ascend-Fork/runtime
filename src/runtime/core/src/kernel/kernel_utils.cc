@@ -399,6 +399,9 @@ rtError_t GetKernelAttribute(
         case RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US:
             ret = ConvertTimeoutByAttrId(aicTaskInfo->timeout, attrId, attrValue);
             break;
+        case RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING:
+            attrValue->enableProfiling = taskInfo->enableProfiling;
+            break;
         case RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE:
         case RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET:
         case RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH:

@@ -729,6 +729,8 @@ TEST_F(UTEST_ACL_compatibility_enum_check, aclrtLaunchKernelAttrId)
 
     id = (aclrtLaunchKernelAttrId)8;
     EXPECT_EQ(id, ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US);
+    id = (aclrtLaunchKernelAttrId)9;
+    EXPECT_EQ(id, ACL_RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING);
     EXPECT_EQ(sizeof(aclrtLaunchKernelAttrId), sizeof(int32_t));
 }
 

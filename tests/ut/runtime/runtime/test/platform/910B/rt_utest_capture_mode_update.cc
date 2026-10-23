@@ -473,6 +473,42 @@ TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttribute006)
     GlobalMockObject::verify();
 }
 
+TEST_F(CloudV2CaptureModelUpdateTest, rtModelKernelTaskGetAttributeEnableProfiling)
+{
+    rtContext_t ctx;
+    rtStream_t stream;
+    rtModel_t model;
+    rtTask_t kernelTask;
+    CreateKernelTaskModel(ctx, stream, model, function_, kernelTask);
+
+    rtLaunchKernelAttrVal_t attrValue = {};
+    rtError_t ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING, &attrValue);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(attrValue.enableProfiling, 0U);
+
+    rtTaskParams params = {};
+    ret = rtModelTaskGetParams(kernelTask, &params);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    rtLaunchKernelAttr_t attr = {};
+    attr.id = RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING;
+    attr.value.enableProfiling = 1U;
+    rtKernelLaunchCfg_t cfg = {&attr, 1U};
+    params.kernelTaskParams.cfg = &cfg;
+    ret = rtModelTaskSetParams(kernelTask, &params);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    ret = rtModelUpdate(model);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    attrValue.enableProfiling = 0U;
+    ret = rtModelKernelTaskGetAttribute(kernelTask, RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING, &attrValue);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(attrValue.enableProfiling, 1U);
+
+    ReleaseModelResource(ctx, stream, model);
+    GlobalMockObject::verify();
+}
+
 TEST_F(CloudV2CaptureModelUpdateTest, rtModelUpdate_Success)
 {
     rtContext_t ctx;

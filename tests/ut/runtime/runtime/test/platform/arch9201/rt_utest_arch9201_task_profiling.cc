@@ -23,6 +23,7 @@
 #include "task_recycle.hpp"
 #include "npu_driver.hpp"
 #include "davinci_kernel_task.h"
+#include "kernel_utils.hpp"
 #include "stars_david.hpp"
 #include "david_sqe_adapter.hpp"
 #include "para_convertor.hpp"
@@ -175,6 +176,10 @@ static void ExpectArch9201AixSqeReservedWithTaskCfg(
     task.u.aicTaskInfo.kernel = kernel;
     EXPECT_EQ(task.enableProfiling, expectedEnableProfiling);
 
+    rtLaunchKernelAttrVal_t attrValue = {};
+    EXPECT_EQ(GetKernelAttribute(&task, RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING, &attrValue), RT_ERROR_NONE);
+    EXPECT_EQ(attrValue.enableProfiling, expectedEnableProfiling);
+
     Runtime::Instance()->SetTaskLevelProfFlag(true);
     ToConstructSqe(&task, static_cast<void*>(&sqe), sqeInfo);
     EXPECT_EQ(sqe.header.reserved, expectedReserved);
@@ -255,7 +260,7 @@ TEST_F(Arch9201TaskProfilingTest, ConstructArch9201AixSqeTaskProfilingFollowsTas
     ExpectArch9201AixSqeReservedByProfiling(stream_, RT_KERNEL_ATTR_TYPE_MIX, MIX_AIC_AIV_MAIN_AIV);
 }
 
-TEST_F(Arch9201TaskProfilingTest, LaunchCfgEnableProfilingAttrFeedsArch9201AixSqe)
+TEST_F(Arch9201TaskProfilingTest, LaunchCfgEnableProfilingAttrFeedsArch9201AixSqeAndGetKernelAttribute)
 {
     TaskCfg defaultTaskCfg = {};
     ASSERT_EQ(ConvertLaunchCfgToTaskCfg(defaultTaskCfg, nullptr), RT_ERROR_NONE);
