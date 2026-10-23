@@ -25,9 +25,8 @@ ProfileLogRecord::ProfileLogRecord(const uint16_t recordType, const uint16_t opT
 }
 
 ProfileLogRecord::ProfileLogRecord(const uint16_t opType, const Profiler* const profilerInfo)
-{
-    ProfileLogRecord(PROFILE_RECORD_TYPE_RT_CALL_RT, opType, profilerInfo);
-}
+    : ProfileLogRecord(PROFILE_RECORD_TYPE_RT_CALL_RT, opType, profilerInfo)
+{}
 
 void ProfileLogRecord::PrintRecord(const rtProfileRecordSyncRt_t& recordSyncRt) const
 {

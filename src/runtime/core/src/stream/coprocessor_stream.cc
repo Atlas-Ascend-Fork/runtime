@@ -23,7 +23,6 @@ rtError_t CoprocessorStream::Setup()
 {
     rtError_t error =
         device_->Driver_()->StreamIdAlloc(&streamId_, device_->Id_(), device_->DevGetTsId(), priority_, flags_);
-    device_->GetStreamSqCqManage()->SetStreamIdToStream(static_cast<uint32_t>(streamId_), this);
     if (error != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_ERROR, "Failed to alloc coprocessor stream id, retCode=%#x.", static_cast<uint32_t>(error));
         if ((error == RT_ERROR_DRV_NO_RESOURCES) || (error == RT_ERROR_DRV_NO_STREAM_RESOURCES)) {
@@ -31,6 +30,7 @@ rtError_t CoprocessorStream::Setup()
         }
         return error;
     }
+    device_->GetStreamSqCqManage()->SetStreamIdToStream(static_cast<uint32_t>(streamId_), this);
     RT_LOG(RT_LOG_DEBUG, "Alloc coprocessor stream, stream_id=%d", streamId_);
 
     /**** alloc sq cq id *****/
@@ -68,14 +68,14 @@ rtError_t CoprocessorStream::Setup()
         streamId_ = -1;
         return error;
     }
+    sqId_ = tmpSqId;
+    cqId_ = tmpCqId;
     // drv need support mc2 logic cq bind
     if (device_->IsStarsPlatform() && device_->CheckFeatureSupport(TS_FEATURE_MC2_ENHANCE)) {
         error =
             AllocLogicCq(Runtime::Instance()->GetDisableThread(), device_->IsStarsPlatform(), stmSqCqManage, drvFlag);
         ERROR_RETURN(error, "Failed to alloc coprocessor stream logic cq, retCode=%#x.", error);
     }
-    sqId_ = tmpSqId;
-    cqId_ = tmpCqId;
     RT_LOG(
         RT_LOG_INFO, "Coprocessor stream setup end, stream_id=%d, sqId=%u, cqId=%u, deviceId=%u", streamId_, sqId_,
         cqId_, device_->Id_());

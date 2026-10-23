@@ -864,6 +864,17 @@ TEST_F(ProfilerTest, ApiProfileDecoratorUserDeviceIdOverflow)
     ClearApiProfContextStack(&profiler);
 }
 
+TEST_F(ProfilerTest, ApiProfileDecoratorContextDestroyWithoutDevice)
+{
+    ApiImpl impl;
+    Profiler profiler(&impl);
+    ApiProfileDecorator api(&impl, &profiler);
+    Context context(nullptr, false);
+    MOCKER_CPP_VIRTUAL(impl, &ApiImpl::ContextDestroy).stubs().will(returnValue(RT_ERROR_NONE));
+
+    EXPECT_EQ(api.ContextDestroy(&context), RT_ERROR_NONE);
+}
+
 TEST_F(ProfilerTest, ApiProfileDecoratorMemSetSyncExtInfo)
 {
     RuntimeProfTestApiImpl impl;

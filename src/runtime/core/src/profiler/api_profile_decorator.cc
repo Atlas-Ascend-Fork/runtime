@@ -850,7 +850,8 @@ rtError_t ApiProfileDecorator::ContextCreate(Context** const inCtx, const int32_
 rtError_t ApiProfileDecorator::ContextDestroy(Context* const inCtx)
 {
     CallApiBegin(RT_PROF_API_CONTEXT_DESTROY);
-    const uint32_t devId = inCtx->Device_()->Id_();
+    const Device* const device = inCtx->Device_();
+    const uint32_t devId = (device == nullptr) ? static_cast<uint32_t>(UINT16_MAX) : device->Id_();
     const rtError_t error = impl_->ContextDestroy(inCtx);
     CallApiEnd(error, devId);
     return error;

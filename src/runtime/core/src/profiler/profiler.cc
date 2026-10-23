@@ -921,7 +921,7 @@ void ReportStreamSqInfoForProfiling(const Stream* stream, uint16_t streamStatus)
         return;
     }
 
-    MsprofCompactInfo compactInfo;
+    MsprofCompactInfo compactInfo{};
     compactInfo.level = MSPROF_REPORT_RUNTIME_LEVEL;
     compactInfo.type = RT_PROFILE_TYPE_STREAM_SQ_INFO;
     compactInfo.timeStamp = MsprofSysCycleTime();

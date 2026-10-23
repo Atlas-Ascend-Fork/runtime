@@ -6087,6 +6087,7 @@ rtError_t Runtime::RestoreModule(void) const
         const uint32_t memSize = static_cast<uint32_t>(node->memSize);
         void* hostAddr = static_cast<void*>(node->hostAddr);
         Device* device = const_cast<Runtime*>(this)->GetDevice(node->devId, 0U);
+        COND_PROC((device == nullptr), return RT_ERROR_DEVICE_NULL);
         rtError_t error;
         // 使用 GetPoolMemInfo 原子化查询，避免 TOCTOU 竞争
         PoolMemInfo poolInfo = device->GetKernelMemoryPool()->GetPoolMemInfo(devAddr);
