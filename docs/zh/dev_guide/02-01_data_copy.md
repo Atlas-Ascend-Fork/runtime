@@ -82,7 +82,7 @@ if (canAccess != 0) {
 
 ## 二维和批量复制
 
-二维复制接口aclrtMemcpy2d、aclrtMemcpy2dAsync适用于矩阵、图像或带pitch的二维数据。调用时需要分别指定源和目的内存中相邻两列向量的地址距离，以及待复制区域的宽度和高度。异步二维复制涉及Host内存时，同样遵循“锁页Host内存才是真正异步”的规则。
+二维复制接口aclrtMemcpy2d、aclrtMemcpy2dAsync适用于矩阵、图像或带pitch的二维数据。调用时需要分别指定源和目的内存中相邻两行数据的地址距离，以及待复制区域的宽度和高度。异步二维复制涉及Host内存时，同样遵循“锁页Host内存才是真正异步”的规则。
 
 批量复制接口aclrtMemcpyBatch、aclrtMemcpyBatchAsync及其V2版本适用于一次下发多段Host到Device或Device到Host复制。批量复制需要注意：
 

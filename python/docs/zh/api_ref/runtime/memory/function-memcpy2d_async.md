@@ -44,9 +44,9 @@
 | 参数名 | 说明 |
 | --- | --- |
 | dst | int，目的内存地址的指针地址。 |
-| dpitch | int，目的内存中相邻两列向量的地址距离。 |
+| dpitch | int，目的内存中相邻两行数据的地址距离。 |
 | src | int，源内存地址的指针地址。 |
-| spitch | int，源内存中相邻两列向量的地址距离。 |
+| spitch | int，源内存中相邻两行数据的地址距离。 |
 | width | int，待复制的矩阵宽度。<br>width最大设置为5000000，且必须小于或等于dpitch和spitch。 |
 | height | int，待复制的矩阵高度。<br>“height”最大可设置为5 *1024* 1024 = 5242880，否则接口返回失败。 |
 | kind | int，内存复制的类型。<br>ACL_MEMCPY_HOST_TO_HOST = 0 // Host内的内存复制<br>ACL_MEMCPY_HOST_TO_DEVICE = 1 // Host到Device的内存复制<br>ACL_MEMCPY_DEVICE_TO_HOST = 2 // Device到Host的内存复制<br>ACL_MEMCPY_DEVICE_TO_DEVICE = 3 // Device内的内存复制<br>ACL_MEMCPY_DEFAULT = 4 // 由系统根据源、目的内存地址自行判断拷贝方向 |

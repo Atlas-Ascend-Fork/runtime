@@ -1287,9 +1287,9 @@ aclError aclrtMemcpy2d(T *dst, size_t dpitch, const U *src, size_t spitch, size_
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |
 | dst | 输入 | 目的内存地址指针。 |
-| dpitch | 输入 | 目的内存中相邻两列向量的地址距离。 |
+| dpitch | 输入 | 目的内存中相邻两行数据的地址距离。 |
 | src | 输入 | 源内存地址指针。 |
-| spitch | 输入 | 源内存中相邻两列向量的地址距离。 |
+| spitch | 输入 | 源内存中相邻两行数据的地址距离。 |
 | width | 输入 | 待复制的数据宽度。<br>取值不能超过5000000，且必须小于或等于dpitch和spitch。 |
 | height | 输入 | 待复制的数据高度。<br>取值不能超过5242880（即5 * 1024 * 1024）。 |
 | kind | 输入 | 内存复制的类型。类型定义请参见[aclrtMemcpyKind](25-02_Enumerations.md#aclrtMemcpyKind)。 |
@@ -1353,9 +1353,9 @@ aclError aclrtMemcpy2dAsync(T *dst, size_t dpitch, const U *src, size_t spitch, 
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |
 | dst | 输入 | 目的内存地址指针。 |
-| dpitch | 输入 | 目的内存中相邻两列向量的地址距离。 |
+| dpitch | 输入 | 目的内存中相邻两行数据的地址距离。 |
 | src | 输入 | 源内存地址指针。 |
-| spitch | 输入 | 源内存中相邻两列向量的地址距离。 |
+| spitch | 输入 | 源内存中相邻两行数据的地址距离。 |
 | width | 输入 | 待复制的数据宽度。<br>取值不能超过5000000，且必须小于或等于dpitch和spitch。 |
 | height | 输入 | 待复制的数据高度。<br>取值不能超过5242880（即5 * 1024 * 1024）。 |
 | kind | 输入 | 内存复制的类型。类型定义请参见[aclrtMemcpyKind](25-02_Enumerations.md#aclrtMemcpyKind)。 |
