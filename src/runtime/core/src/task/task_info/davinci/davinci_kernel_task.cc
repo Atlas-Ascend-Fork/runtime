@@ -673,7 +673,7 @@ static void DumpAicpuArgsForDfx(TaskInfo* taskInfo, const uint32_t devId)
         const size_t soNameLen = strnlen(soNamePtr, static_cast<size_t>(argsSize - soNameOffset));
         RT_LOG(
             RT_LOG_ERROR,
-            "[AICPU_INFO] soName=%s, strLen=%lu, remainingLen=%lu, device_id=%u, stream_id=%d, "
+            "[AICPU_INFO] soName=%s, strLen=%zu, remainingLen=%" PRIu64 ", device_id=%u, stream_id=%d, "
             "task_id=%u.",
             soNamePtr, soNameLen, static_cast<uint64_t>(argsSize) - soNameOffset, devId, streamId,
             static_cast<uint32_t>(taskId));
@@ -685,7 +685,7 @@ static void DumpAicpuArgsForDfx(TaskInfo* taskInfo, const uint32_t devId)
         const size_t kernelNameLen = strnlen(kernelNamePtr, static_cast<size_t>(argsSize - kernelNameOffset));
         RT_LOG(
             RT_LOG_ERROR,
-            "[AICPU_INFO] kernelName=%s, strLen=%lu, remainingLen=%lu, device_id=%u, stream_id=%d, "
+            "[AICPU_INFO] kernelName=%s, strLen=%zu, remainingLen=%" PRIu64 ", device_id=%u, stream_id=%d, "
             "task_id=%u.",
             kernelNamePtr, kernelNameLen, static_cast<uint64_t>(argsSize) - kernelNameOffset, devId, streamId,
             static_cast<uint32_t>(taskId));

@@ -46,7 +46,8 @@ rtError_t RdmaPiValueModifyTaskInit(TaskInfo* const taskInfo, const std::vector<
     if (ret != RT_ERROR_NONE || funCallMemAddr == nullptr) {
         RT_LOG(
             RT_LOG_ERROR,
-            "alloc pi value array failed, allocSize=%llu, funCallMemAndPiValueMemSize=%llu, dfxSize=%llu, ret=%#x",
+            "alloc pi value array failed, allocSize=%" PRIu64 ", funCallMemAndPiValueMemSize=%" PRIu64
+            ", dfxSize=%" PRIu64 ", ret=%#x",
             allocSize, funCallMemAndPiValueMemSize, dfxSize, ret);
         return RT_ERROR_DRV_MEMORY;
     }
@@ -68,7 +69,7 @@ rtError_t RdmaPiValueModifyTaskInit(TaskInfo* const taskInfo, const std::vector<
 
     RT_LOG(
         RT_LOG_DEBUG,
-        "piValueVecLength size is %lu, funCallMemAddr is %p, funCallMemAddrAlign is %#" PRIx64
+        "piValueVecLength size is %" PRIu64 ", funCallMemAddr is %p, funCallMemAddrAlign is %#" PRIx64
         ", piValueArrAddr is %#" PRIx64 ", dfxAddr is %#" PRIx64,
         piValueVecLength, funCallMemAddr, funCallMemAddrAlign, piValueArrAddr, dfxAddr);
 
@@ -77,8 +78,8 @@ rtError_t RdmaPiValueModifyTaskInit(TaskInfo* const taskInfo, const std::vector<
         hostFunCallMem.data(), sizeof(RtStarsPivalueModifyFuncCall), &funcCall, sizeof(RtStarsPivalueModifyFuncCall));
     if (cpyRet != EOK) {
         RT_LOG(
-            RT_LOG_ERROR, "memcpy_s failed, funCallMemAndPiValueMemSize=%llu, cpyRet=%d", funCallMemAndPiValueMemSize,
-            cpyRet);
+            RT_LOG_ERROR, "memcpy_s failed, funCallMemAndPiValueMemSize=%" PRIu64 ", cpyRet=%d",
+            funCallMemAndPiValueMemSize, cpyRet);
         (void)dev->Driver_()->DevMemFree(funCallMemAddr, dev->Id_());
         return RT_ERROR_SEC_HANDLE;
     }
@@ -89,7 +90,8 @@ rtError_t RdmaPiValueModifyTaskInit(TaskInfo* const taskInfo, const std::vector<
         piValueVecLength * sizeof(uint64_t));
     if (cpyRet != EOK) {
         RT_LOG(
-            RT_LOG_ERROR, "memcpy_s failed, funCallMemAndPiValueMemSize=%llu, piValueVecLength=%lu, cpyRet=%d",
+            RT_LOG_ERROR,
+            "memcpy_s failed, funCallMemAndPiValueMemSize=%" PRIu64 ", piValueVecLength=%" PRIu64 ", cpyRet=%d",
             funCallMemAndPiValueMemSize, piValueVecLength, cpyRet);
         (void)dev->Driver_()->DevMemFree(funCallMemAddr, dev->Id_());
         return RT_ERROR_SEC_HANDLE;
@@ -101,7 +103,7 @@ rtError_t RdmaPiValueModifyTaskInit(TaskInfo* const taskInfo, const std::vector<
     if (ret != RT_ERROR_NONE) {
         RT_LOG(
             RT_LOG_ERROR,
-            "funCallMem memcopy failed, funCallMemAddr=%p, hostFunCallMem addr=%p, funCallMemSize=%llu, ret=%#x",
+            "funCallMem memcopy failed, funCallMemAddr=%p, hostFunCallMem addr=%p, funCallMemSize=%" PRIu64 ", ret=%#x",
             funCallMemAddr, hostFunCallMem.data(), funCallMemAndPiValueMemSize, ret);
         (void)dev->Driver_()->DevMemFree(funCallMemAddr, dev->Id_());
         return ret;
@@ -152,7 +154,7 @@ void GetRdmaTaskInfoFromFftsPlusTask(
         if (contextType == static_cast<uint16_t>(RT_CTX_TYPE_WRITE_VALUE_RDMA)) {
             constexpr size_t offset = offsetof(rtFftsPlusWriteValueCtx_t, writeValue);
             const uint64_t piValueOffset = contextOffset + offset;
-            RT_LOG(RT_LOG_DEBUG, "rdma offset=%zu, piValueOffset=%lu.", offset, piValueOffset);
+            RT_LOG(RT_LOG_DEBUG, "rdma offset=%zu, piValueOffset=%" PRIu64 ".", offset, piValueOffset);
             rdmaPiValueDeviceAddrVec.push_back(deviceTotalContextAddr + piValueOffset);
         }
     }

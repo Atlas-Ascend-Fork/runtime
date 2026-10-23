@@ -31,7 +31,8 @@ rtError_t GetConnectUbFlagFromDrv(const uint32_t deviceId, bool& connectUbFlag)
     }
     connectUbFlag = (hdConnectType == HOST_DEVICE_CONNECT_TYPE_UB ? true : false); // 2: ub, 0: pcie, 1: hccs
     RT_LOG(
-        RT_LOG_DEBUG, "hdConnectType = %lld, connectUbFlag = %d.", hdConnectType, static_cast<int32_t>(connectUbFlag));
+        RT_LOG_DEBUG, "hdConnectType = %" PRId64 ", connectUbFlag = %d.", hdConnectType,
+        static_cast<int32_t>(connectUbFlag));
     return RT_GET_DRV_ERRCODE(drvRet);
 }
 
