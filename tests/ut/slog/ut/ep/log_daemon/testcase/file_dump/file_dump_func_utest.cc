@@ -250,7 +250,7 @@ TEST_F(EP_FILE_DUMP_FUNC_UTEST, FileDumpTableIncludesCcuInfo)
         EXPECT_EQ(nullptr, info.scriptArgs);
         EXPECT_EQ(100000U, info.timeout);
         EXPECT_EQ(TYPE_10, info.type);
-        EXPECT_TRUE(info.isRoot);
+        EXPECT_FALSE(info.isRoot);
     }
     EXPECT_EQ(1U, foundCount);
 }
@@ -634,7 +634,7 @@ TEST_F(EP_FILE_DUMP_FUNC_UTEST, LogGetFileProcessExportsCcuInfoScript)
     ASSERT_NE(nullptr, request);
 
     EXPECT_EQ(SYS_OK, getFile.Process(handle, request));
-    EXPECT_EQ("sudo /var/ccu_info_collect.sh 42", g_capturedCmd);
+    EXPECT_EQ("/var/ccu_info_collect.sh 42", g_capturedCmd);
     EXPECT_EQ("game_over", g_capturedEndMsg);
     ResetErrLog();
 }
