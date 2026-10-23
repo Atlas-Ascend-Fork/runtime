@@ -43,7 +43,7 @@ rtError_t CheckAndGetTotalShareMemorySize(
         ubSize由dev properties中simtUbSize配置, 默认形态为256K, arch9201形态为384K
     */
     const uint32_t kernelVfType = kernel->KernelVfType_();
-    bool canUseSimt = (kernelVfType != 0);
+    const bool canUseSimt = (kernelVfType != 0);
     const bool simtFlag = (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMT_VF_ONLY)) ||
                           (kernelVfType == static_cast<uint32_t>(AivTypeFlag::AIV_TYPE_SIMD_SIMT_MIX_VF));
     const uint32_t simtUbSize = stm->Device_()->GetDevProperties().simtUbSize;
