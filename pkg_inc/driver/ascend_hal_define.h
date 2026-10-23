@@ -653,12 +653,16 @@ struct dqs_mbuf_prod_trace {
     unsigned long long alloc_req_time;
     unsigned long long prodq_enque_time;
     unsigned long long prod_free_time;
+    int pid;
+    int tid;
 };
 
 struct dqs_mbuf_cons_trace {
     union dqs_mbuf_owner_info cons_owner_info;
     unsigned long long cons_deque_copy_ref_time;
     unsigned long long cons_free_time;
+    int pid;
+    int tid;
 };
 
 typedef struct {
