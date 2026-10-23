@@ -252,11 +252,11 @@ rtError_t DavidEvent::ReclaimTask(const bool evtWaitTask)
 
 rtError_t DavidEvent::QueryEventTask(rtEventStatus_t* const status)
 {
-    Stream* stm = nullptr;
+    std::shared_ptr<Stream> stm = nullptr;
     DavidRecordTaskInfo latestState = GetLatestRecordInfo();
     const uint32_t streamId = static_cast<uint32_t>(latestState.streamId);
     const uint32_t taskId = latestState.taskId;
-    rtError_t error = device_->GetStreamSqCqManage()->GetStreamById(static_cast<uint32_t>(streamId), &stm);
+    rtError_t error = device_->GetStreamSqCqManage()->GetStreamSharedPtrById(static_cast<uint32_t>(streamId), stm);
 
     COND_RETURN_ERROR_MSG_INNER(
         ((error != RT_ERROR_NONE) || (stm == nullptr)), error,
@@ -285,7 +285,7 @@ rtError_t DavidEvent::QueryEventTask(rtEventStatus_t* const status)
             if (IsExternalRecordOrWait()) {
                 device_->WakeUpRecycleThread();
             } else {
-                (void)TaskReclaimByStream(stm, false);
+                (void)TaskReclaimByStream(stm.get(), false);
             }
             stm->StreamSyncUnLock();
         }

@@ -990,11 +990,12 @@ TEST_F(EventTestDavid, TestQueryEventTask)
     DavidEvent* evt = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(event));
     rtStreamCreate(&stream, 0);
     Stream* stm = rt_ut::UnwrapOrNull<Stream>(stream);
+    std::shared_ptr<Stream> stmSharedPtr = stm->GetSharedPtr();
 
     rtEventStatus_t status1 = RT_EVENT_RECORDED;
-    MOCKER_CPP(&StreamSqCqManage::GetStreamById)
+    MOCKER_CPP(&StreamSqCqManage::GetStreamSharedPtrById)
         .stubs()
-        .with(mockcpp::any(), outBoundP(&stm), mockcpp::any())
+        .with(mockcpp::any(), outBound(stmSharedPtr))
         .will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(stm, &Stream::JudgeHeadTailPos)
         .stubs()
@@ -1005,10 +1006,16 @@ TEST_F(EventTestDavid, TestQueryEventTask)
     evt->timestamp_ = UINT64_MAX;
     error = evt->QueryEventTask(&status);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(status, RT_EVENT_INIT);
 
     error = rtEventDestroy(event);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
-    rtStreamDestroy(stream);
+    std::weak_ptr<Stream> streamLifetime = stmSharedPtr;
+    // Release the mock's shared ownership before fixture teardown releases the device.
+    GlobalMockObject::verify();
+    EXPECT_EQ(rtStreamDestroy(stream), ACL_RT_SUCCESS);
+    stmSharedPtr.reset();
+    EXPECT_TRUE(streamLifetime.expired());
 }
 
 TEST_F(EventTestDavid, TestQueryEventWaitStatus)

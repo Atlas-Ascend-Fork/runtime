@@ -472,10 +472,13 @@ rtError_t rtsLaunchCmoAddrTask(rtCmoDesc_t cmoDesc, rtStream_t stm, rtCmoOpCode 
     COND_RETURN_EXT_ERRCODE_AND_MSG_OUTER_WITH_PARAM((reserve != nullptr), RT_ERROR_INVALID_VALUE, reserve, "nullptr");
 
     DevProperties properties;
-    const auto error = GET_DEV_PROPERTIES(Runtime::Instance()->GetChipType(), properties);
+    const Runtime* const rtInstance = Runtime::Instance();
+    NULL_RETURN_ERROR_WITH_EXT_ERRCODE(rtInstance);
+
+    const auto error = GET_DEV_PROPERTIES(rtInstance->GetChipType(), properties);
     COND_RETURN_ERROR_MSG_INNER(
         error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%s.",
-        ChipTypeToString(Runtime::Instance()->GetChipType()).c_str());
+        ChipTypeToString(rtInstance->GetChipType()).c_str());
     const uint64_t sizeMax = properties.cmoDDRStructInfoSize;
 
     return rtCmoAddrTaskLaunch(cmoDesc, sizeMax, cmoOpCode, stm, 0U);

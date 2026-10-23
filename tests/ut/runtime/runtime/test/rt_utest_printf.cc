@@ -2338,6 +2338,14 @@ TEST_F(PrintfTest, FLOAT8_E8M0_Dumptensor)
     EXPECT_EQ(std::abs(fp82.GetValue() - val) < std::numeric_limits<float>::epsilon(), true);
 }
 
+TEST_F(PrintfTest, FP16_AssignInt8Min)
+{
+    cce::runtime::fp16_t value;
+    value = static_cast<int8_t>(-128);
+    EXPECT_EQ(value.val, 0xD800U);
+    EXPECT_EQ(value.toFloat(), -128.0F);
+}
+
 TEST_F(PrintfTest, FP16_Dumptensor)
 {
     float data1 = 1.234;
