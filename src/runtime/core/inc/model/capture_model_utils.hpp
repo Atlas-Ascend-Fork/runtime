@@ -28,7 +28,7 @@ struct ExternalEventRefreshInfo;
 using ExternalPlaceholderSubmitter = rtError_t (*)(Device* dev, TaskInfo* task);
 void TaskClearForUpdate(TaskInfo* taskInfo);
 void TaskUpdateItemPostProc(TaskInfo* const taskInfo, const TaskUpdateItem& updateItem);
-void PopCompletedUpdateItems(TaskInfo* const taskInfo, uint32_t launchNo);
+void PopCompletedUpdateItems(TaskInfo* const taskInfo, const uint32_t launchNo);
 bool IsEventCapturing(const Event* const evt, const Stream* const stm);
 void DetachCaptureEvent(Event* const evt);
 void TerminateCapture(const Event* const evt, const Stream* const stm);

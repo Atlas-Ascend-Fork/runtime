@@ -332,7 +332,7 @@ public:
 
     GraphUpdateInfo& GetGraphUpdateInfo() { return updateInfo_; }
 
-    void InsertGraphUpdateTask(TaskInfo* taskInfo);
+    void InsertGraphUpdateTask(TaskInfo* const taskInfo);
     void ClearGraphUpdateTask();
 
 private:
