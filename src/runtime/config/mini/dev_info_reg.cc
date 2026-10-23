@@ -36,7 +36,6 @@ static constexpr uint32_t DEFAULT_CQE_SIZE = 12U;
 static constexpr uint32_t KERNEL_CUSTOM_STACK_SIZE_MAX = 7864320U; // 7680KB
 
 static const DevProperties CHIP_MINI_PROPERTIES = {
-    .engineType = "HWTS",
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

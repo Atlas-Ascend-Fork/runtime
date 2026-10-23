@@ -135,7 +135,6 @@ static constexpr uint32_t RT_ARCH_9201_AICORE_NUM_PER_DIE = 35U;
 static constexpr uint32_t RT_SIMT_UB_SIZE_920X = 384U * 1024U;             // UBSize 384KB
 
 static const DevProperties CHIP_CLOUD_V5_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,
@@ -271,6 +270,9 @@ static const DevProperties CHIP_CLOUD_V5_PROPERTIES = {
     .taskFailPrintFlushTimeoutMs = TASK_FAIL_PRINT_FLUSH_TIMEOUT_DEFAULT,
     .memsetTaskSupport = MemsetTaskSupportType::MEMSET_TASK_SUPPORT,
     .icachePrefetchUnits = ICACHE_PREFETCH_UNIT,
+    .simtStackUseMaxDavidDieNum = false,
+    .modelScheduleSoftware = false,
+    .userBufferSize = USER_BUFFER_SIZE_64M,
 };
 
 REGISTER_DEV_PROPERTIES(CHIP_CLOUD_V5, CHIP_CLOUD_V5_PROPERTIES);

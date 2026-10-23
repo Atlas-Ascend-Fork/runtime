@@ -9,10 +9,10 @@
  */
 #ifndef CCE_RUNTIME_DEVICE_PROPERTIES_H
 #define CCE_RUNTIME_DEVICE_PROPERTIES_H
-#include <string>
 #include <array>
 #include "dev_info.h"
 #include "runtime/rt_inner_device.h"
+#define USER_BUFFER_SIZE_64M (64U * 1024U * 1024U)
 namespace cce {
 namespace runtime {
 
@@ -184,7 +184,6 @@ enum class DeviceCvArchType : uint8_t {
 };
 
 struct DevProperties final {
-    std::string engineType;
     bool isStars;
     bool isStarsV2;
     uint32_t pthreadStackSize; // 0: Use the default stack size. others: Custom Stack Size
@@ -318,7 +317,9 @@ struct DevProperties final {
     uint32_t taskFailPrintFlushTimeoutMs = TASK_FAIL_PRINT_FLUSH_TIMEOUT_DEFAULT;
     MemsetTaskSupportType memsetTaskSupport = MemsetTaskSupportType::MEMSET_TASK_NOT_SUPPORT;
     uint32_t icachePrefetchUnits = ICACHE_PREFETCH_DEFAULT_UNIT;
+    bool simtStackUseMaxDavidDieNum = false;
     bool modelScheduleSoftware = false;
+    uint32_t userBufferSize = 0U;
 };
 } // namespace runtime
 } // namespace cce

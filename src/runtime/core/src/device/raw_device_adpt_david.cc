@@ -45,7 +45,10 @@ rtError_t RawDevice::AllocSimtStackPhyBase(const rtChipType_t chipType)
     const uint64_t simtWarpStkSize = Runtime::Instance()->GetSimtWarpStkSize();
     const uint32_t simtDvgWarpStkSize = Runtime::Instance()->GetSimtDvgWarpStkSize();
 
-    const uint64_t aivCoreNum = GetDavidDieNum() * GetDevProperties().aivNumPerDie;
+    uint64_t aivCoreNum = GetDavidDieNum() * GetDevProperties().aivNumPerDie;
+    if (GetDevProperties().simtStackUseMaxDavidDieNum) {
+        aivCoreNum = RT_DAVID_DIE_MAX_NUM * GetDevProperties().aivNumPerDie;
+    }
     uint64_t stackPhySize =
         aivCoreNum * RT_MAX_WARP_NUM_PER_VECTOR_CORE * (simtWarpStkSize + static_cast<uint64_t>(simtDvgWarpStkSize));
     stackPhySize += static_cast<uint64_t>(STACK_PHY_BASE_ALIGN_LEN); // 128B align

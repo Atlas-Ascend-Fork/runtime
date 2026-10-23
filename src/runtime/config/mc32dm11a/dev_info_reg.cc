@@ -103,7 +103,6 @@ constexpr uint32_t RT_MC32DM11A_CORE_NUM_PER_DIE = 4U;
 static constexpr uint32_t RT_SIMT_UB_SIZE_DEFAULT = 256U * 1024U;                   // UBSize 256KB
 
 static const DevProperties CHIP_MC32DM11A_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,

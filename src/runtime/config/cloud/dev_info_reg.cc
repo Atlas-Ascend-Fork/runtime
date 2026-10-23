@@ -81,7 +81,6 @@ static constexpr uint32_t RT_HWTS_910A_DEFAULT_BLOCK_DIM_UINT32 =
 static constexpr double RT_HWTS_910A_TASK_KERNEL_CREDIT_SCALE_US = 68719476.736; // 2^36 / 1000M *1000*1000(us)
 
 static const DevProperties CHIP_CLOUD_PROPERTIES = {
-    .engineType = "HWTS",
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

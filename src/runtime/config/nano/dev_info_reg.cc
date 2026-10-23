@@ -55,7 +55,6 @@ static constexpr uint32_t DEFAULT_CQE_SIZE = 12U;
 static constexpr uint32_t CQE_DEPTH = 1024U;
 
 static const DevProperties CHIP_NANO_PROPERTIES = {
-    .engineType = "HWTS",
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

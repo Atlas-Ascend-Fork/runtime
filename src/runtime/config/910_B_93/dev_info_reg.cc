@@ -148,7 +148,6 @@ static constexpr std::array<uint32_t, RT_ATOMIC_OPERATION_MAX_VAL> GetStarsP2PAt
 }
 
 static const DevProperties CHIP_CLOUD_V2_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = 0U,

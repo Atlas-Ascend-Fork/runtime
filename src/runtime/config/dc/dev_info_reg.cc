@@ -93,7 +93,6 @@ static constexpr uint32_t RT_HWTS_310P_DEFAULT_KERNEL_CREDIT_UINT32 =
 static constexpr double RT_HWTS_310P_TASK_KERNEL_CREDIT_SCALE_US = 2147483.648; // 2^31 / 1000M *1000*1000(us)
 
 static const DevProperties CHIP_DC_PROPERTIES = {
-    .engineType = "HWTS",
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = 0U,

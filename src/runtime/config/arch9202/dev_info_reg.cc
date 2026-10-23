@@ -134,7 +134,6 @@ static constexpr float64_t RT_STARS_TASK_KERNEL_CREDIT_SCALE_MIN = 0.001F; // 0.
 static constexpr uint32_t RT_SIMT_UB_SIZE_920X = 384U * 1024U;             // UBSize 384KB
 
 static const DevProperties CHIP_CLOUD_V6_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,
@@ -270,6 +269,9 @@ static const DevProperties CHIP_CLOUD_V6_PROPERTIES = {
     .taskFailPrintFlushTimeoutMs = TASK_FAIL_PRINT_FLUSH_TIMEOUT_DEFAULT,
     .memsetTaskSupport = MemsetTaskSupportType::MEMSET_TASK_SUPPORT,
     .icachePrefetchUnits = ICACHE_PREFETCH_UNIT,
+    .simtStackUseMaxDavidDieNum = false,
+    .modelScheduleSoftware = false,
+    .userBufferSize = USER_BUFFER_SIZE_64M,
 };
 
 REGISTER_DEV_PROPERTIES(CHIP_CLOUD_V6, CHIP_CLOUD_V6_PROPERTIES);

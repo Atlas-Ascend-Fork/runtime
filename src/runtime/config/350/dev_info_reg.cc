@@ -175,7 +175,6 @@ static constexpr std::array<uint32_t, RT_ATOMIC_OPERATION_MAX_VAL> GetDavidAtomi
 }
 
 static const DevProperties CHIP_DAVID_LITE_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,
@@ -310,6 +309,9 @@ static const DevProperties CHIP_DAVID_LITE_PROPERTIES = {
     .simtUbSize = RT_SIMT_UB_SIZE_DEFAULT,
     .taskFailPrintFlushTimeoutMs = TASK_FAIL_PRINT_FLUSH_TIMEOUT_DEFAULT,
     .memsetTaskSupport = MemsetTaskSupportType::MEMSET_TASK_SUPPORT,
+    .icachePrefetchUnits = ICACHE_PREFETCH_DEFAULT_UNIT,
+    .simtStackUseMaxDavidDieNum = true,
+    .modelScheduleSoftware = false,
 };
 
 REGISTER_DEV_PROPERTIES(CHIP_ASCEND_350, CHIP_DAVID_LITE_PROPERTIES);

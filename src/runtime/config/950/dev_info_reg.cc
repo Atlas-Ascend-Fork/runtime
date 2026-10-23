@@ -176,7 +176,6 @@ static constexpr std::array<uint32_t, RT_ATOMIC_OPERATION_MAX_VAL> GetDavidAtomi
 }
 
 static const DevProperties CHIP_DAVID_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,

@@ -31,7 +31,6 @@ static constexpr uint32_t RT_STARS_DEFAULT_KERNEL_CREDIT_UINT32 =
 static constexpr float64_t RT_STARS_TASK_KERNEL_CREDIT_SCALE_MIN = 0.001F; // 0.001(us) = 1ns
 
 static const DevProperties CHIP_KIRIN_DEV_0001_PROPERTIES = {
-    .engineType = "STARS",
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = 0U,
