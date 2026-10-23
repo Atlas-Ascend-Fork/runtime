@@ -47,15 +47,9 @@ TEST_F(ADX_LOG_HDC_TEST, UnInit)
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.UnInit());
 }
 
-static SessionNode* GetSessionNodeStub(uint32_t pid, uint32_t devId)
-{
-    if (g_node == NULL) {
-        g_node = (SessionNode*)malloc(sizeof(SessionNode));
-    }
-    return g_node;
-}
+static LogRt SetSessionNodeTimeoutStub(uint32_t pid, uint32_t devId, int32_t timeout) { return (LogRt)SUCCESS; }
 
-static SessionNode* GetSessionNodeNullStub(uint32_t pid, uint32_t devId) { return NULL; }
+static LogRt SetSessionNodeTimeoutNullStub(uint32_t pid, uint32_t devId, int32_t timeout) { return (LogRt)ARGV_NULL; }
 
 static LogRt DeleteSessionNodeStub(uintptr_t session, int pid, int devId)
 {
@@ -71,9 +65,10 @@ TEST_F(ADX_LOG_HDC_TEST, Process)
     handle.type = OptType::COMM_HDC;
     handle.session = 0x123456789;
 
-    MsgProto* proto = (MsgProto*)malloc(sizeof(MsgProto) + 100);
+    MsgProto* proto = (MsgProto*)calloc(1, sizeof(MsgProto) + 100);
     proto->msgType = MsgType::MSG_DATA;
     proto->status = MsgStatus::MSG_STATUS_HAND_SHAKE;
+    proto->sliceLen = 100;
     LogNotifyMsg* msg = (LogNotifyMsg*)proto->data;
     strcpy(msg->data, INSERT_MSG.c_str());
     SharedPtr<MsgProto> protoPtrs(proto, free);
@@ -84,7 +79,10 @@ TEST_F(ADX_LOG_HDC_TEST, Process)
 
     MOCKER(InsertSessionNode).stubs().will(returnValue(IDE_DAEMON_OK));
 
-    MOCKER(GetSessionNode).stubs().will(invoke(GetSessionNodeStub)).then(invoke(GetSessionNodeNullStub));
+    MOCKER(SetSessionNodeTimeout)
+        .stubs()
+        .will(invoke(SetSessionNodeTimeoutStub))
+        .then(invoke(SetSessionNodeTimeoutNullStub));
 
     MOCKER(IsSessionNodeListNull).stubs().will(returnValue(true));
 

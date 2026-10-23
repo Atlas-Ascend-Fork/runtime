@@ -357,6 +357,21 @@ SessionNode* GetSessionNode(uint32_t pid, uint32_t devId)
     return tmp;
 }
 
+// update the timeout of a main list node entirely under g_sessionMutex: an unlocked write races
+// with HandleInvalidSessionNode, which frees main list nodes while holding the same mutex
+LogRt SetSessionNodeTimeout(uint32_t pid, uint32_t devId, int32_t timeout)
+{
+    ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return ARGV_NULL, "invalid device id for node searching: %u", devId);
+
+    LOCK_WARN_LOG(&g_sessionMutex);
+    SessionNode* node = GetSessionNodeByList(pid, devId, g_sessionPidDevIdList);
+    if (node != NULL) {
+        node->timeout = timeout;
+    }
+    UNLOCK_WARN_LOG(&g_sessionMutex);
+    return (node != NULL) ? SUCCESS : ARGV_NULL;
+}
+
 SessionNode* GetDeletedSessionNode(uint32_t pid, uint32_t devId)
 {
     ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return NULL, "invalid device id for node searching: %u", devId);

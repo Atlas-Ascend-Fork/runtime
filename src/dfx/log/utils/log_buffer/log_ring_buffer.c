@@ -261,7 +261,15 @@ int32_t LogBufWrite(RingBufferCtrl* ringBufferCtrl, const char* text, LogHead* h
     }
     int32_t resTmp;
     if ((logNextIdxTmp + size + (uint32_t)LOGHEAD_LEN) > ringBufferCtrl->dataLen) {
-        resTmp = memset_s(logBuf + logNextIdxTmp, LOGHEAD_LEN, 0, LOGHEAD_LEN);
+        // the zeroed head at the wrap position is the wrap sentinel for LogNext (allLength == 0);
+        // the 8-byte aligned write index can stop within LOGHEAD_LEN of the end, clamp the fill
+        // so it never writes past dataLen (a reader landing on a partial sentinel hits the
+        // readIdx > dataLen bound check in LogBufRead instead of a clean wrap)
+        uint32_t tailLen = ringBufferCtrl->dataLen - logNextIdxTmp;
+        if (tailLen > (uint32_t)LOGHEAD_LEN) {
+            tailLen = (uint32_t)LOGHEAD_LEN;
+        }
+        resTmp = memset_s(logBuf + logNextIdxTmp, tailLen, 0, tailLen);
         ringBufferCtrl->logNextIdx = 0;
         logNextIdxTmp = 0;
         if (resTmp != EOK) {

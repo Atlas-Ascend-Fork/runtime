@@ -78,7 +78,9 @@ STATIC void SlogdKernelLogDecodeMsg(char* msg, uint32_t length)
     const char* ptr = msg;
     uint32_t len = 0;
     while ((*ptr != '\0') && (len <= length)) {
-        if ((*ptr == '\\') && (*(ptr + 1) == 'x')) {
+        // both hex digits must exist inside the NUL terminated message, otherwise a trailing
+        // "\x" makes the reads below step onto and past the NUL (out-of-bounds read)
+        if ((*ptr == '\\') && (*(ptr + 1) == 'x') && (*(ptr + 2) != '\0') && (*(ptr + 3) != '\0')) {
             ptr += POSITION_UNIT;
             ch = (char)(((int32_t)SlogdKernelLogGetChValue(*ptr) * BASE_HEX) + SlogdKernelLogGetChValue(*(ptr + 1)));
             ptr += POSITION_UNIT;

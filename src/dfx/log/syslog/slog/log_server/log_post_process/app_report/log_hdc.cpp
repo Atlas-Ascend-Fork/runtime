@@ -29,8 +29,15 @@ int32_t LogHdc::Process(const CommHandle& handle, const SharedPtr<MsgProto>& pro
     TWO_ACT_ERR_LOG(
         handle.session == ADX_OPT_INVALID_HANDLE, AdxDestroyCommHandle(adxHandle), return SYS_ERROR,
         "handle or handle.session invalid");
+    // the payload only carries the framework level length, validate the business header before
+    // touching msg->timeout / msg->data (a short payload makes both reads run past the buffer)
+    if (proto->sliceLen < sizeof(LogNotifyMsg)) {
+        AdxDestroyCommHandle(adxHandle);
+        SELF_LOG_ERROR("invalid notify msg, sliceLen %u too short", proto->sliceLen);
+        return SYS_ERROR;
+    }
     LogNotifyMsg* msg = reinterpret_cast<LogNotifyMsg*>(proto->data);
-    std::string actionType(msg->data);
+    std::string actionType(msg->data, strnlen(msg->data, proto->sliceLen - sizeof(LogNotifyMsg)));
 
     int32_t devId = 0;
     int32_t err = IdeGetDevIdBySession(reinterpret_cast<HDC_SESSION>(handle.session), &devId);
@@ -58,13 +65,13 @@ int32_t LogHdc::Process(const CommHandle& handle, const SharedPtr<MsgProto>& pro
     } else if (actionType == DELETE_MSG) {
         SELF_LOG_INFO("delete log session, pid %d devid %d", pid, devId);
         int32_t flag = SYS_OK;
-        SessionNode* node = GetSessionNode(pid, devId);
-        if (node == nullptr) {
+        // write the timeout under the session mutex, an unlocked node->timeout write races with
+        // the invalid session reclamation in HandleInvalidSessionNode
+        if (SetSessionNodeTimeout((uint32_t)pid, (uint32_t)devId, msg->timeout) != SUCCESS) {
             ONE_ACT_WARN_LOG(!IsSessionNodeListNull(), flag = SYS_ERROR, "get session node failed");
         } else {
-            node->timeout = msg->timeout;
             ONE_ACT_ERR_LOG(
-                DeleteSessionNode(node->session, pid, devId) != SYS_OK, flag = SYS_ERROR,
+                DeleteSessionNode(handle.session, pid, devId) != SYS_OK, flag = SYS_ERROR,
                 "delete log session node failed");
         }
         AdxDestroyCommHandle(adxHandle);

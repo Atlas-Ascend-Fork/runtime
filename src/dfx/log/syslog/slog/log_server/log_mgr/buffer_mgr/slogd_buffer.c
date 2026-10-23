@@ -555,8 +555,8 @@ static void SlogdStaticBufferReset(LogBufferMgr* bufMgr)
 {
     ONE_ACT_ERR_LOG(bufMgr->buffer == NULL, return, "check log buffer failed, input buffer is null.");
     BlockStruct* blockHead = bufMgr->buffer;
-    blockHead->readPtr =
-        (blockHead->readPtr / blockHead->blockSize + 1U) % bufMgr->blockNum + (uint32_t)sizeof(BlockStruct);
+    blockHead->readPtr = (blockHead->readPtr / blockHead->blockSize + 1U) % bufMgr->blockNum * blockHead->blockSize +
+                         (uint32_t)sizeof(BlockStruct);
 }
 
 void SlogdBufferReset(void* handle)

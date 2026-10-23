@@ -650,6 +650,12 @@ STATIC bool LogAgentWriteLimitCheck(StSubLogFileList* subList, uint32_t dataLen)
     ONE_ACT_ERR_LOG(buffer == NULL, return false, "strdup file path failed, discard current log data.");
 
     size_t len = strlen(buffer);
+    if (len == 0) {
+        // an empty path makes buffer[len - 1U] below index SIZE_MAX (heap out-of-bounds)
+        SELF_LOG_ERROR("file path is empty, discard current log data.");
+        XFREE(buffer);
+        return false;
+    }
     if (buffer[len - 1U] == '/') {
         buffer[len - 1U] = '\0';
     }
@@ -954,7 +960,7 @@ uint32_t LogAgentWriteDeviceLog(const StLogFileList* logList, char* msg, const D
     StSubLogFileList* subList = NULL;
     if (LogConfGroupGetSwitch() == false) {
         uint32_t deviceNum = logList->ucDeviceNum;
-        if (deviceId > deviceNum) {
+        if (deviceId >= deviceNum) {
             SELF_LOG_WARN("[input] wrong device_id=%u, device_number=%u.", deviceId, deviceNum);
             return NOK;
         }
@@ -968,7 +974,7 @@ uint32_t LogAgentWriteDeviceLog(const StLogFileList* logList, char* msg, const D
         ONE_ACT_ERR_LOG(
             (group == NULL) || (group->deviceLogList == NULL), return NOK, "can't find target group[%d].", groupId);
         uint32_t deviceNum = group->deviceNum;
-        if (info->deviceId > deviceNum) {
+        if (info->deviceId >= deviceNum) {
             SELF_LOG_WARN("[input] wrong device_id=%u, device_number=%u.", info->deviceId, deviceNum);
             return NOK;
         }
@@ -984,7 +990,7 @@ uint32_t LogAgentWriteDeviceLog(const StLogFileList* logList, char* msg, const D
     ONE_ACT_WARN_LOG(msg == NULL, return NOK, "[input] log message is null.");
     ONE_ACT_WARN_LOG(info == NULL, return NOK, "[input] info is null.");
 
-    if (info->deviceId > logList->ucDeviceNum) {
+    if (info->deviceId >= logList->ucDeviceNum) {
         SELF_LOG_WARN("[input] wrong device_id=%u, device_number=%u.", info->deviceId, logList->ucDeviceNum);
         return NOK;
     }

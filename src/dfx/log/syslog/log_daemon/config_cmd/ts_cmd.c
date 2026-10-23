@@ -246,6 +246,12 @@ static int32_t HandleSetValue(const struct MsnReq* req, LogCmdInfo* cmdInfo)
                 coreMask = (union CoreMask){.coreId = {0}, .reserve = {0}, .operation = 1};
             } else {
                 coreMask.operation = setMask->coreSwitch;
+                // configNum comes from the host payload and coreId[] only has CORE_ID_MAX slots:
+                // without the bound check an oversized configNum overwrites the stack union
+                if (setMask->configNum > CORE_ID_MAX) {
+                    SELF_LOG_ERROR("core config num %u exceeds the maximum %d", setMask->configNum, CORE_ID_MAX);
+                    return CONFIG_INVALID_PARAM;
+                }
                 for (int32_t i = 0; i < setMask->configNum; ++i) {
                     coreMask.coreId[i] = setMask->coreId[i];
                 }
