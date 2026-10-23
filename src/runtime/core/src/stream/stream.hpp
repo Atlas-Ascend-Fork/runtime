@@ -1128,9 +1128,10 @@ private:
     bool isAutoSplitSq_{false}; // 是否为自动切分SQ模式
     bool* destroyTaskRecycledOnTearDownOutput_{nullptr};
     bool isSlaveStream_{false}; // 是否为slave stream
+    CCStreamResManage* ccStreamResource_{nullptr};
+
 public:
     TaskResManage* taskResMang_{nullptr};
-    CCStreamResManage* ccStreamResource_{nullptr};
     bool isHasPcieBar_{false};
     Atomic<uint32_t> pendingNum_;
     bool isSubmitTaskFail_{false};

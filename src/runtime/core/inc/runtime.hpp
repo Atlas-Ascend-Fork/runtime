@@ -708,8 +708,8 @@ private:
     void InitSocTypeFromCloudVersion(const int64_t aicoreNumLevel);
     int32_t GetProfDeviceNum(const uint64_t profMask);
     bool IsSupportVisibleDevices() const;
-    rtError_t CheckVisibleDevicesCcStatus();
-    rtError_t InitCcFeature();
+    rtError_t CheckVisibleDevicesCcStatus() const;
+    rtError_t InitCcFeature() const;
     rtError_t InitChipTypeAndSocVersion();
     rtError_t InitApiImplies();
     rtError_t InitLogger();

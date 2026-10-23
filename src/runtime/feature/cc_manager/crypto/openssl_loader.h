@@ -10,7 +10,6 @@
 #ifndef CCE_RUNTIME_OPENSSL_LOADER_H
 #define CCE_RUNTIME_OPENSSL_LOADER_H
 
-#include <cstdint>
 #include <mutex>
 
 namespace cce {

@@ -6974,7 +6974,7 @@ rtError_t ApiImpl::DeviceGetCcMode(int32_t deviceId, int32_t* mode)
 {
     HAL_CC_INFO ccInfo{};
     int32_t size = static_cast<int32_t>(sizeof(ccInfo));
-    rtError_t error = NpuDriver::GetDeviceInfoByBuff(
+    const rtError_t error = NpuDriver::GetDeviceInfoByBuff(
         static_cast<uint32_t>(deviceId), static_cast<int32_t>(MODULE_TYPE_CC), static_cast<int32_t>(INFO_TYPE_CC),
         &ccInfo, &size);
     if (error != RT_ERROR_NONE) {

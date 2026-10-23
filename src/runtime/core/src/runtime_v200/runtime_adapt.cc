@@ -72,7 +72,7 @@ static rtError_t CheckDeviceCcStatus(const uint32_t deviceId)
     return RT_ERROR_NONE;
 }
 
-rtError_t Runtime::CheckVisibleDevicesCcStatus()
+rtError_t Runtime::CheckVisibleDevicesCcStatus() const
 {
     rtError_t error = RT_ERROR_NONE;
     COND_RETURN_ERROR(
@@ -112,7 +112,7 @@ rtError_t Runtime::CheckVisibleDevicesCcStatus()
     return RT_ERROR_NONE;
 }
 
-rtError_t Runtime::InitCcFeature()
+rtError_t Runtime::InitCcFeature() const
 {
     // CC 特性按芯片函数表注册入口开启：未注册 CC 特性的芯片直接返回，
     // 不做 /dev/sev-guest 探测与可见设备查询，避免无 CC 芯片被误检测。
