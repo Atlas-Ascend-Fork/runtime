@@ -69,7 +69,7 @@ Dump初始化。
 
     - 执行两个不同的模型，通过回调获取Dump数据，该场景下，只要不调用[acldumpUnregCallback](#acldumpUnregCallback)接口取消注册回调函数，则可通过回调函数获取两个模型的Dump数据：
 
-        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
+        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
 ### 参数说明
 
@@ -81,8 +81,8 @@ Dump初始化。
 
 ### 约束说明
 
-- 对于模型Dump配置、单算子Dump配置、溢出算子Dump配置，如果已经通过[aclInit](02_initialization_and_deinitialization.md#aclInit)接口配置了dump信息，则调用aclmdlInitDump接口时会返回失败。
-- 必须在调用[aclInit](02_initialization_and_deinitialization.md#aclInit)接口之后、模型加载接口之前调用aclmdlInitDump接口。
+- 对于模型Dump配置、单算子Dump配置、溢出算子Dump配置，如果已经通过[aclInit](02_initialization_and_deinitialization.md#aclInit)接口配置了dump信息，则调用[aclmdlInitDump](#aclmdlInitDump)接口时会返回失败。
+- 必须在调用[aclInit](02_initialization_and_deinitialization.md#aclInit)接口之后、模型加载接口之前调用[aclmdlInitDump](#aclmdlInitDump)接口。
 
 ### 参考资源
 
@@ -150,13 +150,13 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
 
     例如以下接口调用顺序中，加载的模型1不受影响，配置的Dump信息仅对加载的模型2有效：
 
-    [aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>aclmdlSetDump接口--\>模型2加载--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口
+    [aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>[aclmdlSetDump](#aclmdlSetDump)接口--\>模型2加载--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口
 
 - 多次调用本接口对同一个模型配置了Dump信息，系统内处理时会采用覆盖策略。
 
     例如以下接口调用顺序中，第二次调用本接口配置的Dump信息会覆盖第一次配置的Dump信息：
 
-    [aclmdlInitDump](#aclmdlInitDump)接口--\>aclmdlSetDump接口--\>aclmdlSetDump接口--\>模型1加载--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口
+    [aclmdlInitDump](#aclmdlInitDump)接口--\>[aclmdlSetDump](#aclmdlSetDump)接口--\>[aclmdlSetDump](#aclmdlSetDump)接口--\>模型1加载--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口
 
 ### 模型Dump配置、单算子Dump配置
 
@@ -170,22 +170,23 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
 {
     "dump":{
         "dump_list":[
-            {    "model_name":"ResNet-101"
+            {
+                "model_name":"ResNet-101"
             },
             {
                 "model_name":"ResNet-50",
                 "layer":[
-                      "conv1conv1_relu",
-                      "res2a_branch2ares2a_branch2a_relu",
-                      "res2a_branch1",
-                      "pool1"
+                    "conv1conv1_relu",
+                    "res2a_branch2ares2a_branch2a_relu",
+                    "res2a_branch1",
+                    "pool1"
                 ]
             }
         ],
         "dump_path":"/home/output",
-                "dump_mode":"output",
+        "dump_mode":"output",
         "dump_op_switch":"off",
-                "dump_data":"tensor"
+        "dump_data":"tensor"
     }
 }
 ```
@@ -197,7 +198,7 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
     "dump":{
         "dump_path":"/home/output",
         "dump_list":[{}],
-    "dump_op_switch":"on",
+        "dump_op_switch":"on",
         "dump_data":"tensor"
     }
 }
@@ -205,7 +206,7 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
 
 <a id="exception_dump_config"></a>
 
-### 配置文件示例（异常算子Dump配置）
+### 异常算子Dump配置
 
 **异常算子Dump配置**（用于导出异常算子的输入输出数据、workspace信息、Tiling信息），导出的数据用于分析AI Core Error问题。默认不启用该Dump配置。
 
@@ -237,12 +238,11 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
             Atlas A3系列产品
 
             您可以单击[Link](https://www.hiascend.com/hardware/firmware-drivers/commercial)，在“固件与驱动”页面下载Ascend HDK  25.0.RC1或更高版本的驱动安装包，并参考相应版本的文档进行安装、升级。
-    <!-- end id1 -->
 
-        -   若设置aic\_err\_detail\_dump选项，则需在[aclrtSetDevice](04_device_management.md#aclrtSetDevice)接口之前调用本接口，且通过[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口无法实现Dump去初始化。
-        -   导出dump文件过程中，会暂停问题算子所在的AI Core，因此可能会影响Device上其它业务进程的正常执行，导出dump文件后，会自行恢复AI Core。
-        -   导出dump文件后，会强制退出Host侧用户业务进程，强制退出过程中的报错可不作为AI Core问题分析的输入。
-        -   如果多个Host侧用户业务进程指定同一个Device、且都配置了aic\_err\_detail\_dump选项，则先执行的进程按aic\_err\_detail\_dump选项导出dump文件，后执行的进程按照aic\_err\_brief\_dump选项导出dump文件。
+        - 导出dump文件过程中，会暂停问题算子所在的AI Core，因此可能会影响Device上其它业务进程的正常执行，导出dump文件后，AI Core会自动恢复。因此，多个Host侧用户业务进程指定同一个Device的场景下，不建议使用aic\_err\_detail\_dump选项。
+        - 导出dump文件后，会强制退出Host侧用户业务进程，强制退出过程中的报错可不作为AI Core问题分析的输入。
+        - 配置aic\_err\_detail\_dump选项后，如果生成了dump文件，但不是\*.core文件，则表示aic\_err\_detail\_dump对应的功能没有使能成功，系统自动切换为按aic\_err\_brief\_dump选项dump。
+    <!-- end id1 -->
 
     - lite\_exception：表示轻量化exception dump，为了兼容旧版本，效果等同于aic\_err\_brief\_dump。
 
@@ -438,17 +438,17 @@ Dump数据回调函数注册接口。
 
     支持以下两种方式：
 
-    - 在aclInit接口处**不启用**模型Dump配置、单算子Dump配置
+    - 在[aclInit](02_initialization_and_deinitialization.md#aclInit)接口处**不启用**模型Dump配置、单算子Dump配置
 
-        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>模型加载--\>模型执行--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
+        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型加载--\>模型执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>模型卸载--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
-    - 在aclInit接口处**启用**模型Dump配置、单算子Dump配置，在aclInit接口处启用Dump配置时需配置落盘路径，但如果调用了[acldumpRegCallback](#acldumpRegCallback)接口，则落盘不生效，以回调函数获取的Dump数据为准
+    - 在[aclInit](02_initialization_and_deinitialization.md#aclInit)接口处**启用**模型Dump配置、单算子Dump配置，在[aclInit](02_initialization_and_deinitialization.md#aclInit)接口处启用Dump配置时需配置落盘路径，但如果调用了[acldumpRegCallback](#acldumpRegCallback)接口，则落盘不生效，以回调函数获取的Dump数据为准
 
         [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>模型加载--\>模型执行--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>模型卸载--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
 - **执行两个不同的模型，通过回调获取Dump数据**，该场景下，只要不调用[acldumpUnregCallback](#acldumpUnregCallback)接口取消注册回调函数，则可通过回调函数获取两个模型的Dump数据：
 
-    [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>模型1加载--\>模型1执行--\>--\>模型2加载--\>模型2执行--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
+    [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
 ### 参数说明
 
@@ -518,7 +518,7 @@ void acldumpUnregCallback()
 
 ### 功能说明
 
-Dump数据回调函数取消注册接口。acldumpUnregCallback需要和acldumpRegCallback配合使用，且必须在acldumpRegCallback调用后才有效。
+Dump数据回调函数取消注册接口。[acldumpUnregCallback](#acldumpUnregCallback)接口需要和[acldumpRegCallback](#acldumpRegCallback)接口配合使用，且必须在[acldumpRegCallback](#acldumpRegCallback)接口调用之后调用才有效。
 
 [aclmdlInitDump](#aclmdlInitDump)接口、[acldumpRegCallback](#acldumpRegCallback)接口（通过该接口注册的回调函数需由用户自行实现，回调函数实现逻辑中包括获取Dump数据及数据长度）、[acldumpUnregCallback](#acldumpUnregCallback)接口、[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口配合使用，用于通过回调函数获取Dump数据。场景举例如下：
 
@@ -528,7 +528,7 @@ Dump数据回调函数取消注册接口。acldumpUnregCallback需要和acldumpR
 
 - 执行两个不同的模型，通过回调获取Dump数据，该场景下，只要不调用[acldumpUnregCallback](#acldumpUnregCallback)接口取消注册回调函数，则可通过回调函数获取两个模型的Dump数据：
 
-    [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
+    [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
 ### 参数说明
 
@@ -651,7 +651,7 @@ Dump去初始化。
 
     - 执行两个不同的模型，通过回调获取Dump数据，该场景下，只要不调用[acldumpUnregCallback](#acldumpUnregCallback)接口取消注册回调函数，则可通过回调函数获取两个模型的Dump数据：
 
-        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
+        [aclInit](02_initialization_and_deinitialization.md#aclInit)接口--\>[acldumpRegCallback](#acldumpRegCallback)接口--\>[aclmdlInitDump](#aclmdlInitDump)接口--\>模型1加载--\>模型1执行--\>模型2加载--\>模型2执行--\>[aclmdlFinalizeDump](#aclmdlFinalizeDump)接口--\>模型卸载--\>[acldumpUnregCallback](#acldumpUnregCallback)接口--\>[aclFinalize](02_initialization_and_deinitialization.md#aclFinalize)接口
 
 ### 参数说明
 
@@ -706,7 +706,7 @@ aclError aclopStartDumpArgs(uint32_t dumpType, const char *path)
 
 调用本接口开启算子信息统计功能，并需与[aclopStopDumpArgs](#aclopStopDumpArgs)接口配合使用，将算子信息文件输出到path参数指定的目录，一个shape对应一个算子信息文件，文件中包含算子类型、算子属性、算子输入&输出的format/数据类型/shape等信息。
 
-**使用场景：**例如要统计某个模型执行涉及哪些算子，可在模型执行之前调用aclopStartDumpArgs接口，在模型执行之后调用aclopStopDumpArgs接口，接口调用成功后，在path参数指定的目录下生成每个算子shape的算子信息文件。
+**使用场景：** 例如要统计某个模型执行涉及哪些算子，可在模型执行之前调用[aclopStartDumpArgs](#aclopStartDumpArgs)接口，在模型执行之后调用[aclopStopDumpArgs](#aclopStopDumpArgs)接口，接口调用成功后，在path参数指定的目录下生成每个算子shape的算子信息文件。
 
 ### 参数说明
 
@@ -766,7 +766,7 @@ aclError aclopStopDumpArgs(uint32_t dumpType)
 
 调用本接口关闭算子信息统计功能，并需与[aclopStartDumpArgs](#aclopStartDumpArgs)接口配合使用，将算子信息文件输出到path参数指定的目录，一个shape对应一个算子信息文件，文件中包含算子类型、算子属性、算子输入&输出的format/数据类型/shape等信息。
 
-**使用场景：**例如要统计某个模型执行涉及哪些算子，可在模型执行之前调用aclopStartDumpArgs接口，在模型执行之后调用aclopStopDumpArgs接口，接口调用成功后，在path参数指定的目录下生成每个算子shape的算子信息文件。
+**使用场景：** 例如要统计某个模型执行涉及哪些算子，可在模型执行之前调用[aclopStartDumpArgs](#aclopStartDumpArgs)接口，在模型执行之后调用[aclopStopDumpArgs](#aclopStopDumpArgs)接口，接口调用成功后，在path参数指定的目录下生成每个算子shape的算子信息文件。
 
 ### 参数说明
 
