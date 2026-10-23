@@ -2470,7 +2470,7 @@ rtError_t ApiErrorDecorator::SetMemcpyDesc(
     ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(count, "Setting the memory copy descriptor");
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         (count > MAX_MEMCPY_SIZE_OF_D2D), RT_ERROR_INVALID_VALUE, "Setting the memory copy descriptor", count,
-        RtFmtMsg("(0, %u]", MAX_MEMCPY_SIZE_OF_D2D));
+        RtFmtMsg("(0, %" PRIu64 "]", MAX_MEMCPY_SIZE_OF_D2D));
     COND_RETURN_AND_MSG_OUTER(
         (RtPtrToValue(desc) % 64ULL) != 0ULL, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
         "Setting the memory copy descriptor", desc, "desc", "desc is not 64-byte aligned");

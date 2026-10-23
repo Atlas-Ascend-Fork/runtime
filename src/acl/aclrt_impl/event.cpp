@@ -329,7 +329,8 @@ aclError aclrtMemUceRepairImpl(int32_t deviceId, aclrtMemUceInfo* memUceInfoArra
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(memUceInfoArray);
 
     ACL_CHECK_INVALID_PARAM_WITH_REASON_RET(
-        arraySize > RT_MAX_RECORD_PA_NUM_PER_DEV, arraySize, "must be less than or equal to 128",
+        arraySize > RT_MAX_RECORD_PA_NUM_PER_DEV, arraySize,
+        acl::AclErrorLogManager::FormatStr("must be less than or equal to %u", RT_MAX_RECORD_PA_NUM_PER_DEV).c_str(),
         ACL_ERROR_INVALID_PARAM);
 
     // reserved value check, should be filled with 0
