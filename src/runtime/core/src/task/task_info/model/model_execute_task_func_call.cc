@@ -299,7 +299,7 @@ rtError_t ConstructFuncCallParaForModelExecuteTask(
         RT_LOG(RT_LOG_INFO, "baseAddr=0x%llx", baseAddr);
         if (baseAddr == 0ULL) {
             RT_LOG(
-                RT_LOG_ERROR, "invalid device_id, physic chip_id=%u, die_id=%u, stream_id=%d.",
+                RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%" PRId64 ", die_id=%" PRId64 ", stream_id=%d.",
                 taskInfo->stream->Device_()->Id_(), taskInfo->stream->Device_()->GetPhyChipId(),
                 taskInfo->stream->Device_()->GetPhyDieId(), taskInfo->stream->Id_());
             return RT_ERROR_DEVICE_INVALID;
@@ -447,7 +447,7 @@ void PrintErrorModelExecuteTaskFuncCall(TaskInfo* const task)
         return;
     }
     RT_LOG(
-        RT_LOG_ERROR, "funcCallSvmMem=0x%llx, funCallMemSize=%u.", model->GetFuncCallSvmMem(),
+        RT_LOG_ERROR, "funcCallSvmMem=0x%" PRIx64 ", funCallMemSize=%" PRIu64 ".", model->GetFuncCallSvmMem(),
         model->GetFunCallMemSize());
     uint8_t* starsModelExefuncCall = new (std::nothrow) uint8_t[model->GetFunCallMemSize()];
     if (starsModelExefuncCall == nullptr) {

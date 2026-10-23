@@ -963,7 +963,7 @@ rtError_t StreamWriteValuePtr(
     RtDavidStarsWriteValueSqe writeValueSqe = {};
     InitWriteValueSqe(&writeValueSqe, writeValueInfo);
     RT_LOG(
-        RT_LOG_INFO, "pointed write value sqe's addr=0x%lx, addr=0x%lx.", RtPtrToValue(pointedAddr),
+        RT_LOG_INFO, "pointed write value sqe's addr=0x%lx, addr=0x%" PRIx64 ".", RtPtrToValue(pointedAddr),
         writeValueInfo->addr);
 
     Device* dev = stm->Device_();

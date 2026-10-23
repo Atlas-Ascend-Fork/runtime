@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cinttypes>
 #include "random_num_task.h"
 
 #include "enum_desc.hpp"
@@ -372,7 +373,7 @@ rtError_t GetDsaSqeByRandomNumTask(const rtRandomNumTaskInfo_t* taskInfo, TaskIn
         &devMem, static_cast<uint64_t>(RANDOM_INPUT_PARAM_SIZE + sizeof(rtStarsDsaSqe_t)), RT_MEMORY_DEFAULT,
         dev->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP, MODULEID_RUNTIME);
     COND_RETURN_ERROR((error != RT_ERROR_NONE), error, "malloc mem fail, ret=%u", error);
-    RT_LOG(RT_LOG_INFO, "mem alloc by runtime, mem ptr=0x%llx", RtPtrToPtr<uint64_t, void*>(devMem));
+    RT_LOG(RT_LOG_INFO, "mem alloc by runtime, mem ptr=0x%" PRIx64, RtPtrToPtr<uint64_t, void*>(devMem));
 
     StarsCommonTaskInfo* starsCommonTask = &commonTask->u.starsCommTask;
     starsCommonTask->randomDevAddr = devMem;

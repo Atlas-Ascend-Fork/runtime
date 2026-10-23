@@ -5912,7 +5912,9 @@ rtError_t Runtime::SaveModelAllDataToHost(void)
     Driver* devDrv = rt->driverFactory_.GetDriver(NPU_DRIVER);
     for (const auto& node : moduleBackupList_) {
         auto tempDrv = (node->drv == nullptr ? devDrv : node->drv);
-        RT_LOG(RT_LOG_DEBUG, "device_id=%u, backup devAddr=0x%llx len=%u", node->devId, node->devAddr, node->memSize);
+        RT_LOG(
+            RT_LOG_DEBUG, "device_id=%u, backup devAddr=0x%llx len=%" PRIu64, node->devId, node->devAddr,
+            node->memSize);
         ret = tempDrv->MemCopySync(
             static_cast<void*>(node->hostAddr), node->memSize, node->devAddr, node->memSize, RT_MEMCPY_DEVICE_TO_HOST);
         if (ret != RT_ERROR_NONE) {

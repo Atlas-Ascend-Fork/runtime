@@ -2781,8 +2781,8 @@ rtError_t ApiImpl::OpenNetService(const rtNetServiceOpenArgs* args)
     const char* paramInfo = args->extParamList->paramInfo;
     std::string paramInfoStr = (paramInfo != nullptr) ? paramInfo : "";
     RT_LOG(
-        RT_LOG_INFO, "OpenNetService begin. extParamCnt=%u, paramLen=%u, paramInfo=%s", args->extParamCnt,
-        args->extParamList->paramLen, paramInfoStr.c_str());
+        RT_LOG_INFO, "OpenNetService begin. extParamCnt=%" PRIu64 ", paramLen=%" PRIu64 ", paramInfo=%s",
+        args->extParamCnt, args->extParamList->paramLen, paramInfoStr.c_str());
     Runtime* const rt = Runtime::Instance();
     rtError_t error = rt->OpenNetService(args);
     ERROR_RETURN(error, "failed to open NetService, retCode:%#x", static_cast<uint32_t>(error));

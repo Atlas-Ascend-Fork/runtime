@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <cinttypes>
 #include "event_c.hpp"
 #include "stars_david.hpp"
 #include "task_david.hpp"
@@ -191,7 +192,8 @@ rtError_t EvtWait(Event* const evt, Stream* const stm, const uint32_t timeout)
         } else {
             RT_LOG(
                 RT_LOG_ERROR,
-                "Cannot submit event wait because the event ID is invalid, device_id=%u, stream_id=%d, flag=%u, "
+                "Cannot submit event wait because the event ID is invalid, device_id=%u, stream_id=%d, flag=%" PRIu64
+                ", "
                 "model=%s.",
                 dev->Id_(), stm->Id_(), davidEvt->GetEventFlag(), stm->IsModelStream() ? "yes" : "no");
         }

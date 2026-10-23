@@ -162,9 +162,11 @@ void PrintErrorInfoForUbDirectSendTask(TaskInfo* taskInfo, const uint32_t devId)
     const uint32_t taskId = taskInfo->id;
     const int32_t streamId = stream->Id_();
     RT_LOG(
-        RT_LOG_ERROR, "ub direct send failed device_id=%u, stream_id=%d, task_id=%u,",
-        " wrCqe=%hu, wqeSize=%u, dieId=%u, jettyId=%u, funcId=%u.", devId, streamId, taskId, directSend->wrCqe,
-        directSend->wqeSize, directSend->dieId, directSend->jettyId, directSend->funcId);
+        RT_LOG_ERROR,
+        "ub direct send failed device_id=%u, stream_id=%d, task_id=%u,"
+        " wrCqe=%hu, wqeSize=%u, dieId=%u, jettyId=%u, funcId=%u.",
+        devId, streamId, taskId, directSend->wrCqe, directSend->wqeSize, directSend->dieId, directSend->jettyId,
+        directSend->funcId);
 }
 
 static void TaskFailCallBackForDirectWqeTask(const TaskInfo* const taskInfo, const uint32_t deviceId)

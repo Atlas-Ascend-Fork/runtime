@@ -64,7 +64,7 @@ rtError_t InitFuncCallParaForStreamSwitchTaskV1(
             const uint64_t baseAddr = stm->Device_()->GetStarsRegBaseAddr();
             if (baseAddr == 0ULL) {
                 RT_LOG(
-                    RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%u, die_id=%u, stream_id=%d.",
+                    RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%" PRId64 ", die_id=%" PRId64 ", stream_id=%d.",
                     stm->Device_()->Id_(), stm->Device_()->GetPhyChipId(), stm->Device_()->GetPhyDieId(), stm->Id_());
                 return RT_ERROR_DEVICE_INVALID;
             }
@@ -125,7 +125,7 @@ rtError_t InitFuncCallParaForStreamSwitchTaskV2(
             const uint64_t baseAddr = stm->Device_()->GetStarsRegBaseAddr();
             if (baseAddr == 0ULL) {
                 RT_LOG(
-                    RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%u, die_id=%u, stream_id=%d.",
+                    RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%" PRId64 ", die_id=%" PRId64 ", stream_id=%d.",
                     stm->Device_()->Id_(), stm->Device_()->GetPhyChipId(), stm->Device_()->GetPhyDieId(), stm->Id_());
                 return RT_ERROR_DEVICE_INVALID;
             }

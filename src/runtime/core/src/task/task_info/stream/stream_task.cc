@@ -83,7 +83,7 @@ rtError_t InitFuncCallParaForStreamActiveTask(
             const uint64_t baseAddr = taskInfo->stream->Device_()->GetStarsRegBaseAddr();
             if (baseAddr == 0ULL) {
                 RT_LOG(
-                    RT_LOG_ERROR, "invalid device_id, physic chip_id=%u, die_id=%u, stream_id=%d.",
+                    RT_LOG_ERROR, "invalid device_id=%u, physic chip_id=%" PRId64 ", die_id=%" PRId64 ", stream_id=%d.",
                     taskInfo->stream->Device_()->Id_(), taskInfo->stream->Device_()->GetPhyChipId(),
                     taskInfo->stream->Device_()->GetPhyDieId(), taskInfo->stream->Id_());
                 return RT_ERROR_DEVICE_INVALID;

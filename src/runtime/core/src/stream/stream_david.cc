@@ -596,8 +596,8 @@ rtError_t DavidStream::TearDown(const bool terminal, bool flag)
         isForceRecycle_ = isForceRecycle;
     }
     RT_LOG(
-        RT_LOG_INFO, "stream_id=%d, sq_id=%u, head=%hu, tail=%hu, isForceRecycle=%d, flag=%d, failMode=%u.", stmId,
-        sqId_, head, tail, isForceRecycle, flag, GetFailureMode());
+        RT_LOG_INFO, "stream_id=%d, sq_id=%u, head=%hu, tail=%hu, isForceRecycle=%d, flag=%d, failMode=%" PRIu64 ".",
+        stmId, sqId_, head, tail, isForceRecycle, flag, GetFailureMode());
     if (!taskResMang_->IsEmpty()) {
         NULL_PTR_RETURN_MSG(exeStream, RT_ERROR_STREAM_NULL);
         (void)static_cast<DavidStream*>(exeStream)->SubmitMaintenanceTask(

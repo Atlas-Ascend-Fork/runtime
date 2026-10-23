@@ -1475,7 +1475,7 @@ void DeviceErrorProc::ProcessStarsTimeoutDfxSlotInfo4FftsPlus(
         RT_LOG(
             RT_LOG_ERROR,
             "fftsplus task timeout dfx print failed, dev_id=%u, stream_id=%d, "
-            "task_id=%u, context_id=%u, descBufLen=%u, descAlignBuf=%u, descAlignBuf is invalid.",
+            "task_id=%u, context_id=%u, descBufLen=%" PRIu64 ", descAlignBuf=%u, descAlignBuf is invalid.",
             dev->Id_(), streamId, taskId, slotInfo.cxtId, fftsPlusTaskInfo->descBufLen, fftsPlusTaskInfo->descAlignBuf);
         return;
     }

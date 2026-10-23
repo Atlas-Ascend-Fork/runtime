@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <cinttypes>
 #include "runtime.hpp"
 #include "device_sq_cq_pool.hpp"
 #include "error_message_manage.hpp"
@@ -136,8 +137,8 @@ rtError_t DeviceSqCqPool::BatchAllocSqCq(const uint32_t allcocNum, const int32_t
 
         deviceSqCqFreeList_.push_back(sqCqInfo);
         RT_LOG(
-            RT_LOG_DEBUG, "Alloc SqCq: sq_id=%u, cq_id=%u, virtualAddr=%u, error=%u", sqCqInfo.sqId, sqCqInfo.cqId,
-            sqCqInfo.sqRegVirtualAddr, error);
+            RT_LOG_DEBUG, "Alloc SqCq: sq_id=%u, cq_id=%u, virtualAddr=%" PRIu64 ", error=%u", sqCqInfo.sqId,
+            sqCqInfo.cqId, sqCqInfo.sqRegVirtualAddr, error);
     }
 
     return RT_ERROR_NONE;

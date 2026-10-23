@@ -1531,8 +1531,8 @@ rtError_t Stream::TearDown(const bool terminal, bool flag)
     }
     bool isForceRecycle = GetForceRecycleFlag(flag);
     RT_LOG(
-        RT_LOG_INFO, "stream_id=%d, sqId=%u, pendingNum=%u, isForceRecycle_=%d, flag=%d, failMode=%u.", stmId, sqId_,
-        pendingNum_.Value(), isForceRecycle, flag, GetFailureMode());
+        RT_LOG_INFO, "stream_id=%d, sqId=%u, pendingNum=%u, isForceRecycle_=%d, flag=%d, failMode=%" PRIu64 ".", stmId,
+        sqId_, pendingNum_.Value(), isForceRecycle, flag, GetFailureMode());
     if (isForceRecycle) {
         // force recycle may use ctrlsq
         exeStream = dev->GetCtrlStream(this);

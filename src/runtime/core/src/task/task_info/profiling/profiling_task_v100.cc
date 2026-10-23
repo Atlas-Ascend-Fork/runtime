@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cinttypes>
 #include "stream.hpp"
 #include "runtime_task_manager.h"
 #include "profiling_task.h"
@@ -43,7 +44,7 @@ void ConstructSqeForProfilingEnableTask(TaskInfo* const taskInfo, void* const sq
     RT_LOG(
         RT_LOG_INFO,
         "Launch ProfilingEnableTask succ, "
-        "sqe_type=%u, pre_p=%u, stream_id=%u, task_id=%u, task_type=%u, pid=%u.",
+        "sqe_type=%u, pre_p=%u, stream_id=%u, task_id=%u, task_type=%u, pid=%" PRIu64 ".",
         sqe->type, sqe->pre_p, sqe->rt_streamID, sqe->task_id, sqe->task_type, profilingEnableTaskInfo->pid);
 }
 #endif
@@ -74,7 +75,7 @@ void ConstructSqeForProfilingDisableTask(TaskInfo* const taskInfo, void* const s
     RT_LOG(
         RT_LOG_INFO,
         "Launch ProfilingDisableTask succ, "
-        "sqe_type=%u, pre_p=%u, stream_id=%u, task_id=%u, task_type=%u, pid=%u.",
+        "sqe_type=%u, pre_p=%u, stream_id=%u, task_id=%u, task_type=%u, pid=%" PRIu64 ".",
         sqe->type, sqe->pre_p, sqe->rt_streamID, sqe->task_id, sqe->task_type, profilingDisableTaskInfo->pid);
 }
 #endif

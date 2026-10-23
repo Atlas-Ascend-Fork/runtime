@@ -502,7 +502,7 @@ static rtError_t InitFuncCallParaForDqsZeroCopyTask(
     RT_LOG(
         RT_LOG_INFO,
         "Init DqsZeroCopy with offset function call params, copyType=%u, isCpyAddrLow32First=%u, "
-        "mbufHandleAddr=%#llx, mbufBaseAddr=%#llx, blockSizeAddr=%#llx, count=%u, queueId=%u",
+        "mbufHandleAddr=%#llx, mbufBaseAddr=%#llx, blockSizeAddr=%#llx, count=%" PRIu64 ", queueId=%u",
         static_cast<uint32_t>(cfg->zeroCopyCfg->copyType), static_cast<uint32_t>(fcPara.isCpyAddrLow32First),
         fcPara.mbufHandleAddr, fcPara.mbufBaseAddr, fcPara.blockSizeAddr, fcPara.count, queueId);
     return RT_ERROR_NONE;
@@ -1720,7 +1720,7 @@ static rtError_t InitFuncCallParaForDqsConditionCopyTask(
 
     RT_LOG(
         RT_LOG_INFO,
-        "Init ConditionCopy function call params, conditionAddr=%#llx, dstAddr=%#llx, srcAddr=%#llx, "
+        "Init ConditionCopy function call params, conditionAddr=%#llx, dstAddr=%#llx, srcAddr=%#" PRIx64 ", "
         "copyCount=%" PRIu64,
         fcPara.conditionAddr, fcPara.dstAddr, fcPara.srcAddr, fcPara.count);
     return RT_ERROR_NONE;
@@ -1827,7 +1827,7 @@ static void InitFuncCallParaForDqsAdspcTask(
         RT_LOG_DEBUG,
         "dqs adspc task function call param: qmngrEnqRegAddr=%#llx, qmngrOwRegAddr=%#llx, "
         "mbufFreeRegAddr=%#llx, cqeHeadTailMask=%#x, cqeSize=%#x, cqDepth=%#x, mbufHandle=%#x, cqeBaseAddr=%#llx, "
-        "cqeCopyAddr=%#llx, cqHeadRegAddr=%#llx, cqTailRegAddr=%#llx, dfxAddr=%#llx",
+        "cqeCopyAddr=%#llx, cqHeadRegAddr=%#llx, cqTailRegAddr=%#llx, dfxAddr=%#" PRIx64,
         fcPara.qmngrEnqRegAddr, fcPara.qmngrOwRegAddr, fcPara.mbufFreeRegAddr, fcPara.cqeHeadTailMask, fcPara.cqDepth,
         fcPara.cqeSize, fcPara.mbufHandle, fcPara.cqeBaseAddr, fcPara.cqeCopyAddr, fcPara.cqHeadRegAddr,
         fcPara.cqTailRegAddr, fcPara.dfxAddr);

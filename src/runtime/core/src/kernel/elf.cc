@@ -1344,8 +1344,8 @@ RtKernel* GetKernels(rtElfData* const elfData)
             /* metaInfo init */
             KernelMetaInfoInit(&(kernels[kernelNum].metaInfo));
             RT_LOG(
-                RT_LOG_DEBUG, "kernel_name=%s, offset=%d, length=%u, stackSize=%llu,", stringTab + psym->st_name,
-                kernels[kernelNum].offset, psym->st_size, elfData->stackSize);
+                RT_LOG_DEBUG, "kernel_name=%s, offset=%d, length=%" PRIu64 ", stackSize=%llu,",
+                stringTab + psym->st_name, kernels[kernelNum].offset, psym->st_size, elfData->stackSize);
             kernelNum++;
             psym++;
         }

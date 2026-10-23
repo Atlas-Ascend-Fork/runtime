@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <cinttypes>
 #include "notify_c.hpp"
 #include "event.hpp"
 #include "event_resource.hpp"
@@ -133,7 +134,7 @@ rtError_t NtyReset(Notify* const inNotify, Stream* const streamIn)
 {
     const int32_t streamId = streamIn->Id_();
     RT_LOG(
-        RT_LOG_INFO, "device_id=%u, stream_id=%d, notify_id=%u, lastLocalId=%u, lastBaseAddr_=%#x.",
+        RT_LOG_INFO, "device_id=%u, stream_id=%d, notify_id=%u, lastLocalId=%u, lastBaseAddr_=%#" PRIx64 ".",
         streamIn->Device_()->Id_(), streamId, inNotify->GetNotifyId(), inNotify->GetLastLocalId(),
         inNotify->GetLastBaseAddr());
 

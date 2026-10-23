@@ -69,7 +69,7 @@ void UvmCallback::MemcpyAsyncCallback(void* userData)
     const rtError_t error = driver->MemCopySync(params->dst, params->destMax, params->src, params->cnt, kindCov);
     if (error != RT_ERROR_NONE) {
         RT_LOG(
-            RT_LOG_ERROR, "Memcopy sync failed with code=%u dst=%p destMax=%u src=%p cnt=%u kind=%s",
+            RT_LOG_ERROR, "Memcopy sync failed with code=%u dst=%p destMax=%" PRIu64 " src=%p cnt=%" PRIu64 " kind=%s",
             static_cast<uint32_t>(error), params->dst, params->destMax, params->src, params->cnt,
             MemcpyKindToStr(kindCov));
     }
