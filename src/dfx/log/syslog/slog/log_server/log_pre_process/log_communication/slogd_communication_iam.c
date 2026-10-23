@@ -347,7 +347,7 @@ STATIC int LogIamOpsIoctl(struct IAMMgrFile* file, unsigned cmd, struct IAMIoctl
             const char* path = (const char*)arg->argData;
             uint32_t len = (uint32_t)arg->size;
             ONE_ACT_NO_LOG(!SlogdCheckCollectValid(path, len), return SYS_ERROR);
-            SlogdCollectNotify(path, len);
+            ONE_ACT_NO_LOG(!SlogdCollectNotify(path, len), return SYS_ERROR);
             break;
         }
         case IAM_CMD_COLLECT_LOG_PATTERN: {

@@ -84,13 +84,19 @@ STATIC void SlogdSetCollectLogPath(const char* path, uint32_t len)
     g_collectInfo.collectStatus++; // only when log path set success, count++
 }
 
-void SlogdCollectNotify(const char* path, uint32_t len)
+bool SlogdCollectNotify(const char* path, uint32_t len)
 {
     (void)ToolMutexLock(&g_collectInfo.thread.mutex);
+    if (g_collectInfo.collectStatus >= COLLECT_MAX_CONCURRENT_NUM) {
+        SELF_LOG_ERROR("collect concurrent max, path=%s.", path);
+        (void)ToolMutexUnLock(&g_collectInfo.thread.mutex);
+        return false;
+    }
     g_collectInfo.collectWait = false;
     SlogdSetCollectLogPath(path, len);
     (void)ToolCondNotify(&g_collectInfo.thread.cond);
     (void)ToolMutexUnLock(&g_collectInfo.thread.mutex);
+    return true;
 }
 
 /**
@@ -327,7 +333,30 @@ STATIC LogStatus SlogdCollectBufferLog(void)
     SlogdCollectNewestLog(logBuf, COLLECT_LOG_BUFFER_SIZE, &pos);
 
     // write to file
-    char* fileName = g_collectInfo.path.collectLogPath[g_collectInfo.path.current];
+    char fileName[PATH_MAX] = {0};
+    // decrement the count, snapshot the file name and advance the cursor in ONE critical
+    // section: decrementing earlier (in the consumer loop) leaves a window where the count
+    // says 9 but 10 slots are still occupied (cursor not yet advanced), letting a new request
+    // overwrite the oldest unconsumed path
+    (void)ToolMutexLock(&g_collectInfo.thread.mutex);
+    if (g_collectInfo.collectStatus == 0) {
+        (void)ToolMutexUnLock(&g_collectInfo.thread.mutex);
+        XFREE(logBuf);
+        return LOG_FAILURE;
+    }
+    g_collectInfo.collectStatus--;
+    errno_t cpyRet = strcpy_s(fileName, PATH_MAX, g_collectInfo.path.collectLogPath[g_collectInfo.path.current]);
+    if (g_collectInfo.path.current + 1U >= COLLECT_MAX_CONCURRENT_NUM) {
+        g_collectInfo.path.current = 0;
+    } else {
+        g_collectInfo.path.current++;
+    }
+    (void)ToolMutexUnLock(&g_collectInfo.thread.mutex);
+    if (cpyRet != EOK) {
+        SELF_LOG_ERROR("copy collect file name failed, ret = %d.", cpyRet);
+        XFREE(logBuf);
+        return LOG_FAILURE;
+    }
     char* zippedBuf = NULL;
     uint32_t zippedBufLen = 0;
     LogStatus ret = SlogdCompress(logBuf, pos, &zippedBuf, &zippedBufLen);
@@ -338,12 +367,6 @@ STATIC LogStatus SlogdCollectBufferLog(void)
     }
     ret = SlogdCollectWriteToFile(fileName, zippedBuf, zippedBufLen);
     XFREE(zippedBuf);
-
-    if (g_collectInfo.path.current + 1U >= COLLECT_MAX_CONCURRENT_NUM) {
-        g_collectInfo.path.current = 0;
-    } else {
-        g_collectInfo.path.current++;
-    }
     ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, return LOG_FAILURE, "collect newest log failed, file name = %s.", fileName);
     SELF_LOG_INFO("collect newest log success, file name = %s.", fileName);
     return LOG_SUCCESS;
@@ -355,20 +378,24 @@ STATIC void* SlogdCollectLog(ArgPtr arg)
     NO_ACT_WARN_LOG(ToolSetThreadName("LogCollect") != SYS_OK, "can not set thread name(LogCollect).");
 
     while (LogGetSigNo() == 0) {
-        // collect log
+        // the producer (ioctl thread) updates collectStatus / path slots under the same mutex:
+        // read, collect and advance the consumer cursor inside the critical section, otherwise
+        // a lost update drifts the count and the ring cursors tear the file names
+        (void)ToolMutexLock(&g_collectInfo.thread.mutex);
         if (g_collectInfo.collectStatus > 0) {
+            (void)ToolMutexUnLock(&g_collectInfo.thread.mutex);
             SELF_LOG_INFO("slogd start collect newest log.");
             LogStatus ret = SlogdCollectBufferLog();
             if (ret != LOG_SUCCESS) {
                 SELF_LOG_ERROR("slogd collect newest log failed, ret = %d.", ret);
             }
-            g_collectInfo.collectStatus--;
+            (void)ToolMutexLock(&g_collectInfo.thread.mutex);
+            // backlog suppression: keep consuming back-to-back while requests remain queued,
+            // otherwise each leftover request pays one extra COLLECT_SCAN_INTERVAL sleep
             if (g_collectInfo.collectStatus > 0) {
                 g_collectInfo.collectWait = false;
             }
         }
-        // sleep when no need to collect log
-        (void)ToolMutexLock(&g_collectInfo.thread.mutex);
         // if notify, continue
         if (g_collectInfo.collectWait) {
             (void)ToolCondTimedWait(&g_collectInfo.thread.cond, &g_collectInfo.thread.mutex, COLLECT_SCAN_INTERVAL);
@@ -420,10 +447,10 @@ STATIC LogStatus SlogdCheckDir(const char* path, uint32_t len)
 
 bool SlogdCheckCollectValid(const char* path, uint32_t len)
 {
+    // only the directory check here: the capacity check moved into SlogdCollectNotify's lock
+    // so that check + enqueue + count is atomic (the old split allowed two concurrent callers
+    // to both pass a capacity of 9 and reach 11, overwriting unconsumed path slots)
     ONE_ACT_ERR_LOG(SlogdCheckDir(path, len) != LOG_SUCCESS, return false, "input is invalid");
-    ONE_ACT_ERR_LOG(
-        g_collectInfo.collectStatus >= COLLECT_MAX_CONCURRENT_NUM, return false, "collect concurrent max, path=%s.",
-        path);
     return true;
 }
 
@@ -466,10 +493,11 @@ LogStatus SlogdGetLogPatterns(LogConfigInfo* info)
 #else
 void SlogdStartCollectThread(void) { return; }
 
-void SlogdCollectNotify(const char* path, uint32_t len)
+bool SlogdCollectNotify(const char* path, uint32_t len)
 {
     (void)path;
     (void)len;
+    return true;
 }
 
 void SlogdCollectThreadExit(void) { return; }

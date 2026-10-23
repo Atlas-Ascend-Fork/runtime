@@ -63,7 +63,10 @@ LogRt SetDlogLevel(int32_t devId)
         return SET_LEVEL_ERR;
     }
 
-    for (uint32_t i = 0; i < info.bufNum; i++) {
+    // bufNum is filled by the driver ioctl: cap it to the fixed modId array so a bad driver
+    // response cannot walk past the stack struct
+    uint32_t bufNum = (info.bufNum > MODULE_ID_NUM) ? (uint32_t)MODULE_ID_NUM : info.bufNum;
+    for (uint32_t i = 0; i < bufNum; i++) {
         int32_t level = SlogdGetModuleLevel((int32_t)info.modId[i], DEBUG_LOG_MASK);
         if (level > LOG_MAX_LEVEL) {
             level = SlogdGetGlobalLevel(DEBUG_LOG_MASK);

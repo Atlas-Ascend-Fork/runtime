@@ -23,6 +23,7 @@
 #define CPU_DETECT_RECV_TIME 1000
 #define CPU_DETECT_TESTCASE_FAIL 100
 
+#define CPU_DETECT_TIMEOUT_MAX_MS 15000U
 typedef int32_t (*CpuDetectStartFunc)(uint32_t timeout);
 typedef void (*CpuDetectStopFunc)(void);
 
@@ -79,6 +80,14 @@ STATIC int32_t CpuDetectServerProcess(const ServerHandle handle, const CpuDetect
 
     if (g_cpuDetectMgr.cpuDetectStart == NULL) {
         SELF_LOG_ERROR("cpu detect start func is null");
+        CpuDetectServerReplyMsg(handle, DETECT_FAILURE, CPU_DETECT_REPLY_MSG_FW_FAIL);
+        return DETECT_FAILURE;
+    }
+    // timeout comes straight from the host payload: cap it so a detection cannot outlive the
+    // bounded drain of the component (aligned with the upgrade drain timeout)
+    if (msg->timeout > CPU_DETECT_TIMEOUT_MAX_MS) {
+        SELF_LOG_ERROR(
+            "cpu detect timeout %u exceeds the maximum %u, reject.", msg->timeout, CPU_DETECT_TIMEOUT_MAX_MS);
         CpuDetectServerReplyMsg(handle, DETECT_FAILURE, CPU_DETECT_REPLY_MSG_FW_FAIL);
         return DETECT_FAILURE;
     }

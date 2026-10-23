@@ -282,6 +282,9 @@ STATIC void DeviceAppNotifyEventProc(void* arg)
 
 STATIC void DeviceAppRmNotifyMonitor(void)
 {
+    // skip the event delete when the LOOP event was never registered (EventAdd failure path),
+    // but still run the inotify fd / watch cleanup below: fd can be valid when eventHandle is
+    // NULL (inotify_init1 succeeded before EventAdd failed)
     if (g_devAppMonitor.eventMonitor.notifyMonitor.eventHandle != NULL) {
         int32_t ret = EventDelete(g_devAppMonitor.eventMonitor.notifyMonitor.eventHandle);
         NO_ACT_ERR_LOG(ret != LOG_SUCCESS, "delete notify event failed, ret = %d.", ret);

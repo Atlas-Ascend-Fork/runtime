@@ -25,7 +25,7 @@ typedef struct {
 } LogConfigInfo;
 
 void SlogdStartCollectThread(void);
-void SlogdCollectNotify(const char* path, uint32_t len);
+bool SlogdCollectNotify(const char* path, uint32_t len);
 void SlogdCollectThreadExit(void);
 bool SlogdCheckCollectValid(const char* path, uint32_t len);
 LogStatus SlogdGetLogPatterns(LogConfigInfo* info);

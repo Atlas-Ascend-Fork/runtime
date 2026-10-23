@@ -133,11 +133,12 @@ bool SlogdCheckCollectValid(const char* path, uint32_t len)
     return g_collectValid;
 }
 
-void SlogdCollectNotify(const char* path, uint32_t len)
+bool SlogdCollectNotify(const char* path, uint32_t len)
 {
     (void)path;
     (void)len;
     g_collectNotifyCount++;
+    return true;
 }
 
 LogStatus SlogdGetLogPatterns(LogConfigInfo* info)
