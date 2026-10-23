@@ -5119,7 +5119,7 @@ ACL_FUNC_VISIBILITY aclError aclmdlRIGetTasks(aclmdlRI modelRI, aclmdlRITask* ta
  * @ingroup AscendCL
  * @brief get the type of the task
  * @param [in] task: task handle
- * @param [in, out] type: variable to store the task type
+ * @param [out] type: variable to store the task type
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
@@ -5752,7 +5752,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemSetAccess(void* virPtr, size_t size, aclrtM
  * @brief This command is used to get access to a reversed virtual address range for the other device.
  * @param [in] virPtr    the va that has been mapped to device memory.
  * @param [in] location  va location, when type is device, id is devid.
- * @param [in] flag      access type.
+ * @param [out] flag      access type.
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure

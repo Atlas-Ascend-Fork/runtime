@@ -433,7 +433,7 @@ ACL_FUNC_VISIBILITY aclError aclGetCannAttributeList(const aclCannAttr** cannAtt
  * environment
  *
  * @param  cannAttr [IN]  CANN attributes to query
- * @param  num [OUT]  0/1: 0 represents unavailable , 1 available
+ * @param  value [OUT]  0/1: 0 represents unavailable , 1 available
  *
  * @retval ACL_SUCCESS  The function is successfully executed.
  * @retval OtherValues  Failure

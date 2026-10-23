@@ -95,7 +95,7 @@ typedef struct rtTaskParams {
  * @ingroup rt_task
  * @brief get the type of the task
  * @param [in] task: task handle
- * @param [in, out] type: variable to store the task type
+ * @param [out] type: variable to store the task type
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
