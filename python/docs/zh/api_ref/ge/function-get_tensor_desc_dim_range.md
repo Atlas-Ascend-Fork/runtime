@@ -44,7 +44,7 @@
 | 参数名 | 说明 |
 | --- | --- |
 | desc | int，aclTensorDesc类型的指针地址。需提前调用[acl.create_tensor_desc](function-create_tensor_desc.md)接口创建aclTensorDesc类型。 |
-| index | int，指定获取第几个维度的大小，index值从0开始。用户调用[acl.get_tensor_desc_num_dims](function-get_tensor_desc_num_dims.md)接口获取Shape维度个数，该index的取值范围：[0, (shape维度个数<br> 1)]。 |
+| index | int，指定获取第几个维度的大小，index值从0开始。用户调用[acl.get_tensor_desc_num_dims](function-get_tensor_desc_num_dims.md)接口获取Shape维度个数，该index的取值范围：[0, (shape维度个数-1)]。 |
 | dim_range_num | int，“dim_range”的长度，该值必须大于或等于2。 |
 
 ## 返回值说明

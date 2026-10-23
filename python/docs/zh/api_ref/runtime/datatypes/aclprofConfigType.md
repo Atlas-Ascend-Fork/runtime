@@ -13,7 +13,7 @@ Atlas 200I/500 A2推理产品：不支持ACL\_PROF\_SYS\_INTERCONNECTION\_FREQ�
 
 枚举项说明如下：
 
-- ACL\_\PROF\_STORAGE\_LIMIT = 1：指定落盘目录允许存放的最大文件容量，有效取值范围为[200, 4294967295]，单位为MB。
+- ACL\_PROF\_STORAGE\_LIMIT = 1：指定落盘目录允许存放的最大文件容量，有效取值范围为[200, 4294967295]，单位为MB。
 - ACL\_PROF\_SYS\_HARDWARE\_MEM\_FREQ = 3：片上内存、QoS带宽及内存、LLC的读写带宽数据、acc_pmu数据和SoC传输带宽信息、组件内存采集频率，范围[1,100]。
 - ACL\_PROF\_LLC\_MODE = 4：LLC Profiling采集事件。要求同时设置ACL_PROF_SYS_HARDWARE_MEM_FREQ。
     可以设置为：

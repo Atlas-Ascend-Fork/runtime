@@ -44,7 +44,7 @@
 | 参数名 | 说明 |
 | --- | --- |
 | desc | int，Tensor描述数据的指针地址。调用[acl.mdl.create_and_get_op_desc](function-create_and_get_op_desc.md)接口，获取算子所有输入/输出的Tensor描述作为本接口的输入。 |
-| index | int，指定获取第几个维度的大小，index值从0开始。调用[acl.mdl.create_and_get_op_desc](function-create_and_get_op_desc.md)接口获取的算子输入/输出的数量后，该index的取值范围：[0, (算子输入/输出的数量<br> 1)]。 |
+| index | int，指定获取第几个维度的大小，index值从0开始。调用[acl.mdl.create_and_get_op_desc](function-create_and_get_op_desc.md)接口获取的算子输入/输出的数量后，该index的取值范围：[0, (算子输入/输出的数量-1)]。 |
 
 ## 返回值说明
 
