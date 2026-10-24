@@ -7,6 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#define SHM_SIZE 10240U
+
 #include "log_level_stub.h"
 #include "log_print.h"
 
@@ -29,10 +31,15 @@ int32_t shmgetStub(key_t key, size_t size, int32_t shmflg)
 void* shmatStub(int32_t shmid, const void* shmaddr, int32_t shmflg)
 {
     g_shmFlag = shmflg;
+    g_value = calloc(1U, SHM_SIZE);
     if (g_shmFlag == SHM_RDONLY) {
-        read(g_shmFd, (void*)shmaddr, strlen(shmaddr));
+        // the product's ShMemRead passes NULL as shmaddr (the return value is the mapped
+        // pointer): read into the buffer we actually return, not into the NULL argument
+        ssize_t rret = read(g_shmFd, g_value, SHM_SIZE);
+        if (rret < 0) {
+            SELF_LOG_WARN("stub read shm failed, ret=%zd", rret);
+        }
     }
-    g_value = malloc(10240);
     return g_value;
 }
 

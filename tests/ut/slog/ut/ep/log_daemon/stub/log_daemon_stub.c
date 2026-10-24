@@ -236,7 +236,9 @@ void DlogRecord(int moduleId, int level, const char* fmt, ...)
 
 drvError_t drvGetDevIDByLocalDevID(uint32_t localDevId, uint32_t* devId)
 {
-    devId = 0;
+    if (devId != NULL) {
+        *devId = 0;
+    }
     return 0;
 }
 

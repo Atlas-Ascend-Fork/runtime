@@ -64,6 +64,9 @@ typedef struct LogBufferMgr {
 #define BUF_DATA_OFFSET BLOCK_HEADER_LEN
 #define BUF_START_ATTR(blockHead) (((blockHead)->data) - BLOCK_HEADER_LEN)
 static LogBufferMgr* g_slogdBufMgr[LOG_TYPE_MAX_NUM] = {0};
+// protects the head-insert in SlogdBufferInit, which is compiled in both STATIC_BUFFER and
+// non-STATIC_BUFFER product variants, so the lock must live outside the #ifdef STATIC_BUFFER block
+static ToolMutex g_bufMgrRegMutex = TOOL_MUTEX_INITIALIZER;
 
 typedef struct {
     LogStatus (*slogdBufferInitFunc)(LogBufferMgr*, uint32_t, int32_t, uint32_t);
@@ -174,13 +177,16 @@ LogStatus SlogdBufferInit(int32_t logType, uint32_t bufSize, uint32_t devId, Slo
         bufMgr->bufAttr.attr = bufAttr->attr;
         bufMgr->bufAttr.slogdBufAttrCompare = bufAttr->slogdBufAttrCompare;
     }
-    // add to list head to keep consistent with the applog and grouplog nodes.
+    // use a dedicated registration mutex: the new node's own lock is per-instance and cannot
+    // serialise concurrent registrations racing on the shared g_slogdBufMgr head pointer
+    (void)ToolMutexLock(&g_bufMgrRegMutex);
     if (g_slogdBufMgr[logType] == NULL) {
         g_slogdBufMgr[logType] = bufMgr;
     } else {
         bufMgr->next = g_slogdBufMgr[logType];
         g_slogdBufMgr[logType] = bufMgr;
     }
+    (void)ToolMutexUnLock(&g_bufMgrRegMutex);
     return LOG_SUCCESS;
 }
 

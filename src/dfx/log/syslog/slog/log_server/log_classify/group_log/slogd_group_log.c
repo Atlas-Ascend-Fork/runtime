@@ -430,7 +430,14 @@ LogStatus SlogdGroupLogInit(void)
     return LOG_SUCCESS;
 }
 
-void SlogdGroupLogExit(void) { DeleteAllGroup(); }
+void SlogdGroupLogExit(void)
+{
+    // NOTE: the group chain has no dedicated mutex (the per group fileList.lock only guards
+    // file operations). The teardown relies on the slogd exit ordering stopping the distribute
+    // and flush threads before the classify exit; a formal exit order audit is tracked as a
+    // follow-up. For now the free stays unlocked to avoid introducing a new partial lock.
+    DeleteAllGroup();
+}
 
 #else
 

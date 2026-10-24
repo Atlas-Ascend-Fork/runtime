@@ -305,6 +305,9 @@ LogStatus SlogdApplogFlushInit(void) { return LOG_SUCCESS; }
 
 void SlogdApplogFlushExit(void)
 {
+    // take the app log mutex: until the exit ordering is formally audited, the free must not
+    // race with the distribute / flush / report threads that walk the same list under the lock
+    SlogdAppLogLock();
     AppLogList* tmp = g_appLogList;
     AppLogList* node = NULL;
     while (tmp != NULL) {
@@ -313,6 +316,7 @@ void SlogdApplogFlushExit(void)
         XFREE(node);
     }
     g_appLogList = NULL;
+    SlogdAppLogUnLock();
     for (int32_t i = 0; i < (int32_t)LOG_TYPE_NUM; i++) {
         SlogdBufferExit(DEBUG_APP_LOG_TYPE + i, NULL);
     }
