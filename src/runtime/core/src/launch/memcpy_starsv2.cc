@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <limits>
 #include <string>
 #include "memcpy_c.hpp"
@@ -310,7 +311,7 @@ rtError_t MemcopyAsync(
     return error;
 }
 
-rtError_t DevMemSetAsyncByMemset(
+static rtError_t SendMemsetAsyncTask(
     Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
 {
     Stream* dstStm = stm;
@@ -346,6 +347,27 @@ rtError_t DevMemSetAsyncByMemset(
     ERROR_RETURN_MSG_INNER(
         error, "Post-processing of Memset failed, stream_id=%d, retCode=%#x.", stm->Id_(),
         static_cast<uint32_t>(error));
+
+    return RT_ERROR_NONE;
+}
+
+rtError_t DevMemSetAsyncByMemset(
+    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
+{
+    // SQE 的 lengthMove 为 32bit 字段（单次上限 4GB-1），取能放入 u32 的最大 2 的幂（2GB）：
+    // 保证分块后各块起始地址继承首地址的对齐（如 4 字节对齐），且整块长度为 4 的倍数，
+    // 满足 D32 memset 按 32bit 字填充的语义；若取 UINT32_MAX（奇数）会破坏后续块的对齐
+    constexpr uint64_t MEMSET_SQE_MAX_LEN = 0x80000000ULL;
+    uint64_t doneSize = 0ULL;
+    do {
+        const uint64_t chunkSize = std::min(fillCount - doneSize, MEMSET_SQE_MAX_LEN);
+        const rtError_t error = SendMemsetAsyncTask(
+            stm, RtPtrToPtr<char_t*, void*>(ptr) + doneSize, destMax - doneSize, fillVal, chunkSize);
+        ERROR_RETURN_MSG_INNER(
+            error, "Memset chunk submit failed, stream_id=%d, offset=%" PRIu64 ", size=%" PRIu64 ", retCode=%#x.",
+            stm->Id_(), doneSize, chunkSize, static_cast<uint32_t>(error));
+        doneSize += chunkSize;
+    } while (doneSize < fillCount);
 
     return RT_ERROR_NONE;
 }

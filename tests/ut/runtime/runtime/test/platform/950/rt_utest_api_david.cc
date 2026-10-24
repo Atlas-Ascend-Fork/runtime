@@ -6865,6 +6865,63 @@ TEST_F(ApiDavidTest, ConstructDavidSqeForMemsetAsyncTask_basic)
     EXPECT_EQ(memcpySqe->sns, 1U);
 }
 
+constexpr uint64_t MEMSET_CHUNK_MAX_LEN = 0x80000000ULL;
+struct MemsetChunkRecord {
+    void* targetPtr;
+    uint64_t targetSize;
+    uint64_t fillCount;
+};
+std::vector<MemsetChunkRecord> g_memsetChunkRecords;
+uint32_t g_memsetSendFailAt = 0U;
+
+rtError_t DavidSendTaskMemsetCapture(TaskInfo* taskInfo, Stream* const stm)
+{
+    g_memsetChunkRecords.push_back(
+        {taskInfo->u.memsetAsyncTaskInfo.targetPtr, taskInfo->u.memsetAsyncTaskInfo.targetSize,
+         taskInfo->u.memsetAsyncTaskInfo.fillCount});
+    if ((g_memsetSendFailAt != 0U) && (g_memsetChunkRecords.size() == g_memsetSendFailAt)) {
+        return RT_ERROR_DRV_ERR;
+    }
+    return RT_ERROR_NONE;
+}
+
+TEST_F(ApiDavidTest, DevMemSetAsyncByMemset_ChunkSplit)
+{
+    void* const basePtr = reinterpret_cast<void*>(0x100000000000ULL);
+    g_memsetChunkRecords.clear();
+    g_memsetSendFailAt = 0U;
+    MOCKER(DavidSendTask).stubs().will(invoke(DavidSendTaskMemsetCapture));
+
+    rtError_t error = DevMemSetAsyncByMemset(stream_, basePtr, MEMSET_CHUNK_MAX_LEN, 0xABABABABU, MEMSET_CHUNK_MAX_LEN);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    ASSERT_EQ(g_memsetChunkRecords.size(), 1U);
+    EXPECT_EQ(g_memsetChunkRecords[0].fillCount, MEMSET_CHUNK_MAX_LEN);
+
+    g_memsetChunkRecords.clear();
+    error = DevMemSetAsyncByMemset(stream_, basePtr, MEMSET_CHUNK_MAX_LEN + 4U, 0xABABABABU, MEMSET_CHUNK_MAX_LEN + 4U);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    ASSERT_EQ(g_memsetChunkRecords.size(), 2U);
+    EXPECT_EQ(g_memsetChunkRecords[0].targetPtr, basePtr);
+    EXPECT_EQ(g_memsetChunkRecords[0].fillCount, MEMSET_CHUNK_MAX_LEN);
+    EXPECT_EQ(g_memsetChunkRecords[1].targetPtr, reinterpret_cast<void*>(0x100000000000ULL + MEMSET_CHUNK_MAX_LEN));
+    EXPECT_EQ(g_memsetChunkRecords[1].targetSize, 4U);
+    EXPECT_EQ(g_memsetChunkRecords[1].fillCount, 4U);
+
+    g_memsetChunkRecords.clear();
+    error = DevMemSetAsyncByMemset(stream_, basePtr, 64U, 0xABABABABU, 0U);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    ASSERT_EQ(g_memsetChunkRecords.size(), 1U);
+    EXPECT_EQ(g_memsetChunkRecords[0].fillCount, 0U);
+
+    g_memsetChunkRecords.clear();
+    g_memsetSendFailAt = 2U;
+    error = DevMemSetAsyncByMemset(stream_, basePtr, MEMSET_CHUNK_MAX_LEN * 2U, 0xABABABABU, MEMSET_CHUNK_MAX_LEN * 2U);
+    EXPECT_EQ(error, RT_ERROR_DRV_ERR);
+    EXPECT_EQ(g_memsetChunkRecords.size(), 2U);
+    g_memsetSendFailAt = 0U;
+    GlobalMockObject::verify();
+}
+
 uint32_t gabort_times = 0U;
 uint32_t gquery_times = 0U;
 rtError_t TaskAbortByTypeByTimes(
