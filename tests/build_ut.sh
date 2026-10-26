@@ -368,6 +368,7 @@ run_ut() {
     ORIGINAL_LD_PRELOAD="$LD_PRELOAD"
     # validate sanitizer libraries if ASAN is enabled
     validate_sanitizer_libs
+    local ut_preload="${LD_PRELOAD:-}"
 
     local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
     echo "${UT_TARGET}"
@@ -378,17 +379,35 @@ run_ut() {
       echo "ERROR: timeout command not found. Please install timeout command or run with --ut_timeout=0"
       return 1
     fi
+    local crash_capture_enabled=off
+    if [[ "$UT_TARGET" == full || "$UT_TARGET" == runtime || "$UT_TARGET" == runtime_c ]]; then
+      # Sanitizer/custom preloads belong to UT, not Python, apt, or the debugger.
+      unset LD_PRELOAD
+      source "${BASEPATH}/tests/ut_crash_diagnostics.sh"
+      if prepare_ut_crash_diagnostics; then
+        crash_capture_enabled=on
+      else
+        echo "WARNING: Crash stacks unavailable; continuing native UT with its original result." >&2
+      fi
+    fi
     while IFS= read -r ut_exec; do
         filename=$(basename "$ut_exec")
         echo "Executing: ${filename}"
         local ret=0
         set +e
-        if [[ "${UT_TIMEOUT}" -gt 0 ]]; then
-          timeout "${UT_TIMEOUT}s" \
+        if [[ "$crash_capture_enabled" == on && "$ut_exec" == "${BUILD_PATH}/tests/ut/runtime/"* ]]; then
+          python3 "${BASEPATH}/tests/ut/runtime/diagnostics/run_with_crash_capture.py" \
+            --report-dir "${report_dir}/crash" --ut-timeout "${UT_TIMEOUT}" \
+            --gdb-timeout "${UT_CRASH_GDB_TIMEOUT:-60}" --preload "$ut_preload" -- \
+            "$ut_exec" "--gtest_output=xml:${report_dir}/${filename}.xml"
+          ret=$?
+        elif [[ "${UT_TIMEOUT}" -gt 0 ]]; then
+          timeout "${UT_TIMEOUT}s" env "LD_PRELOAD=$ut_preload" \
             "$ut_exec" "--gtest_output=xml:${report_dir}/${filename}.xml"
           ret=$?
         else
-          "$ut_exec" "--gtest_output=xml:${report_dir}/${filename}.xml"
+          env "LD_PRELOAD=$ut_preload" \
+            "$ut_exec" "--gtest_output=xml:${report_dir}/${filename}.xml"
           ret=$?
         fi
         set -e
