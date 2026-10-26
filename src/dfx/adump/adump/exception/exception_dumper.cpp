@@ -24,6 +24,7 @@
 #include "kernel_info_collector.h"
 #include "kernel_source_symbolizer.h"
 #include "exception_dumper.h"
+#include "adump_cc_mode.h"
 
 namespace Adx {
 namespace {
@@ -162,6 +163,9 @@ std::string ExceptionDumper::GetDumpSceneName() const
 int32_t ExceptionDumper::DumpException(const rtExceptionInfo& exception)
 {
     IDE_CTRL_VALUE_WARN(!destructionFlag_, return ADUMP_FAILED, "ExceptionDumper has been destructed.");
+    if (IsCcMode(static_cast<int32_t>(exception.deviceid))) {
+        return ADUMP_SUCCESS;
+    }
     IDE_CTRL_VALUE_WARN(
         ExceptionInfoCommon::IsSupportExceptionDump(exception), return ADUMP_FAILED,
         "Exception dump is not supported for this exception.");

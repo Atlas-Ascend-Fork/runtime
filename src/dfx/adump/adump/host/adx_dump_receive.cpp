@@ -13,6 +13,7 @@
 #include "mmpa_api.h"
 #include "memory_utils.h"
 #include "adx_dump_record.h"
+#include "adump_cc_mode.h"
 #include "log/adx_log.h"
 namespace Adx {
 int32_t AdxDumpReceive::Init()
@@ -104,14 +105,16 @@ int32_t AdxDumpReceive::Receive(const CommHandle& handle, const SharedPtr<MsgPro
             dumpChunk->bufLen <= chunkDataLen, return IDE_DAEMON_ERROR,
             "chunk bufLen(%u) exceeds actual chunk data buffer size(%u)", dumpChunk->bufLen, chunkDataLen);
 
-        IDE_LOGI(
-            "fileName: %s, bufLen: %u, isLastChunk: %u, offset: %ld, flag: %d", dumpChunk->fileName, dumpChunk->bufLen,
-            dumpChunk->isLastChunk, dumpChunk->offset, dumpChunk->flag);
-
-        HostDumpDataInfo data = {msgPtr, protoDataLen};
         MsgStatus status = MsgStatus::MSG_STATUS_NONE_ERROR;
-        if (!AdxDumpRecord::Instance().RecordDumpDataToQueue(data)) {
-            status = MsgStatus::MSG_STATUS_CACHE_FULL_ERROR;
+        if (!IsCcMode(static_cast<int32_t>(proto->devId))) {
+            IDE_LOGI(
+                "fileName: %s, bufLen: %u, isLastChunk: %u, offset: %ld, flag: %d", dumpChunk->fileName,
+                dumpChunk->bufLen, dumpChunk->isLastChunk, dumpChunk->offset, dumpChunk->flag);
+
+            HostDumpDataInfo data = {msgPtr, protoDataLen};
+            if (!AdxDumpRecord::Instance().RecordDumpDataToQueue(data)) {
+                status = MsgStatus::MSG_STATUS_CACHE_FULL_ERROR;
+            }
         }
 
         // send respone msg to device

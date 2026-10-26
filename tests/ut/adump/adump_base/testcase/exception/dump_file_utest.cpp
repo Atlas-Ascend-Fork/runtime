@@ -16,17 +16,33 @@
 #include "dump_memory.h"
 #include "dump_datatype.h"
 #include "dump_file.h"
+#include "adump_cc_mode.h"
 #include "ascend_hal.h"
 #include "adump_dsmi.h"
 #include "hccl_mc2_define.h"
 #include "dump_manager.h"
+#include "runtime_stub.h"
 
 using namespace Adx;
+namespace {
+constexpr int32_t NON_CC_MODE = 0;
+constexpr int32_t NORMAL_CC_MODE = static_cast<int32_t>(HAL_CC_MODE_NORMAL);
+} // namespace
 static std::vector<std::string> logRecord;
 class DumpFileUtest : public testing::Test {
 protected:
-    virtual void SetUp() {}
-    virtual void TearDown() { GlobalMockObject::verify(); }
+    virtual void SetUp()
+    {
+        ResetCcModeCacheForUt();
+        SetStubCcMode(NON_CC_MODE, RT_ERROR_NONE);
+    }
+
+    virtual void TearDown()
+    {
+        ResetCcModeCacheForUt();
+        SetStubCcMode(NON_CC_MODE, RT_ERROR_NONE);
+        GlobalMockObject::verify();
+    }
 };
 
 TEST_F(DumpFileUtest, Test_DumpData)
@@ -136,6 +152,39 @@ TEST_F(DumpFileUtest, Test_SetOpAttr)
 
     DumpFileChecker checker;
     EXPECT_EQ(checker.Load(dumpFilePath), true);
+}
+
+TEST_F(DumpFileUtest, Test_DumpDataWithCcMode)
+{
+    Tools::CaseWorkspace ws("Test_DumpDataWithCcMode");
+    std::string dumpFilePath = ws.Root() + "/dump_file_cc.bin";
+
+    int64_t hostData = 12345;
+    TensorInfoV2 tensorV2 = {};
+    tensorV2.addrType = AddressType::TRADITIONAL;
+    tensorV2.type = TensorType::INPUT;
+    tensorV2.dataType = static_cast<int32_t>(GeDataType::DT_INT64);
+    tensorV2.argsOffSet = 0;
+    tensorV2.format = 2; // ND
+    tensorV2.shape = {1};
+    tensorV2.originShape = {1};
+    tensorV2.tensorAddr = &hostData;
+    tensorV2.tensorSize = sizeof(hostData);
+    tensorV2.placement = TensorPlacement::kOnDeviceHbm;
+
+    std::vector<DumpTensor> inputTensors;
+    inputTensors.emplace_back(tensorV2);
+
+    ResetCcModeCacheForUt();
+    SetStubCcModeForDevice(1, NORMAL_CC_MODE, RT_ERROR_NONE);
+    DumpFile dumpFile(1, dumpFilePath);
+    dumpFile.SetHeader("cc_op");
+    dumpFile.SetInputTensors(inputTensors);
+    std::vector<std::string> logRecord;
+    EXPECT_EQ(dumpFile.Dump(logRecord), ADUMP_SUCCESS);
+
+    DumpFileChecker checker;
+    EXPECT_EQ(checker.Load(dumpFilePath), false);
 }
 
 // TEST_F(DumpFileUtest, Test_Dump_With_CopyDeviceData_Fail)

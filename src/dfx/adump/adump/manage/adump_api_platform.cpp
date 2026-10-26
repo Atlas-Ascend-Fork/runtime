@@ -16,6 +16,7 @@
 #include "adump_error_manager.h"
 #include "str_utils.h"
 #include "common/path.h"
+#include "adump_cc_mode.h"
 
 namespace Adx {
 uint64_t g_chunk[RING_CHUNK_SIZE + MAX_TENSOR_NUM] = {0};
@@ -237,6 +238,9 @@ const char* acldumpGetPath(acldumpType dumpType)
 aclError acldumpSaveExceptionInfo(
     const char* fileName, const char* userTag, const acldumpTensorInfo* tensors, size_t tensorCount)
 {
+    if (Adx::IsCurrentDeviceCcMode()) {
+        return ACL_SUCCESS;
+    }
     if (fileName == nullptr) {
         REPORT_EP0007_NULL_POINTER(
             Adx::FUNC_NAME_ACL_DUMP_SAVE_EXCEPTION_INFO, Adx::FUNC_ACL_DUMP_SAVE_EXCEPTION_INFO_PARAM_FILENAME);

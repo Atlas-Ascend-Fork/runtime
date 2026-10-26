@@ -10,6 +10,7 @@
 #ifndef TEST_RUNTIME_STUB_H
 #define TEST_RUNTIME_STUB_H
 
+#include "runtime/base.h"
 #include "runtime/runtime/stream.h"
 
 // 设置流状态桩的返回值：rtStreamGetCaptureInfo 返回 captureStatus，rtStreamGetFlags 返回 streamFlags
@@ -17,5 +18,9 @@ void SetStubStreamState(rtStreamCaptureStatus captureStatus, uint32_t streamFlag
 
 // 获取流状态桩的当前返回值
 void GetStubStreamState(rtStreamCaptureStatus& captureStatus, uint32_t& streamFlags);
+
+void SetStubCcMode(int32_t mode, rtError_t result);
+void SetStubCcModeForDevice(int32_t deviceId, int32_t mode, rtError_t result);
+uint32_t GetStubCcModeQueryCount();
 
 #endif // TEST_RUNTIME_STUB_H

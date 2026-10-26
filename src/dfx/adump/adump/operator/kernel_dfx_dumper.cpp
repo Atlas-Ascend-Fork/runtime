@@ -20,6 +20,7 @@
 #include "log/adx_log.h"
 #include "dump_config_converter.h"
 #include "kernel_dfx_dumper.h"
+#include "adump_cc_mode.h"
 
 namespace Adx {
 static const int32_t WAIT_TASK_INTERVAL_TIME = 500;
@@ -44,6 +45,11 @@ static const std::map<rtKernelDfxInfoType, std::string> DFX_TYPE_STR_MAP = {
 void DumpKernelDfxInfoCallback(
     rtKernelDfxInfoType dfxType, uint32_t coreType, uint32_t coreId, const uint8_t* buffer, size_t length)
 {
+    // CC mode is global: once enabled, all logical devices are in CC mode.
+    if (IsCcMode(0)) {
+        return;
+    }
+
     (void)KernelDfxDumper::Instance().DumpKernelDfxInfo(dfxType, coreType, coreId, buffer, length);
 }
 

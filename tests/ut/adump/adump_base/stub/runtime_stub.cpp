@@ -43,6 +43,10 @@ static std::vector<rtDeviceStateCallback> g_deviceCallBackList;
 std::vector<void*> g_exceptionRegInfoList;
 static rtStreamCaptureStatus g_stubCaptureStatus = RT_STREAM_CAPTURE_STATUS_ACTIVE;
 static uint32_t g_stubStreamFlags = 0U;
+static int32_t g_stubCcMode = 0;
+static rtError_t g_stubCcModeResult = RT_ERROR_NONE;
+static int32_t g_stubCcDeviceId = -1;
+static uint32_t g_stubCcModeQueryCount = 0U;
 
 void SetStubStreamState(rtStreamCaptureStatus captureStatus, uint32_t streamFlags)
 {
@@ -55,6 +59,34 @@ void GetStubStreamState(rtStreamCaptureStatus& captureStatus, uint32_t& streamFl
     captureStatus = g_stubCaptureStatus;
     streamFlags = g_stubStreamFlags;
 }
+
+void SetStubCcMode(int32_t mode, rtError_t result)
+{
+    g_stubCcMode = mode;
+    g_stubCcModeResult = result;
+    g_stubCcDeviceId = -1;
+    g_stubCcModeQueryCount = 0U;
+}
+
+void SetStubCcModeForDevice(int32_t deviceId, int32_t mode, rtError_t result)
+{
+    g_stubCcDeviceId = deviceId;
+    g_stubCcMode = mode;
+    g_stubCcModeResult = result;
+    g_stubCcModeQueryCount = 0U;
+}
+
+extern "C" int32_t rtDeviceGetCcMode(int32_t devId, int32_t* mode)
+{
+    g_stubCcModeQueryCount++;
+    if ((mode == nullptr) || (g_stubCcModeResult != RT_ERROR_NONE)) {
+        return g_stubCcModeResult;
+    }
+    *mode = ((g_stubCcDeviceId < 0) || (g_stubCcDeviceId == devId)) ? g_stubCcMode : 0;
+    return RT_ERROR_NONE;
+}
+
+uint32_t GetStubCcModeQueryCount() { return g_stubCcModeQueryCount; }
 
 rtError_t rtGetDevice(int32_t* devId)
 {

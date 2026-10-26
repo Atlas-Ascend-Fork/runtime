@@ -43,3 +43,12 @@ rtError_t rtGetRunMode(rtRunMode* runMode)
     *runMode = RT_RUN_MODE_OFFLINE;
     return RT_ERROR_NONE;
 }
+
+rtError_t rtDeviceGetCcMode(int32_t devId, int32_t* mode)
+{
+    if (mode == NULL) {
+        return 1;
+    }
+    *mode = 0;
+    return RT_ERROR_NONE;
+}

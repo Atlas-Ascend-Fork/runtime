@@ -109,6 +109,7 @@ set(adumpBaseSrcList
 )
 
 set(adumpBaseUtestSrcList
+    ${ADUMP_BASE_UT_ROOT_PATH}/testcase/common/adump_cc_mode_utest.cpp
     ${ADUMP_BASE_UT_ROOT_PATH}/testcase/common/common_path_utest.cpp
     ${ADUMP_BASE_UT_ROOT_PATH}/testcase/common/common_file_utest.cpp
     ${ADUMP_BASE_UT_ROOT_PATH}/testcase/common/common_sys_utils_utest.cpp
@@ -229,6 +230,7 @@ target_compile_definitions(adump_base_utest PRIVATE
     __ADUMP_LLT
     google=ascend_private
     ADX_LIB_HOST
+    RT_RUNTIME_DISABLE_DEPRECATED_WARNINGS
     ADUMP_BASE_DIR=\"${ADUMP_BASE_UT_ROOT_PATH}/\"
 )
 

@@ -26,6 +26,7 @@
 #include "rt_inner_dfx.h"
 #include "runtime/base.h"
 #include "dfx_struct.h"
+#include "adump_cc_mode.h"
 #include "dump_printf.h"
 #include "kernel_dfx_dumper.h"
 
@@ -1187,6 +1188,15 @@ void DfxInfoParser::ParseDfxInfo(const rtDfxParseParam* param, uint64_t* consume
         return;
     }
     *consumedLen = 0U;
+    if ((param != nullptr) && IsCcMode(static_cast<int32_t>(param->deviceId))) {
+        if ((param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_SIMT) ||
+            (param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_AICPU)) {
+            *consumedLen = param->writeIdx - param->readIdx;
+        } else {
+            *consumedLen = 1U;
+        }
+        return;
+    }
     if (param == nullptr || param->data == nullptr || param->datalen == 0U) {
         return;
     }

@@ -20,6 +20,7 @@
 #include "adump_dsmi.h"
 #include "adump_platform_manager.h"
 #include "dump_tensor_plugin.h"
+#include "adump_cc_mode.h"
 #include "hccl_mc2_define.h"
 #include "proto/dump_task.pb.h"
 
@@ -282,6 +283,10 @@ int32_t DumpFile::Dump(std::vector<std::string>& record)
 {
     if (!HasDumpData()) {
         IDE_LOGI("No dump data, skip dump file.");
+        return ADUMP_SUCCESS;
+    }
+
+    if (IsCcMode(static_cast<int32_t>(deviceId_))) {
         return ADUMP_SUCCESS;
     }
 

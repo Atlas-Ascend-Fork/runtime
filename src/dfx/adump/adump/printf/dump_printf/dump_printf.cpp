@@ -28,6 +28,7 @@
 #include "dump_printf_platform.h"
 #include "dump_datatype.h"
 #include "dump_printf.h"
+#include "adump_cc_mode.h"
 
 using namespace Adx;
 namespace {
@@ -931,6 +932,9 @@ void AdxPrintWorkSpace(
     const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
     bool enableSync = true)
 {
+    if (Adx::IsCurrentDeviceCcMode()) {
+        return;
+    }
     std::vector<uint8_t> printData(dumpWorkSpaceSize);
     if (AdxGetWorkspaceData(printData.data(), workSpaceAddr, dumpWorkSpaceSize, stream, enableSync) == RT_ERROR_NONE) {
         std::vector<MsprofAicTimeStampInfo> timeStampInfo;
@@ -948,6 +952,9 @@ void AdxPrintTimeStamp(
     const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
     std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
 {
+    if (Adx::IsCurrentDeviceCcMode()) {
+        return;
+    }
     std::vector<uint8_t> printData(dumpWorkSpaceSize);
     if (AdxGetWorkspaceData(printData.data(), workSpaceAddr, dumpWorkSpaceSize, stream, true) == RT_ERROR_NONE) {
         AdxPrintDumpdata(printData, dumpWorkSpaceSize, opType, false, timeStampInfo);
@@ -1110,12 +1117,24 @@ void AdxAssertCallBack(rtExceptionInfo_t* exceptionInfo)
         IDE_LOGE("Get operator timeout failed, ret: %d", ret);
     } else {
         IDE_LOGI("Get operator timeout %ums", timeout);
-        if (timeout < TIMEOUT_THRESHOLD) {
-            IDE_LOGI(
-                "Operator timeout %ums, enable fast recovery, skip parsing printf/assert/DumpTensor content.", timeout);
-            return;
-        }
     }
+
+    int32_t deviceId = -1;
+    if (exceptionInfo != nullptr) {
+        deviceId = static_cast<int32_t>(exceptionInfo->deviceid);
+    } else if (!Adx::GetCurrentDeviceId(deviceId)) {
+        deviceId = -1;
+    }
+    if (Adx::IsCcMode(deviceId)) {
+        return;
+    }
+
+    if ((ret == ACL_RT_SUCCESS) && (timeout < TIMEOUT_THRESHOLD)) {
+        IDE_LOGI(
+            "Operator timeout %ums, enable fast recovery, skip parsing printf/assert/DumpTensor content.", timeout);
+        return;
+    }
+
     void* workSpaceAddr = nullptr;
     uint64_t dumpWorkSpaceSize = 0U;
     bool res = false;

@@ -39,6 +39,7 @@
 #include "sys_utils.h"
 #include "dump_file.h"
 #include "adx_datadump_server.h"
+#include "adump_cc_mode.h"
 
 namespace Adx {
 constexpr char EXCEPTION_CB_MODULE[] = "AdumpException";
@@ -484,6 +485,9 @@ int32_t DumpManager::DumpOperatorWithCfg(
     const std::string& opType, const std::string& opName, const std::vector<TensorInfo>& tensors, aclrtStream stream,
     const DumpCfg& dumpCfg)
 {
+    if (IsCurrentDeviceCcMode()) {
+        return ADUMP_SUCCESS;
+    }
     std::lock_guard<std::mutex> lk(resourceMtx_);
     if (!dumpSetting_.GetDumpStatusEx() && !dumpSetting_.GetDumpDebugStatus()) {
         IDE_LOGW("Both operator and overflow dump are disabled; data cannot be dumped.");
@@ -535,6 +539,9 @@ int32_t DumpManager::DumpOperator(
 int32_t DumpManager::DumpOperatorV2(
     const std::string& opType, const std::string& opName, const std::vector<TensorInfoV2>& tensors, aclrtStream stream)
 {
+    if (IsCurrentDeviceCcMode()) {
+        return ADUMP_SUCCESS;
+    }
     std::lock_guard<std::mutex> lk(resourceMtx_);
     if (!dumpSetting_.GetDumpStatus() && !dumpSetting_.GetDumpDebugStatus()) {
         IDE_LOGW("Both operator and overflow dump are disabled; dumping is skipped.");
@@ -848,6 +855,9 @@ int32_t DumpManager::SaveExceptionInfo(
 
 int32_t DumpManager::SaveFile(const char* data, size_t dataLen, const char* fileName, SaveType type)
 {
+    if (IsCurrentDeviceCcMode()) {
+        return ADUMP_SUCCESS;
+    }
     // opInfoRecordPath_ 写侧在 StartDumpArgs 的 resourceMtx_ 内，读侧在此同步拷贝快照，
     // 避免并发 StartDumpArgs 换路径时 std::string 撕裂读。
     std::string opInfoRecordPathSnapshot;
