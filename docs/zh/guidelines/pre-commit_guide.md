@@ -13,9 +13,7 @@ pre-commit 是一个 Git Hooks 框架，用于在 `git commit` 时自动运行�
 
 - **Git**: 2.0+
 - **Python**: 3.8+
-- **Java**: 17+ (OAT 工具依赖，可自动安装)
 - **clang-format**: 14.0+ (代码格式化)
-- **Maven**: 3.6+ (OAT 工具依赖，可自动安装)
 
 ## 安装步骤
 
@@ -33,10 +31,10 @@ sudo apt install pre-commit
 
 ```bash
 # Ubuntu/Debian
-sudo apt install clang-format openjdk-17-jre maven
+sudo apt install clang-format
 
 # macOS
-brew install clang-format openjdk@17 maven
+brew install clang-format
 ```
 
 ### 3. 项目路径下安装 Git Hooks
@@ -65,7 +63,7 @@ git commit -m "your commit message"
 输出示例：
 ```
 clang-format.............................................................Passed
-OAT Compliance Check.....................................................Passed
+OAT Compliance Check (Python Edition).....................................Passed
 ```
 
 ### 手动运行检查
@@ -113,23 +111,22 @@ OAT (Open Source Audit Tool) 检查开源合规性：
 | 归档文件检查 | 禁止提交 zip/tar 等归档文件 |
 
 
-OAT 检查脚本，首次运行时会自动：
-1. 检测/安装 Java 17
-2. 检测/安装 Maven
-3. 克隆并编译 tools_oat 工具（约 1-2 分钟）
+OAT 使用 [compliance](https://gitcode.com/HiAgent/compliance) 仓库提供的远程 Python hook，版本由 `.pre-commit-config.yaml` 中的 `rev: v1.0.6` 固定。首次运行时，pre-commit 会自动克隆该仓库，在独立的 Python 虚拟环境中安装 OAT 及其依赖，并通过 `oat-precommit` 检查传入的文件。
+
+仓库根目录的 `OAT.xml` 用于配置本项目的合规规则，无需复制或维护本地检查脚本。
 
 ## 常见问题
 
 ### Q1: 首次提交时 OAT 检查很慢
 
-**原因**: 首次运行需要克隆并编译 OAT 工具。
+**原因**: 首次运行需要下载远程 hook 并安装 Python 环境及依赖，需要能够访问 GitCode 和 Python 包源。
 
-**解决**: 这是正常现象，后续提交会使用缓存的 JAR，速度会很快。
+**解决**: 等待首次安装完成，后续提交会复用 pre-commit 缓存的环境。
 
 
 ## 相关文档
 
 - [pre-commit 官方文档](https://pre-commit.com/)
 - [clang-format 配置](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
-- [OAT 工具](https://gitcode.com/openharmony-sig/tools_oat)
+- [OAT 远程 hook](https://gitcode.com/HiAgent/compliance)
 - [代码仓集成pre-commit指导](https://gitcode.com/cann/infrastructure/blob/main/docs/SC/pre-commit/pre-commit%E9%85%8D%E7%BD%AE%E6%8C%87%E5%AF%BC%E4%B9%A6.md)
