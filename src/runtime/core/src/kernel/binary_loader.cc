@@ -93,10 +93,17 @@ static rtError_t ParseDebugOptions(const nlohmann::json& kernelJson)
         if (debugOptions.find("printf") != std::string::npos) {
             RT_LOG(
                 RT_LOG_ERROR, "Kernel debug option 'printf' is not supported, debugOptions=[%s]", debugOptions.c_str());
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1006, "Parsing the operator binary debug options",
+                RtFmtMsg("debugOptions=%s", debugOptions.c_str()),
+                "The current binary loading path does not support the printf debug option");
             return RT_ERROR_FEATURE_NOT_SUPPORT;
         }
     } catch (nlohmann::json::exception& e) {
         RT_LOG(RT_LOG_ERROR, "Invalid debugOptions in json file, because %s.", e.what());
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1003, "Parsing the operator binary debug options", kernelJson["debugOptions"].dump(),
+            "debugOptions", "a JSON string");
         return RT_ERROR_INVALID_VALUE;
     }
 
@@ -110,7 +117,8 @@ rtError_t BinaryLoader::ParseLoadOptions()
         return RT_ERROR_NONE;
     }
     if (loadOptions_->options == nullptr) {
-        RT_LOG_INNER_MSG(RT_LOG_ERROR, "Load Options is not nullptr, but loadOptions.options is nullptr.");
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1004, "Parsing the loading options of the operator binary data", "options->options");
         return RT_ERROR_INVALID_VALUE;
     }
 
@@ -123,7 +131,9 @@ rtError_t BinaryLoader::ParseLoadOptions()
             } else if (lazyLoadCfg == LOAD_OPTION_LAZY_LOAD_DISABLE) {
                 isLazyLoad_ = false;
             } else {
-                RT_LOG_INNER_MSG(RT_LOG_ERROR, "Lazy load Cfg %u is invalid, valid value is [0, 1].", lazyLoadCfg);
+                RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                    ErrorCode::EE1003, "Parsing the loading options of the operator binary data", lazyLoadCfg,
+                    RtFmtMsg("options->options[%zu].value.isLazyLoad", idx), "{0, 1}");
                 return RT_ERROR_INVALID_VALUE;
             }
             RT_LOG(RT_LOG_DEBUG, "Parse binary load option isLazyLoad=%u", lazyLoadCfg);
@@ -156,9 +166,10 @@ rtError_t BinaryLoader::ParseLoadOptions()
                 ErrorCode::EE1003, "Parsing the loading options of the operator binary data",
                 (optionId == RT_LOAD_BINARY_OPT_MAX) ? "LOAD_BINARY_OPT_MAX(4)" :
                                                        RtFmtMsg("UNKNOWN(%d)", static_cast<int32_t>(optionId)),
-                "optionId",
-                "[" + std::to_string(RT_LOAD_BINARY_OPT_LAZY_LOAD) + ", " + std::to_string(RT_LOAD_BINARY_OPT_MAX) +
-                    ")");
+                RtFmtMsg("options->options[%zu].type", idx),
+                RtFmtMsg(
+                    "[%d, %d)", static_cast<int32_t>(RT_LOAD_BINARY_OPT_LAZY_LOAD),
+                    static_cast<int32_t>(RT_LOAD_BINARY_OPT_MAX)));
             return RT_ERROR_INVALID_VALUE;
         }
     }
@@ -187,17 +198,13 @@ rtError_t BinaryLoader::SetCpuBinInfo(const rtLoadBinaryOptionValue_t& option)
 {
     const int32_t mode = option.cpuKernelMode;
     // 0, 1 user for load from file
-    COND_RETURN_AND_MSG_OUTER(
-        (isLoadFromFile_ && (mode != 0) && (mode != 1)), RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
-        "rtsBinaryLoadFromFile", "option.cpuKernelMode",
-        "When the AI CPU operator binary is loaded from a file, the loading mode " + std::to_string(mode) +
-            " is invalid. " + "The valid value range is [0: load only the JSON file, 1: load the CPU SO & JSON file]");
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        (isLoadFromFile_ && (mode != 0) && (mode != 1)), RT_ERROR_INVALID_VALUE,
+        "Setting the binary loading information of an AI CPU operator", mode, "cpuKernelMode", "{0, 1}");
     // 2 only user for load from data
-    COND_RETURN_AND_MSG_OUTER(
-        !isLoadFromFile_ && (mode != 2), RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "rtsBinaryLoadFromData",
-        "option.cpuKernelMode",
-        "When the AI CPU operator binary is loaded from data, the loading mode " + std::to_string(mode) +
-            " is invalid. " + "The valid value can only be 2: LoadFromData");
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        !isLoadFromFile_ && (mode != 2), RT_ERROR_INVALID_VALUE,
+        "Setting the binary loading information of an AI CPU operator", mode, "cpuKernelMode", "2");
     switch (mode) {
         case 0: // 0: only need .json
         case 1: // 1: need .so and .json
@@ -501,15 +508,15 @@ rtError_t BinaryLoader::LoadNonCpu(Program** prog)
         // Reject malformed ELF headers before allocating or copying the full binary.
         NULL_PTR_RETURN_MSG(binaryBuffer_, RT_ERROR_INVALID_VALUE);
         COND_RETURN_AND_MSG_OUTER(
-            binarySize_ < sizeof(Elf64_External_Ehdr), RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, __func__, "length",
-            "binary data is shorter than an ELF64 header");
+            binarySize_ < sizeof(Elf64_External_Ehdr), RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+            "Loading the operator binary data", "length", "Binary data is shorter than an ELF64 header");
         const uint8_t* const ident = static_cast<const uint8_t*>(binaryBuffer_);
         COND_RETURN_AND_MSG_OUTER(
             (ident[0] != 0x7FU) || (ident[1] != 'E') || (ident[2] != 'L') || (ident[3] != 'F'), RT_ERROR_INVALID_VALUE,
-            ErrorCode::EE1017, __func__, "data", "invalid ELF magic");
+            ErrorCode::EE1017, "Loading the operator binary data", "data", "invalid ELF magic");
         COND_RETURN_AND_MSG_OUTER(
-            ident[EI_CLASS] != ELFCLASS64, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, __func__, "data",
-            "only ELF64 binary data is supported");
+            ident[EI_CLASS] != ELFCLASS64, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+            "Loading the operator binary data", "data", "Only ELF64 binary data is supported");
     }
 
     // 1. Load binary file or data, parse elf, get the original kernel symbols and attributes.

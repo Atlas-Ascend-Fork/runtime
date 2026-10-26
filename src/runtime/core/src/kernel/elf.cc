@@ -1306,6 +1306,7 @@ RtKernel* GetKernels(rtElfData* const elfData)
 
         RtKernel* const kernels = new (std::nothrow) RtKernel[funcNum]();
         if (kernels == nullptr) {
+            RT_LOG_OUTER_MSG_IMPL(ErrorCode::EE1013, sizeof(RtKernel) * funcNum, "new");
             return kernels;
         }
 
@@ -1330,6 +1331,7 @@ RtKernel* GetKernels(rtElfData* const elfData)
             }
             kernels[kernelNum].name = new (std::nothrow) char[len + 1U];
             if (kernels[kernelNum].name == nullptr) {
+                RT_LOG_OUTER_MSG_IMPL(ErrorCode::EE1013, len + 1U, "new");
                 KernelNameFree(kernels, kernelNum);
                 delete[] kernels;
                 return nullptr;

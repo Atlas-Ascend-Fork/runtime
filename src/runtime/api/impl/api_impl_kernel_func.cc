@@ -103,7 +103,7 @@ rtError_t ApiImplKernelFunc::FuncGetName(const Kernel* const kernel, const uint3
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(name, RT_ERROR_INVALID_VALUE, "Obtaining the kernel function name");
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         maxLen < (kernel->Name_().length() + 1U), RT_ERROR_INVALID_VALUE, "Obtaining the kernel function name", maxLen,
-        "greater than or equal to " + std::to_string(kernel->Name_().length() + 1U));
+        RtFmtMsg("greater than or equal to %zu", kernel->Name_().length() + 1U));
 
     const errno_t error =
         memcpy_s(name, static_cast<size_t>(maxLen), kernel->Name_().c_str(), kernel->Name_().length() + 1U);
@@ -132,7 +132,9 @@ rtError_t ApiImplKernelFunc::FunctionGetAttribute(rtFuncHandle funcHandle, rtFun
         (attrType == RT_FUNCTION_ATTR_MAX) ? "FUNCTION_ATTR_MAX(4)" :
                                              RtFmtMsg("UNKNOWN(%d)", static_cast<int32_t>(attrType)),
         "attrType",
-        "[" + std::to_string(RT_FUNCTION_ATTR_KERNEL_TYPE) + ", " + std::to_string(RT_FUNCTION_ATTR_MAX) + ")");
+        RtFmtMsg(
+            "[%d, %d)", static_cast<int32_t>(RT_FUNCTION_ATTR_KERNEL_TYPE),
+            static_cast<int32_t>(RT_FUNCTION_ATTR_MAX)));
 
     if (attrType == RT_FUNCTION_ATTR_KERNEL_RATIO) {
         const Runtime* const rtInstance = Runtime::Instance();
@@ -249,7 +251,7 @@ rtError_t ApiImplKernelFunc::FunctionGetParamInfo(
     if (paramIndex >= funcHandle->GetParamCount()) {
         RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
             ErrorCode::EE1003, "Obtaining parameter information from the kernel function handle", paramIndex,
-            "paramIndex", "[0, " + std::to_string(funcHandle->GetParamCount()) + ")");
+            "paramIndex", RtFmtMsg("[0, %u)", funcHandle->GetParamCount()));
         return RT_ERROR_INVALID_VALUE;
     }
 

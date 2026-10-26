@@ -763,9 +763,9 @@ rtError_t ApiErrorDecorator::BinaryGetFunctionByEntry(
         funcHandle, RT_ERROR_INVALID_VALUE, "Obtaining the kernel function handle based on the function entry");
     const KernelRegisterType kernelRegType = binHandle->GetKernelRegType();
     COND_RETURN_AND_MSG_OUTER(
-        kernelRegType != RT_KERNEL_REG_TYPE_NON_CPU, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
-        "Obtaining the kernel function handle based on the function entry", "binHandle->kernelRegType_",
-        "The binHandle obtained after registering the AI CPU operator is not supported");
+        kernelRegType != RT_KERNEL_REG_TYPE_NON_CPU, RT_ERROR_INVALID_VALUE, ErrorCode::EE1006,
+        "Obtaining the kernel function handle based on the function entry", "An AI CPU binary handle",
+        "Function entry lookup requires a non-CPU binary");
 
     return impl_->BinaryGetFunctionByEntry(binHandle, funcEntry, funcHandle);
 }

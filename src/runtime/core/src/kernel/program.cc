@@ -995,8 +995,9 @@ rtError_t ElfProgram::ParserBinary()
 
     elfData_->obj_size = binarySize_;
     kernels_ = ProcessObject(RtPtrToPtr<char_t*>(binary_), elfData_);
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        kernels_, RT_ERROR_INVALID_VALUE, "Parsing the binary file data of the operator");
+    COND_RETURN_AND_MSG_OUTER(
+        kernels_ == nullptr, RT_ERROR_INVALID_VALUE, ErrorCode::EE1014,
+        "Kernel information could not be obtained from the ELF binary");
 
     const Runtime* const rtInstance = Runtime::Instance();
     const rtChipType_t chipType = rtInstance->GetChipType();
@@ -1245,6 +1246,9 @@ rtError_t ElfProgram::GetGlobalSymbol(const char* name, uint64_t* offset, uint64
     auto it = elfData_->globalSymbolMap.find(name);
     if (it == elfData_->globalSymbolMap.end()) {
         RT_LOG(RT_LOG_ERROR, "global symbol %s not found", name);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1011, "Obtaining global symbol information", name, "name",
+            "The global symbol was not found in the binary");
         return RT_ERROR_SYMBOL_NOT_FOUND;
     }
     *offset = it->second.first;

@@ -5968,7 +5968,10 @@ rtError_t ApiImpl::BinaryGetGlobal(const Program* const binHandle, const char* n
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
 
     ElfProgram* prog = const_cast<ElfProgram*>(dynamic_cast<const ElfProgram*>(binHandle));
-    COND_RETURN_ERROR_MSG_INNER(prog == nullptr, RT_ERROR_INVALID_VALUE, "can't dynamic_cast program.");
+    COND_RETURN_AND_MSG_OUTER(
+        prog == nullptr, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017,
+        "Querying the address and size of a device global variable", "binHandle",
+        "The binary handle does not refer to an ELF program. Use a handle for an ELF binary");
 
     rtError_t ret = prog->Load2Device();
     ERROR_RETURN(ret, "load program to device failed, retCode=%#x", ret);
