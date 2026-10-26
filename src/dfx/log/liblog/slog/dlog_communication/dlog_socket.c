@@ -7,6 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <poll.h>
+#include <time.h>
 #include "dlog_socket.h"
 #include "dlog_attr.h"
 #include "log_file_info.h"
@@ -23,6 +25,7 @@ STATIC uint32_t g_connPrintNum = 0;
 
 #define RSYSLOG_SOCKET_NAME_LEN 32U
 #define RSYSLOG_SOCKET_NUM 3U
+#define RSYSLOG_PROBE_INTERVAL_SEC 1U
 
 typedef struct {
     uint32_t typemask;
@@ -35,6 +38,7 @@ STATIC RsyslogSocket g_rsyslogSocket[RSYSLOG_SOCKET_NUM] = {
     {SECURITY_LOG_MASK, "sec_os", -1},
     {RUN_LOG_MASK, "run_os", -1},
 };
+STATIC time_t g_rsyslogLastProbe[RSYSLOG_SOCKET_NUM] = {0};
 
 /**
  * @brief IsSocketConnected: return socket status
@@ -147,6 +151,24 @@ toolSockHandle GetRsyslogSocketFd(uint32_t typeMask)
         }
         if (g_rsyslogSocket[i].fd == -1) {
             g_rsyslogSocket[i].fd = GetRsyslogSocket(g_rsyslogSocket[i].socketName);
+        } else {
+            // a cached fd goes stale when rsyslogd restarts or the peer closes: probe it and
+            // reconnect on failure so the write path does not keep hitting a dead socket.
+            // The probe is throttled to one per interval because this function sits on the
+            // per-message rsyslog send path: an unthrottled poll() would add one syscall
+            // to every log message forwarded to rsyslogd.
+            time_t now = time(NULL);
+            if ((now - g_rsyslogLastProbe[i]) >= (time_t)RSYSLOG_PROBE_INTERVAL_SEC) {
+                g_rsyslogLastProbe[i] = now;
+                // POLLNVAL is always reported in revents by poll(2) regardless of the events
+                // field: include it so an fd invalidated outside this cache is also detected
+                struct pollfd pfd = {g_rsyslogSocket[i].fd, POLLERR | POLLHUP, 0};
+                int32_t pret = poll(&pfd, 1, 0);
+                if ((pret == 1) && ((pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0)) {
+                    (void)ToolClose(g_rsyslogSocket[i].fd);
+                    g_rsyslogSocket[i].fd = GetRsyslogSocket(g_rsyslogSocket[i].socketName);
+                }
+            }
         }
         return g_rsyslogSocket[i].fd;
     }

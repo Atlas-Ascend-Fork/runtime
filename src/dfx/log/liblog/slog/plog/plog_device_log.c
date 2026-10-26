@@ -106,13 +106,13 @@ FUNC_END:
  */
 STATIC void DlogReportSendEndMsg(int32_t devId)
 {
+    DlogReportLock();
     if (g_plogClient == NULL) {
         DlogReportUnLock();
         SELF_LOG_WARN("plog client is null, skip send end msg, devId=%d.", devId);
         return;
     }
     uintptr_t session = 0;
-    DlogReportLock();
     int32_t ret = DrvSessionInit((HDC_CLIENT)g_plogClient, (HDC_SESSION*)&session, devId);
     DlogReportUnLock();
     ONE_ACT_ERR_LOG(ret != 0, return, "create session failed, ret=%d, devId=%d.", ret, devId);

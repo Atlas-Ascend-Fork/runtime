@@ -114,6 +114,7 @@ ShmErr ShMemWrite(int32_t shmId, const char* value, uint32_t len, uint32_t offse
     }
     int32_t ret = snprintf_truncated_s(shmvalue + offset, len, "%s", value);
     if (ret < 0) {
+        (void)ToolShmDt(shmvalue);
         return SHM_ERROR;
     }
     if (ToolShmDt(shmvalue) != (int)SHM_SUCCEED) {
@@ -143,10 +144,12 @@ ShmErr ShMemRead(int32_t shmId, char* value, size_t len, size_t offset)
         return SHM_ERROR;
     }
     if ((strlen(shmvalue) == 0) || (strlen(shmvalue) > len)) {
+        (void)ToolShmDt(shmvalue);
         return SHM_ERROR;
     }
     int32_t ret = snprintf_truncated_s(value, len, "%s", shmvalue + offset);
     if (ret < 0) {
+        (void)ToolShmDt(shmvalue);
         return SHM_ERROR;
     }
     if (ToolShmDt(shmvalue) != 0) {

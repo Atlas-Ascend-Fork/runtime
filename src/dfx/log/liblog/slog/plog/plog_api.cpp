@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <mutex>
 #include <string>
 #include "acl_log.h"
 #include "plog.h"
@@ -18,6 +19,7 @@
 
 namespace {
 ArgPtr g_dloglibHandle = nullptr;
+static std::mutex g_dlogFuncMutex;
 SymbolInfo g_dlogFuncInfo[PLOG_FUNC_MAX] = {{"DlogReportInitialize", nullptr},   {"DlogReportFinalize", nullptr},
                                             {"DlogReportStart", nullptr},        {"DlogReportStop", nullptr},
                                             {"acllogRegisterCallback", nullptr}, {"acllogUnregisterCallback", nullptr}};
@@ -50,8 +52,15 @@ int32_t PlogTransferToUnifiedlog(void)
 
 int32_t PlogCloseUnifiedlog(void)
 {
-    (void)UnloadRuntimeDll(g_dloglibHandle);
-    return LOG_SUCCESS;
+    // hold the same mutex as the forwarding calls: a caller that already passed the null check
+    // must finish its call before the library is unloaded (use-after-free otherwise)
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
+    for (uint32_t i = 0; i < PLOG_FUNC_MAX; i++) {
+        g_dlogFuncInfo[i].handle = nullptr;
+    }
+    int32_t ret = UnloadRuntimeDll(g_dloglibHandle);
+    g_dloglibHandle = nullptr;
+    return (ret == LOG_SUCCESS) ? LOG_SUCCESS : LOG_FAILURE;
 }
 
 #else
@@ -75,6 +84,7 @@ extern "C" {
 #endif // __cplusplus
 int32_t DlogReportStart(int32_t devId, int32_t mode)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[DLOG_REPORT_START].handle != nullptr) {
         return reinterpret_cast<DlogReportStartFunc>(g_dlogFuncInfo[DLOG_REPORT_START].handle)(devId, mode);
     }
@@ -83,6 +93,7 @@ int32_t DlogReportStart(int32_t devId, int32_t mode)
 
 void DlogReportStop(int32_t devId)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[DLOG_REPORT_STOP].handle != nullptr) {
         return reinterpret_cast<DlogReportStopFunc>(g_dlogFuncInfo[DLOG_REPORT_STOP].handle)(devId);
     }
@@ -91,6 +102,7 @@ void DlogReportStop(int32_t devId)
 
 int32_t DlogReportInitialize(void)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[DLOG_REPORT_INITIALIZE].handle != nullptr) {
         return reinterpret_cast<DlogReportInitializeFunc>(g_dlogFuncInfo[DLOG_REPORT_INITIALIZE].handle)();
     }
@@ -99,6 +111,7 @@ int32_t DlogReportInitialize(void)
 
 int32_t DlogReportFinalize(void)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[DLOG_REPORT_FINALIZE].handle != nullptr) {
         return reinterpret_cast<DlogReportFinalizeFunc>(g_dlogFuncInfo[DLOG_REPORT_FINALIZE].handle)();
     }
@@ -108,6 +121,7 @@ int32_t DlogReportFinalize(void)
 int32_t acllogRegisterCallback(
     acllogRecordCallback callbackFunc, void* userData, uint32_t outputLogType, acllogCallbackHandle* callbackHandle)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[ACLLOG_REGISTER_CALLBACK].handle != nullptr) {
         return reinterpret_cast<AcllogRegisterCallbackFunc>(g_dlogFuncInfo[ACLLOG_REGISTER_CALLBACK].handle)(
             callbackFunc, userData, outputLogType, callbackHandle);
@@ -117,6 +131,7 @@ int32_t acllogRegisterCallback(
 
 int32_t acllogUnregisterCallback(acllogCallbackHandle callback)
 {
+    std::lock_guard<std::mutex> lock(g_dlogFuncMutex);
     if (g_dlogFuncInfo[ACLLOG_UNREGISTER_CALLBACK].handle != nullptr) {
         return reinterpret_cast<AcllogUnregisterCallbackFunc>(g_dlogFuncInfo[ACLLOG_UNREGISTER_CALLBACK].handle)(
             callback);

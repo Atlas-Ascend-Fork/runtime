@@ -82,6 +82,7 @@ typedef struct DlogNsycMgr {
     int32_t himemFd;            // high memory fd
 } DlogNsycMgr;
 
+static bool g_asyncAtforkRegistered = false;
 STATIC DlogNsycMgr g_dlogAsyncMgr = {
     false, false, {{NULL, NULL, NULL, NULL}, 0, 0, 0, 0}, PTHREAD_MUTEX_INITIALIZER, {false, DLOG_DEBUG, 0, {0, 0}},
     -1};
@@ -331,7 +332,9 @@ static void DlogUnifiedTimerCb(void)
         return;
     }
     // if write buffer is not empty and service is ready, exchange buffer and send data
+    DlogLock();
     uint32_t writeBufIndex = g_dlogAsyncMgr.bufMgr.writeBufIndex;
+    DlogUnLock();
     LOG_MONITOR_TIME_OUT(
         DlogSyncAllSendBuf(&g_dlogAsyncMgr.bufMgr.sendBufIndex, writeBufIndex), LOG_SEND_COST_MAX_TIME,
         "%s send all buffer", DLOG_TIMER_NAME);
@@ -699,10 +702,20 @@ int32_t DlogAsyncInit(void)
         (void)HiMemInit(&g_dlogAsyncMgr.himemFd);
     }
     DlogInitMutex();
-    int32_t ret = pthread_atfork((ThreadAtFork)DlogLock, (ThreadAtFork)DlogUnLock, (ThreadAtFork)DlogChildUnLock);
-    NO_ACT_WARN_LOG(ret != 0, "can not register fork, ret=%d, strerr=%s.", ret, strerror(ToolGetErrorCode()));
+    // register the atfork handlers only once per process: DlogFree allows re-init and
+    // pthread_atfork accumulates handlers, a second registration would double-lock the
+    // async mutex in the fork prepare path
+    if (!g_asyncAtforkRegistered) {
+        int32_t atforkRet =
+            pthread_atfork((ThreadAtFork)DlogLock, (ThreadAtFork)DlogUnLock, (ThreadAtFork)DlogChildUnLock);
+        if (atforkRet == 0) {
+            g_asyncAtforkRegistered = true;
+        }
+        NO_ACT_WARN_LOG(
+            atforkRet != 0, "can not register fork, ret=%d, strerr=%s.", atforkRet, strerror(ToolGetErrorCode()));
+    }
 
-    ret = DlogIamInit();
+    int32_t ret = DlogIamInit();
     if (ret != SYS_OK) {
         return SYS_ERROR;
     }

@@ -36,6 +36,9 @@ STATIC bool g_threadExit = false;
 STATIC bool g_threadSleepFlag = true;                  // true, sleep; false, skip sleep
 STATIC ToolMutex g_plogMutex = TOOL_MUTEX_INITIALIZER;
 STATIC ToolMutex g_forkMutex = TOOL_MUTEX_INITIALIZER; // lock it before fork to protect critical resource
+STATIC volatile int32_t g_plogExiting = 0;             // accessed with __atomic builtins
+#define PLOG_EXIT_DRAIN_MAX_RETRY 100                  // 100ms max drain wait
+STATIC volatile int32_t g_plogActiveCalls = 0;         // in-flight callback count for quiesce
 
 STATIC int32_t g_plogSyncMode = PLOG_ASYNC_SAVE;
 
@@ -63,6 +66,10 @@ STATIC void PlogChildUnlock(void)
 
 STATIC void PlogAtForkCallback(int32_t type)
 {
+    // do NOT early-return on the exit flag in any atfork branch: prepare locks
+    // g_plogMutex/g_forkMutex and parent/child unlock them, skipping either side leaves the
+    // pair unbalanced (deadlock or UB unlock). Exit protection is provided by the other
+    // callbacks' entry checks; the atfork handler itself must stay fully paired.
     switch (type) {
         case ATFORK_PREPARE:
             PlogLock();
@@ -219,8 +226,22 @@ STATIC void PlogStopFlushThread(void)
  */
 STATIC int32_t PlogWriteCallback(const char* data, uint32_t dataLen, LogType type)
 {
-    ONE_ACT_NO_LOG((data == NULL) || (dataLen == 0), return -1);
-    ONE_ACT_NO_LOG(type >= LOG_TYPE_NUM, return -1);
+    __atomic_fetch_add(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+    if (__atomic_load_n(&g_plogExiting, __ATOMIC_ACQUIRE)) {
+        __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+        return -1;
+    }
+
+    /* paired with the fetch_add above: every early return must decrement g_plogActiveCalls,
+     * otherwise the leaked count makes each PlogHostMgrExit drain wait the full timeout */
+    if ((data == NULL) || (dataLen == 0)) {
+        __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+        return -1;
+    }
+    if (type >= LOG_TYPE_NUM) {
+        __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+        return -1;
+    }
     PlogStartFlushThreadOnce();
     PlogLock();
 
@@ -234,6 +255,7 @@ STATIC int32_t PlogWriteCallback(const char* data, uint32_t dataLen, LogType typ
 
     int32_t ret = PlogBuffWrite(type, data, dataLen);
     PlogUnlock();
+    __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
     return ret;
 }
 
@@ -252,6 +274,12 @@ STATIC void PlogCleanUpBuff(int32_t bufferType)
  */
 STATIC void PlogForkCallback(void)
 {
+    __atomic_fetch_add(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+    if (__atomic_load_n(&g_plogExiting, __ATOMIC_ACQUIRE)) {
+        __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+        return;
+    }
+
     PlogLock();
     PlogCleanUpBuff(BUFFER_TYPE_WRITE);
     PlogUnlock();
@@ -262,6 +290,7 @@ STATIC void PlogForkCallback(void)
      * any caller going through alog.so's fork callback also gets the correct
      * child PID in its log filenames. */
     PlogReinitFileHeadsForChild();
+    __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
 }
 
 static LogStatus PlogGetSyncEnv(int32_t* syncStatus)
@@ -295,15 +324,27 @@ STATIC void PlogSyncInit(void)
 
 STATIC void PlogFlushCallback(void)
 {
+    __atomic_fetch_add(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+    if (__atomic_load_n(&g_plogExiting, __ATOMIC_ACQUIRE)) {
+        __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
+        return;
+    }
+
     PlogLock();
     if (!PlogBuffCheckEmpty(BUFFER_TYPE_WRITE)) {
         PlogFlushHostLog(BUFFER_TYPE_WRITE);
     }
     PlogUnlock();
+    __atomic_fetch_sub(&g_plogActiveCalls, 1, __ATOMIC_ACQ_REL);
 }
 
 LogStatus PlogHostMgrInit(void)
 {
+    // reset the exit flag so an exit -> re-init cycle does not permanently silence all callbacks
+    __atomic_store_n(&g_plogExiting, 0, __ATOMIC_RELEASE);
+    // reset the in-flight counter with the same release ordering: no callback is registered yet,
+    // so a stale count from the previous cycle cannot race with a live fetch_add/fetch_sub pair
+    __atomic_store_n(&g_plogActiveCalls, 0, __ATOMIC_RELEASE);
     int32_t ret = PlogMutexInit();
     ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, return LOG_FAILURE, "init mutex failed, ret=%d.", ret);
     ret = PlogBuffInit();
@@ -327,6 +368,19 @@ LogStatus PlogHostMgrInit(void)
 
 void PlogHostMgrExit(void)
 {
+    // block new callbacks before unregistering: alog.so has no sync guarantee for in-flight
+    // calls, the flag makes any late callback return immediately instead of touching freed data
+    __atomic_store_n(&g_plogExiting, 1, __ATOMIC_RELEASE);
+    // wait for in-flight callbacks to return before destroying the buffers and mutexes:
+    // each callback decrements g_plogActiveCalls on exit, when it reaches 0 the coast is clear
+    int32_t drainRetry = 0;
+    while (__atomic_load_n(&g_plogActiveCalls, __ATOMIC_ACQUIRE) > 0) {
+        if (++drainRetry > PLOG_EXIT_DRAIN_MAX_RETRY) {
+            SELF_LOG_WARN("plog exit drain timeout, active=%d", __atomic_load_n(&g_plogActiveCalls, __ATOMIC_ACQUIRE));
+            break;
+        }
+        (void)ToolSleep(1); // 1ms
+    }
     // flush all log and set callback null
     (void)RegisterCallback(NULL, LOG_WRITE);
     (void)RegisterCallback(NULL, LOG_FLUSH);

@@ -55,6 +55,8 @@ STATIC void SlogLock(void) { LOCK_WARN_LOG(&g_slogMutex); }
 /**
  * @brief       : parent_process will call it before fork()
  */
+static bool g_atforkRegistered = false;
+
 STATIC void DlogAtForkParpare(void)
 {
     SlogLock();
@@ -552,12 +554,15 @@ STATIC void DlogInitLocal(void)
 {
     ONE_ACT_INFO_LOG(DlogCheckInit(), return, "dlog has been inited.");
 
-    if (!DlogIsInited()) {
-        // fix deadlock because of fork
+    if (!g_atforkRegistered) {
+        // register the atfork handlers only once per process: DlogFree resets the init flag but
+        // pthread_atfork accumulates handlers, a re-init after close would run them twice per fork;
+        // set the flag only after success so a failed registration (e.g. ENOMEM) can be retried
         int32_t result = pthread_atfork(
             (ThreadAtFork)DlogAtForkParpare, (ThreadAtFork)DlogAtForkParent, (ThreadAtFork)DlogAtForkChild);
         ONE_ACT_ERR_LOG(
             result != 0, return, "register atFork fail, result=%d, strerr=%s.", result, strerror(ToolGetErrorCode()));
+        g_atforkRegistered = true;
     }
 
     // sync time zone

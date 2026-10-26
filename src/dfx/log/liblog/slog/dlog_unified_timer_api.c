@@ -87,15 +87,29 @@ LogStatus DlogCloseTimerDll(void)
 typedef uint32_t (*UNIFIED_TIMER_ADD)(const char*, void (*)(void), int64_t, enum TimerType);
 uint32_t DlogAddUnifiedTimer(const char* timerName, void (*callback)(void), int64_t period, enum TimerType type)
 {
+    (void)ToolMutexLock(&g_timerMutex);
     UNIFIED_TIMER_ADD func = (UNIFIED_TIMER_ADD)g_timerFuncInfo[0].handle;
-    ONE_ACT_WARN_LOG(func == NULL, return 1, "Can not find unified timer func.");
-    return func(timerName, callback, period, type);
+    if (func == NULL) {
+        (void)ToolMutexUnLock(&g_timerMutex);
+        SELF_LOG_WARN("Can not find unified timer func.");
+        return 1;
+    }
+    uint32_t ret = func(timerName, callback, period, type);
+    (void)ToolMutexUnLock(&g_timerMutex);
+    return ret;
 }
 
 typedef uint32_t (*UNIFIED_TIMER_REMOVE)(const char*);
 uint32_t DlogRemoveUnifiedTimer(const char* timerName)
 {
+    (void)ToolMutexLock(&g_timerMutex);
     UNIFIED_TIMER_REMOVE func = (UNIFIED_TIMER_REMOVE)g_timerFuncInfo[1].handle;
-    ONE_ACT_WARN_LOG(func == NULL, return 1, "Can not find unified timer func.");
-    return func(timerName);
+    if (func == NULL) {
+        (void)ToolMutexUnLock(&g_timerMutex);
+        SELF_LOG_WARN("Can not find unified timer func.");
+        return 1;
+    }
+    uint32_t ret = func(timerName);
+    (void)ToolMutexUnLock(&g_timerMutex);
+    return ret;
 }
