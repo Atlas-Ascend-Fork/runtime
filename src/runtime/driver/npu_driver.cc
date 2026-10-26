@@ -182,6 +182,19 @@ bool NpuDriver::CheckIfSupportDsaUpdate()
     return true;
 }
 
+rtError_t NpuDriver::GetSlotKey(uint32_t devId, uint32_t slot, uint8_t* key, uint32_t* keyLen)
+{
+    COND_RETURN_WARN(&halGetSlotKey == nullptr, RT_ERROR_DRV_NOT_SUPPORT, "[drv api] halGetSlotKey does not exist.");
+    const drvError_t drvRet = halGetSlotKey(devId, slot, key, keyLen);
+    if (drvRet != DRV_ERROR_NONE) {
+        DRV_ERROR_PROCESS(
+            drvRet, "Call driver api halGetSlotKey failed, drvRetCode=%d, devId=%u, slot=%u.",
+            static_cast<int32_t>(drvRet), devId, slot);
+        return RT_GET_DRV_ERRCODE(drvRet);
+    }
+    return RT_ERROR_NONE;
+}
+
 /***
 function: trans memory attribute in P2P mode by memory policy
 ***/

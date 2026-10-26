@@ -86,26 +86,6 @@ int32_t InitIvBase(IvCtx* ivCtx)
 
 } // namespace
 
-extern "C" int halGetSlotKey(uint32_t device_id, uint32_t slot, uint8_t* key, uint32_t* key_len)
-{
-    // placeholder slot key for bring-up; replace with real driver implementation once ready.
-    (void)device_id;
-    if ((key == nullptr) || (key_len == nullptr)) {
-        return -1;
-    }
-    uint8_t fill = 0U;
-    if (slot == 1U) {
-        fill = 0x11U;
-    } else if (slot == 2U) {
-        fill = 0x12U;
-    } else {
-        return -1;
-    }
-    (void)memset_s(key, 16U, fill, 16U); // 16 slot key len
-    *key_len = 16U;
-    return 0;
-}
-
 int32_t GetKeyFromKernel(
     int32_t deviceId, CRYPTO_KEY_DIRECTION direction, uint8_t key[cc_crypto_impl::AES_128_KEY_SIZE])
 {
@@ -114,19 +94,28 @@ int32_t GetKeyFromKernel(
     }
     uint32_t slot = 0U;
     if (direction == CRYPTO_KEY_DIRECTION::H2D) {
-        slot = 1U;
+        slot = cc_crypto_impl::KEY_SLOT_H2D;
     } else if (direction == CRYPTO_KEY_DIRECTION::D2H) {
-        slot = 2U;
+        slot = cc_crypto_impl::KEY_SLOT_D2H;
     } else {
         return -1;
     }
     uint32_t keyLen = 0U;
-    if (halGetSlotKey(static_cast<uint32_t>(deviceId), slot, key, &keyLen) != 0) {
+    uint8_t rawKey[cc_crypto_impl::SLOT_KEY_MAX_SIZE] = {0}; // 驱动侧槽位密钥最长 64 字节，先读全量
+    Driver* const driver = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
+    if (driver == nullptr) {
         return -1;
     }
-    if (keyLen != cc_crypto_impl::AES_128_KEY_SIZE) {
+    if (driver->GetSlotKey(static_cast<uint32_t>(deviceId), slot, rawKey, &keyLen) != RT_ERROR_NONE) {
+        (void)memset_s(rawKey, sizeof(rawKey), 0, sizeof(rawKey));
         return -1;
     }
+    if (keyLen < cc_crypto_impl::AES_128_KEY_SIZE) {
+        (void)memset_s(rawKey, sizeof(rawKey), 0, sizeof(rawKey));
+        return -1;
+    }
+    (void)memcpy_s(key, cc_crypto_impl::AES_128_KEY_SIZE, rawKey, cc_crypto_impl::AES_128_KEY_SIZE);
+    (void)memset_s(rawKey, sizeof(rawKey), 0, sizeof(rawKey));
     return 0;
 }
 
@@ -363,8 +352,8 @@ rtError_t CCrypto::BuildLoadKeyParam(CCLoadKeyKernelParam* param) const
         return RT_ERROR_CC_KEY_NOT_INITIALIZED;
     }
 
-    param->h2dSlotId = 1U;
-    param->d2hSlotId = 2U;
+    param->h2dSlotId = static_cast<uint16_t>(cc_crypto_impl::KEY_SLOT_H2D);
+    param->d2hSlotId = static_cast<uint16_t>(cc_crypto_impl::KEY_SLOT_D2H);
     param->keyAddr = keyCtx_->dev_key_addr;
     param->keyLen = cc_crypto_impl::AES_128_KEY_SIZE;
     return RT_ERROR_NONE;

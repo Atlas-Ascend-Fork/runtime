@@ -214,6 +214,22 @@ drvError_t halRepairFault(uint32_t devid, halRepairFaultInfo* info)
     return DRV_ERROR_NONE;
 }
 
+drvError_t halGetSlotKey(uint32_t device_id, uint32_t slot, uint8_t* key, uint32_t* key_len)
+{
+    (void)device_id;
+    (void)slot;
+    if (key == nullptr || key_len == nullptr) {
+        return DRV_ERROR_INVALID_VALUE;
+    }
+    static const unsigned char stubKey[16] = {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                                              0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11};
+    if (memcpy_s(key, 16U, stubKey, sizeof(stubKey)) != EOK) {
+        return DRV_ERROR_INNER_ERR;
+    }
+    *key_len = 16U;
+    return DRV_ERROR_NONE;
+}
+
 int64_t g_device_driver_version_stub = 1;
 void halSetDeviceInfoEncap(int32_t moduleType, int32_t infoType, int64_t value)
 {

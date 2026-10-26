@@ -246,6 +246,7 @@ drvError_t __attribute__((weak)) halMemHostGetDevPointer(void* srcPtr, uint32_t 
 int32_t __attribute__((weak))
 drv_log_report_err_msg_handle_register(struct err_msg_report_handle* handle, size_t input_size);
 int32_t __attribute__((weak)) drv_log_report_err_msg_handle_unregister(void);
+drvError_t __attribute__((weak)) halGetSlotKey(uint32_t devId, uint32_t slot, uint8_t* key, uint32_t* keyLen);
 };
 
 namespace cce {

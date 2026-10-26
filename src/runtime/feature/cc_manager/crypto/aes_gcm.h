@@ -33,6 +33,11 @@ constexpr uint32_t GCM_IV_COUNTER_MAX = 0xFFFFFFFFU;
 constexpr uint32_t GCM_TAG_SIZE = 16U;
 // GCM 附加认证数据（AAD）最大长度（字节）
 constexpr uint32_t GCM_AAD_MAX_SIZE = 32U;
+// 驱动侧密钥槽位 ID：1 = H2D 加密密钥，2 = D2H 解密密钥（halGetSlotKey 的 slot 入参）
+constexpr uint32_t KEY_SLOT_H2D = 1U;
+constexpr uint32_t KEY_SLOT_D2H = 2U;
+// 驱动侧槽位密钥最大长度（字节）
+constexpr uint32_t SLOT_KEY_MAX_SIZE = 64U;
 
 // 加解密操作失败返回值
 constexpr int32_t CRYPTO_FAILURE = -1;

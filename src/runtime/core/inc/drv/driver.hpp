@@ -607,6 +607,7 @@ public:
     virtual rtError_t GetTsegInfoByVa(
         uint32_t devid, uint64_t va, uint64_t size, uint32_t flag, struct halTsegInfo* tsegInfo) = 0;
     virtual rtError_t PutTsegInfo(uint32_t devid, struct halTsegInfo* tsegInfo) = 0;
+    virtual rtError_t GetSlotKey(uint32_t devId, uint32_t slot, uint8_t* key, uint32_t* keyLen) = 0;
     virtual rtError_t GetChipIdDieId(
         const uint32_t devId, const uint32_t remoteDevId, const uint32_t remotePhyId, int64_t& chipId,
         int64_t& dieId) = 0;

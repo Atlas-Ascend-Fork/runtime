@@ -759,6 +759,7 @@ public:
     rtError_t GetTsegInfoByVa(
         uint32_t devid, uint64_t va, uint64_t size, uint32_t flag, struct halTsegInfo* tsegInfo) override;
     rtError_t PutTsegInfo(uint32_t devid, struct halTsegInfo* tsegInfo) override;
+    rtError_t GetSlotKey(uint32_t devId, uint32_t slot, uint8_t* key, uint32_t* keyLen) override;
 
     // soma: SOMA in npu_driver_soma.cc
     rtError_t StreamMemPoolCreate(

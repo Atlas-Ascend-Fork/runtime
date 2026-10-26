@@ -1388,6 +1388,17 @@ DLLEXPORT drvError_t halRepairFault(uint32_t devid, halRepairFaultInfo* info);
 
 /**
  * @ingroup driver
+ * @brief Get the crypto key of the specified key slot
+ * @param [in] devId device id
+ * @param [in] slot key slot
+ * @param [out] key key buffer
+ * @param [out] keyLen actual key length
+ * @return 0 success, others for fail
+ */
+DLLEXPORT drvError_t halGetSlotKey(uint32_t devId, uint32_t slot, uint8_t* key, uint32_t* keyLen);
+
+/**
+ * @ingroup driver
  * @brief Get device info using physical device id
  * @attention each  moduleType  and infoType will get a different
  * if the type you input is not compatitable with the table below, then will return fail
