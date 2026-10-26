@@ -2423,7 +2423,7 @@ rtError_t ApiImpl::DevFree(void* const devPtr)
 {
     RT_LOG(RT_LOG_DEBUG, "device free mem=0x%llx", RtPtrToPtr<uint64_t*>(devPtr));
     Context* const curCtx = CurrentContext(false);
-    rtError_t error = DevFreeStatic(devPtr, curCtx);
+    const rtError_t error = DevFreeStatic(devPtr, curCtx);
     if ((error == RT_ERROR_NONE) && Runtime::Instance()->ApiSoma_()->InMemPoolRegion(devPtr)) {
         RT_LOG(
             RT_LOG_INFO, "Pointer %#" PRIx64 " is in SOMA memory pool range, assuming it's allocated by async api.",
@@ -3013,9 +3013,9 @@ static rtError_t DestroyInactiveContext(Context* const ctx)
 
 rtError_t ApiImpl::DeviceReset(const int32_t devId, const bool isForceReset)
 {
-    RT_LOG(RT_LOG_DEBUG, "Reset device, drv devId=%d.", devId);
+    RT_LOG(RT_LOG_DEBUG, "Device reset begins, drv devId=%d.", devId);
     Runtime* const rt = Runtime::Instance();
-    rtError_t ret = rt->PrimaryContextRelease(static_cast<uint32_t>(devId), isForceReset);
+    const rtError_t ret = rt->PrimaryContextRelease(static_cast<uint32_t>(devId), isForceReset);
     if (ret != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_ERROR, "DeviceReset context release failed, drv devId=%d, retCode=%#x", devId, ret);
     }
@@ -3026,7 +3026,7 @@ rtError_t ApiImpl::DeviceReset(const int32_t devId, const bool isForceReset)
     TIMESTAMP_END(TIMESTAMPs_DUMP);
 
     InnerThreadLocalContainer::SetTsId(static_cast<uint32_t>(RT_TSC_ID));
-    RT_LOG(RT_LOG_INFO, "Succ, drv devId=%d.", devId);
+    RT_LOG(RT_LOG_INFO, "Device reset ends, drv devId=%d.", devId);
     return ret;
 }
 
@@ -3061,7 +3061,6 @@ rtError_t ApiImpl::DeviceSetLimit(const int32_t devId, const rtLimitType_t type,
 rtError_t ApiImpl::DeviceGetLimit(const rtLimitType_t type, uint32_t* val)
 {
     RT_LOG(RT_LOG_DEBUG, "Get Limit, type=%s.", LimitTypeToString(type).c_str());
-    rtError_t ret = RT_ERROR_NONE;
     if (type == RT_LIMIT_TYPE_STACK_SIZE) {
         Runtime* rt = Runtime::Instance();
         *val = rt->GetDeviceCustomerStackSize();
@@ -3083,7 +3082,7 @@ rtError_t ApiImpl::DeviceGetLimit(const rtLimitType_t type, uint32_t* val)
         *val = 0U;
     }
     RT_LOG(RT_LOG_INFO, "DeviceGetLimit success, type=%s, val=%u.", LimitTypeToString(type).c_str(), *val);
-    return ret;
+    return RT_ERROR_NONE;
 }
 
 rtError_t ApiImpl::DeviceGetStreamPriorityRange(int32_t* const leastPriority, int32_t* const greatestPriority)
