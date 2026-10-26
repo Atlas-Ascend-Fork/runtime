@@ -18,6 +18,7 @@
 #include "hal_ts.h"
 #include "error_codes/rt_error_codes.h"
 #include "rt_ctrl_model.h"
+#include "stream.h"
 #include "sort_vector.h"
 #include "vector.h"
 #include "mem_pool.h"
@@ -1108,7 +1109,7 @@ TEST_F(ApiCTest, runtime_rtUnSubscribeReport)
     error = rtCtxCreateEx(&ctx, 0, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    rtStreamConfigHandle handle;
+    rtStreamConfigHandle handle{};
     rtStream_t stream;
     error = rtStreamCreateWithConfig(&stream, &handle);
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -1116,9 +1117,16 @@ TEST_F(ApiCTest, runtime_rtUnSubscribeReport)
     uint64_t threadId = 1;
     error = rtSubscribeReport(threadId, stream);
     EXPECT_EQ(error, RT_ERROR_NONE);
-    MOCKER(halSqUnSubscribeTid).stubs().will(returnObjectList(DRV_ERROR_NONE));
+    MOCKER(halSqUnSubscribeTid).expects(exactly(2)).will(returnObjectList(DRV_ERROR_INVALID_VALUE, DRV_ERROR_NONE));
+    EXPECT_EQ(rtUnSubscribeReport(threadId + 1, stream), ACL_ERROR_RT_STREAM_SUBSCRIBE);
+    error = rtUnSubscribeReport(threadId, stream);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+    EXPECT_EQ(GetStreamThreadID(stream, SUBSCRIBE_CALLBACK), threadId);
+    EXPECT_EQ(rtSubscribeReport(threadId, stream), ACL_ERROR_RT_STREAM_SUBSCRIBE);
+
     error = rtUnSubscribeReport(threadId, stream);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(GetStreamThreadID(stream, SUBSCRIBE_CALLBACK), UINT64_MAX);
 
     error = rtUnSubscribeReport(threadId, stream);
     EXPECT_EQ(error, ACL_ERROR_RT_STREAM_SUBSCRIBE);
@@ -1314,7 +1322,7 @@ TEST_F(ApiCTest, runtime_rtSubscribeHostFunc)
 
 TEST_F(ApiCTest, runtime_rtUnSubscribeHostFunc)
 {
-    rtStreamConfigHandle handle;
+    rtStreamConfigHandle handle{};
     rtStream_t stream;
     rtError_t error = rtInit();
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -1329,13 +1337,20 @@ TEST_F(ApiCTest, runtime_rtUnSubscribeHostFunc)
     error = rtStreamCreateWithConfig(&stream, &handle);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER(halSqUnSubscribeTid).stubs().will(returnObjectList(DRV_ERROR_NONE));
+    MOCKER(halSqUnSubscribeTid).expects(exactly(2)).will(returnObjectList(DRV_ERROR_INVALID_VALUE, DRV_ERROR_NONE));
 
     uint64_t threadId = 1;
     error = rtSubscribeHostFunc(threadId, stream);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(rtUnSubscribeHostFunc(threadId + 1, stream), ACL_ERROR_RT_STREAM_SUBSCRIBE);
+    error = rtUnSubscribeHostFunc(threadId, stream);
+    EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
+    EXPECT_EQ(GetStreamThreadID(stream, SUBSCRIBE_HOSTFUNC), threadId);
+    EXPECT_EQ(rtSubscribeHostFunc(threadId, stream), ACL_ERROR_RT_STREAM_SUBSCRIBE);
+
     error = rtUnSubscribeHostFunc(threadId, stream);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(GetStreamThreadID(stream, SUBSCRIBE_HOSTFUNC), UINT64_MAX);
 
     error = rtUnSubscribeHostFunc(threadId, stream);
     EXPECT_EQ(error, ACL_ERROR_RT_STREAM_SUBSCRIBE);

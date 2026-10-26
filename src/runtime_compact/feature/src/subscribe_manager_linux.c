@@ -152,13 +152,13 @@ rtError_t UnSubscribeReport(uint64_t threadId, rtStream_t stm, SUBSCRIBE_TYPE ty
 
     uint64_t streamThreadId = GetStreamThreadID(stream, type);
     if ((streamThreadId != UINT64_MAX) && (streamThreadId == threadId)) {
-        ResetStreamThreadID(stream, type);
         drvError_t drvRet =
             halSqUnSubscribeTid((uint8_t)GetStreamDeviceId(stream), (uint8_t)GetStreamSqID(stream), (uint8_t)type);
         if (drvRet != DRV_ERROR_NONE) {
             RT_LOG_ERROR("unSubscribe failed, ret=%d.", drvRet);
             return ErrorConvert(drvRet);
         }
+        ResetStreamThreadID(stream, type);
         RT_LOG_INFO("unSubscribe success.");
     } else {
         RT_LOG_ERROR("stream has not been subscribed to tid[0x%llx].", (uint64_t)threadId);
