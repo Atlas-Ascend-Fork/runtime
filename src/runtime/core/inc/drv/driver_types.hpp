@@ -111,6 +111,8 @@ struct AsyncDmaWqeDestroyInfo2D {
     std::array<uint32_t, ASYNC_CPY_2D_DESTROY_RSV_LEN> rsv;
 };
 
+constexpr uint64_t MAX_BATCH_DMA_CNT = 2047ULL;
+
 struct AsyncDmaBatchInfo {
     void** dsts;
     void** srcs;
@@ -129,7 +131,6 @@ struct AsyncDmaWqeInputInfoBatch {
     void** srcs;
     uint64_t* lens;
     uint64_t count;
-    uint64_t fixedCnt;
     std::array<uint32_t, ASYNC_CPY_BATCH_IN_RSV_LEN> rsv;
 };
 
@@ -196,13 +197,15 @@ struct AsyncWqeInputPara {
 struct AsyncWqeOutputPara {
     uint32_t wqeCnt; /* 转化出返回多少个wqe */
     /*
-     * batch: already complete-converted array element;
-     * others: 0 for partially-converted, 1 for complete-converted
+     * for fixedCnt in scene:
+     * drvAsyncDmaType_t batch/nop: already complete-converted array element;
+     * drvAsyncDmaType_t 2d/normal: 0 for partially-converted, 1 for complete-converted
      */
     uint64_t fixedCnt;
     /*
-     * batch: the actual-converted size for the next partially-converted array element;
-     * others: fixedSize return the actual-converted size if fixedCnt is 0, otherwhise return 0
+     * for fixedSize in scene:
+     * drvAsyncDmaType_t batch/nop: the actual-converted size for the array[fixedCnt] element;
+     * drvAsyncDmaType_t 2d/normal: fixedSize return the actual-converted size if fixedCnt is 0, otherwise return 0
      */
     uint64_t fixedSize;
     std::array<uint32_t, 8> rsv; // 8 rsv cnt
