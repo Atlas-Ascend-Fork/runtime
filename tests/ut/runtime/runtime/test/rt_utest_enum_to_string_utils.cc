@@ -141,10 +141,11 @@ TEST(EnumToStringUtilsTest, ChipTypeToNameAllKnownValues)
         {CHIP_5162A, "CHIP_5162A"},
         {CHIP_X90, "CHIP_X90"},
         {CHIP_9030, "CHIP_9030"},
-        {CHIP_DEV_0000, "CHIP_DEV_0000"},
+        {CHIP_9050, "CHIP_9050"},
         {CHIP_DEV_0001, "CHIP_DEV_0001"},
         {CHIP_DEV_0002, "CHIP_DEV_0002"},
         {CHIP_DEV_0003, "CHIP_DEV_0003"},
+        {CHIP_9020, "CHIP_9020"},
     };
 
     for (const auto& item : cases) {

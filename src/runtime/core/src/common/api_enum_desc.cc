@@ -23,14 +23,16 @@ const char_t* ChipTypeToName(const rtChipType_t type)
                 return "CHIP_X90";
             case CHIP_9030:
                 return "CHIP_9030";
-            case CHIP_DEV_0000:
-                return "CHIP_DEV_0000";
+            case CHIP_9050:
+                return "CHIP_9050";
             case CHIP_DEV_0001:
                 return "CHIP_DEV_0001";
             case CHIP_DEV_0002:
                 return "CHIP_DEV_0002";
             case CHIP_DEV_0003:
                 return "CHIP_DEV_0003";
+            case CHIP_9020:
+                return "CHIP_9020";
             default:
                 return "UNKNOWN";
         }

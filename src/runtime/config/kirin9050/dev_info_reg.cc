@@ -16,13 +16,13 @@
 namespace cce {
 namespace runtime {
 
-REGISTER_PLATFORM_LIB_INFO(CHIP_DEV_0000, "libruntime_v100.so");
+REGISTER_PLATFORM_LIB_INFO(CHIP_9050, "libruntime_v100.so");
 
-static const std::unordered_set<RtOptionalFeatureType> KIRIN_DEV_0000_FEATURE{};
-REGISTER_CHIP_FEATURE_SET(CHIP_DEV_0000, KIRIN_DEV_0000_FEATURE);
+static const std::unordered_set<RtOptionalFeatureType> KIRIN9050_FEATURE{};
+REGISTER_CHIP_FEATURE_SET(CHIP_9050, KIRIN9050_FEATURE);
 
-constexpr uint32_t RT_KIRIN_DEV_0000_AICORE_NUM = 4U;
-constexpr uint32_t RT_KIRIN_DEV_0000_AIVECTOR_NUM = 4U;
+constexpr uint32_t RT_KIRIN9050_AICORE_NUM = 4U;
+constexpr uint32_t RT_KIRIN9050_AIVECTOR_NUM = 4U;
 static constexpr uint32_t ASYNC_TASK_D2D_QOS = 6U;
 constexpr uint32_t TS_FEATURE_MC2_RTS_SUPPORT_HCCL_PROP = 23;
 static constexpr uint32_t RT_STARS_MAX_KERNEL_CREDIT_UINT32 = 254U; // STARS MAX KERNEL_CREDIT = 255.
@@ -30,7 +30,7 @@ static constexpr uint32_t RT_STARS_DEFAULT_KERNEL_CREDIT_UINT32 =
     254U;                                                           // The STARS reference time is 1090921693.184 us.
 static constexpr float64_t RT_STARS_TASK_KERNEL_CREDIT_SCALE_MIN = 0.001F; // 0.001(us) = 1ns
 
-static const DevProperties CHIP_KIRIN_DEV_0000_PROPERTIES = {
+static const DevProperties CHIP_KIRIN9050_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = 0U,
@@ -53,8 +53,8 @@ static const DevProperties CHIP_KIRIN_DEV_0000_PROPERTIES = {
     .maxCustomerStackSize = DEFAULT_CUSTOM_STACK_SIZE_MAX,
     .ioDieNum = 0U,
     .defaultTaskRatio = NORMAL_TASK_RATION,
-    .aicNum = RT_KIRIN_DEV_0000_AICORE_NUM,
-    .aivNum = RT_KIRIN_DEV_0000_AIVECTOR_NUM,
+    .aicNum = RT_KIRIN9050_AICORE_NUM,
+    .aivNum = RT_KIRIN9050_AIVECTOR_NUM,
     .aicNumPerDie = 0U,
     .aivNumPerDie = 0U,
     .ringbufSize = DEVICE_RINGBUFFER_SIZE,
@@ -164,6 +164,6 @@ static const DevProperties CHIP_KIRIN_DEV_0000_PROPERTIES = {
     .swapBufferProfCfgOffset = 0U,
 };
 
-REGISTER_DEV_PROPERTIES(CHIP_DEV_0000, CHIP_KIRIN_DEV_0000_PROPERTIES);
+REGISTER_DEV_PROPERTIES(CHIP_9050, CHIP_KIRIN9050_PROPERTIES);
 } // namespace runtime
 } // namespace cce

@@ -982,7 +982,7 @@ TEST_F(RuntimeTest, SocTypeByChipType_kirin)
 
     rt.SetChipType(static_cast<rtChipType_t>(PLAT_GET_CHIP(static_cast<uint64_t>(0xca00))));
     rt.GetSocVersionByHardwareVer(0, 0, 0);
-    EXPECT_EQ(rt.GetRawSocVersion(), "KirinDev0000");
+    EXPECT_EQ(rt.GetRawSocVersion(), "Kirin9050");
 
     rt.SetChipType(static_cast<rtChipType_t>(PLAT_GET_CHIP(static_cast<uint64_t>(0xcb00))));
     rt.GetSocVersionByHardwareVer(0, 0, 0);
@@ -995,6 +995,10 @@ TEST_F(RuntimeTest, SocTypeByChipType_kirin)
     rt.SetChipType(static_cast<rtChipType_t>(PLAT_GET_CHIP(static_cast<uint64_t>(0xcd00))));
     rt.GetSocVersionByHardwareVer(0, 0, 0);
     EXPECT_EQ(rt.GetRawSocVersion(), "KirinDev0003");
+
+    rt.SetChipType(static_cast<rtChipType_t>(PLAT_GET_CHIP(static_cast<uint64_t>(0xce00))));
+    rt.GetSocVersionByHardwareVer(0, 0, 0);
+    EXPECT_EQ(rt.GetRawSocVersion(), "Kirin9020");
 }
 
 extern "C" {
