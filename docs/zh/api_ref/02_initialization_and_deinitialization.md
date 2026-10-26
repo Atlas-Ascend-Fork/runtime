@@ -219,7 +219,7 @@ IPV350只支持模型Dump配置，不支持单算子Dump配置。若开启模型
 
 - dump\_path是可选参数，表示导出dump文件的存储路径。
 
-    dump文件存储路径的优先级如下：NPU\_COLLECT\_PATH环境变量 \> ASCEND\_WORK\_PATH环境变量 \> 配置文件中的dump\_path \> 应用程序的当前执行目录，环境变量的详细描述请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+    dump文件存储路径的优先级如下：NPU\_COLLECT\_PATH环境变量 \> ASCEND\_WORK\_PATH环境变量 \> 配置文件中的dump\_path \> 应用程序的当前执行目录，环境变量的详细描述请参见[《环境变量参考》](https://gitcode.com/cann/docs/blob/master/docs/zh/env-vars/README.md)。
 
 <!-- npu="950,A3,910b,910,310p,310b" id6 -->
 - 若需查看导出的dump文件内容，请参见[《故障处理》](https://hiascend.com/document/redirect/CannCommunitytrouble)中的“故障定位工具 \> msaicerr工具使用指导 \> 解析Dump文件”章节。
@@ -365,7 +365,7 @@ Atlas推理系列产品
 
 - dump\_path：启用算子Kernel调测信息Dump功能时，dump\_path必须配置，表示导出Dump文件的存储路径，支持配置绝对路径或相对路径。
 
-    Dump文件存储路径的优先级如下：ASCEND\_DUMP\_PATH环境变量 \> ASCEND\_WORK\_PATH环境变量 \> 配置文件中的dump\_path，环境变量的详细描述请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+    Dump文件存储路径的优先级如下：ASCEND\_DUMP\_PATH环境变量 \> ASCEND\_WORK\_PATH环境变量 \> 配置文件中的dump\_path，环境变量的详细描述请参见[《环境变量参考》](https://gitcode.com/cann/docs/blob/master/docs/zh/env-vars/README.md)。
 
     导出的Dump文件无法通过文本工具直接查看其内容，若需查看，需使用show\_kernel\_debug\_data工具将调测信息解析为可读格式，工具使用指导请参见[《Ascend C算子开发指南》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)。
     <!-- end id8 -->
@@ -595,7 +595,7 @@ aclError aclFinalize()
 去初始化函数，用于释放进程内acl接口使用的相关资源。
 
 <!-- npu="950,A3,910b,910,310p,310b" id29 -->
-对于涉及Device业务日志回传到Host的场景，本接口默认增加2000ms延时（实际最大延时可达2000ms），以确保ERROR级别和EVENT级别日志完整回传，防止丢失。您可以将ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT环境变量设置为0（命令示例：export ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT=0），来取消该默认延时。关于ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT环境变量的详细描述请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)中的“ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT”。
+对于涉及Device业务日志回传到Host的场景，本接口默认增加2000ms延时（实际最大延时可达2000ms），以确保ERROR级别和EVENT级别日志完整回传，防止丢失。您可以将ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT环境变量设置为0（命令示例：export ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT=0），来取消该默认延时。关于ASCEND\_LOG\_DEVICE\_FLUSH\_TIMEOUT环境变量的详细描述请参见[《环境变量参考》](../env_vars/ASCEND_LOG_DEVICE_FLUSH_TIMEOUT.md)。
 <!-- end id29 -->
 
 ### 参数说明

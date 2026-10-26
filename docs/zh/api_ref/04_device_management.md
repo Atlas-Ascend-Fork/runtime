@@ -1797,7 +1797,7 @@ aclError aclrtGetLogicDevIdByUserDevId(const int32_t userDevid, int32_t *const l
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>
@@ -1859,7 +1859,7 @@ aclError aclrtGetUserDevIdByLogicDevId(const int32_t logicDevId, int32_t *const 
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>
@@ -1923,7 +1923,7 @@ aclError aclrtGetLogicDevIdByPhyDevId(const int32_t phyDevId, int32_t *const log
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>
@@ -1987,7 +1987,7 @@ aclError aclrtGetPhyDevIdByLogicDevId(const int32_t logicDevId, int32_t *const p
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>
@@ -2049,7 +2049,7 @@ aclError aclrtGetUserDevIdByPhyDevId(const int32_t phyDevId, int32_t *const user
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>
@@ -2111,7 +2111,7 @@ aclError aclrtGetPhyDevIdByUserDevId(const int32_t userDevId, int32_t *const phy
 
 ![](figures/UserDevId_LogicDevId_PhyDevId.png)
 
-关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+关于ASCEND\_RT\_VISIBLE\_DEVICES环境的详细介绍请参见[《环境变量参考》](../env_vars/ASCEND_RT_VISIBLE_DEVICES.md)。
 
 <br>
 <br>

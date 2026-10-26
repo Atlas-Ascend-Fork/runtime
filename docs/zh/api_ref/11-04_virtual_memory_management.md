@@ -334,7 +334,7 @@ aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t ali
 
 预留虚拟内存。
 
-本接口与aclrtReserveMemAddress接口的使用方法相同，区别在于：根据环境变量AUTO\_USE\_UC\_MEMORY决定是否允许数据搬移不经过L2 Cache的算子，本接口预留的虚拟内存不能用作此类算子的输入或输出内存，否则可能会导致算子精度问题或异常。AUTO\_USE\_UC\_MEMORY环境变量的详细说明请参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
+本接口与aclrtReserveMemAddress接口的使用方法相同，区别在于：根据环境变量AUTO\_USE\_UC\_MEMORY决定是否允许数据搬移不经过L2 Cache的算子，本接口预留的虚拟内存不能用作此类算子的输入或输出内存，否则可能会导致算子精度问题或异常。AUTO\_USE\_UC\_MEMORY环境变量的详细说明请参见[《环境变量参考》](../env_vars/AUTO_USE_UC_MEMORY.md)。
 
 另外，本接口中的虚拟内存起始地址不支持由系统自动分配，只能由用户指定，且地址建议在40T-224T范围内。
 
