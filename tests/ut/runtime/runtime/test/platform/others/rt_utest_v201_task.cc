@@ -2521,6 +2521,41 @@ TEST_F(TaskTestV201, EndGraphNotifyWaitReadOnlyTask)
     EXPECT_NO_THROW(ReleaseResourceForEndGraphNotifyWaitTaskOnlModel(&readOnlyTask));
 }
 
+TEST_F(TaskTestV201, Test_PrintErrorInfoForDqsInterChipPreProcTask)
+{
+    stars_dqs_inter_chip_space_t interChipSpace[2] = {};
+    interChipSpace[1].dst_alloc_error_code = 4U;
+    interChipSpace[1].src_mbuf_handle = 0x123U;
+    interChipSpace[1].dst_mbuf_handle = 0x456U;
+    interChipSpace[1].mbuf_op_snapshot = {1U, 0U, 0U, 0U, 0U, 0U};
+    StreamWithDqs* streamWithDqs = static_cast<StreamWithDqs*>(stream_);
+    streamWithDqs->SetDqsInterChipSpace(interChipSpace);
+
+    TaskInfo task = {};
+    task.stream = stream_;
+    task.u.dqsInterChipPreProcTask.groupIdx = 1U;
+    PrintErrorInfoForDqsInterChipPreProcTask(&task, 0U);
+
+    streamWithDqs->SetDqsInterChipSpace(nullptr);
+}
+
+TEST_F(TaskTestV201, Test_PrintErrorInfoForDqsInterChipPostProcTask)
+{
+    stars_dqs_inter_chip_space_t interChipSpace[2] = {};
+    interChipSpace[1].src_mbuf_handle = 0x789U;
+    interChipSpace[1].dst_mbuf_handle = 0xabcU;
+    interChipSpace[1].mbuf_op_snapshot = {1U, 1U, 1U, 1U, 1U, 0U};
+    StreamWithDqs* streamWithDqs = static_cast<StreamWithDqs*>(stream_);
+    streamWithDqs->SetDqsInterChipSpace(interChipSpace);
+
+    TaskInfo task = {};
+    task.stream = stream_;
+    task.u.dqsInterChipPostProcTask.groupIdx = 1U;
+    PrintErrorInfoForDqsInterChipPostProcTask(&task, 0U);
+
+    streamWithDqs->SetDqsInterChipSpace(nullptr);
+}
+
 TEST_F(TaskTestV201, Test_ModelAttrSet)
 {
     rtModel_t model;

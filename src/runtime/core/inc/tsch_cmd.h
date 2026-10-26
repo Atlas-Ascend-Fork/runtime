@@ -409,6 +409,15 @@ typedef struct {
 } stars_memcpy_ptr_sdma_sqe_t;
 
 typedef struct {
+    uint8_t alloc_pre_dot;
+    uint8_t alloc_post_dot;
+    uint8_t enqueue_pre_dot;
+    uint8_t enqueue_post_dot;
+    uint8_t src_free_pre_dot;
+    uint8_t src_free_post_dot;
+} inter_chip_mbuf_op_snapshot_info;
+
+typedef struct {
     uint16_t src_prod_qid;
     uint16_t src_cons_qid;
     uint16_t dst_prod_qid;
@@ -444,6 +453,7 @@ typedef struct {
 
     /* error code */
     uint8_t dst_alloc_error_code; // 申请对片mbuf handle失败错误码
+    inter_chip_mbuf_op_snapshot_info mbuf_op_snapshot;
 
     /* SDMA拷贝SQE：用于拷贝mbuf private info数据, 必须64B对齐 */
     __attribute__((aligned(64))) stars_memcpy_ptr_sdma_sqe_t mbuf_head_memcpy_sqe;

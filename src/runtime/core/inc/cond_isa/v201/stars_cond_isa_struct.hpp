@@ -361,6 +361,9 @@ struct RtStarsDqsConditionCopyFc {
 };
 
 struct RtStarsDqsInterChipPreProcFc {
+    MbufOpDotInitFc allocPreDotInitFc;
+    MbufOpDotInitFc allocPostDotInitFc;
+
     RtStarsCondOpLLWI llwiDstAllocErrorCodeAddr;
     RtStarsCondOpLHWI lhwiDstAllocErrorCodeAddr;
     RtStarsCondOpLLWI llwiDstAllocErrorCodeDefault;
@@ -372,6 +375,8 @@ struct RtStarsDqsInterChipPreProcFc {
     RtStarsCondOpLHWI lhwi1;
 
     RtStarsCondOpLoad ldr1;
+    MbufOpCntFc allocPreCntFc;
+    RtStarsCondOpSystemCsr biaAllocPre;
     RtStarsCondOpSystemCsr csrrc;
     RtStarsCondOpLoad ldr2;
     RtStarsCondOpSystemCsr csrrs;
@@ -396,6 +401,8 @@ struct RtStarsDqsInterChipPreProcFc {
     RtStarsCondOpLLWI llwi2;
     RtStarsCondOpLHWI lhwi2;
     RtStarsCondOpStore store1;
+    RtStarsCondOpSystemCsr biaAllocPost;
+    MbufOpCntFc allocPostCntFc;
 
     RtStarsCondOpLLWI llwi3;
     RtStarsCondOpLHWI lhwi3;
@@ -472,6 +479,11 @@ struct RtStarsDqsInterChipPreProcFc {
 };
 
 struct RtStarsDqsInterChipPostProcFc {
+    MbufOpDotInitFc enqueuePreDotInitFc;
+    MbufOpDotInitFc enqueuePostDotInitFc;
+    MbufOpDotInitFc srcFreePreDotInitFc;
+    MbufOpDotInitFc srcFreePostDotInitFc;
+
     RtStarsCondOpLLWI llwi1;
     RtStarsCondOpLHWI lhwi1;
     RtStarsCondOpLLWI llwi2;
@@ -515,9 +527,13 @@ struct RtStarsDqsInterChipPostProcFc {
 
     CondMbufTraceFc dstProdEnqueMbufTraceFc;
 
+    MbufOpCntFc enqueuePreCntFc;
+    RtStarsCondOpSystemCsr biaEnqueuePre;
     RtStarsCondOpSystemCsr csrrc2;
     RtStarsCondOpStore sw2;
     RtStarsCondOpSystemCsr csrrs2;
+    RtStarsCondOpSystemCsr biaEnqueuePost;
+    MbufOpCntFc enqueuePostCntFc;
 
     RtStarsCondOpLLWI llwi9;
     RtStarsCondOpLHWI lhwi9;
@@ -528,9 +544,13 @@ struct RtStarsDqsInterChipPostProcFc {
 
     CondMbufTraceFc srcConsFreembufTraceFc;
 
+    MbufOpCntFc srcFreePreCntFc;
+    RtStarsCondOpSystemCsr biaSrcFreePre;
     RtStarsCondOpSystemCsr csrrc3;
     RtStarsCondOpStore sw3;
     RtStarsCondOpSystemCsr csrrs3;
+    RtStarsCondOpSystemCsr biaSrcFreePost;
+    MbufOpCntFc srcFreePostCntFc;
 
     RtStarsSetCsrJumpPc jumpPc4;
     RtStarsCondOpBranch beq3;

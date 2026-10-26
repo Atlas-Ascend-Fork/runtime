@@ -135,6 +135,7 @@ struct RtStarsDqsInterChipPreProcPara {
     uint64_t dstMbufDataBaseAddr;
     uint64_t mbufDataSdmaSqeAddr; // mbuf data sdma
     uint64_t mbufHeadSdmaSqeAddr; // mbuf head sdma
+    uint64_t mbufOpSnapshotAddr;
 
     CondMbufTraceParam allocMbufTracePara;
 };
@@ -147,6 +148,7 @@ struct RtStarsDqsInterChipPostProcPara {
     uint64_t srcMbufFreeAddr;
     uint64_t dstMbufFreeAddr;
     uint64_t dstQmngrOwAddr;
+    uint64_t mbufOpSnapshotAddr;
     CondMbufTraceParam dstProdEnqueMbufTracePara;
     CondMbufTraceParam srcConsFreeMbufTracePara;
     CondMbufTraceParam dstProdFreeMbufTracePara;

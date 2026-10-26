@@ -680,6 +680,9 @@ static rtError_t InitFuncCallParaForDqsInterChipPreProcTask(
         RtPtrToValue(interChipSpaceBasePtr) + static_cast<uint64_t>(groupIdx * sizeof(stars_dqs_inter_chip_space_t));
     constexpr size_t dstAddrOffset = offsetof(stars_memcpy_ptr_sdma_sqe_t, dst_addr);
 
+    fcPara.mbufOpSnapshotAddr =
+        interChipSpaceAddr + static_cast<uint64_t>(offsetof(stars_dqs_inter_chip_space_t, mbuf_op_snapshot));
+
     size_t offset = offsetof(stars_dqs_inter_chip_space_t, dst_mbuf_handle);
     fcPara.dstMbufHandleAddr = interChipSpaceAddr + static_cast<uint64_t>(offset);
 
@@ -881,6 +884,9 @@ static rtError_t InitFuncCallParaForDqsInterChipPostProcTask(
     const uint32_t groupIdx = dqsTask->groupIdx;
     const uint64_t interChipSpaceAddr =
         RtPtrToValue(interChipSpaceBasePtr) + static_cast<uint64_t>(groupIdx * sizeof(stars_dqs_inter_chip_space_t));
+
+    fcPara.mbufOpSnapshotAddr =
+        interChipSpaceAddr + static_cast<uint64_t>(offsetof(stars_dqs_inter_chip_space_t, mbuf_op_snapshot));
 
     size_t offset = offsetof(stars_dqs_inter_chip_space_t, src_mbuf_handle);
     fcPara.srcMbufHandleAddr = interChipSpaceAddr + static_cast<uint64_t>(offset);

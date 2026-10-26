@@ -1482,6 +1482,12 @@ static void ConstructInterChipPreProcAllocMbuf(
     // r1: dstMbufHandle
     ConstructLoad(r1, 0U, r1, RT_STARS_COND_ISA_LOAD_FUNC3_LDR, fc.ldr1);
 
+    // increment alloc pre dot before accessing the peer mbuf pool
+    const uint64_t allocPreDotAddr =
+        funcCallPara.mbufOpSnapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, alloc_pre_dot);
+    AddMbufOpDot(allocPreDotAddr, fc.allocPreCntFc, r8, r9);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaAllocPre);
+
     // cfg use PA
     ConstructSystemCsr(r6, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRC, fc.csrrc);
     ConstructLoad(r1, 0U, r1, RT_STARS_COND_ISA_LOAD_FUNC3_LDR, fc.ldr2);
@@ -1535,6 +1541,12 @@ static void ConstructInterChipPreProcStoreMbufInfo(
     ConstructLHWI(r2, funcCallPara.dstMbufHandleAddr, fc.lhwi2);
     // STORE(dstMbufHandle, dstMbufHandleAddr); 将dstMbufHandle拷贝到dstMbufHandleAddr中
     ConstructStore(r2, r1, 0U, RT_STARS_COND_ISA_STORE_FUNC3_SW, fc.store1);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaAllocPost);
+
+    // increment alloc post dot only after the valid handle is stored
+    const uint64_t allocPostDotAddr =
+        funcCallPara.mbufOpSnapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, alloc_post_dot);
+    AddMbufOpDot(allocPostDotAddr, fc.allocPostCntFc, r8, r9);
 
     // r3: dqsBlockIdMask
     ConstructLLWI(r3, dqsBlockIdMask, fc.llwi3);
@@ -1642,6 +1654,11 @@ static void ConstructInterChipPreProcErrPath(
 void ConstructDqsInterChipPreProcFc(
     RtStarsDqsInterChipPreProcFc& fc, const RtStarsDqsInterChipPreProcPara& funcCallPara)
 {
+    // Reset this group's allocation dots before starting a new allocation.
+    const uint64_t snapshotAddr = funcCallPara.mbufOpSnapshotAddr;
+    InitMbufOpDot(r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, alloc_pre_dot), fc.allocPreDotInitFc);
+    InitMbufOpDot(r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, alloc_post_dot), fc.allocPostDotInitFc);
+
     ConstructInterChipPreProcAllocMbuf(fc, funcCallPara);
     ConstructInterChipPreProcErrBranch(fc);
     ConstructInterChipPreProcStoreMbufInfo(fc, funcCallPara);
@@ -1656,6 +1673,17 @@ void ConstructDqsInterChipPreProcFc(
 void ConstructDqsInterChipPostProcFc(
     RtStarsDqsInterChipPostProcFc& fc, const RtStarsDqsInterChipPostProcPara& funcCallPara)
 {
+    // Initialize postproc dots without resetting the allocation snapshot.
+    const uint64_t snapshotAddr = funcCallPara.mbufOpSnapshotAddr;
+    InitMbufOpDot(
+        r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, enqueue_pre_dot), fc.enqueuePreDotInitFc);
+    InitMbufOpDot(
+        r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, enqueue_post_dot), fc.enqueuePostDotInitFc);
+    InitMbufOpDot(
+        r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, src_free_pre_dot), fc.srcFreePreDotInitFc);
+    InitMbufOpDot(
+        r8, snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, src_free_post_dot), fc.srcFreePostDotInitFc);
+
     // r4: read immd reg va cfg mask
     ConstructLLWI(r4, AXI_USER_VA_CFG_MASK, fc.llwi1);
     ConstructLHWI(r4, AXI_USER_VA_CFG_MASK, fc.lhwi1);
@@ -1753,12 +1781,22 @@ void ConstructDqsInterChipPostProcFc(
     ConstructMbufTrace(
         fc.dstProdEnqueMbufTraceFc, funcCallPara.dstProdEnqueMbufTracePara, dstProdEnqueRegInfo, mbufTraceNop);
 
+    // Increment enqueue pre dot while still using VA.
+    const uint64_t enqueuePreDotAddr = snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, enqueue_pre_dot);
+    AddMbufOpDot(enqueuePreDotAddr, fc.enqueuePreCntFc, r8, r9);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaEnqueuePre);
+
     // cfg use PA
     ConstructSystemCsr(r4, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRC, fc.csrrc2);
     // dstMbufHandle enqueue
     ConstructStore(r2, r1, 0U, RT_STARS_COND_ISA_STORE_FUNC3_SW, fc.sw2);
     // restore to use VA
     ConstructSystemCsr(r4, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRS, fc.csrrs2);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaEnqueuePost);
+
+    // Increment enqueue post dot after restoring VA.
+    const uint64_t enqueuePostDotAddr = snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, enqueue_post_dot);
+    AddMbufOpDot(enqueuePostDotAddr, fc.enqueuePostCntFc, r8, r9);
 
     // r3: srcMbufHandleAddr
     ConstructLLWI(r3, funcCallPara.srcMbufHandleAddr, fc.llwi9);
@@ -1783,12 +1821,22 @@ void ConstructDqsInterChipPostProcFc(
         static_cast<uint32_t>((RtPtrToValue(&(fc.srcConsFreembufTraceFc.nop)) - RtPtrToValue(&fc)) / sizeof(uint32_t));
     ConstructMbufTrace(fc.srcConsFreembufTraceFc, funcCallPara.srcConsFreeMbufTracePara, srcConsFreePara, mbufTraceNop);
 
+    // increment source free pre dot while still using VA
+    const uint64_t srcFreePreDotAddr = snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, src_free_pre_dot);
+    AddMbufOpDot(srcFreePreDotAddr, fc.srcFreePreCntFc, r8, r9);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaSrcFreePre);
+
     // cfg use PA
     ConstructSystemCsr(r4, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRC, fc.csrrc3);
     // srcMbufHandle free
     ConstructStore(r1, r3, 0U, RT_STARS_COND_ISA_STORE_FUNC3_SW, fc.sw3);
     // restore to use VA
     ConstructSystemCsr(r4, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_CSRRS, fc.csrrs3);
+    ConstructSystemCsr(r0, r0, RT_STARS_COND_CSR_AXI_USER_REG, RT_STARS_COND_ISA_SYSTEM_FUNC3_BIA, fc.biaSrcFreePost);
+
+    // increment source free post dot after restoring VA
+    const uint64_t srcFreePostDotAddr = snapshotAddr + offsetof(inter_chip_mbuf_op_snapshot_info, src_free_post_dot);
+    AddMbufOpDot(srcFreePostDotAddr, fc.srcFreePostCntFc, r8, r9);
 
     // skip error
     offset = offsetof(RtStarsDqsInterChipPostProcFc, end);
