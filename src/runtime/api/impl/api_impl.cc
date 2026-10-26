@@ -2421,7 +2421,8 @@ rtError_t ApiImpl::DevMalloc(void** const devPtr, const uint64_t size, const rtM
 
 rtError_t ApiImpl::DevFree(void* const devPtr)
 {
-    RT_LOG(RT_LOG_DEBUG, "device free mem=0x%llx", RtPtrToPtr<uint64_t*>(devPtr));
+    // The tool relies on INFO-level logs to analyze memory usage.
+    RT_LOG(RT_LOG_INFO, "device free mem=0x%llx", RtPtrToPtr<uint64_t*>(devPtr));
     Context* const curCtx = CurrentContext(false);
     const rtError_t error = DevFreeStatic(devPtr, curCtx);
     if ((error == RT_ERROR_NONE) && Runtime::Instance()->ApiSoma_()->InMemPoolRegion(devPtr)) {
