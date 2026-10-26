@@ -3074,7 +3074,7 @@ TEST_F(ApiImplTest, modelSetAttr_test)
 
     Model* realModel = rt_ut::UnwrapOrNull<Model>(model);
     ASSERT_NE(realModel, nullptr);
-    EXPECT_EQ(realModel->GetSchMode(), RT_MODEL_SCHED_NORMAL);
+    EXPECT_EQ(realModel->GetSchMode(), ModelSchedMode::RT_MODEL_SCHED_NORMAL);
 
     error = rtsModelDestroy(model);
     EXPECT_EQ(error, RT_ERROR_NONE);

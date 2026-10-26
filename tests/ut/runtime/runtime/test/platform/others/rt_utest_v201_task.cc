@@ -2567,12 +2567,12 @@ TEST_F(TaskTestV201, Test_ModelAttrSet)
     rtMdlSchMode schMode = RT_MDL_SCH_EXCLUSIVE;
     ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_EXCLUSIVE);
+    EXPECT_EQ(mdl->GetSchMode(), ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE);
 
     schMode = RT_MDL_SCH_DEFAULT;
     ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_NORMAL);
+    EXPECT_EQ(mdl->GetSchMode(), ModelSchedMode::RT_MODEL_SCHED_NORMAL);
 
     ret = rtsSetModelAttr(nullptr, RT_MODEL_ATTR_SCH_MODE, &schMode);
     EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
@@ -2610,7 +2610,7 @@ TEST_F(TaskTestV201, Test_ModelSerialSchedAttrToSqe)
     rtMdlSchMode schMode = RT_MDL_SCH_EXCLUSIVE;
     ret = rtsSetModelAttr(model, RT_MODEL_ATTR_SCH_MODE, &schMode);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(mdl->GetSchMode(), RT_MODEL_SCHED_EXCLUSIVE);
+    EXPECT_EQ(mdl->GetSchMode(), ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE);
 
     mdl->headStreams_.push_back(stream_);
 
@@ -2631,15 +2631,16 @@ TEST_F(TaskTestV201, Test_ModelSerialSchedAttrToSqe)
 
     ret = ModelSerialSchedPreProc(stream_, notify, mdl);
     EXPECT_EQ(ret, RT_ERROR_NONE);
-    EXPECT_EQ(task.u.modelSerialSchedTask.modelSchedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+    EXPECT_EQ(
+        task.u.modelSerialSchedTask.modelSchedMode, static_cast<uint32_t>(ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE));
 
     rtDavidSqe_t davidSqe = {};
     const TaskSqeInfo sqeInfo = {};
     ConstructSqeForModelSerialSchedPreProcTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
-    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE));
 
     ConstructSqeForModelSerialSchedPostProcTask(&task, static_cast<void*>(&davidSqe), sqeInfo);
-    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(RT_MODEL_SCHED_EXCLUSIVE));
+    EXPECT_EQ(davidSqe.aicpuDqsSqe.schedMode, static_cast<uint32_t>(ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE));
 
     stream_->Device_()->RefreshDevProperties(origProps);
     delete notify;

@@ -52,8 +52,12 @@ rtError_t ApiImplV201::ModelAttrSet(Model* const mdl, const rtModelAttr attrId, 
         RT_LOG_OUTER_MSG_INVALID_PARAM(attrId, "only RT_MODEL_ATTR_SCH_MODE is supported");
         return RT_ERROR_INVALID_VALUE;
     }
-    const rtMdlSchMode schMode = *RtPtrToPtr<rtMdlSchMode*>(value);
-    mdl->SetSchMode((schMode == RT_MDL_SCH_EXCLUSIVE) ? RT_MODEL_SCHED_EXCLUSIVE : RT_MODEL_SCHED_NORMAL);
+    const rtMdlSchMode schMode = *(static_cast<rtMdlSchMode*>(value));
+    if (schMode == RT_MDL_SCH_EXCLUSIVE) {
+        mdl->SetSchMode(ModelSchedMode::RT_MODEL_SCHED_EXCLUSIVE);
+    } else {
+        mdl->SetSchMode(ModelSchedMode::RT_MODEL_SCHED_NORMAL);
+    }
     return RT_ERROR_NONE;
 }
 

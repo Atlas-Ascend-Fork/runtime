@@ -1215,7 +1215,7 @@ static rtError_t GetTaskParamsWithoutUpdate(const TaskInfo* const taskInfo, rtTa
 
 static rtError_t GetTaskParamsWithUpdate(const TaskInfo* const taskInfo, rtTaskParams* const params)
 {
-    rtTaskType latestType = taskInfo->updateInfo->latestParams.type;
+    const rtTaskType latestType = taskInfo->updateInfo->latestParams.type;
 
     switch (latestType) {
         case RT_TASK_KERNEL:

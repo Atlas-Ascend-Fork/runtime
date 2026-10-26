@@ -42,7 +42,7 @@ enum ModelType {
     RT_MODEL_MAX
 };
 
-enum ModelSchedMode : uint8_t {
+enum class ModelSchedMode : uint8_t {
     RT_MODEL_SCHED_NORMAL = 0,
     RT_MODEL_SCHED_EXCLUSIVE = 1,
 };
@@ -403,7 +403,7 @@ private:
     std::mutex labelMapMutex_;
     bool isModelDelete_;
     int16_t schGroupId_;
-    ModelSchedMode schMode_{RT_MODEL_SCHED_NORMAL};
+    ModelSchedMode schMode_{ModelSchedMode::RT_MODEL_SCHED_NORMAL};
     std::mutex cmoIdMapMutex_;
     std::map<uint32_t, uint16_t> logicIdToCMOIdMap_;
     uint64_t labelCount_;
