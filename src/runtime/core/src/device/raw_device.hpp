@@ -579,6 +579,7 @@ public:
     const qos_master_config_t& GetQosCfg() const { return aicoreQosCfgs_; }
 
     rtError_t RestoreSqCqPool() override;
+    bool SkipSimtStackAlloc(const uint64_t stackPhySize) const;
 
 private:
     friend rtError_t InitAicpuPrintInfoImpl(RawDevice* device);

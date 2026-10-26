@@ -37,6 +37,7 @@ constexpr uint32_t RT_DAVID_AIVECTOR_NUM_PER_DIE = 36U;
 constexpr uint32_t RT_DAVID_DIE_MAX_NUM = 2U;
 
 constexpr uint32_t RT_SIMT_SHARE_MEM_ALIGN_LEN = 128U;
+constexpr uint64_t RT_SIMT_STACK_SHARE_THRESHOLD = 20ULL * 1024ULL * 1024ULL;
 } // namespace runtime
 } // namespace cce
 

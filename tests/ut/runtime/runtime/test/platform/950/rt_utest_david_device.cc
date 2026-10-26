@@ -43,6 +43,8 @@
 #include "rdma_task.h"
 #include "device_sq_cq_pool.hpp"
 #include "sq_addr_memory_pool.hpp"
+#include "dev_simt_stack_checker.hpp"
+#include "utils/capability.hpp"
 
 using namespace testing;
 using namespace cce::runtime;
@@ -272,6 +274,42 @@ TEST_F(DeviceTestDavid, AddAddrKernelNameMapTableTest)
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 }
 
+TEST_F(DeviceTestDavid, SkipSimtStackAllocThreshold)
+{
+    RawDevice device(0);
+    device.properties_.cvArchType = DeviceCvArchType::CV_ARCH_INTERGRATION;
+    device.featureSet_[static_cast<uint32_t>(RtOptionalFeatureType::RT_FEATURE_DEVICE_SIMT)] = true;
+    for (const uint8_t dieNum : {1U, 2U}) {
+        device.davidDieNum_ = dieNum;
+        const uint64_t threshold = RT_SIMT_STACK_SHARE_THRESHOLD * dieNum;
+        EXPECT_TRUE(device.SkipSimtStackAlloc(threshold - 1U));
+        EXPECT_FALSE(device.SkipSimtStackAlloc(threshold));
+        EXPECT_FALSE(device.SkipSimtStackAlloc(threshold + 1U));
+    }
+    device.davidDieNum_ = 0U;
+    EXPECT_FALSE(device.SkipSimtStackAlloc(0U));
+}
+
+TEST_F(DeviceTestDavid, SkipSimtStackAllocUnsupported)
+{
+    RawDevice device(0);
+    device.properties_.cvArchType = DeviceCvArchType::CV_ARCH_INTERGRATION;
+    device.featureSet_[static_cast<uint32_t>(RtOptionalFeatureType::RT_FEATURE_DEVICE_SIMT)] = false;
+    EXPECT_FALSE(device.SkipSimtStackAlloc(0U));
+    EXPECT_FALSE(device.SkipSimtStackAlloc(RT_SIMT_STACK_SHARE_THRESHOLD - 1U));
+}
+
+TEST_F(DeviceTestDavid, SkipSimtStackAllocRejectsNonIntegratedArchitecture)
+{
+    RawDevice device(0);
+    device.featureSet_[static_cast<uint32_t>(RtOptionalFeatureType::RT_FEATURE_DEVICE_SIMT)] = true;
+    for (const DeviceCvArchType archType : {DeviceCvArchType::CV_ARCH_SEPARATION, DeviceCvArchType::CV_ARCH_INVALID}) {
+        device.properties_.cvArchType = archType;
+        EXPECT_FALSE(device.SkipSimtStackAlloc(0U));
+        EXPECT_FALSE(device.SkipSimtStackAlloc(RT_SIMT_STACK_SHARE_THRESHOLD - 1U));
+    }
+}
+
 class DavidDeviceLimitTest : public testing::Test {
 protected:
     static void SetUpTestCase() {}
@@ -334,6 +372,27 @@ private:
     bool isCfgOpWaitTaskTimeout{false};
     bool isCfgOpExcTaskTimeout{false};
 };
+
+TEST_F(DavidDeviceLimitTest, SkipSimtAllocationPreservesStackSizes)
+{
+    RawDevice device(0);
+    Runtime* runtime = static_cast<Runtime*>(Runtime::Instance());
+    runtime->simtWarpStkSize_ = 4096U;
+    runtime->simtDvgWarpStkSize_ = 256U;
+    device.properties_.cvArchType = DeviceCvArchType::CV_ARCH_INTERGRATION;
+    device.davidDieNum_ = 1U;
+    device.properties_.aivNumPerDie = RT_DAVID_AIVECTOR_NUM_PER_DIE;
+    device.driver_ = runtime->driverFactory_.GetDriver(NPU_DRIVER);
+    MOCKER(IsNeedAllocSimtStack).stubs().will(returnValue(true));
+    device.featureSet_[static_cast<uint32_t>(RtOptionalFeatureType::RT_FEATURE_DEVICE_SIMT)] = true;
+    MOCKER_CPP_VIRTUAL(device.driver_, &Driver::DevMemAllocWithBackupFlag).expects(never());
+    EXPECT_EQ(device.AllocSimtStackPhyBase(CHIP_MC32DM11A), RT_ERROR_NONE);
+    EXPECT_EQ(device.GetSimtStackPhyBase(), nullptr);
+    EXPECT_EQ(device.GetSimtWarpStkSize(), 4096U);
+    EXPECT_EQ(device.GetSimtDvgWarpStkSize(), 256U);
+    EXPECT_EQ(device.FreeSimtStackPhyBase(), RT_ERROR_NONE);
+    device.driver_ = nullptr;
+}
 
 TEST_F(DavidDeviceLimitTest, SetAndGetLimit_StackSize_Success)
 {

@@ -36,6 +36,13 @@
 
 namespace cce {
 namespace runtime {
+bool RawDevice::SkipSimtStackAlloc(const uint64_t stackPhySize) const
+{
+    return IsSupportFeature(RtOptionalFeatureType::RT_FEATURE_DEVICE_SIMT) &&
+           GetDevProperties().cvArchType == DeviceCvArchType::CV_ARCH_INTERGRATION &&
+           stackPhySize < RT_SIMT_STACK_SHARE_THRESHOLD * GetDavidDieNum();
+}
+
 rtError_t RawDevice::AllocSimtStackPhyBase(const rtChipType_t chipType)
 {
     UNUSED(chipType);
@@ -52,6 +59,14 @@ rtError_t RawDevice::AllocSimtStackPhyBase(const rtChipType_t chipType)
     uint64_t stackPhySize =
         aivCoreNum * RT_MAX_WARP_NUM_PER_VECTOR_CORE * (simtWarpStkSize + static_cast<uint64_t>(simtDvgWarpStkSize));
     stackPhySize += static_cast<uint64_t>(STACK_PHY_BASE_ALIGN_LEN); // 128B align
+    simtWarpStkSize_ = static_cast<uint32_t>((simtWarpStkSize >= MAX_UINT32_NUM) ? MAX_UINT32_NUM : simtWarpStkSize);
+    simtDvgWarpStkSize_ = simtDvgWarpStkSize;
+    if (SkipSimtStackAlloc(stackPhySize)) {
+        RT_LOG(
+            RT_LOG_INFO, "Skip SIMT stack base allocation, device_id=%u, stackPhySize=%" PRIu64 ".", deviceId_,
+            stackPhySize);
+        return RT_ERROR_NONE;
+    }
 
     const rtError_t error = driver_->DevMemAllocWithBackupFlag(
         &simtStackPhyBase_, stackPhySize, RT_MEMORY_DDR, deviceId_, DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);
@@ -67,8 +82,6 @@ rtError_t RawDevice::AllocSimtStackPhyBase(const rtChipType_t chipType)
             RtPtrToValue(simtStackPhyBase_) :
             (((RtPtrToValue(simtStackPhyBase_) >> STACK_PHY_BASE_ALIGN_BIT) + 1U) << STACK_PHY_BASE_ALIGN_BIT);
     simtStackPhyBaseAlign_ = RtValueToPtr<void*>(devAlignAddr);
-    simtWarpStkSize_ = static_cast<uint32_t>((simtWarpStkSize >= MAX_UINT32_NUM) ? MAX_UINT32_NUM : simtWarpStkSize);
-    simtDvgWarpStkSize_ = simtDvgWarpStkSize;
     return RT_ERROR_NONE;
 }
 
