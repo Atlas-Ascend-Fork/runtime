@@ -22,3 +22,4 @@ This directory focuses on Host/Device data transfer, shared memory, IPC, and mul
 - [15_batch_tensor_round_trip](./15_batch_tensor_round_trip/README_en.md): Demonstrates Host/Device round-trip transfers and element-wise verification for the same small tensors in four batch-copy modes.
 - [16_guarded_result_slice](./16_guarded_result_slice/README_en.md): Demonstrates an asynchronous result-slice update through indirect base addresses and offsets, with guard-region verification.
 - [17_configured_allocation](./17_configured_allocation/README_en.md): Demonstrates allocation tagged by application module, memory identification, single-device round-trip transfers, synchronized release, and data verification.
+- [19_component_memory_triage](./19_component_memory_triage/README_en.md): Reads a single-device component memory snapshot, validates current and peak usage, and prioritizes investigation using thresholds.
