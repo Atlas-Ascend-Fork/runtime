@@ -158,7 +158,7 @@ def _process_debug_address_pair(lines, i, parts, context):
     next_line = lines[i + 1].strip()
     next_parts = next_line.split()
     
-    if len(next_parts) < 2 or next_parts[1] != 'SC_DBG_ADDR_H':
+    if len(next_parts) < 5 or next_parts[1] != 'SC_DBG_ADDR_H':
         return None
     
     try:
