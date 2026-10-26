@@ -651,7 +651,7 @@ aclError aclrtMemcpy2dAsync(void *dst, size_t dpitch, const void *src, size_t sp
 
 ### 约束说明
 
-- 本接口仅支持ACL\_MEMCPY\_HOST\_TO\_DEVICE、ACL\_MEMCPY\_DEVICE\_TO\_HOST或ACL\_MEMCPY\_DEVICE\_TO\_DEVICE内存复制类型，且不同型号支持的类型不同。对于不支持的内存复制类型，接口返回ACL\_ERROR\_INVALID\_PARAM。
+- 本接口支持ACL\_MEMCPY\_HOST\_TO\_DEVICE、ACL\_MEMCPY\_DEVICE\_TO\_HOST、ACL\_MEMCPY\_DEVICE\_TO\_DEVICE和ACL\_MEMCPY\_DEFAULT内存复制类型，且不同型号支持的类型不同。对于不支持的内存复制类型，接口返回ACL\_ERROR\_INVALID\_PARAM。
 
   <!-- npu="950,A3,910b" id14 -->
   其中，ACL\_MEMCPY\_DEVICE\_TO\_DEVICE类型，仅Ascend 950PR&950DT系列产品、Atlas A3系列产品、Atlas A2系列产品支持。
