@@ -525,7 +525,7 @@ ACL_FUNC_VISIBILITY aclError acltdtAddQueueRoute(acltdtQueueRouteList* routeList
  *
  * @param routeList [IN]  pointer to the queue route list
  * @param index [IN]  index of queue route in route list
- * @param route [IN|OUT]  pointer to the queue route
+ * @param route [OUT]  pointer to the queue route
  *
  * @retval ACL_SUCCESS  The function is successfully executed.
  * @retval OtherValues Failure

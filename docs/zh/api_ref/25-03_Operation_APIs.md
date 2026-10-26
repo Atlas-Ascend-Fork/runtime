@@ -1648,7 +1648,7 @@ aclError acltdtGetDimsFromItem(const acltdtDataItem *dataItem, int64_t *dims, si
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
 | dataItem | 输入 | acltdtDataItem类型的指针。<br>需提前调用[acltdtCreateDataItem](#acltdtCreateDataItem)接口创建acltdtDataItem类型的数据。 |
-| dims | 输入&输出 | 维度信息数组。 |
+| dims | 输出 | 维度信息数组。 |
 | dimNum | 输入 | 维度个数。 |
 
 ### 返回值说明
@@ -2560,7 +2560,7 @@ aclError acltdtGetQueueRoute(const acltdtQueueRouteList *routeList, size_t index
 | --- | :---: | --- |
 | routeList | 输入 | 队列路由配置数组。<br>需提前调用[acltdtCreateQueueRouteList](#acltdtCreateQueueRouteList)接口创建acltdtQueueRouteList类型的数据。 |
 | index | 输入 | 指定获取哪一个队列路由配置信息，index编号从0开始。 |
-| route | 输入&输出 | 队列路由配置信息的指针。类型定义请参见[acltdtQueueRoute](#acltdtQueueRoute)。 |
+| route | 输出 | 队列路由配置信息的指针。类型定义请参见[acltdtQueueRoute](#acltdtQueueRoute)。 |
 
 ### 返回值说明
 

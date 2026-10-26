@@ -104,7 +104,7 @@ ACL_FUNC_VISIBILITY aclError acltdtGetSliceInfoFromItem(
  * @brief Get dims from item
  *
  * @param  dataItem [IN]      the struct of data item
- * @param  dims [IN|OUT]      pointer to the dims of dataItem
+ * @param  dims [OUT]         pointer to the dims of dataItem
  * @param  dimNum [IN]        the size of the dims
  *
  * @retval ACL_SUCCESS  The function is successfully executed.
