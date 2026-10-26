@@ -334,6 +334,7 @@ public:
 
     void InsertGraphUpdateTask(TaskInfo* const taskInfo);
     void ClearGraphUpdateTask();
+    bool HasExternalEvent() { return !externalRecordEventItems_.empty(); }
 
 private:
     rtError_t AllocSqCqProc(const uint32_t logicSqNum) const;

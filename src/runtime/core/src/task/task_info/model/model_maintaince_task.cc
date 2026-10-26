@@ -118,7 +118,8 @@ rtError_t ModelMaintainceTaskInit(
 
         if ((modelPtr != nullptr && modelPtr->GetModelType() == RT_MODEL_CAPTURE_MODEL) &&
             (dev->CheckFeatureSupport(TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE))) {
-            modelMaintainceTaskInfo->enableCqe = 0x1U;
+            CaptureModel* const captureModel = dynamic_cast<CaptureModel*>(modelPtr);
+            modelMaintainceTaskInfo->enableCqe = captureModel->HasExternalEvent() ? 0x1U : 0x0U;
         } else {
             modelMaintainceTaskInfo->enableCqe = 0x0U;
         }
