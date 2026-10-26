@@ -2857,8 +2857,7 @@ ACL_FUNC_VISIBILITY aclError aclrtSynchronizeStream(aclrtStream stream);
  * in the specified stream have completed
  *
  * @param  stream [IN]   the stream to wait
- * @param  timeout [IN]  timeout value,the unit is milliseconds
- * -1 means waiting indefinitely, 0 means check whether synchronization is complete immediately
+ * @param  timeout [IN]  timeout value,the unit is milliseconds, -1 means waiting indefinitely
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
