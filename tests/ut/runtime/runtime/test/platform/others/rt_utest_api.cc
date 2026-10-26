@@ -7260,7 +7260,7 @@ TEST_F(ApiTest, rtMultipleTaskInfoLaunchCtrl_dvppTask)
     input.push_back(reinterpret_cast<uintptr_t>(&multipleTaskInfo));
     input.push_back(reinterpret_cast<uintptr_t>(stream_));
     rtError_t error = rtGeneralCtrl(input.data(), input.size(), RT_GNL_CTRL_TYPE_MULTIPLE_TSK);
-    EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(error, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     rtFree(devPtr);
 }
 

@@ -1143,6 +1143,10 @@ rtError_t ApiErrorDecorator::MultipleTaskInfoLaunch(
     }
     for (size_t idx = 0U; idx < taskInfo->taskNum; idx++) {
         if (taskInfo->taskDesc[idx].type == RT_MULTIPLE_TASK_TYPE_DVPP) {
+            if (!stm->Device_()->GetDevProperties().isSupportDvppAccelerator) {
+                RT_LOG(RT_LOG_WARNING, "This platform is not support dvpp task");
+                return RT_ERROR_FEATURE_NOT_SUPPORT;
+            }
             const uint16_t type = taskInfo->taskDesc[idx].u.dvppTaskDesc.sqe.sqeHeader.type;
             COND_RETURN_AND_MSG_OUTER(
                 !IsDvppTask(type), RT_ERROR_INVALID_VALUE, ErrorCode::EE1003, "Delivering a DVPP Multiple task", type,
