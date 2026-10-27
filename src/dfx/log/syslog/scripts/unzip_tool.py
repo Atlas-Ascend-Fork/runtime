@@ -21,7 +21,7 @@ GZIP_HEAD = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03'
 
 
 def unzip_file(data_list, file_name):
-    with open(file_name, 'ab+') as fou:
+    with open(file_name, 'wb') as fou:
         i = 0
         for data in data_list:
             if (i == 0):
