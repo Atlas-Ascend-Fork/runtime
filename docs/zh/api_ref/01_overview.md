@@ -26,7 +26,7 @@
 
 您需要根据实际使用的acl接口来include依赖的文件，各头文件的用途如下表所示。
 
-acl接口的头文件在“${INSTALL_DIR}/include/”目录下，库文件在“${INSTALL_DIR}/lib64/”目录下。${INSTALL_DIR}请替换为CANN软件安装后文件存储路径。以root用户安装为例，安装后文件默认存储路径为：/usr/local/Ascend/cann。
+acl接口的头文件在“\${INSTALL_DIR}/include/”目录下，库文件在“\${INSTALL_DIR}/lib64/”目录下。\${INSTALL_DIR}请替换为CANN软件安装后文件存储路径。以root用户安装为例，安装后文件默认存储路径为：/usr/local/Ascend/cann。
 
 >**须知：**
 >编译acl接口程序时，请按照include的头文件依赖对应的库文件，如果引用多余的库文件（例如libascendcl.a），可能导致版本功能异常或后续版本升级时存在兼容性问题。

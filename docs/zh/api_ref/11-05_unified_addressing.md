@@ -257,9 +257,6 @@ aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t fl
 <!-- npu="910" id2610 -->
 - Atlas训练系列产品：支持
 <!-- end id2610 -->
-<!-- npu="IPV350" id2611 -->
-- IPV350：不支持
-<!-- end id2611 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-05_unified_addressing_res.md#id7 -->
 
 ### 功能说明
@@ -312,9 +309,6 @@ aclError aclrtPointerGetAttributes(const void *ptr, aclrtPtrAttributes *attribut
 <!-- npu="910" id1714 -->
 - Atlas训练系列产品：支持
 <!-- end id1714 -->
-<!-- npu="IPV350" id1715 -->
-- IPV350：不支持
-<!-- end id1715 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-05_unified_addressing_res.md#id8 -->
 
 ### 功能说明
