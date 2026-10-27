@@ -206,7 +206,7 @@ rtError_t StreamLaunchCpuKernel(
 
     // Set args for task
     error = stm->LoadArgsInfo(argsInfo, false, &result, LoadPolicy::LP_CPU_KRN);
-    ERROR_GOTO(error, ERROR_FREE, "Failed to load cpu Kernel args , retCode=%#x", error);
+    ERROR_GOTO_MSG_INNER(error, ERROR_FREE, "Failed to load cpu Kernel args , retCode=%#x", error);
     SetAicpuArgs(kernTask, result.kerArgs, argsInfo->argsSize, result.handle);
     // handle is owned by task.
     result.handle = nullptr;

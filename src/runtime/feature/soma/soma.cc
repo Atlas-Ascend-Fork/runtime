@@ -68,7 +68,7 @@ rtError_t SomaApi::StreamMemPoolCreate(rtMemPool_t* memPool, const rtMemPoolProp
     rtMemPoolProps curPoolProps = *poolProps;
     uint32_t phyDevId;
     error = Runtime::Instance()->ChgUserDevIdToDeviceId(curPoolProps.devId, &phyDevId, false);
-    ERROR_RETURN_MSG_INNER(
+    ERROR_RETURN(
         error, "Convert user devId to physical devId failed! userDevId=%u, error Code=%u!", curPoolProps.devId,
         static_cast<uint32_t>(error));
     curPoolProps.devId = phyDevId;
@@ -126,11 +126,13 @@ rtError_t SomaApi::StreamMemPoolDestroy(rtMemPool_t const memPool)
 {
     SegmentManager* delMemPool = RtPtrToPtr<SegmentManager*>(memPool);
     std::shared_ptr<SegmentManager> owned = PoolRegistry::Instance().QueryMemPool(delMemPool);
-    COND_RETURN_ERROR(owned == nullptr, RT_ERROR_MEM_POOL_NULL, "Memory pool is not created or destroyed.");
+    COND_RETURN_AND_MSG_OUTER(
+        owned == nullptr, RT_ERROR_MEM_POOL_NULL, ErrorCode::EE1011, "Destroying a memory pool",
+        RtFmtMsg("%p", memPool), "memPool", "Use a valid memory pool handle that has not been destroyed");
 
-    COND_RETURN_ERROR(
-        !owned->CanDelete(), RT_ERROR_POOL_OP_INVALID, "Failed to destroy not deletable memPool(Id=%#" PRIx64 ").",
-        owned->MemPoolId());
+    COND_RETURN_AND_MSG_OUTER(
+        !owned->CanDelete(), RT_ERROR_POOL_OP_INVALID, ErrorCode::EE1016, "Destroying a memory pool",
+        RtFmtMsg("Memory pool (pool_id=%#" PRIx64 ") does not support explicit destruction", owned->MemPoolId()));
 
     const uint32_t deviceId = owned->DeviceId();
     const uint64_t poolId = owned->MemPoolId();
@@ -291,7 +293,9 @@ rtError_t SomaApi::MemPoolTrimTo(rtMemPool_t memPool, uint64_t minBytesToKeep)
 
     std::shared_ptr<SegmentManager> curMemPool =
         PoolRegistry::Instance().QueryMemPool(RtPtrToPtr<SegmentManager*>(memPool));
-    COND_RETURN_ERROR(curMemPool == nullptr, RT_ERROR_MEM_POOL_NULL, "Memory pool invalid or destroyed.");
+    COND_RETURN_AND_MSG_OUTER(
+        curMemPool == nullptr, RT_ERROR_MEM_POOL_NULL, ErrorCode::EE1011, "Trimming a memory pool",
+        RtFmtMsg("%p", memPool), "memPool", "Use a valid memory pool handle that has not been destroyed");
 
     uint64_t poolBusySize = 0;
     uint64_t poolReservedSize = 0;

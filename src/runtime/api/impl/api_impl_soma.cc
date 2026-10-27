@@ -88,12 +88,14 @@ rtError_t ApiImplSoma::MemPoolMallocAsync(
 
     // Align the allocation size to DEVICE_POOL_MIN_BLOCK_SIZE
     constexpr uint64_t alignMask = DEVICE_POOL_MIN_BLOCK_SIZE - 1;
-    COND_RETURN_ERROR(
-        size > UINT64_MAX - alignMask, RT_ERROR_INVALID_VALUE, "Memory allocation size overflow, size=%" PRIu64 ".",
-        size);
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
+        size > UINT64_MAX - alignMask, RT_ERROR_INVALID_VALUE, "Allocating memory from a memory pool", size,
+        RtFmtMsg("Not greater than %" PRIu64 " bytes", UINT64_MAX - alignMask));
     const uint64_t alignedSize = (size + alignMask) & ~alignMask;
     const std::shared_ptr<SegmentManager> poolHolder = SomaApi::QueryMemPool(memPoolId);
-    COND_RETURN_ERROR(poolHolder == nullptr, RT_ERROR_MEM_POOL_NULL, "Memory pool is not created or destroyed.");
+    COND_RETURN_AND_MSG_OUTER(
+        poolHolder == nullptr, RT_ERROR_MEM_POOL_NULL, ErrorCode::EE1011, "Allocating memory from a memory pool",
+        RtFmtMsg("%p", memPoolId), "memPool", "Use a valid memory pool handle that has not been destroyed");
     ReuseFlag flag = ReuseFlag::REUSE_FLAG_NONE;
     rtError_t error = SomaApi::AllocFromMemPool(ptr, alignedSize, memPoolId, streamId, flag);
     ERROR_RETURN_MSG_INNER(
@@ -142,7 +144,9 @@ rtError_t ApiImplSoma::MemPoolFreeAsync(void* const ptr, Stream* const stm)
             "memory address is correct");
         const uint64_t va = RtPtrToValue(ptr);
         const uint64_t allocSize = SomaApi::GetAllocSize(ptr);
-        COND_RETURN_ERROR(allocSize == 0, RT_ERROR_INVALID_VALUE, "Get alloc size is 0, ptr=%#" PRIx64 ".", va);
+        COND_RETURN_AND_MSG_OUTER(
+            allocSize == 0, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011, "Freeing memory from a memory pool",
+            RtFmtMsg("%p", ptr), "ptr", "Use the starting address of an allocated block that is still valid");
         SomaApi::MemPoolAsyncConfig(memPool, va, allocSize, SomaAsyncConfigType::SOMA_ASYNC_CONFIG_FREE);
         constexpr AicpuOpType opType = AicpuOpType::FREE;
         constexpr SomaAicpuSubCmd subCmd = SomaAicpuSubCmd::FREE;
@@ -152,7 +156,7 @@ rtError_t ApiImplSoma::MemPoolFreeAsync(void* const ptr, Stream* const stm)
             SomaApi::MemPoolAsyncConfig(memPool, va, allocSize, SomaAsyncConfigType::SOMA_ASYNC_CONFIG_MALLOC);
         }
         COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, RT_ERROR_FEATURE_NOT_SUPPORT);
-        ERROR_RETURN_MSG_INNER(
+        ERROR_RETURN(
             error, "Failed to launch soma free aicpu kernel, va=%" PRIu64 ", memPoolId=%#" PRIx64 ", retCode=%#x.", va,
             RtPtrToValue<void*>(memPool), static_cast<uint32_t>(error));
         error = SomaApi::FreeToMemPool(ptr);
@@ -213,19 +217,14 @@ rtError_t ApiImplSoma::SomaAicpuLaunchValidation(
     const rtKernelLaunchNames_t* const launchNames, const uint32_t blockDim, const rtArgsEx_t* const argsInfo,
     const Stream* const stm, const uint32_t flags) const
 {
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        launchNames->kernelName, RT_ERROR_INVALID_VALUE, "Checking the validity of kernel function startup parameters");
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        argsInfo, RT_ERROR_INVALID_VALUE, "Checking the validity of kernel function startup parameters");
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        argsInfo->args, RT_ERROR_INVALID_VALUE, "Checking the validity of kernel function startup parameters");
-    ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
-        argsInfo->argsSize, "Checking the validity of kernel function startup parameters");
+    NULL_PTR_RETURN(launchNames->kernelName, RT_ERROR_INVALID_VALUE);
+    NULL_PTR_RETURN(argsInfo, RT_ERROR_INVALID_VALUE);
+    NULL_PTR_RETURN(argsInfo->args, RT_ERROR_INVALID_VALUE);
+    COND_RETURN_ERROR(argsInfo->argsSize == 0U, RT_ERROR_INVALID_VALUE, "Internal kernel argument size is 0.");
 
     COND_RETURN_AND_MSG_OUTER(
         ((stm->Flags() & RT_STREAM_CP_PROCESS_USE) != 0U), RT_ERROR_STREAM_INVALID, ErrorCode::EE1006,
-        "Checking the validity of kernel function startup parameters",
-        "Stream flags value " + std::to_string(stm->Flags()),
+        "Checking the validity of kernel function startup parameters", RtFmtMsg("Stream flags value %u", stm->Flags()),
         RtFmtMsg(
             "Stream (stream_id=%d) with the flag RT_STREAM_CP_PROCESS_USE(0x800U) cannot be used for kernel launch",
             stm->Id_()));
@@ -273,11 +272,10 @@ rtError_t ApiImplSoma::SomaAicpuKernelLaunch(
     rtError_t error;
     error = SomaAicpuLaunchValidation(&launchNames, 1U, &rtArgs, stm, 0U);
     COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ERROR_RETURN_MSG_INNER(
-        error, "Failed to validate soma aicpu launch params, retCode=%#x.", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Failed to validate soma aicpu launch params, retCode=%#x.", static_cast<uint32_t>(error));
 
     error = StreamLaunchCpuKernel(&launchNames, 1U, &rtArgs, stm, 0U);
-    ERROR_RETURN_MSG_INNER(error, "Failed to launch soma aicpu kernel, retCode=%#x.", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Failed to launch soma aicpu kernel, retCode=%#x.", static_cast<uint32_t>(error));
 
     return RT_ERROR_NONE;
 }

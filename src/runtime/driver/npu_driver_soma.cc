@@ -12,6 +12,7 @@
 #include "error_message_manage.hpp"
 #include "npu_driver_base.hpp"
 #include "npu_driver_base_soma.hpp"
+#include "enum_desc.hpp"
 namespace cce {
 namespace runtime {
 rtError_t NpuDriver::StreamMemPoolCreate(
@@ -117,6 +118,10 @@ rtError_t NpuDriver::StreamMemPoolSetAttr(
 
     const soma_mem_pool_attr halAttr = ConvertMemPoolAttr(attr);
     if (halAttr == MEM_POOL_ATTR_MAX) {
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1003, "Setting a memory pool attribute", MemPoolAttrToString(attr), "attr",
+            "rtMemPoolAttrReleaseThreshold(4), rtMemPoolAttrReservedMemCurrent(5), "
+            "rtMemPoolAttrReservedMemHigh(6), rtMemPoolAttrUsedMemCurrent(7), rtMemPoolAttrUsedMemHigh(8)");
         return RT_ERROR_INVALID_VALUE;
     }
     soma_mem_pool_t pool = {.poolId = poolId, .devId = deviceId};
@@ -134,6 +139,10 @@ rtError_t NpuDriver::StreamMemPoolGetAttr(
 
     const soma_mem_pool_attr halAttr = ConvertMemPoolAttr(attr);
     if (halAttr == MEM_POOL_ATTR_MAX) {
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1003, "Getting a memory pool attribute", MemPoolAttrToString(attr), "attr",
+            "rtMemPoolAttrReleaseThreshold(4), rtMemPoolAttrReservedMemCurrent(5), "
+            "rtMemPoolAttrReservedMemHigh(6), rtMemPoolAttrUsedMemCurrent(7), rtMemPoolAttrUsedMemHigh(8)");
         return RT_ERROR_INVALID_VALUE;
     }
     soma_mem_pool_t pool = {.poolId = poolId, .devId = deviceId};

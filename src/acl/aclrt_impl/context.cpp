@@ -172,7 +172,9 @@ aclError aclrtSetSysParamOptImpl(aclSysParamOpt opt, int64_t value)
 aclError aclrtPeekAtLastErrorImpl(aclrtLastErrLevel level)
 {
     ACL_LOG_INFO("start to execute aclrtPeekAtLastError, level is %s", acl::GetLastErrLevelDesc(level));
-    ACL_REQUIRES_PARAM_EQUAL_REPORT(level, ACL_RT_THREAD_LEVEL);
+    ACL_CHECK_INVALID_VALUE_WITH_DESC(
+        level == ACL_RT_THREAD_LEVEL, acl::GetLastErrLevelDesc(level), "level", "ACL_RT_THREAD_LEVEL(0)",
+        ACL_ERROR_INVALID_PARAM);
     const rtLastErrLevel_t rtLevel = static_cast<rtLastErrLevel_t>(level);
     return rtPeekAtLastError(rtLevel);
 }
@@ -180,7 +182,9 @@ aclError aclrtPeekAtLastErrorImpl(aclrtLastErrLevel level)
 aclError aclrtGetLastErrorImpl(aclrtLastErrLevel level)
 {
     ACL_LOG_INFO("start to execute aclrtGetLastError, level is %s", acl::GetLastErrLevelDesc(level));
-    ACL_REQUIRES_PARAM_EQUAL_REPORT(level, ACL_RT_THREAD_LEVEL);
+    ACL_CHECK_INVALID_VALUE_WITH_DESC(
+        level == ACL_RT_THREAD_LEVEL, acl::GetLastErrLevelDesc(level), "level", "ACL_RT_THREAD_LEVEL(0)",
+        ACL_ERROR_INVALID_PARAM);
     const rtLastErrLevel_t rtLevel = static_cast<rtLastErrLevel_t>(level);
     return rtGetLastError(rtLevel);
 }

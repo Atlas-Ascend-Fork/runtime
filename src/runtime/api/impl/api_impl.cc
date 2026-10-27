@@ -6506,8 +6506,7 @@ rtError_t ApiImpl::RepairError(const uint32_t deviceId, const rtErrorInfo* const
             RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
                 ErrorCode::EE1003, "Rectifying the device faults", ErrorTypeToString(errorInfo->errorType),
                 "errorInfo->errorType",
-                "{" + ErrorTypeToString(RT_NO_ERROR) + ", " + ErrorTypeToString(RT_ERROR_MEMORY) + ", " +
-                    ErrorTypeToString(RT_ERROR_LINK) + "}");
+                "{" + ErrorTypeToString(RT_NO_ERROR) + ", " + ErrorTypeToString(RT_ERROR_MEMORY) + "}");
             break;
     }
     dev->SetBaseTime();
@@ -6694,6 +6693,9 @@ static rtError_t GetAicpuFuncHandleFromExceptionInfo(const rtExceptionInfo_t* in
     const rtFuncHandle rawFuncHandle = info->expandInfo.u.aicpuInfo.funcHandle;
     if (rawFuncHandle == nullptr) {
         RT_LOG(RT_LOG_ERROR, "Get func handle from AICPU exception info failed, funcHandle is nullptr.");
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1004, "Obtaining the kernel function handle from the exception information",
+            "info->expandInfo.u.aicpuInfo.funcHandle");
         return RT_ERROR_INVALID_VALUE;
     }
 
@@ -6765,6 +6767,12 @@ rtError_t ApiImpl::GetFuncHandleFromExceptionInfo(const rtExceptionInfo_t* info,
         RT_LOG(
             RT_LOG_ERROR, "Get func handle from exception info failed, binHandle=%p, kernelName=%p", rawBinHandle,
             kernelName);
+        RT_LOG_OUTER_MSG_IMPL(
+            ErrorCode::EE1017, "Obtaining the kernel function handle from the exception information", "info",
+            RtFmtMsg(
+                "The exception information must describe RT_EXCEPTION_AICORE(2) or RT_EXCEPTION_FUSION(5) with "
+                "RT_FUSION_AICORE_CCU(0) and provide non-NULL bin and kernelName fields, bin=%p, kernelName=%p",
+                rawBinHandle, kernelName));
         return RT_ERROR_INVALID_VALUE;
     }
     const rtError_t handleRet = GetValidatedObject<Program>(rawBinHandle, binHandle);

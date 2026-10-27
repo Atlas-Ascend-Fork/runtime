@@ -340,12 +340,24 @@ rtError_t StreamDebugUnRegister(Stream* const debugStream, Stream* const default
     return error;
 }
 
+static bool IsTaskSendUserErrorReported(Stream* const stm, const rtError_t error)
+{
+    // RT_ERROR_STREAM_INVALID also has a WARN-only path without RT_STREAM_CP_PROCESS_USE.
+    return (error == RT_ERROR_INVALID_VALUE && !stm->IsSoftwareSqEnable() && stm->GetBindFlag() &&
+            stm->Model_() != nullptr && stm->isModelComplete) ||
+           (error == RT_ERROR_STREAM_ABORT_SEND_TASK_FAIL) ||
+           (error == RT_ERROR_STREAM_INVALID && (stm->Flags() & RT_STREAM_CP_PROCESS_USE) != 0U);
+}
+
 rtError_t StreamNpuGetFloatStatus(
     void* const outputAddrPtr, const uint64_t outputSize, const uint32_t checkMode, Stream* const stm, bool isDebug)
 {
     const int32_t streamId = stm->Id_();
     TaskInfo* rtNpuGetFloatStatusTask = nullptr;
     rtError_t error = CheckTaskCanSend(stm);
+    COND_RETURN_ERROR(
+        IsTaskSendUserErrorReported(stm, error), error, "Failed to check stream, stream_id=%d, retCode=%#x.", streamId,
+        static_cast<uint32_t>(error));
     ERROR_RETURN_MSG_INNER(
         error, "Failed to check stream, stream_id=%d, retCode=%#x.", streamId, static_cast<uint32_t>(error));
     uint32_t pos = 0xFFFFU;
@@ -379,6 +391,9 @@ rtError_t StreamNpuClearFloatStatus(const uint32_t checkMode, Stream* const stm,
 
     TaskInfo* rtNpuClearFloatStatusTask = nullptr;
     rtError_t error = CheckTaskCanSend(stm);
+    COND_RETURN_ERROR(
+        IsTaskSendUserErrorReported(stm, error), error, "Failed to check stream, stream_id=%d, retCode=%#x.", streamId,
+        static_cast<uint32_t>(error));
     ERROR_RETURN_MSG_INNER(
         error, "Failed to check stream, stream_id=%d, retCode=%#x.", streamId, static_cast<uint32_t>(error));
     uint32_t pos = 0xFFFFU;
@@ -761,6 +776,9 @@ rtError_t SetTimeoutConfigTaskSubmitDavid(Stream* const stm, const rtTaskTimeout
     TaskInfo* timeoutSetTask = nullptr;
 
     rtError_t error = CheckTaskCanSend(stm);
+    COND_RETURN_ERROR(
+        IsTaskSendUserErrorReported(stm, error), error, "Failed to check stream, stream_id=%d, retCode=%#x.",
+        stm->Id_(), static_cast<uint32_t>(error));
     ERROR_RETURN_MSG_INNER(
         error, "Failed to check stream, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     uint32_t pos = 0xFFFFU;
@@ -779,7 +797,12 @@ rtError_t SetTimeoutConfigTaskSubmitDavid(Stream* const stm, const rtTaskTimeout
                                 static_cast<uint32_t>(error));
     stm->StreamUnLock();
     error = stm->Synchronize();
-    COND_RETURN_AND_MSG_OUTER(error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002, "SetTimeoutConfig.");
+    COND_RETURN_AND_MSG_OUTER(
+        error == RT_ERROR_STREAM_SYNC_TIMEOUT, error, ErrorCode::EE1002,
+        RtFmtMsg(
+            "Timed out while waiting for the task that configures the operator timeout, stream_id=%d, "
+            "device_id=%u, retCode=%#x.",
+            stm->Id_(), stm->Device_()->Id_(), static_cast<uint32_t>(error)));
     ERROR_RETURN_MSG_INNER(
         error, "Failed to synchronize, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
     return error;

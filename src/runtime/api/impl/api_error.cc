@@ -5655,10 +5655,15 @@ rtError_t ApiErrorDecorator::CtxGetOverflowAddr(void** const overflowAddr)
 rtError_t ApiErrorDecorator::GetDeviceSatStatus(void* const outputAddrPtr, const uint64_t outputSize, Stream* const stm)
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        outputAddrPtr, RT_ERROR_INVALID_VALUE, "Check param failed, outputAddrPtr can not be null.");
-    COND_RETURN_ERROR(
-        outputSize != OVERFLOW_OUTPUT_SIZE, RT_ERROR_INVALID_VALUE,
-        "Output size %lu is invalid. Only %lu bytes are supported", outputSize, OVERFLOW_OUTPUT_SIZE);
+        outputAddrPtr, RT_ERROR_INVALID_VALUE,
+        "Obtaining the overflow status of tasks in all streams on the current device");
+    if (outputSize != OVERFLOW_OUTPUT_SIZE) {
+        RT_LOG(
+            RT_LOG_ERROR, "Output size %lu is invalid. Only %lu bytes are supported", outputSize, OVERFLOW_OUTPUT_SIZE);
+        RT_LOG_OUTER_MSG_INVALID_PARAM_WITH_DESC(
+            "Obtaining the overflow status of tasks in all streams on the current device", outputSize, "64");
+        return RT_ERROR_INVALID_VALUE;
+    }
     COND_RETURN_AND_MSG_OUTER(
         (stm != nullptr) && (stm->IsCapturing()), RT_ERROR_STREAM_CAPTURED, ErrorCode::EE1016,
         "Obtaining the overflow status of tasks in all streams on the current device",

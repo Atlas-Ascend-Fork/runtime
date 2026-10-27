@@ -79,7 +79,7 @@ rtError_t ApiImpl::SetOpExecuteTimeOutV2(uint64_t timeout, uint64_t* actualTimeo
         "Setting the timeout interval for operator execution", "Device is not initialized, call rtSetDevice API first");
 
     const rtError_t error = rtInstance->SetTimeoutConfig(RT_TIMEOUT_TYPE_OP_EXECUTE, timeout, RT_TIME_UNIT_TYPE_US);
-    ERROR_RETURN_MSG_INNER(error, "Failed to set op execute timeout, retCode=%#x.", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Failed to set op execute timeout, retCode=%#x.", static_cast<uint32_t>(error));
 
     if ((timeoutCfg.isOpTimeoutMs) && (timeoutCfg.isCfgOpExcTaskTimeout) && (timeoutCfg.opExcTaskTimeout == 0UL)) {
         *actualTimeout = MAX_UINT64_NUM; // never timeout

@@ -131,11 +131,25 @@ aclError aclrtGetArgsFromExceptionInfoImpl(const aclrtExceptionInfo* info, void*
             "exception information type = %s is invalid, get args failed.",
             acl::GetExceptionExpandTypeDesc(info->expandInfo.type));
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
-        acl::AclErrorLogManager::ReportInputError(
-            acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
-            std::vector<const char*>(
-                {funcName.c_str(), acl::GetExceptionExpandTypeDesc(info->expandInfo.type), "info->expandInfo.type",
-                 "RT_EXCEPTION_AICORE, RT_EXCEPTION_AICPU or RT_EXCEPTION_FUSION"}));
+        if (info->expandInfo.type == RT_EXCEPTION_FUSION) {
+            const auto fusionType = info->expandInfo.u.fusionInfo.type;
+            const std::string fusionTypeDesc = fusionType == RT_FUSION_AICORE_AICPU ?
+                                                   "RT_FUSION_AICORE_AICPU(1)" :
+                                                   "UNKNOWN(" + std::to_string(static_cast<int32_t>(fusionType)) + ")";
+            acl::AclErrorLogManager::ReportInputError(
+                acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
+                std::vector<const char*>(
+                    {funcName.c_str(), fusionTypeDesc.c_str(), "info->expandInfo.u.fusionInfo.type",
+                     "When info->expandInfo.type is RT_EXCEPTION_FUSION(5), only RT_FUSION_AICORE_CCU(0) supports "
+                     "retrieving arguments"}));
+        } else {
+            acl::AclErrorLogManager::ReportInputError(
+                acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
+                std::vector<const char*>(
+                    {funcName.c_str(), acl::GetExceptionExpandTypeDesc(info->expandInfo.type), "info->expandInfo.type",
+                     "RT_EXCEPTION_AICORE(2), RT_EXCEPTION_AICPU(6) or RT_EXCEPTION_FUSION(5) with "
+                     "RT_FUSION_AICORE_CCU(0)"}));
+        }
         return ACL_ERROR_INVALID_EXCEPTION_INFO;
     }
 

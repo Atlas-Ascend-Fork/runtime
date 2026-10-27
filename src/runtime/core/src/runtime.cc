@@ -4720,9 +4720,9 @@ rtError_t Runtime::SetTimeoutConfig(
     const rtChipType_t chipType = rtInstance->GetChipType();
     // AS31XM1 use ms to calculate timeout cfg
     if ((socVersion_ == "AS31XM1X") || (chipType == CHIP_MC32DM11A) || (chipType == CHIP_MC62CM12A)) {
-        COND_RETURN_ERROR_MSG_INNER(
-            timeUnitType == RT_TIME_UNIT_TYPE_US, RT_ERROR_FEATURE_NOT_SUPPORT,
-            "Not support set opexecutetimeout with us");
+        COND_RETURN_AND_MSG_OUTER(
+            timeUnitType == RT_TIME_UNIT_TYPE_US, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1005,
+            "configuring the operator execution timeout in microseconds on the current device");
         timeoutConfig_.mtx.lock();
         timeoutConfig_.isCfgOpExcTaskTimeout = true;
         timeoutConfig_.opExcTaskTimeout =
@@ -4772,7 +4772,7 @@ rtError_t Runtime::SetTimeoutConfig(
             } else {
                 error = SetTimeoutConfigTaskSubmit(stm, type, taskTimeout);
             }
-            ERROR_RETURN_MSG_INNER(error, "Failed to exe SetTimeoutConfigTaskSubmit, retCode=%#x.", error);
+            ERROR_RETURN(error, "Failed to exe SetTimeoutConfigTaskSubmit, retCode=%#x.", error);
         }
     }
 #endif

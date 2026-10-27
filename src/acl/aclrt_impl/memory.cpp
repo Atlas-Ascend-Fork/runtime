@@ -2224,7 +2224,7 @@ aclError aclrtMemPoolCreateImpl(aclrtMemPool* memPool, const aclrtMemPoolProps* 
     uint8_t zeros[sizeof(poolProps->reserved)] = {0};
     ACL_CHECK_INVALID_PARAM_NO_VALUE(
         memcmp(poolProps->reserved, zeros, sizeof(poolProps->reserved)) == 0, "poolProps->reserved",
-        "poolProps->reserved is a reserved parameter and must be nullptr");
+        "All bytes in poolProps->reserved must be 0");
 
     ACL_REQUIRES_RTS_OK(rtMemPoolCreate(reinterpret_cast<rtMemPool_t*>(memPool), &rtPoolProps));
     return ACL_SUCCESS;

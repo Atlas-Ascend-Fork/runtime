@@ -366,7 +366,7 @@ rtError_t GetMemUceInfoProc(const uint32_t deviceId, rtErrorInfo* const errorInf
     COND_RETURN_AND_MSG_INNER(
         ret != EOK, RT_ERROR_INVALID_VALUE,
         "Failed to call memcpy_s to copy memUceInfo.repairAddr, src=%p, dest=%p, dest_max=%zu, count=%zu, retCode=%#x.",
-        memUceArray->repairAddrArray, memUceInfo.repairAddr, sizeof(memUceArray->repairAddrArray),
+        memUceInfo.repairAddr, memUceArray->repairAddrArray, sizeof(memUceArray->repairAddrArray),
         sizeof(memUceInfo.repairAddr), ret);
 
     errorInfo->tryRepair = 1U;

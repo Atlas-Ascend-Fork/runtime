@@ -210,6 +210,14 @@ rtError_t StreamLaunchCpuKernel(
         stm->StreamUnLock();
     };
     rtError_t error = CheckTaskCanSend(stm);
+    COND_RETURN_ERROR(
+        (error == RT_ERROR_INVALID_VALUE && !stm->IsSoftwareSqEnable() && stm->GetBindFlag() &&
+         stm->Model_() != nullptr && stm->isModelComplete) ||
+            error == RT_ERROR_STREAM_ABORT_SEND_TASK_FAIL ||
+            (error == RT_ERROR_STREAM_INVALID && (stm->Flags() & RT_STREAM_CP_PROCESS_USE) != 0U),
+        error,
+        "The current stream status does not meet the conditions for sending the task. stream_id=%d, retCode=%#x.",
+        streamId, static_cast<uint32_t>(error));
     ERROR_RETURN_MSG_INNER(
         error,
         "The current stream status does not meet the conditions for sending the task. stream_id=%d, retCode=%#x.",

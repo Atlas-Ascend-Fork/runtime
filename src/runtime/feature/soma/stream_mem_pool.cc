@@ -496,6 +496,12 @@ rtError_t SegmentManager::GetAttribute(rtMemPoolAttr attr, void* value)
             break;
         default:
             RT_LOG(RT_LOG_ERROR, "GetAttribute failed, invalid attr=%s.", MemPoolAttrToString(attr).c_str());
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1003, "Getting a memory pool attribute", MemPoolAttrToString(attr), "attr",
+                "rtMemPoolReuseFollowEventDependencies(1), rtMemPoolReuseAllowOpportunistic(2), "
+                "rtMemPoolReuseAllowInternalDependencies(3), rtMemPoolAttrReleaseThreshold(4), "
+                "rtMemPoolAttrReservedMemCurrent(5), rtMemPoolAttrReservedMemHigh(6), "
+                "rtMemPoolAttrUsedMemCurrent(7), rtMemPoolAttrUsedMemHigh(8)");
             return RT_ERROR_POOL_PROP_INVALID;
     }
     return RT_ERROR_NONE;
@@ -507,8 +513,8 @@ rtError_t SegmentManager::SetAttribute(rtMemPoolAttr attr, const void* value)
     uint64_t reset = 0U;
 
     COND_RETURN_AND_MSG_OUTER(
-        isIPCPool_, RT_ERROR_POOL_UNSUPPORTED, ErrorCode::EE1016, "Allocate memory from memory pool",
-        "The IPC memory pool does not support this operation");
+        isIPCPool_, RT_ERROR_POOL_UNSUPPORTED, ErrorCode::EE1016, "Setting a memory pool attribute",
+        "Setting attributes of an IPC memory pool is not supported");
 
     switch (attr) {
         case rtMemPoolReuseFollowEventDependencies:
@@ -525,9 +531,11 @@ rtError_t SegmentManager::SetAttribute(rtMemPoolAttr attr, const void* value)
             break;
         case rtMemPoolAttrReleaseThreshold:
             reset = *static_cast<const uint64_t*>(value);
-            COND_RETURN_ERROR(
-                reset > size_, RT_ERROR_POOL_PROP_INVALID,
-                "releaseThreshold=%#" PRIx64 " bytes exceeds poolSize=%#" PRIx64 " bytes.", reset, size_);
+            COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+                reset > size_, RT_ERROR_POOL_PROP_INVALID, "Setting a memory pool attribute", reset, "value",
+                RtFmtMsg(
+                    "Not greater than pool size %" PRIu64 " bytes for attr=%s", size_,
+                    MemPoolAttrToString(attr).c_str()));
             state_.waterMark = reset;
             RT_LOG(
                 RT_LOG_DEBUG, "Set attribute releaseThreshold, value=%#" PRIx64 ".",
@@ -535,22 +543,27 @@ rtError_t SegmentManager::SetAttribute(rtMemPoolAttr attr, const void* value)
             break;
         case rtMemPoolAttrReservedMemHigh:
             reset = *static_cast<const uint64_t*>(value);
-            COND_RETURN_ERROR(
-                reset != 0, RT_ERROR_POOL_PROP_INVALID, "Set attribute reservedMemHigh only accept 0, value=%" PRIu64,
-                reset);
+            COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+                reset != 0, RT_ERROR_POOL_PROP_INVALID, "Setting a memory pool attribute", reset, "value",
+                RtFmtMsg("0 for attr=%s", MemPoolAttrToString(attr).c_str()));
             maxReservedSize_ = 0U;
             RT_LOG(RT_LOG_DEBUG, "Reset reservedMemHigh to 0 successfully.");
             break;
         case rtMemPoolAttrUsedMemHigh:
             reset = *static_cast<const uint64_t*>(value);
-            COND_RETURN_ERROR(
-                reset != 0, RT_ERROR_POOL_PROP_INVALID, "Set attribute usedMemHigh only accept 0, value=%" PRIu64,
-                reset);
+            COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+                reset != 0, RT_ERROR_POOL_PROP_INVALID, "Setting a memory pool attribute", reset, "value",
+                RtFmtMsg("0 for attr=%s", MemPoolAttrToString(attr).c_str()));
             maxBusySize_ = 0U;
             RT_LOG(RT_LOG_DEBUG, "Reset usedMemHigh to 0 successfully.");
             break;
         default:
             RT_LOG(RT_LOG_ERROR, "SetAttribute failed, invalid attr=%s.", MemPoolAttrToString(attr).c_str());
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1003, "Setting a memory pool attribute", MemPoolAttrToString(attr), "attr",
+                "rtMemPoolReuseFollowEventDependencies(1), rtMemPoolReuseAllowOpportunistic(2), "
+                "rtMemPoolReuseAllowInternalDependencies(3), rtMemPoolAttrReleaseThreshold(4), "
+                "rtMemPoolAttrReservedMemHigh(6), rtMemPoolAttrUsedMemHigh(8)");
             return RT_ERROR_POOL_PROP_INVALID;
     }
     return RT_ERROR_NONE;
