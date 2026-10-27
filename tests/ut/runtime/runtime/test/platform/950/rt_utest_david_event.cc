@@ -248,6 +248,35 @@ TEST_F(EventTestDavid, TestAllocEventIdResource)
     delete eventPool;
 }
 
+TEST_F(EventTestDavid, AllocEventIdResourceReturnsApplyCntNotifyIdError)
+{
+    DavidEvent event(device_, RT_EVENT_DEFAULT, stream_->Context_(), false);
+    DavidStream* const stream = static_cast<DavidStream*>(stream_);
+    stream->cntNotifyId_ = MAX_UINT32_NUM;
+    int32_t eventId = INVALID_EVENT_ID;
+    MOCKER_CPP_VIRTUAL(stream_, &Stream::ApplyCntNotifyId)
+        .expects(once())
+        .will(returnValue(RT_ERROR_DRV_NO_EVENT_RESOURCES));
+
+    EXPECT_EQ(event.AllocEventIdResource(stream_, eventId), RT_ERROR_DRV_NO_EVENT_RESOURCES);
+    EXPECT_EQ(eventId, MAX_INT32_NUM);
+}
+
+TEST_F(EventTestDavid, EvtRecordReturnsAllocEventIdResourceError)
+{
+    rtEvent_t eventHandle = nullptr;
+    ASSERT_EQ(rtEventCreate(&eventHandle), RT_ERROR_NONE);
+    DavidEvent* const event = static_cast<DavidEvent*>(rt_ut::UnwrapOrNull<Event>(eventHandle));
+    ASSERT_NE(event, nullptr);
+    MOCKER_CPP_VIRTUAL(event, &DavidEvent::AllocEventIdResource)
+        .expects(once())
+        .will(returnValue(RT_ERROR_DRV_NO_EVENT_RESOURCES));
+    MOCKER(DavidSendTask).expects(never());
+
+    EXPECT_EQ(EvtRecord(event, stream_), RT_ERROR_DRV_NO_EVENT_RESOURCES);
+    EXPECT_EQ(rtEventDestroy(eventHandle), RT_ERROR_NONE);
+}
+
 TEST_F(EventTestDavid, TestWaitSendCheck)
 {
     rtError_t error;

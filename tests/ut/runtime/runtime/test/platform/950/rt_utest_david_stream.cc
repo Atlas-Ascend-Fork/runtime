@@ -343,6 +343,18 @@ TEST_F(DavidStreamTest, ApplyCntNotifyId_abnormal)
     EXPECT_NE(res, RT_ERROR_NONE);
 }
 
+TEST_F(DavidStreamTest, ApplyCntNotifyId_no_notify_resource)
+{
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::NotifyIdAlloc)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_NO_NOTIFY_RESOURCES));
+    DavidStream* stream = (DavidStream*)stream_;
+    stream->cntNotifyId_ = MAX_UINT32_NUM;
+    int32_t cntNotifyId;
+    const rtError_t res = stream->ApplyCntNotifyId(cntNotifyId);
+    EXPECT_EQ(res, RT_ERROR_DRV_NO_NOTIFY_RESOURCES);
+}
+
 TEST_F(DavidStreamTest, StarsShowDfx)
 {
     DavidStream* stream = (DavidStream*)stream_;

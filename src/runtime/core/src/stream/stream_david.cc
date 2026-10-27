@@ -861,11 +861,17 @@ rtError_t DavidStream::ApplyCntNotifyId(int32_t& newEventId)
     if (unlikely(cntNotifyId_ == MAX_UINT32_NUM)) {
         const rtError_t error = driver->NotifyIdAlloc(static_cast<int32_t>(deviceId), &cntNotifyId_, tsId, 0U, true);
         if (error != RT_ERROR_NONE) {
-            RT_LOG_INNER_MSG(
-                RT_LOG_ERROR, "Alloc notifyId failed, device_id=%u, retCode=%#x.", deviceId,
-                static_cast<uint32_t>(error));
+            if ((error == RT_ERROR_DRV_NO_NOTIFY_RESOURCES) || (error == RT_ERROR_DRV_NO_RESOURCES)) {
+                RT_LOG_OUTER_MSG_IMPL(
+                    ErrorCode::EE1023, "Alloc CntNotify resource", "Too many CntNotify objects are created");
+            } else {
+                RT_LOG_INNER_MSG(
+                    RT_LOG_ERROR, "Alloc notifyId failed, device_id=%u, retCode=%#x.", deviceId,
+                    static_cast<uint32_t>(error));
+            }
             return error;
         }
+
         recordVersion_.Set(0);
     }
     newEventId = static_cast<int32_t>(cntNotifyId_);

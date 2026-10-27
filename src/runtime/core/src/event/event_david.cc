@@ -124,8 +124,10 @@ rtError_t DavidEvent::AllocEventIdResource(Stream* const stm, int32_t& newEventI
 
     stm->GetCntNotifyId(newEventId);
     if (newEventId == MAX_INT32_NUM) {
-        (void)stm->ApplyCntNotifyId(newEventId);
-        return RT_ERROR_NONE;
+        error = stm->ApplyCntNotifyId(newEventId);
+        if (unlikely(error != RT_ERROR_NONE)) {
+            return error;
+        }
     }
 
     if (unlikely(stm->IsCntNotifyReachThreshold() == true)) {

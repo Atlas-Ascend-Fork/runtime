@@ -45,7 +45,11 @@ rtError_t EvtRecord(Event* const evt, Stream* const stm)
     dstStm = tsk->stream;
 
     if (davidEvt->IsNewMode() || davidEvt->GetEventFlag() == RT_EVENT_DEFAULT) {
-        (void)davidEvt->AllocEventIdResource(dstStm, newEventId);
+        error = davidEvt->AllocEventIdResource(dstStm, newEventId);
+        ERROR_PROC_RETURN_MSG_INNER(error, TaskRollBack(dstStm, pos); stm->StreamUnLock();
+                                    , "Failed to allocate event id, deviceId=%u, tsId=%u, retCode=%#x.",
+                                    davidEvt->Device_()->Id_(), davidEvt->Device_()->DevGetTsId(),
+                                    static_cast<uint32_t>(error));
         davidEvt->SetEventId(newEventId);
     }
 
