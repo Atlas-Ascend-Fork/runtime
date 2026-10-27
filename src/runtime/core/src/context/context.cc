@@ -1979,6 +1979,9 @@ rtError_t Context::LabelSwitchListCreate(Label** const labels, const size_t num,
     for (size_t idx = 0U; idx < num; idx++) {
         error = labels[idx]->SetLabelDevAddr(devAddr);
         if (error != RT_ERROR_NONE) {
+            for (size_t rollbackIdx = 0U; rollbackIdx < idx; rollbackIdx++) {
+                labels[rollbackIdx]->ResetLabelDevAddr();
+            }
             (void)device_->Driver_()->DevMemFree(devMem, device_->Id_());
             RT_LOG(
                 RT_LOG_ERROR, "Failed to set label device address, retCode=%#x, labels num=%zu, index=%zu.",
