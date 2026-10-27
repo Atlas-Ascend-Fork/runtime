@@ -13,6 +13,7 @@ add_subdirectory(alog)
 add_subdirectory(ep)
 add_subdirectory(iam)
 add_subdirectory(rc)
+add_subdirectory(python)
 
 set(SLOG_UT_TARGETS
     log_slogd_utest
@@ -31,6 +32,7 @@ set(SLOG_UT_TARGETS
     log_proxy_coverage_utest
     hardware_zip_coverage_utest
     rc_alog_utest
+    slog_python_ut
 )
 
 add_custom_target(slog_ut DEPENDS ${SLOG_UT_TARGETS})
