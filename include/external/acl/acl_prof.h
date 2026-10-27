@@ -464,7 +464,7 @@ MSVP_PROF_API const char* aclprofGetOpAttriValue(
  * @brief
  *
  * @param  stepInfo [IN]     pointer to stepInfo data
- * @param  aclprofstepTag [IN] start or end flag
+ * @param  tag [IN]          start or end flag
  * @param  stream [IN] steam info
  *
  * @retval 0 for failed
