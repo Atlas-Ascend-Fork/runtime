@@ -33,10 +33,12 @@ ArgsHandleAllocator::~ArgsHandleAllocator()
     if (localArgsHandle_->buffer != nullptr) {
         uint8_t* buf = RtPtrToPtr<uint8_t*, void*>(localArgsHandle_->buffer);
         DELETE_A(buf);
+        localArgsHandle_->buffer = nullptr;
     }
 
     uint8_t* argsHandleBuff = RtPtrToPtr<uint8_t*, RtArgsHandle*>(localArgsHandle_);
     DELETE_A(argsHandleBuff);
+    localArgsHandle_ = nullptr;
 
     return;
 }
