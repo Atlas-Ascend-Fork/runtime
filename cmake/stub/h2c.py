@@ -182,7 +182,8 @@ def main(input_header, output_cfile):
     if content:
         print("stub content has been generated")
         if not output_cfile:
-            output_cfile = os.path.basename(input_header).replace(".h", ".c")
+            first_header = next(header for header in input_header if header.endswith('.h'))
+            output_cfile = os.path.basename(first_header).replace(".h", ".c")
         with open(output_cfile, mode='w') as output_cnt:
             output_cnt.writelines(content)
         return 0
@@ -211,7 +212,8 @@ def args_prase():
                         help='This parameter define input header for transform.')
     parser.add_argument('-o', '--outcfile', metavar='outcfile', required=False, \
                         dest='output_cfile', nargs='?', const='', default='', \
-                        help='This parameter define output file.')
+                        help='Output file; defaults to the first processed header name with .c '
+                             'in the current directory.')
     return parser.parse_args()
 
 if __name__ == "__main__":
