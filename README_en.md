@@ -67,7 +67,7 @@ For developers with Ascend devices, if you want to manually set up the Ascend en
 
 The basic dependencies for this project are as follows. Note the version requirements.
 
-- python >= 3.7.0 (Python 3.7 and Python 3.8 have reached official EOL. CANN will stop supporting them in March 2027. Please upgrade to version 3.9.0 or later.)
+- Python >= 3.7.0 (>= 3.9.0 recommended; Python 3.7 and 3.8 have officially reached end of life (EOL). CANN will stop supporting them in March 2027.)
 - pip3
 - gcc >= 7.3.0, <= 13
 - cmake >= 3.16.0
