@@ -246,7 +246,7 @@ static void ConstructDavidSqeForEventWaitTask(TaskInfo* taskInfo, void* const sq
 
     notifySqe->header.type = RT_DAVID_SQE_TYPE_NOTIFY_WAIT;
     notifySqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    notifySqe->notifyId = static_cast<uint16_t>(eventWaitTaskInfo->eventId);
+    notifySqe->notifyId = eventWaitTaskInfo->eventId;
     notifySqe->clrFlag = 0U;
     notifySqe->cntFlag = 0U;
     notifySqe->cntValue = 0U;
@@ -327,7 +327,7 @@ static void ConstructDavidSqeForEventResetTask(TaskInfo* taskInfo, void* const s
 
     notifySqe->header.type = RT_DAVID_SQE_TYPE_NOTIFY_RECORD;
     notifySqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    notifySqe->notifyId = static_cast<uint16_t>(eventResetTaskInfo->eventId);
+    notifySqe->notifyId = eventResetTaskInfo->eventId;
     notifySqe->clrFlag = 1U; // reset will clear bits
     notifySqe->cntValue = 0U;
     notifySqe->waitModeBit = 0U;

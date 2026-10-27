@@ -457,6 +457,39 @@ TEST_F(EventTestDavid, TestToConstructDavidEventWaitTask)
     delete evt;
 }
 
+TEST_F(EventTestDavid, TestEventSqesPreserveSeventeenthNotifyIdBit)
+{
+    constexpr int32_t eventId = 0x10001;
+    DavidEvent* evt = new (std::nothrow) DavidEvent(device_, RT_EVENT_WITH_FLAG, nullptr, false);
+    ASSERT_NE(evt, nullptr);
+    evt->SetEventId(eventId);
+
+    const TaskSqeInfo sqeInfo = {0ULL, 0ULL};
+    TaskInfo recordTask = {};
+    InitByStream(&recordTask, stream_);
+    ASSERT_EQ(DavidEventRecordTaskInit(&recordTask, evt, eventId), RT_ERROR_NONE);
+    rtDavidSqe_t recordSqe = {};
+    ToConstructSqe(&recordTask, &recordSqe, sqeInfo);
+
+    TaskInfo waitTask = {};
+    InitByStream(&waitTask, stream_);
+    DavidEventWaitTaskInit(&waitTask, evt, eventId, 0U);
+    rtDavidSqe_t waitSqe = {};
+    ToConstructSqe(&waitTask, &waitSqe, sqeInfo);
+
+    TaskInfo resetTask = {};
+    InitByStream(&resetTask, stream_);
+    DavidEventResetTaskInit(&resetTask, evt, eventId);
+    rtDavidSqe_t resetSqe = {};
+    ToConstructSqe(&resetTask, &resetSqe, sqeInfo);
+
+    EXPECT_EQ(recordSqe.notifySqe.notifyId, static_cast<uint32_t>(eventId));
+    EXPECT_EQ(waitSqe.notifySqe.notifyId, static_cast<uint32_t>(eventId));
+    EXPECT_EQ(resetSqe.notifySqe.notifyId, static_cast<uint32_t>(eventId));
+    evt->SetEventId(INVALID_EVENT_ID);
+    delete evt;
+}
+
 TEST_F(EventTestDavid, TestSetStarsResultForDavidEventRecordTask)
 {
     TaskInfo task = {};
