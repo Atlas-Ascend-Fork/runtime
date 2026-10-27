@@ -45,6 +45,7 @@ typedef enum aclplatformDevInfo {
     ACL_PLATFORM_AIC_VERSION = 14,
     ACL_PLATFORM_NPU_ARCH = 15,
     ACL_PLATFORM_MEMORY_TYPE = 16,
+    ACL_PLATFORM_MEMORY_BANDWIDTH = 17,
 } aclplatformDevInfo;
 
 typedef enum aclplatformCoreType {

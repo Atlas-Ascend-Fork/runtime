@@ -12,6 +12,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -199,6 +200,36 @@ TEST_F(PlatformManagerAclUTest, acl_platform_GetDeviceInfo_MEMORY_TYPE)
     char buf[64] = {0};
     aclError ret = aclplatformGetDeviceInfo(ACL_PLATFORM_MEMORY_TYPE, buf, sizeof(buf));
     EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+}
+
+TEST_F(PlatformManagerAclUTest, acl_platform_GetDeviceInfo_MEMORY_BANDWIDTH_empty)
+{
+    // Ascend910B1.ini has empty memory_bandwidth → returns not found
+    char buf[64] = {0};
+    aclError ret = aclplatformGetDeviceInfo(ACL_PLATFORM_MEMORY_BANDWIDTH, buf, sizeof(buf));
+    EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+}
+
+TEST_F(PlatformManagerAclUTest, acl_platform_GetDeviceInfo_MEMORY_BANDWIDTH)
+{
+    // Inject memory_bandwidth into the SoCInfo section of the loaded Ascend910B1 infos
+    auto& infos_map = PlatformInfoManager::Instance().platform_infos_map_;
+    auto it = infos_map.find("Ascend910B1");
+    ASSERT_NE(it, infos_map.end());
+
+    std::map<std::string, std::string> soc_res;
+    ASSERT_TRUE(it->second.GetPlatformResWithLock("SoCInfo", soc_res));
+    soc_res["memory_bandwidth"] = "1.6";
+    it->second.SetPlatformRes("SoCInfo", soc_res);
+
+    char buf[64] = {0};
+    aclError ret = aclplatformGetDeviceInfo(ACL_PLATFORM_MEMORY_BANDWIDTH, buf, sizeof(buf));
+    EXPECT_EQ(ret, ACL_SUCCESS);
+    EXPECT_STREQ(buf, "1.6");
+
+    float num = 1.6f;
+    float num_res = std::stof(buf);
+    EXPECT_EQ(num, num_res);
 }
 
 // ============================================================================

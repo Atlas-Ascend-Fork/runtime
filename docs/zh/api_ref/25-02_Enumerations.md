@@ -465,6 +465,7 @@ typedef enum aclplatformDevInfo {
     ACL_PLATFORM_AIC_VERSION       = 14,
     ACL_PLATFORM_NPU_ARCH          = 15,
     ACL_PLATFORM_MEMORY_TYPE       = 16,
+    ACL_PLATFORM_MEMORY_BANDWIDTH  = 17,
 } aclplatformDevInfo;
 ```
 
@@ -487,6 +488,7 @@ typedef enum aclplatformDevInfo {
 | ACL_PLATFORM_AIC_VERSION | AI Core版本字符串。 |
 | ACL_PLATFORM_NPU_ARCH | NPU架构版本，返回值对应[aclplatformNpuArch](#aclplatformNpuArch)枚举的整数值。<br><br> Ascend 950PR&950DT系列产品对应NPU架构版本为3510，Atlas A3训练系列产品/Atlas A3推理系列产品对应NPU架构版本为2201，Atlas A2训练系列产品/Atlas A2推理系列产品对应NPU架构版本为2201。 |
 | ACL_PLATFORM_MEMORY_TYPE | 设备内存类型，返回值对应[aclplatformLocalMemType](#aclplatformLocalMemType)枚举的整数值。 |
+| ACL_PLATFORM_MEMORY_BANDWIDTH | 设备内存带宽，单位GB/s。 |
 
 <br>
 

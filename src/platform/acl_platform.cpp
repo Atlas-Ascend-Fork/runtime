@@ -86,23 +86,24 @@ bool GetPlatFormInfos(fe::PlatFormInfos& platform_infos)
 }
 
 const std::vector<std::pair<std::string, std::string>> kDevInfoTable = {
-    /* 0: ACL_PLATFORM_AICORE_CNT        */ {"SoCInfo", "ai_core_cnt"},
-    /* 1: ACL_PLATFORM_AICORE_UB_SIZE    */ {"AICoreSpec", "ub_size"},
-    /* 2: ACL_PLATFORM_CUBE_CORE_CNT     */ {"SoCInfo", "cube_core_cnt"},
-    /* 3: ACL_PLATFORM_VECTOR_CORE_CNT   */ {"SoCInfo", "vector_core_cnt"},
-    /* 4: ACL_PLATFORM_L2_SIZE           */ {"SoCInfo", "l2_size"},
-    /* 5: ACL_PLATFORM_MEMORY_SIZE       */ {"SoCInfo", "memory_size"},
-    /* 6: ACL_PLATFORM_CUBE_FREQ         */ {"AICoreSpec", "cube_freq"},
-    /* 7: ACL_PLATFORM_VEC_FREQ          */ {"VectorCoreSpec", "vec_freq"},
-    /* 8: ACL_PLATFORM_BT_SIZE           */ {"AICoreSpec", "bt_size"},
-    /* 9: ACL_PLATFORM_L0_A_SIZE         */ {"AICoreSpec", "l0_a_size"},
-    /* 10: ACL_PLATFORM_L0_B_SIZE        */ {"AICoreSpec", "l0_b_size"},
-    /* 11: ACL_PLATFORM_L0_C_SIZE        */ {"AICoreSpec", "l0_c_size"},
-    /* 12: ACL_PLATFORM_L1_SIZE          */ {"AICoreSpec", "l1_size"},
-    /* 13: ACL_PLATFORM_SOC_VERSION      */ {"version", "SoC_version"},
-    /* 14: ACL_PLATFORM_AIC_VERSION      */ {"version", "AIC_version"},
-    /* 15: ACL_PLATFORM_NPU_ARCH         */ {"version", "NpuArch"},
-    /* 16: ACL_PLATFORM_MEMORY_TYPE      */ {"SoCInfo", "memory_type"},
+    {"SoCInfo", "ai_core_cnt"},      // 0: ACL_PLATFORM_AICORE_CNT
+    {"AICoreSpec", "ub_size"},       // 1: ACL_PLATFORM_AICORE_UB_SIZE
+    {"SoCInfo", "cube_core_cnt"},    // 2: ACL_PLATFORM_CUBE_CORE_CNT
+    {"SoCInfo", "vector_core_cnt"},  // 3: ACL_PLATFORM_VECTOR_CORE_CNT
+    {"SoCInfo", "l2_size"},          // 4: ACL_PLATFORM_L2_SIZE
+    {"SoCInfo", "memory_size"},      // 5: ACL_PLATFORM_MEMORY_SIZE
+    {"AICoreSpec", "cube_freq"},     // 6: ACL_PLATFORM_CUBE_FREQ
+    {"VectorCoreSpec", "vec_freq"},  // 7: ACL_PLATFORM_VEC_FREQ
+    {"AICoreSpec", "bt_size"},       // 8: ACL_PLATFORM_BT_SIZE
+    {"AICoreSpec", "l0_a_size"},     // 9: ACL_PLATFORM_L0_A_SIZE
+    {"AICoreSpec", "l0_b_size"},     // 10: ACL_PLATFORM_L0_B_SIZE
+    {"AICoreSpec", "l0_c_size"},     // 11: ACL_PLATFORM_L0_C_SIZE
+    {"AICoreSpec", "l1_size"},       // 12: ACL_PLATFORM_L1_SIZE
+    {"version", "SoC_version"},      // 13: ACL_PLATFORM_SOC_VERSION
+    {"version", "AIC_version"},      // 14: ACL_PLATFORM_AIC_VERSION
+    {"version", "NpuArch"},          // 15: ACL_PLATFORM_NPU_ARCH
+    {"SoCInfo", "memory_type"},      // 16: ACL_PLATFORM_MEMORY_TYPE
+    {"SoCInfo", "memory_bandwidth"}, // 17: ACL_PLATFORM_MEMORY_BANDWIDTH
 };
 } // namespace
 
