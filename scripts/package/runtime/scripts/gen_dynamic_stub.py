@@ -47,7 +47,7 @@ def get_func_infos(func):
         logging.warning("No match func: %s", func)
         return None, None, None
 
-PATTERN_FUNCTION = re.compile(r'ACL_FUNC_VISIBILITY\s+\n*(.+\w+\([^();]*\);)')
+PATTERN_FUNCTION = re.compile(r'ACL_FUNC_VISIBILITY\s+([^;{}]+?\w+\s*\([^();]*\)\s*;)')
 
 HANDLE_GET = '\n'                       \
              'namespace {\n' \
@@ -327,6 +327,7 @@ def generate_function(ge_header_files, runtime_header_files, ge_inc_dir, runtime
     includes.append('#include <limits.h>\n')
     includes.append('#include <string>\n')
     includes.append('#include <cstdarg>\n')
+    includes.append('#include <cstdint>\n')
     # generate includes
     for header in ge_header_files:
         if not header.endswith('.h'):

@@ -19,6 +19,7 @@ add_custom_target(runtime_api_stub_generator_ut
     COMMAND ${Python3_EXECUTABLE} ${RUNTIME_API_STUB_GENERATOR_TEST}
     COMMAND ${Python3_EXECUTABLE} ${ACL_API_STUB_GENERATOR_TEST}
     COMMAND ${Python3_EXECUTABLE} ${TOP_DIR}/tests/host/test_register_init_short_pairs.py
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_gen_dynamic_stub_multiline.py
     WORKING_DIRECTORY ${TOP_DIR}
     COMMENT "Running Runtime and ACL API stub generator unit tests"
     VERBATIM
