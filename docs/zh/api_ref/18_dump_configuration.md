@@ -895,10 +895,10 @@ aclError acldumpSaveExceptionInfo(const char *fileName, const char *userTag, con
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | :---: | --- |
-| fileName | 输入 | 目标文件名。支持为异常算子Dump数据存储路径的相对路径，且不能包含“..”路径段。 |
-| userTag | 输入 | 待保存的自定义维测信息，可选参数。 |
-| tensors | 输入 | 待保存的tensors数组，数组有效长度不得小于tensorCount。Tensor类型定义请参见[acldumpTensorInfo](25-04_Structs.md#acldumpTensorInfo)。其中，acldumpTensorInfo.addrType只支持ACL_DUMP_ADDR_RAW，acldumpTensorInfo.placement只支持ACL_DUMP_PLACEMENT_DEVICE。 |
-| tensorCount | 输入 | tensors数组中的元素个数，需由调用方保证与数组实际长度一致。 |
+| fileName | 输入 | 目标文件名，不能为空。支持为异常算子Dump数据存储路径的相对路径，且不能包含“..”路径段。 |
+| userTag | 输入 | 待保存的自定义维测信息，可选参数，可传入NULL。 |
+| tensors | 输入 | 待保存的tensors数组，不能为空，数组有效长度不得小于tensorCount。Tensor类型定义请参见[acldumpTensorInfo](25-04_Structs.md#acldumpTensorInfo)。每个元素的type仅支持ACL_DUMP_TENSOR_INPUT、ACL_DUMP_TENSOR_OUTPUT、ACL_DUMP_TENSOR_WORKSPACE，其他取值返回ACL_ERROR_INVALID_PARAM；shapeNum和originShapeNum均不得超过ACL_DUMP_MAX_SHAPE_NUM（25）；tensorAddr不能为空且必须为Device侧原始地址，addrType只支持ACL_DUMP_ADDR_RAW，placement只支持ACL_DUMP_PLACEMENT_DEVICE，tensorSize必须大于0。 |
+| tensorCount | 输入 | tensors数组中的元素个数，必须大于0，需由调用方保证与数组实际长度一致。 |
 
 ### 返回值说明
 
