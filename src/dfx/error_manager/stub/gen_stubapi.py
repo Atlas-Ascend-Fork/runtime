@@ -211,14 +211,19 @@ class H2CC(object):
         if pattern_blank_line.search(self.input_content[self.line_index]) or pattern_comment.search(
                 self.input_content[self.line_index]):  # /n or comment using //
             self.line_index += 1
-        if pattern_comment_2_start.search(self.input_content[self.line_index]):  # comment using /*
-            while not pattern_comment_2_end.search(self.input_content[self.line_index]):  # */
+        if self.line_index < len(self.input_content) and pattern_comment_2_start.search(
+                self.input_content[self.line_index]):  # comment using /*
+            while self.line_index < len(self.input_content) and not pattern_comment_2_end.search(
+                    self.input_content[self.line_index]):  # */
                 self.line_index += 1
+            if self.line_index >= len(self.input_content):
+                return
             self.line_index += 1
         # skip define
-        if pattern_define.search(self.input_content[self.line_index]):
-            while pattern_blank_line.search(self.input_content[self.line_index]) or pattern_define_return.search(
-                    self.input_content[self.line_index]):
+        if self.line_index < len(self.input_content) and pattern_define.search(self.input_content[self.line_index]):
+            while self.line_index < len(self.input_content) and (
+                    pattern_blank_line.search(self.input_content[self.line_index]) or pattern_define_return.search(
+                        self.input_content[self.line_index])):
                 self.line_index += 1
             self.line_index += 1
 
@@ -240,6 +245,8 @@ class H2CC(object):
         while self.line_index < len(self.input_content):
             # handle comment and blank line
             self.just_skip()
+            if self.line_index >= len(self.input_content):
+                break
 
             # match namespace
             self.handle_namespace()
