@@ -134,7 +134,7 @@ static constexpr float64_t RT_STARS_TASK_KERNEL_CREDIT_SCALE_MIN = 0.001F; // 0.
 static constexpr uint32_t RT_ARCH_9201_AICORE_NUM_PER_DIE = 35U;
 static constexpr uint32_t RT_SIMT_UB_SIZE_920X = 384U * 1024U;             // UBSize 384KB
 
-static const DevProperties CHIP_CLOUD_V5_PROPERTIES = {
+static constexpr DevProperties CHIP_CLOUD_V5_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,

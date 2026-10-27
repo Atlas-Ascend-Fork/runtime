@@ -74,7 +74,7 @@ static constexpr uint32_t AS31XM1X_DEFAULT_INIT_CNT = 128U;
 static constexpr uint32_t DEVICE_RINGBUFFER_SIZE_MDC = 512U * 1024U;
 static constexpr uint64_t ENGINE_WAIT_COMPLETION_TIMEOUT = 2000UL; // 2000ms
 
-static const DevProperties CHIP_AS31XM1_PROPERTIES = {
+static constexpr DevProperties CHIP_AS31XM1_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

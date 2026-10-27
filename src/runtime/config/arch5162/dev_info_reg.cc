@@ -40,7 +40,7 @@ static constexpr uint32_t CQE_DEPTH = 2048U;
 static constexpr uint32_t TINY_ARG_MAX_ENTRY_INIT_NUM = 4U;
 static constexpr uint32_t TASK_RATION = 1U;
 
-static const DevProperties CHIP_5162A_PROPERTIES = {
+static constexpr DevProperties CHIP_5162A_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

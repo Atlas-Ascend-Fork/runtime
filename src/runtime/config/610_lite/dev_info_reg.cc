@@ -66,7 +66,7 @@ static constexpr double RT_HWTS_610LITE_TASK_KERNEL_CREDIT_SCALE_US = 9320.676; 
 static constexpr int32_t TIMELINE_EVENT_ID = 511;
 static constexpr uint64_t ENGINE_WAIT_COMPLETION_TIMEOUT = 2000UL;              // 2000ms
 
-static const DevProperties CHIP_610LITE_PROPERTIES = {
+static constexpr DevProperties CHIP_610LITE_PROPERTIES = {
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

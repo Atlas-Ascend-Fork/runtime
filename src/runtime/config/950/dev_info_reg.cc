@@ -175,7 +175,7 @@ static constexpr std::array<uint32_t, RT_ATOMIC_OPERATION_MAX_VAL> GetDavidAtomi
     return caps;
 }
 
-static const DevProperties CHIP_DAVID_PROPERTIES = {
+static constexpr DevProperties CHIP_DAVID_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,

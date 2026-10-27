@@ -147,7 +147,7 @@ static constexpr std::array<uint32_t, RT_ATOMIC_OPERATION_MAX_VAL> GetStarsP2PAt
     return caps;
 }
 
-static const DevProperties CHIP_CLOUD_V2_PROPERTIES = {
+static constexpr DevProperties CHIP_CLOUD_V2_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = 0U,

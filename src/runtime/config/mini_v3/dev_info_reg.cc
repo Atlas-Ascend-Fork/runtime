@@ -71,7 +71,7 @@ static constexpr uint32_t RT_STARS_DEFAULT_KERNEL_CREDIT_UINT32 =
 static constexpr double RT_STARS_TASK_KERNEL_CREDIT_SCALE_US = 4294967.296; // 2^32 / 1000M *1000*1000(us)
 static constexpr uint32_t KERNEL_CUSTOM_STACK_SIZE_MAX = 7864320U;          // 7680KB
 
-static const DevProperties CHIP_MINI_V3_PROPERTIES = {
+static constexpr DevProperties CHIP_MINI_V3_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,

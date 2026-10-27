@@ -102,7 +102,7 @@ static constexpr double RT_STARS_MC32DM11A_TASK_KERNEL_CREDIT_SCALE_US = 33554.4
 constexpr uint32_t RT_MC32DM11A_CORE_NUM_PER_DIE = 4U;
 static constexpr uint32_t RT_SIMT_UB_SIZE_DEFAULT = 256U * 1024U;                   // UBSize 256KB
 
-static const DevProperties CHIP_MC32DM11A_PROPERTIES = {
+static constexpr DevProperties CHIP_MC32DM11A_PROPERTIES = {
     .isStars = true,
     .isStarsV2 = true,
     .pthreadStackSize = 0U,

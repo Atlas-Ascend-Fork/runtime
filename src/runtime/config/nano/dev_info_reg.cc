@@ -54,7 +54,7 @@ REGISTER_CHIP_FEATURE_SET(CHIP_NANO, CHIP_NANO_FEATURE);
 static constexpr uint32_t DEFAULT_CQE_SIZE = 12U;
 static constexpr uint32_t CQE_DEPTH = 1024U;
 
-static const DevProperties CHIP_NANO_PROPERTIES = {
+static constexpr DevProperties CHIP_NANO_PROPERTIES = {
     .isStars = false,
     .isStarsV2 = false,
     .pthreadStackSize = PTHREAD_STACK_SIZE,
