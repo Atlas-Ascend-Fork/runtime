@@ -134,7 +134,7 @@
 完整样例代码请参见[Link](https://gitcode.com/cann/runtime/tree/master/example/2_advanced_features/notify/1_ipc_notify_withoutpid)。
 <!-- end id2 -->
 
-注意：创建端会分配Notify硬件资源，因此只能由创建端硬件进行Wait。为此共享Notify有使用约束，只能在创建端调aclrtNotifyWait进行Wait，不能在共享端Wait。
+注意：创建端会分配Notify硬件资源，因此只能由创建端硬件进行Wait。为此共享Notify有使用约束，只能在创建端调aclrtWaitAndResetNotify进行Wait，不能在共享端Wait。
 
 1. 在A进程中创建Notify，生成共享key：
 
@@ -150,17 +150,17 @@
     aclrtSetDevice(0);
     aclrtCreateStream(&stream);
 
-    aclrtNotifyCreate(&notify);
+    aclrtCreateNotify(&notify, 0);
     // 导出key（即Notify共享名称）
     aclrtNotifyGetExportKey(notify, key, keyLen, ACL_RT_NOTIFY_EXPORT_FLAG_DISABLE_PID_VALIDATION);
     // 跨进程通信交换key (以写文件方式交互)
     writeFile("file/ipc_notify", key, keyLen);
 
     // 下发wait任务
-    aclrtNotifyWait(notify, stream);
+    aclrtWaitAndResetNotify(notify, stream, 0);
 
     // Notify使用完, 销毁共享Notify
-    aclrtNotifyDestroy(notify);
+    aclrtDestroyNotify(notify);
     aclrtResetDeviceForce(0);
     ```
 
@@ -184,10 +184,10 @@
     aclrtNotifyImportByKey(&notify, key, ACL_RT_NOTIFY_IMPORT_FLAG_ENABLE_PEER_ACCESS);
 
     // 下发record任务
-    aclrtNotifyRecord (notify, stream);
+    aclrtRecordNotify(notify, stream);
 
     // Notify使用完，销毁共享Notify
-    aclrtNotifyDestroy(notify);
+    aclrtDestroyNotify(notify);
     aclrtResetDeviceForce(1);
     ```
 
