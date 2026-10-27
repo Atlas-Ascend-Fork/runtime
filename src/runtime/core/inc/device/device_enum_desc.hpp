@@ -15,7 +15,6 @@
 #include <string>
 #include "runtime/config.h"
 #include "device.hpp"
-#include "soc/soc_define.hpp"
 #include "rt_log.h"
 
 namespace cce {
@@ -31,13 +30,6 @@ static inline std::string DevRunningStateToString(const uint32_t state)
         default:
             return RtFmtMsg("UNKNOWN(%u)", state);
     }
-}
-
-const char_t* ChipTypeToName(rtChipType_t type);
-
-static inline std::string ChipTypeToString(const rtChipType_t type)
-{
-    return RtFmtMsg("%s(%d)", ChipTypeToName(type), static_cast<int32_t>(type));
 }
 
 static inline std::string DevResTypeToString(const rtDevResType_t type)

@@ -89,8 +89,6 @@ TEST(EnumToStringUtilsTest, InfoTypeToStringUnknownValue) { EXPECT_EQ(InfoTypeTo
 
 TEST(EnumToStringUtilsTest, ErrorLogEnumDescriptions)
 {
-    EXPECT_EQ(ChipTypeToString(CHIP_DAVID), "CHIP_DAVID(15)");
-    EXPECT_EQ(ChipTypeToString(static_cast<rtChipType_t>(999)), "UNKNOWN(999)");
     EXPECT_EQ(DevRunningStateToString(DEV_RUNNING_NORMAL), "DEV_RUNNING_NORMAL(0)");
     EXPECT_EQ(DevRunningStateToString(100U), "UNKNOWN(100)");
     EXPECT_EQ(GetDevMsgTypeToString(RT_GET_DEV_ERROR_MSG), "GET_DEV_ERROR_MSG(0)");
@@ -109,50 +107,6 @@ TEST(EnumToStringUtilsTest, ErrorLogEnumDescriptions)
     EXPECT_STREQ(EschedQueryTypeName(RT_QUERY_TYPE_REMOTE_GRP_ID), "QUERY_TYPE_REMOTE_GRP_ID");
     EXPECT_STREQ(DebugMemoryTypeName(RT_MEM_TYPE_REGISTER), "MEM_TYPE_REGISTER");
     EXPECT_STREQ(KernelDfxInfoTypeName(RT_KERNEL_DFX_INFO_PRINTF), "KERNEL_DFX_INFO_PRINTF");
-}
-
-TEST(EnumToStringUtilsTest, ChipTypeToNameAllKnownValues)
-{
-    const struct {
-        rtChipType_t type;
-        const char* name;
-    } cases[] = {
-        {CHIP_MINI, "CHIP_MINI"},
-        {CHIP_CLOUD, "CHIP_CLOUD"},
-        {CHIP_ADC, "CHIP_ADC"},
-        {CHIP_LHISI, "CHIP_LHISI"},
-        {CHIP_DC, "CHIP_DC"},
-        {CHIP_910_B_93, "CHIP_910_B_93"},
-        {CHIP_NO_DEVICE, "CHIP_NO_DEVICE"},
-        {CHIP_MINI_V3, "CHIP_MINI_V3"},
-        {CHIP_ASCEND_031, "CHIP_ASCEND_031"},
-        {CHIP_NANO, "CHIP_NANO"},
-        {CHIP_RESERVED, "CHIP_RESERVED"},
-        {CHIP_AS31XM1, "CHIP_AS31XM1"},
-        {CHIP_610LITE, "CHIP_610LITE"},
-        {CHIP_CLOUD_V3, "CHIP_CLOUD_V3"},
-        {CHIP_BS9SX1A, "CHIP_BS9SX1A"},
-        {CHIP_DAVID, "CHIP_DAVID"},
-        {CHIP_CLOUD_V5, "CHIP_CLOUD_V5"},
-        {CHIP_MC62CM12A, "CHIP_MC62CM12A"},
-        {CHIP_MC32DM11A, "CHIP_MC32DM11A"},
-        {CHIP_ASCEND_350, "CHIP_ASCEND_350"},
-        {CHIP_XPU, "CHIP_XPU"},
-        {CHIP_5162A, "CHIP_5162A"},
-        {CHIP_X90, "CHIP_X90"},
-        {CHIP_9030, "CHIP_9030"},
-        {CHIP_9050, "CHIP_9050"},
-        {CHIP_DEV_0001, "CHIP_DEV_0001"},
-        {CHIP_DEV_0002, "CHIP_DEV_0002"},
-        {CHIP_DEV_0003, "CHIP_DEV_0003"},
-        {CHIP_9020, "CHIP_9020"},
-    };
-
-    for (const auto& item : cases) {
-        EXPECT_STREQ(ChipTypeToName(item.type), item.name);
-    }
-    EXPECT_STREQ(ChipTypeToName(CHIP_END), "UNKNOWN");
-    EXPECT_STREQ(ChipTypeToName(CHIP_EXT_END), "UNKNOWN");
 }
 
 TEST(EnumToStringUtilsTest, ModuleTypeToStringKnownValue)

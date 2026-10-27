@@ -9,7 +9,6 @@
  */
 
 #include "runtime.hpp"
-#include "device_enum_desc.hpp"
 #include "thread_local_container.hpp"
 #include "error_message_manage.hpp"
 #include "enum_desc.hpp"
@@ -227,7 +226,7 @@ uint16_t TaskResManage::GetTaskPoolSizeByChipType(const rtChipType_t chipType) c
     DevProperties prop;
     rtError_t ret = GET_DEV_PROPERTIES(chipType, prop);
     COND_RETURN_ERROR_MSG_INNER(
-        ret != RT_ERROR_NONE, 0U, "GetDevProperties failed, chip type=%s.", ChipTypeToString(chipType).c_str());
+        ret != RT_ERROR_NONE, 0U, "GetDevProperties failed, chip type=%d.", static_cast<int32_t>(chipType));
     if (prop.taskPoolSizeFromRtsqDepth) {
         return prop.rtsqDepth;
     }

@@ -725,8 +725,8 @@ rtError_t Runtime::GetAicoreNumByLevel(const rtChipType_t chipTypeValue, int64_t
             aicoreNum = RT_AICORE_NUM_30;
         } else {
             RT_LOG_INNER_MSG(
-                RT_LOG_ERROR, "AI Core number level not supported, aicoreNumLevel=%" PRId64 ", chipType=%s.",
-                aicoreNumLevel, ChipTypeToString(chipType_).c_str());
+                RT_LOG_ERROR, "AI Core number level not supported, aicoreNumLevel=%" PRId64 ", chipType=%d.",
+                aicoreNumLevel, static_cast<int32_t>(chipType_));
             return RT_ERROR_DRV_ERR;
         }
     }
@@ -1108,7 +1108,7 @@ rtError_t Runtime::InitChipTypeAndSocVersion()
     ERROR_RETURN_MSG_INNER(ret, "Get all dev properties failed, retCode=%#x.", static_cast<uint32_t>(ret));
     ret = GET_DEV_PROPERTIES(chipType_, curChipProperties_);
     ERROR_RETURN_MSG_INNER(
-        ret, "Get dev properties failed, chipType=%s, retCode=%#x.", ChipTypeToString(chipType_).c_str(),
+        ret, "Get dev properties failed, chipType=%d, retCode=%#x.", static_cast<int32_t>(chipType_),
         static_cast<uint32_t>(ret));
     RT_LOG(
         RT_LOG_INFO, "Runtime init: device type=%d, soc version=%s, have device=%d", chipType_, socVersion_.c_str(),
@@ -1582,8 +1582,8 @@ rtError_t Runtime::GetDcacheLockMixOpPath(std::string& dcacheLockMixOpPath) cons
     DevProperties prop;
     rtError_t ret = GET_DEV_PROPERTIES(chipType_, prop);
     COND_RETURN_ERROR_MSG_INNER(
-        ret != RT_ERROR_NONE, ret, "Get dev properties failed, chipType=%s, retCode=%#x.",
-        ChipTypeToString(chipType_).c_str(), static_cast<uint32_t>(ret));
+        ret != RT_ERROR_NONE, ret, "Get dev properties failed, chipType=%d, retCode=%#x.",
+        static_cast<int32_t>(chipType_), static_cast<uint32_t>(ret));
     if (prop.dcacheLockMixType == DcacheLockMixType::DCACHE_LOCK_MIX_TYPE_FROM_910_B_93) {
         GetCloudV2DcacheLockMixPath(dcacheLockMixOpPath);
     } else if (prop.dcacheLockMixType == DcacheLockMixType::DCACHE_LOCK_MIX_TYPE_FROM_STARS_V2) {

@@ -624,12 +624,12 @@ rtError_t RawDevice::Init()
 
     error = GET_CHIP_FEATURE_SET(chipType, featureSet_);
     ERROR_RETURN_MSG_INNER(
-        error, "Failed to get feature, chipType=%s, device_id=%u, retCode=%#x.", ChipTypeToString(chipType).c_str(),
+        error, "Failed to get feature, chipType=%d, device_id=%u, retCode=%#x.", static_cast<int32_t>(chipType),
         deviceId_, static_cast<uint32_t>(error));
 
     error = GET_DEV_PROPERTIES(chipType, properties_);
     ERROR_RETURN_MSG_INNER(
-        error, "GetDevProperties failed, chipType=%s, device_id=%u, retCode=%#x.", ChipTypeToString(chipType).c_str(),
+        error, "GetDevProperties failed, chipType=%d, device_id=%u, retCode=%#x.", static_cast<int32_t>(chipType),
         deviceId_, static_cast<uint32_t>(error));
 
     if (IsSupportFeature(RtOptionalFeatureType::RT_FEATURE_OVERFLOW_MODE)) {

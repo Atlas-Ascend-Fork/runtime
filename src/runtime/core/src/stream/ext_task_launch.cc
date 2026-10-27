@@ -10,7 +10,6 @@
 
 #include "ext_task_launch.hpp"
 #include "device.hpp"
-#include "device_enum_desc.hpp"
 #include "error_message_manage.hpp"
 #include "stream.hpp"
 #include "task_info.hpp"
@@ -33,8 +32,8 @@ void RegisterExtTaskLaunch(rtChipType_t chipType, tsTaskType_t taskType, ExtTask
 {
     if (!IsValidExtTaskLaunchIndex(chipType, taskType)) {
         RT_LOG(
-            RT_LOG_ERROR, "Invalid ext task launch index, chipType=%s, taskType=%s(%d).",
-            ChipTypeToString(chipType).c_str(), GetTaskDescByType(static_cast<uint8_t>(taskType)),
+            RT_LOG_ERROR, "Invalid ext task launch index, chipType=%d, taskType=%s(%d).",
+            static_cast<int32_t>(chipType), GetTaskDescByType(static_cast<uint8_t>(taskType)),
             static_cast<int32_t>(taskType));
         return;
     }
@@ -54,8 +53,8 @@ rtError_t Stream::LaunchExtTask(tsTaskType_t taskType, const void* params)
     ExtTaskLaunchFunc const launchFunc = GetExtTaskLaunchFunc(device_->GetChipType(), taskType);
     COND_RETURN_ERROR_MSG_INNER(
         launchFunc == nullptr, RT_ERROR_FEATURE_NOT_SUPPORT,
-        "Ext task launch is not registered, chipType=%s, taskType=%s(%d).",
-        ChipTypeToString(device_->GetChipType()).c_str(), GetTaskDescByType(static_cast<uint8_t>(taskType)),
+        "Ext task launch is not registered, chipType=%d, taskType=%s(%d).",
+        static_cast<int32_t>(device_->GetChipType()), GetTaskDescByType(static_cast<uint8_t>(taskType)),
         static_cast<int32_t>(taskType));
     return launchFunc(this, params);
 }

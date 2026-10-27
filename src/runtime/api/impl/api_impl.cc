@@ -1784,8 +1784,8 @@ rtError_t ApiImpl::GetAvailStreamNum(const uint32_t streamType, uint32_t* const 
     if (streamType == RT_HUGE_STREAM) {
         COND_RETURN_ERROR_MSG_INNER(
             props.maxAllocHugeStreamNum == 0U, RT_ERROR_FEATURE_NOT_SUPPORT,
-            "Get max stream and task failed, unsupported huge stream mode in chipType=%s, streamType=%u",
-            ChipTypeToString(chipType).c_str(), streamType);
+            "Get max stream and task failed, unsupported huge stream mode in chipType=%d, streamType=%u",
+            static_cast<int32_t>(chipType), streamType);
         *streamCount = props.maxAllocHugeStreamNum;
         return RT_ERROR_NONE;
     }

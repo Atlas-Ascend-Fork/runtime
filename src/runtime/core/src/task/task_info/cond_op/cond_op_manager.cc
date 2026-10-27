@@ -9,7 +9,6 @@
  */
 
 #include "cond_op_manager.hpp"
-#include "device_enum_desc.hpp"
 #include "inner_thread_local.hpp"
 
 namespace cce {
@@ -22,11 +21,11 @@ CondIsaConstructFuncs g_condIsaConstructFunc[CHIP_END] = {};
 void RegCondIsaTaskFuncs(const rtChipType_t chipType, const CondIsaTaskFuncs* const funcs)
 {
     if ((chipType < CHIP_BEGIN) || (chipType >= CHIP_END)) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return;
     }
     if (funcs == nullptr) {
-        RT_LOG(RT_LOG_ERROR, "Cond ISA task funcs is null, chipType=%s.", ChipTypeToString(chipType).c_str());
+        RT_LOG(RT_LOG_ERROR, "Cond ISA task funcs is null, chipType=%d.", static_cast<int32_t>(chipType));
         return;
     }
     g_condIsaTaskFuncs[chipType] = funcs;
@@ -36,7 +35,7 @@ const CondIsaTaskFuncs* GetCurrentCondIsaTaskFuncs()
 {
     const rtChipType_t chipType = InnerThreadLocalContainer::GetCurrentChipType();
     if ((chipType < CHIP_BEGIN) || (chipType >= CHIP_END)) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return nullptr;
     }
     return g_condIsaTaskFuncs[chipType];
@@ -45,7 +44,7 @@ const CondIsaTaskFuncs* GetCurrentCondIsaTaskFuncs()
 void RegCondIsaConstructFunc(const rtChipType_t chipType, const CondIsaConstructFuncs& funcs)
 {
     if ((chipType < CHIP_BEGIN) || (chipType >= CHIP_END)) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return;
     }
 

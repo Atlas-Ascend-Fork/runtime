@@ -1082,7 +1082,7 @@ const std::vector<rtChipType_t>& GetV201Chips()
 void RegTaskFunc(rtChipType_t chipType, tsTaskType_t taskType, const TaskFuncSingle& funcs)
 {
     if (chipType < CHIP_BEGIN || chipType >= CHIP_END) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return;
     }
 
@@ -1107,7 +1107,7 @@ void RegTaskFunc(rtChipType_t chipType, tsTaskType_t taskType, const TaskFuncSin
 void RegTaskSqeHeaderPostProcFunc(rtChipType_t chipType, PfnTaskSqeHeaderPostProc func)
 {
     if (chipType < CHIP_BEGIN || chipType >= CHIP_END) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return;
     }
 
@@ -1117,7 +1117,7 @@ void RegTaskSqeHeaderPostProcFunc(rtChipType_t chipType, PfnTaskSqeHeaderPostPro
 void RefreshTaskFuncPointer(rtChipType_t chipType)
 {
     if (chipType < CHIP_BEGIN || chipType >= CHIP_END) {
-        RT_LOG(RT_LOG_ERROR, "Invalid chipType=UNKNOWN(%d), valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
+        RT_LOG(RT_LOG_ERROR, "Invalid chipType=%d, valid range: [%d, %d).", chipType, CHIP_BEGIN, CHIP_END);
         return;
     }
 

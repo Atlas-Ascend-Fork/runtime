@@ -3018,8 +3018,8 @@ RTS_API rtError_t rtSetDeviceSatMode(rtFloatOverflowMode_t floatOverflowMode)
     DevProperties prop;
     const rtError_t error = GET_DEV_PROPERTIES(rtInstance->GetChipType(), prop);
     COND_RETURN_EXT_ERRCODE_AND_MSG_INNER(
-        error != RT_ERROR_NONE, error, "GetDevProperties failed, chipType=%s(%d).",
-        ChipTypeToName(rtInstance->GetChipType()), static_cast<int32_t>(rtInstance->GetChipType()));
+        error != RT_ERROR_NONE, error, "GetDevProperties failed, chipType=%d.",
+        static_cast<int32_t>(rtInstance->GetChipType()));
 
     if ((floatOverflowMode >= RT_OVERFLOW_MODE_SATURATION) && (floatOverflowMode < RT_OVERFLOW_MODE_UNDEF)) {
         const uint32_t mode = 1U << floatOverflowMode;
@@ -3525,8 +3525,8 @@ rtError_t rtNeedDevVA2PA(bool* need)
     DevProperties devProperty{};
     const rtError_t error = GET_DEV_PROPERTIES(chipType, devProperty);
     COND_RETURN_EXT_ERRCODE_AND_MSG_INNER(
-        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "GetDevProperties failed, chipType=%s(%d).",
-        ChipTypeToName(chipType), static_cast<int32_t>(chipType));
+        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "GetDevProperties failed, chipType=%d.",
+        static_cast<int32_t>(chipType));
     if (devProperty.isSupportDevVA2PA) {
         *need = true;
     }
@@ -3543,12 +3543,10 @@ rtError_t rtDevVA2PA(uint64_t devAddr, uint64_t len, rtStream_t stm, bool isAsyn
     DevProperties devProperty{};
     rtError_t error = GET_DEV_PROPERTIES(chipType, devProperty);
     COND_RETURN_EXT_ERRCODE_AND_MSG_INNER(
-        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "GetDevProperties failed, chipType=%s(%d).",
-        ChipTypeToName(chipType), static_cast<int32_t>(chipType));
+        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "GetDevProperties failed, chipType=%d.",
+        static_cast<int32_t>(chipType));
     if (!(devProperty.isSupportDevVA2PA)) {
-        RT_LOG(
-            RT_LOG_ERROR, "Chip type %s(%d) does not support.", ChipTypeToName(chipType),
-            static_cast<int32_t>(chipType));
+        RT_LOG(RT_LOG_ERROR, "Chip type %d does not support.", static_cast<int32_t>(chipType));
         return GetRtExtErrCodeAndSetGlobalErr(RT_ERROR_FEATURE_NOT_SUPPORT);
     }
 

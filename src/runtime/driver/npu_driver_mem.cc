@@ -2931,7 +2931,7 @@ rtError_t NpuDriver::CheckIfSupport1GHugePage(const bool isLogError)
     // Static function does not have featureSet
     if (!IS_SUPPORT_CHIP_FEATURE(curChipType, RtOptionalFeatureType::RT_FEATURE_MEM_1G_HUGE_PAGE)) {
         RtLogErrorLevelControl(
-            isLogError, "chip type does not support, chip type=%s.", ChipTypeToString(curChipType).c_str());
+            isLogError, "chip type does not support, chip type=%d.", static_cast<int32_t>(curChipType));
         if (isLogError) {
             RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
                 ErrorCode::EE1006, "Checking 1 GB huge-page memory support",

@@ -5459,8 +5459,8 @@ rtError_t ApiErrorDecorator::CmoAddrTaskLaunch(
     DevProperties devProperty{};
     rtError_t error = GET_DEV_PROPERTIES(chipType, devProperty);
     COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "Failed to get dev properties, chipType=%s",
-        ChipTypeToString(chipType).c_str());
+        error != RT_ERROR_NONE, RT_ERROR_DRV_INVALID_DEVICE, "Failed to get dev properties, chipType=%d",
+        static_cast<int32_t>(chipType));
     const uint64_t sizeMax = (devProperty.cmoAddrInfoType == CmoAddrInfoType::CMO_ADDR_INFO_TYPE_DAVID) ?
                                  sizeof(rtDavidCmoAddrInfo) :
                                  sizeof(rtCmoAddrInfo);

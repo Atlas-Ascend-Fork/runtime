@@ -350,8 +350,8 @@ rtError_t rtsLaunchReduceAsyncTask(const rtReduceInfo_t* reduceInfo, const rtStr
     DevProperties properties;
     const auto error = GET_DEV_PROPERTIES(rtInstance->GetChipType(), properties);
     COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%s.",
-        ChipTypeToString(rtInstance->GetChipType()).c_str());
+        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%d.",
+        static_cast<int32_t>(rtInstance->GetChipType()));
     if (properties.reduceOverflow == ReduceOverflowType::REDUCE_OVERFLOW_TS_VERSION_REDUCE_V2_ID ||
         properties.reduceOverflow == ReduceOverflowType::REDUCE_OVERFLOW_TS_VERSION_REDUCV2_SUPPORT_DC) {
         void* overflowAddr = nullptr;
@@ -477,8 +477,8 @@ rtError_t rtsLaunchCmoAddrTask(rtCmoDesc_t cmoDesc, rtStream_t stm, rtCmoOpCode 
 
     const auto error = GET_DEV_PROPERTIES(rtInstance->GetChipType(), properties);
     COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%s.",
-        ChipTypeToString(rtInstance->GetChipType()).c_str());
+        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%d.",
+        static_cast<int32_t>(Runtime::Instance()->GetChipType()));
     const uint64_t sizeMax = properties.cmoDDRStructInfoSize;
 
     return rtCmoAddrTaskLaunch(cmoDesc, sizeMax, cmoOpCode, stm, 0U);
@@ -535,8 +535,8 @@ rtError_t rtReduceAsyncV2(
     DevProperties properties;
     auto error = GET_DEV_PROPERTIES(rtInstance->GetChipType(), properties);
     COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%s.",
-        ChipTypeToString(rtInstance->GetChipType()).c_str());
+        error != RT_ERROR_NONE, error, "GetDevProperties failed, chip type=%d.",
+        static_cast<int32_t>(rtInstance->GetChipType()));
     if (properties.reduceOverflow != ReduceOverflowType::REDUCE_OVERFLOW_TS_VERSION_REDUCE_V2_ID &&
         properties.reduceOverflow != ReduceOverflowType::REDUCE_OVERFLOW_TS_VERSION_REDUCV2_SUPPORT_DC) {
         RT_LOG_OUTER_MSG_WITH_FUNC(ErrorCode::EE1005);

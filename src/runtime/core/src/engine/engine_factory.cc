@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "engine_factory.hpp"
-#include "device_enum_desc.hpp"
 #include "direct_hwts_engine.hpp"
 #include "async_hwts_engine.hpp"
 #include "engine.hpp"
@@ -24,8 +23,8 @@ Engine* EngineFactory::CreateEngine(const rtChipType_t chipType, Device* dev)
     DevProperties props;
     rtError_t error = GET_DEV_PROPERTIES(chipType, props);
     COND_RETURN_ERROR(
-        (error != RT_ERROR_NONE), nullptr, "Failed to get dev properties, chipType=%s, error=%u",
-        ChipTypeToString(chipType).c_str(), error);
+        (error != RT_ERROR_NONE), nullptr, "Failed to get dev properties, chipType=%d, error=%u",
+        static_cast<int32_t>(chipType), error);
 
     size_t allocSize = 0U;
     if (dev->IsStarsPlatform()) {
