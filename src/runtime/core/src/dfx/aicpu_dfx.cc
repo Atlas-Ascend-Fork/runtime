@@ -152,7 +152,8 @@ rtError_t ParseAicpuPrintInfoImpl(RawDevice* device)
     }
 
     uint32_t userDeviceId = device->deviceId_;
-    if (Runtime::Instance()->GetUserDevIdByDeviceId(device->deviceId_, &userDeviceId) != RT_ERROR_NONE) {
+    if (Runtime::Instance()->GetUserDevIdByDeviceId(device->deviceId_, &userDeviceId, false, false, true) !=
+        RT_ERROR_NONE) {
         RT_LOG(RT_LOG_WARNING, "GetUserDevIdByDeviceId failed, fallback to driver deviceId=%u.", device->deviceId_);
         userDeviceId = device->deviceId_;
     }

@@ -62,7 +62,7 @@ void SetLabelInfoForLabelSetTask(TaskInfo* taskInfo, const uint32_t pos)
     RT_LOG(
         RT_LOG_DEBUG,
         "LabelSetTask, set label position in sq, labelId:%u, sqId:%u, pos:%u, labelInfo:%u, devDstAddr=%#" PRIx64,
-        static_cast<uint32_t>(labelId), sqId, pos, labelInfo, RtPtrToValue((devDstAddr)));
+        static_cast<uint32_t>(labelId), sqId, pos, labelInfo[0U], RtPtrToValue((devDstAddr)));
 
     rtError_t error = RT_ERROR_NONE;
     DevDynInfoProcFunc func{};

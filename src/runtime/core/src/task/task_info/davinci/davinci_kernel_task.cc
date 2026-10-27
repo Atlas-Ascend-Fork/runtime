@@ -458,6 +458,9 @@ void ParseExtendInfo(
         const uint64_t extInfoBuf = RtPtrToValue(extInfos);
         const int32_t infoType = *(RtValueToPtr<int32_t*>(extInfoBuf));
         const uint32_t infoLen = *(RtValueToPtr<uint32_t*>(extInfoBuf + sizeof(int32_t)));
+        COND_RETURN_VOID(
+            (extInfoLen < extInfoStructLen) || (infoLen > (extInfoLen - extInfoStructLen)),
+            "Invalid message length when parsing extend info");
         (void)extendInfo.append("(info_type:")
             .append(std::to_string(infoType))
             .append(", info_len:")

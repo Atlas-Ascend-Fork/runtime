@@ -825,6 +825,58 @@ TEST_F(TaskTest, davinci_kernel_aic_task_print1)
     rtStreamDestroy(stream);
 }
 
+TEST_F(TaskTest, parse_fmk_extend_info_valid_message)
+{
+    TaskInfo task = {};
+    task.u.aicpuTaskInfo.aicpuKernelType = TS_AICPU_KERNEL_FMK;
+    struct {
+        int32_t infoType;
+        uint32_t infoLen;
+        char_t message[4];
+    } extInfo = {4, 4U, {'t', 'e', 's', 't'}};
+    constexpr uint64_t headerSize = sizeof(int32_t) + sizeof(uint32_t);
+    std::string result;
+
+    ParseExtendInfo(&task, reinterpret_cast<const char_t*>(&extInfo), sizeof(extInfo), headerSize, result);
+
+    EXPECT_EQ(result, "(info_type:4, info_len:4, msg_info:test)");
+}
+
+TEST_F(TaskTest, parse_fmk_extend_info_invalid_message_length)
+{
+    TaskInfo task = {};
+    task.u.aicpuTaskInfo.aicpuKernelType = TS_AICPU_KERNEL_FMK;
+    struct {
+        int32_t infoType;
+        uint32_t infoLen;
+        char_t message[4];
+    } extInfo = {4, 5U, {'t', 'e', 's', 't'}};
+    constexpr uint64_t headerSize = sizeof(int32_t) + sizeof(uint32_t);
+    std::string result = "unchanged";
+
+    ParseExtendInfo(&task, reinterpret_cast<const char_t*>(&extInfo), sizeof(extInfo), headerSize, result);
+    EXPECT_EQ(result, "unchanged");
+
+    extInfo.infoLen = std::numeric_limits<uint32_t>::max();
+    ParseExtendInfo(&task, reinterpret_cast<const char_t*>(&extInfo), sizeof(extInfo), headerSize, result);
+    EXPECT_EQ(result, "unchanged");
+}
+
+TEST_F(TaskTest, parse_fmk_extend_info_empty_message)
+{
+    TaskInfo task = {};
+    task.u.aicpuTaskInfo.aicpuKernelType = TS_AICPU_KERNEL_FMK;
+    const struct {
+        int32_t infoType;
+        uint32_t infoLen;
+    } extInfo = {4, 0U};
+    std::string result;
+
+    ParseExtendInfo(&task, reinterpret_cast<const char_t*>(&extInfo), sizeof(extInfo), sizeof(extInfo), result);
+
+    EXPECT_EQ(result, "(info_type:4, info_len:0, msg_info:)");
+}
+
 TEST_F(TaskTest, davinci_kernel_task_print2)
 {
     TaskInfo task = {};

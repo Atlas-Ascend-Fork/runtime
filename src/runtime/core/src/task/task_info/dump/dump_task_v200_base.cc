@@ -68,7 +68,7 @@ static void ConstructDavidSqeForDebugUnRegisterTask(TaskInfo* taskInfo, void* co
     Stream* const stm = taskInfo->stream;
     ConstructDavidSqeForHeadCommon(taskInfo, davidSqe);
     RtDavidPlaceHolderSqe* const phSqe = &(davidSqe->phSqe);
-    phSqe->header.type = RT_STARS_SQE_TYPE_PLACE_HOLDER;
+    phSqe->header.type = RT_DAVID_SQE_TYPE_PLACE_HOLDER;
     phSqe->header.preP = 1U;
     phSqe->taskType = TS_TASK_TYPE_DEBUG_UNREGISTER;
     phSqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT_DAVID;
