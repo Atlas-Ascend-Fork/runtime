@@ -3951,7 +3951,8 @@ ACL_FUNC_VISIBILITY aclError aclrtGetStreamAttribute(
  * @ingroup AscendCL
  * @brief create a notify
  * @param [out] notify  notify to be created
- * @param [in] flag     notify flag, reserved, must be 0
+ * @param [in] flag     notify flag. Valid values are ACL_NOTIFY_DEFAULT and
+ *                      ACL_NOTIFY_DEVICE_USE_ONLY; do not combine the flags.
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
