@@ -133,6 +133,17 @@ static void SendDataCb(uint32_t pid, uint32_t devId, int32_t timeout)
     (void)timeout;
 }
 
+static uint32_t g_recordPid = 0U;
+static uint32_t g_recordDevId = 0U;
+static int32_t g_recordTimeout = 0;
+
+static void RecordSendDataCb(uint32_t pid, uint32_t devId, int32_t timeout)
+{
+    g_recordPid = pid;
+    g_recordDevId = devId;
+    g_recordTimeout = timeout;
+}
+
 class SLOGD_COVERAGE_UTEST : public testing::Test {
 protected:
     virtual void SetUp()
@@ -973,6 +984,142 @@ TEST_F(SLOGD_COVERAGE_UTEST, SessionNodeListCoverage)
     }
     FreeSessionList();
     EXPECT_TRUE(IsSessionNodeListNull());
+    ResetErrLog();
+}
+
+// issue #1272 regression: the END notify sent by DlogReportSendEndMsg arrives on a freshly
+// created session handle, while the session node records the START session of DlogReportSendStartMsg.
+// The delete-by-notify path must match the node by (pid, devId) and never rely on the message's
+// session handle, otherwise the node stays in the main list and the pending app logs are only
+// flushed by the writeWaitTime batch path after the host receive thread already exited.
+TEST_F(SLOGD_COVERAGE_UTEST, SessionDeleteByPidDevIdCoverage)
+{
+    EXPECT_EQ(SUCCESS, InitSessionList());
+    EXPECT_EQ(ARGV_NULL, DeleteSessionNodeByPidDevId(100, GLOBAL_MAX_DEV_NUM, 0)); // invalid devId
+    EXPECT_EQ(ARGV_NULL, DeleteSessionNodeByPidDevId(100, 0, 0));                  // empty list, valid devId
+
+    // session 0x100/0x101 simulate the START sessions recorded at insert time
+    EXPECT_EQ(SUCCESS, InsertSessionNode(0x100, 100, 0));
+    EXPECT_EQ(SUCCESS, InsertSessionNode(0x101, 101, 0)); // list: [101, 100]
+
+    // no session handle is passed: the END notify's session differs from the node's session
+    EXPECT_EQ(SUCCESS, DeleteSessionNodeByPidDevId(100, 0, 0)); // non-head node
+    SessionNode* node100 = GetDeletedSessionNode(100, 0);
+    EXPECT_TRUE(node100 != NULL);
+    EXPECT_EQ(0x100, node100->session);
+    EXPECT_EQ(0, node100->timeout);
+    EXPECT_TRUE(GetSessionNode(100, 0) == NULL);
+
+    EXPECT_EQ(SUCCESS, DeleteSessionNodeByPidDevId(101, 0, 3000)); // head node
+    SessionNode* node101 = GetDeletedSessionNode(101, 0);
+    EXPECT_TRUE(node101 != NULL);
+    EXPECT_EQ(0x101, node101->session);
+    EXPECT_EQ(3000, node101->timeout);
+    EXPECT_TRUE(IsSessionNodeListNull());
+
+    // already moved to the deleted list, a second END notify finds nothing
+    EXPECT_EQ(ARGV_NULL, DeleteSessionNodeByPidDevId(100, 0, 0));
+    EXPECT_EQ(ARGV_NULL, DeleteSessionNodeByPidDevId(999, 0, 0)); // unknown pid
+
+    SessionNode* popped = PopDeletedSessionNode();
+    SessionNode* iter = popped;
+    while (iter != NULL) {
+        SessionNode* next = iter->next;
+        free(iter);
+        iter = next;
+    }
+    FreeSessionList();
+    EXPECT_TRUE(IsSessionNodeListNull());
+    ResetErrLog();
+}
+
+// issue #1272 teardown chain: the node deleted by DeleteSessionNodeByPidDevId must be drained by
+// HandleDeletedSessionNode cycle by cycle — the flush func receives the deleted node's (pid, devId)
+// and the ONE_SECOND-decremented timeout, the node stays queued until the timeout expires and is
+// then released through DevLogReportEnd. This is exactly the flow PR #5818 silently disabled.
+TEST_F(SLOGD_COVERAGE_UTEST, SessionDeleteByPidDevIdTeardownCoverage)
+{
+    EXPECT_EQ(SUCCESS, InitSessionList());
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x600, 600, 0));
+    EXPECT_EQ(SUCCESS, DeleteSessionNodeByPidDevId(600, 0, 3000));
+    EXPECT_TRUE(IsSessionNodeListNull());
+
+    g_recordPid = 0U;
+    g_recordDevId = 0U;
+    g_recordTimeout = 0;
+    HandleDeletedSessionNode(RecordSendDataCb);
+    EXPECT_EQ(600U, g_recordPid);
+    EXPECT_EQ(0U, g_recordDevId);
+    EXPECT_EQ(2000, g_recordTimeout);
+    EXPECT_TRUE(GetDeletedSessionNode(600, 0) != NULL); // not expired yet, re-queued
+
+    HandleDeletedSessionNode(RecordSendDataCb);
+    EXPECT_EQ(1000, g_recordTimeout);
+    EXPECT_TRUE(GetDeletedSessionNode(600, 0) != NULL);
+
+    HandleDeletedSessionNode(RecordSendDataCb);
+    EXPECT_EQ(0, g_recordTimeout);
+    EXPECT_TRUE(PopDeletedSessionNode() == NULL); // expired: released and freed by DevLogReportEnd
+
+    FreeSessionList();
+    ResetErrLog();
+}
+
+// pre-5818 vs current equivalence: replay the pre-5818 call sequence (GetSessionNode ->
+// unlocked timeout write -> DeleteSessionNode(node->session, ...)) with the primitives that
+// still exist unchanged, apply DeleteSessionNodeByPidDevId on an identical list state, and
+// require byte-identical observable state afterwards. The 5818 regression itself is kept as a
+// negative control: DeleteSessionNode with an unrelated session handle reports SUCCESS while
+// the node stays stranded in the main list — exactly the silent failure of issue #1272.
+TEST_F(SLOGD_COVERAGE_UTEST, SessionDeleteByPidDevIdEquivalenceCoverage)
+{
+    EXPECT_EQ(SUCCESS, InitSessionList());
+
+    // phase 1: pre-5818 sequence, list [701, 700]
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x701, 701, 0));
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x700, 700, 0));
+    SessionNode* oldNode = GetSessionNode(700, 0);
+    ASSERT_TRUE(oldNode != NULL);
+    oldNode->timeout = 3000; // pre-5818 wrote this outside the session mutex
+    EXPECT_EQ(SUCCESS, DeleteSessionNode(oldNode->session, 700, 0));
+    EXPECT_TRUE(GetSessionNode(700, 0) == NULL);
+    SessionNode* oldMoved = GetDeletedSessionNode(700, 0);
+    ASSERT_TRUE(oldMoved != NULL);
+    EXPECT_EQ((uintptr_t)0x700, oldMoved->session);
+    EXPECT_EQ(3000, oldMoved->timeout);
+    EXPECT_TRUE(oldMoved->next == NULL);
+    SessionNode* remain1 = GetSessionNode(701, 0);
+    ASSERT_TRUE(remain1 != NULL);
+    EXPECT_EQ((uintptr_t)0x701, remain1->session);
+    SessionNode* oldChain = PopDeletedSessionNode();
+    ASSERT_TRUE(oldChain != NULL);
+    free(oldChain); // exactly one node moved, no residue
+
+    // phase 2: current API on an identical list [711, 710], identical expectations
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x711, 711, 0));
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x710, 710, 0));
+    EXPECT_EQ(SUCCESS, DeleteSessionNodeByPidDevId(710, 0, 3000));
+    EXPECT_TRUE(GetSessionNode(710, 0) == NULL);
+    SessionNode* newMoved = GetDeletedSessionNode(710, 0);
+    ASSERT_TRUE(newMoved != NULL);
+    EXPECT_EQ((uintptr_t)0x710, newMoved->session);
+    EXPECT_EQ(3000, newMoved->timeout);
+    EXPECT_TRUE(newMoved->next == NULL);
+    SessionNode* remain2 = GetSessionNode(711, 0);
+    ASSERT_TRUE(remain2 != NULL);
+    EXPECT_EQ((uintptr_t)0x711, remain2->session);
+    SessionNode* newChain = PopDeletedSessionNode();
+    ASSERT_TRUE(newChain != NULL);
+    free(newChain);
+
+    // phase 3: 5818 negative control — unrelated session handle deletes nothing, silently
+    EXPECT_EQ(SUCCESS, InsertSessionNode((uintptr_t)0x720, 720, 0));
+    EXPECT_EQ(SUCCESS, DeleteSessionNode((uintptr_t)0xDEAD, 720, 0)); // returns SUCCESS
+    EXPECT_FALSE(IsSessionNodeListNull());                            // node stranded in main list
+    EXPECT_TRUE(GetDeletedSessionNode(720, 0) == NULL);
+    EXPECT_EQ(ARGV_NULL, DeleteSessionNodeByPidDevId(720, 1, 0));     // current API: not found is observable
+
+    FreeSessionList();
     ResetErrLog();
 }
 

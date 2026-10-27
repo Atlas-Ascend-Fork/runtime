@@ -47,15 +47,31 @@ TEST_F(ADX_LOG_HDC_TEST, UnInit)
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.UnInit());
 }
 
-static LogRt SetSessionNodeTimeoutStub(uint32_t pid, uint32_t devId, int32_t timeout) { return (LogRt)SUCCESS; }
+// the notify payload carries a distinctive timeout, so the timeout assertions below discriminate
+// a call site that forwards msg->timeout from one that hardcodes it or reads the wrong field;
+// the pid/devId assertions only pin the values produced by the returnValue session-info mocks
+// (they never write out-params, so a pid/devId swap stays indistinguishable until mockcpp
+// governance restores reliable out-param stubs). mockcpp drops invoke-stub return values on
+// some toolchains (aarch64 gcc13 returns 0 for the first chained response, x86 gcc15 dropped
+// the online-UT run), so the stubs return values that stay inert when dropped: SUCCESS equals
+// the dropped default 0, and ARGV_NULL only routes into the warn branch whose flag outcome is
+// identical. returnValue chains are used where the return value itself is load-bearing.
+static constexpr int32_t STUB_NOTIFY_TIMEOUT = 0x7B;
 
-static LogRt SetSessionNodeTimeoutNullStub(uint32_t pid, uint32_t devId, int32_t timeout) { return (LogRt)ARGV_NULL; }
-
-static LogRt DeleteSessionNodeStub(uintptr_t session, int pid, int devId)
+static LogRt DeleteSessionNodeByPidDevIdStub(uint32_t pid, uint32_t devId, int32_t timeout)
 {
-    free(g_node);
-    g_node = NULL;
-    return (LogRt)IDE_DAEMON_OK;
+    EXPECT_EQ(0U, pid);
+    EXPECT_EQ(0U, devId);
+    EXPECT_EQ(STUB_NOTIFY_TIMEOUT, timeout);
+    return (LogRt)SUCCESS;
+}
+
+static LogRt DeleteSessionNodeByPidDevIdNullStub(uint32_t pid, uint32_t devId, int32_t timeout)
+{
+    EXPECT_EQ(0U, pid);
+    EXPECT_EQ(0U, devId);
+    EXPECT_EQ(STUB_NOTIFY_TIMEOUT, timeout);
+    return (LogRt)ARGV_NULL;
 }
 
 TEST_F(ADX_LOG_HDC_TEST, Process)
@@ -79,20 +95,19 @@ TEST_F(ADX_LOG_HDC_TEST, Process)
 
     MOCKER(InsertSessionNode).stubs().will(returnValue(IDE_DAEMON_OK));
 
-    MOCKER(SetSessionNodeTimeout)
+    MOCKER(DeleteSessionNodeByPidDevId)
         .stubs()
-        .will(invoke(SetSessionNodeTimeoutStub))
-        .then(invoke(SetSessionNodeTimeoutNullStub));
+        .will(invoke(DeleteSessionNodeByPidDevIdStub))
+        .then(invoke(DeleteSessionNodeByPidDevIdNullStub));
 
     MOCKER(IsSessionNodeListNull).stubs().will(returnValue(true));
-
-    MOCKER(DeleteSessionNode).stubs().will(invoke(DeleteSessionNodeStub));
 
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.Init());
     EXPECT_EQ(IDE_DAEMON_ERROR, LogHdc.Process(handle, protoPtrs));
     EXPECT_EQ(IDE_DAEMON_ERROR, LogHdc.Process(handle, protoPtrs));
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.Process(handle, protoPtrs));
     strcpy(msg->data, DELETE_MSG.c_str());
+    msg->timeout = STUB_NOTIFY_TIMEOUT;
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.Process(handle, protoPtrs));
     EXPECT_EQ(IDE_DAEMON_OK, LogHdc.Process(handle, protoPtrs));
     strcpy(msg->data, "TEST FAILED");

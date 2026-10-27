@@ -314,7 +314,7 @@ LogRt InsertSessionNode(uintptr_t session, int32_t pid, int32_t devId) { return 
 
 SessionNode* GetSessionNode(uint32_t pid, uint32_t devId) { return NULL; }
 
-LogRt SetSessionNodeTimeout(uint32_t pid, uint32_t devId, int32_t timeout) { return ARGV_NULL; }
+LogRt DeleteSessionNodeByPidDevId(uint32_t pid, uint32_t devId, int32_t timeout) { return ARGV_NULL; }
 
 bool IsSessionNodeListNull(void) { return true; }
 

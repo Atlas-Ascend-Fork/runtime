@@ -63,16 +63,13 @@ int32_t LogHdc::Process(const CommHandle& handle, const SharedPtr<MsgProto>& pro
             InsertSessionNode(handle.session, pid, devId) != SYS_OK, return SYS_ERROR,
             "insert log session node failed");
     } else if (actionType == DELETE_MSG) {
-        SELF_LOG_INFO("delete log session, pid %d devid %d", pid, devId);
+        SELF_LOG_INFO("delete log session, pid %d devid %d, timeout %d", pid, devId, msg->timeout);
         int32_t flag = SYS_OK;
-        // write the timeout under the session mutex, an unlocked node->timeout write races with
-        // the invalid session reclamation in HandleInvalidSessionNode
-        if (SetSessionNodeTimeout((uint32_t)pid, (uint32_t)devId, msg->timeout) != SUCCESS) {
+        // the END notify arrives on a freshly created session handle, so the node inserted at
+        // START time is matched by (pid, devId); the unlink, timeout update and the move to the
+        // deleted list run atomically under the session mutex
+        if (DeleteSessionNodeByPidDevId((uint32_t)pid, (uint32_t)devId, msg->timeout) != SUCCESS) {
             ONE_ACT_WARN_LOG(!IsSessionNodeListNull(), flag = SYS_ERROR, "get session node failed");
-        } else {
-            ONE_ACT_ERR_LOG(
-                DeleteSessionNode(handle.session, pid, devId) != SYS_OK, flag = SYS_ERROR,
-                "delete log session node failed");
         }
         AdxDestroyCommHandle(adxHandle);
         return flag;

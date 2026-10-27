@@ -38,9 +38,9 @@ typedef void (*LogSeverSendDataFunc)(uint32_t pid, uint32_t devId, int32_t timeo
 LogRt InitSessionList(void);
 void FreeSessionList(void);
 LogRt DeleteSessionNode(uintptr_t session, int32_t pid, int32_t devId);
+LogRt DeleteSessionNodeByPidDevId(uint32_t pid, uint32_t devId, int32_t timeout);
 LogRt InsertSessionNode(uintptr_t session, int32_t pid, int32_t devId);
 SessionNode* GetSessionNode(uint32_t pid, uint32_t devId);
-LogRt SetSessionNodeTimeout(uint32_t pid, uint32_t devId, int32_t timeout);
 void PushDeletedSessionNode(SessionNode* node);
 SessionNode* PopDeletedSessionNode(void);
 SessionNode* GetDeletedSessionNode(uint32_t pid, uint32_t devId);

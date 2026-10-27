@@ -107,14 +107,15 @@ void FreeSessionList(void)
     return;
 }
 
-void PushDeletedSessionNode(SessionNode* node)
+// caller must hold g_sessionMutex: the delete paths publish the unlinked node to the deleted
+// list inside the same critical section, so a concurrent SendDataToSessionNode can never
+// observe the node in neither list
+STATIC void PushDeletedSessionNodeUnlocked(SessionNode* node)
 {
     ONE_ACT_NO_LOG(node == NULL, return);
 
-    LOCK_WARN_LOG(&g_sessionMutex);
     if (g_sessionPidDevIdDeletedList == NULL) {
         g_sessionPidDevIdDeletedList = node;
-        UNLOCK_WARN_LOG(&g_sessionMutex);
         return;
     }
     if (node->next != NULL) {
@@ -129,6 +130,14 @@ void PushDeletedSessionNode(SessionNode* node)
         node->next = g_sessionPidDevIdDeletedList;
         g_sessionPidDevIdDeletedList = node;
     }
+}
+
+void PushDeletedSessionNode(SessionNode* node)
+{
+    ONE_ACT_NO_LOG(node == NULL, return);
+
+    LOCK_WARN_LOG(&g_sessionMutex);
+    PushDeletedSessionNodeUnlocked(node);
     UNLOCK_WARN_LOG(&g_sessionMutex);
 }
 
@@ -174,8 +183,8 @@ LogRt DeleteSessionNode(uintptr_t session, int32_t pid, int32_t devId)
             deletedNode->next = NULL;
         }
     }
+    PushDeletedSessionNodeUnlocked(deletedNode);
     UNLOCK_WARN_LOG(&g_sessionMutex);
-    PushDeletedSessionNode(deletedNode);
     return SUCCESS;
 }
 
@@ -357,19 +366,40 @@ SessionNode* GetSessionNode(uint32_t pid, uint32_t devId)
     return tmp;
 }
 
-// update the timeout of a main list node entirely under g_sessionMutex: an unlocked write races
-// with HandleInvalidSessionNode, which frees main list nodes while holding the same mutex
-LogRt SetSessionNodeTimeout(uint32_t pid, uint32_t devId, int32_t timeout)
+// the END notify from the host (DlogReportSendEndMsg) arrives on a freshly created session
+// handle, while the node records the START session of DlogReportSendStartMsg, so the node can
+// only be located by (pid, devId). Timeout update, unlink and the move to the deleted list run
+// in one critical section: an unlocked node->timeout write races with HandleInvalidSessionNode,
+// which frees main list nodes while holding the same mutex, and publishing the node outside the
+// lock leaves a window where SendDataToSessionNode finds it in neither list
+LogRt DeleteSessionNodeByPidDevId(uint32_t pid, uint32_t devId, int32_t timeout)
 {
-    ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return ARGV_NULL, "invalid device id for node searching: %u", devId);
-
+    ONE_ACT_ERR_LOG(devId >= GLOBAL_MAX_DEV_NUM, return ARGV_NULL, "invalid device id for deletion: %u", devId);
+    SessionNode* deletedNode = NULL;
     LOCK_WARN_LOG(&g_sessionMutex);
-    SessionNode* node = GetSessionNodeByList(pid, devId, g_sessionPidDevIdList);
-    if (node != NULL) {
-        node->timeout = timeout;
+    SessionNode* tmp = g_sessionPidDevIdList;
+    if (tmp != NULL) {
+        if ((tmp->pid == (int32_t)pid) && (tmp->devId == (int32_t)devId)) {
+            deletedNode = tmp;
+            g_sessionPidDevIdList = tmp->next;
+            deletedNode->next = NULL;
+        } else {
+            while ((tmp->next != NULL) && ((tmp->next->pid != (int32_t)pid) || (tmp->next->devId != (int32_t)devId))) {
+                tmp = tmp->next;
+            }
+            if (tmp->next != NULL) {
+                deletedNode = tmp->next;
+                tmp->next = deletedNode->next;
+                deletedNode->next = NULL;
+            }
+        }
     }
+    if (deletedNode != NULL) {
+        deletedNode->timeout = timeout;
+    }
+    PushDeletedSessionNodeUnlocked(deletedNode);
     UNLOCK_WARN_LOG(&g_sessionMutex);
-    return (node != NULL) ? SUCCESS : ARGV_NULL;
+    return (deletedNode != NULL) ? SUCCESS : ARGV_NULL;
 }
 
 SessionNode* GetDeletedSessionNode(uint32_t pid, uint32_t devId)
