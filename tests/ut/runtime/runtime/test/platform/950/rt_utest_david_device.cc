@@ -45,6 +45,10 @@
 #include "sq_addr_memory_pool.hpp"
 #include "dev_simt_stack_checker.hpp"
 #include "utils/capability.hpp"
+#include "context.hpp"
+#include "device_debug_c.hpp"
+#include "inner_kernel.h"
+#include "errcode_manage.hpp"
 
 using namespace testing;
 using namespace cce::runtime;
@@ -307,6 +311,105 @@ TEST_F(DeviceTestDavid, SkipSimtStackAllocRejectsNonIntegratedArchitecture)
         device.properties_.cvArchType = archType;
         EXPECT_FALSE(device.SkipSimtStackAlloc(0U));
         EXPECT_FALSE(device.SkipSimtStackAlloc(RT_SIMT_STACK_SHARE_THRESHOLD - 1U));
+    }
+}
+
+class DeviceStackBufferTestDavid : public DeviceTestDavid {
+protected:
+    void SetUp() override
+    {
+        DeviceTestDavid::SetUp();
+        stackDevice_.properties_.cvArchType = DeviceCvArchType::CV_ARCH_INTERGRATION;
+        stackDevice_.properties_.aicNum = 2U;
+        stackDevice_.properties_.aivNum = 4U;
+        stackDevice_.properties_.aicNumPerDie = 1U;
+        stackDevice_.properties_.aivNumPerDie = 2U;
+        stackDevice_.tsId_ = static_cast<uint32_t>(RT_TSC_ID);
+        stackDevice_.simtWarpStkSize_ = 128U;
+        stackDevice_.simtDvgWarpStkSize_ = 32U;
+        MOCKER_CPP(&Context::Device_).stubs().will(returnValue(static_cast<Device*>(&stackDevice_)));
+    }
+
+    void TearDown() override
+    {
+        GlobalMockObject::verify();
+        DeviceTestDavid::TearDown();
+    }
+
+    RawDevice stackDevice_{0};
+    const void* stack_ = nullptr;
+    uint32_t stackSize_ = 0U;
+};
+
+TEST_F(DeviceStackBufferTestDavid, GetStackBufferSimtUsesAllocatedStack)
+{
+    stackDevice_.simtStackPhyBaseAlign_ = ValueToPtr(0x100000ULL);
+    MOCKER(halTsdrvCtl).expects(never());
+    EXPECT_EQ(
+        GetStackBuffer(nullptr, 0U, RT_STACK_TYPE_SIMT, RT_CORE_TYPE_AIV, 1U, &stack_, &stackSize_), RT_ERROR_NONE);
+    EXPECT_EQ(stackSize_, 64U * (128U + 32U));
+    EXPECT_EQ(PtrToValue(stack_), 0x100000ULL + stackSize_);
+}
+
+TEST_F(DeviceStackBufferTestDavid, GetStackBufferSimtQueriesSharedStack)
+{
+    ts_ctrl_msg_body_t ack = {};
+    ack.u.simt_stack_snapshot_info.snapshot_user_va = 0x200000ULL;
+    size_t ackSize = sizeof(ts_simt_stack_snapshot_info_t);
+    MOCKER_CPP_VIRTUAL(static_cast<Device*>(&stackDevice_), &Device::CheckFeatureSupport)
+        .stubs()
+        .with(TS_FEATURE_SIMT_STK_SHARE)
+        .will(returnValue(true));
+    MOCKER(halTsdrvCtl)
+        .expects(once())
+        .with(
+            eq(stackDevice_.Id_()), eq(TSDRV_CTL_CMD_CTRL_MSG), mockcpp::any(), eq(sizeof(tsdrv_ctrl_msg)),
+            outBoundP(static_cast<void*>(&ack), sizeof(ack)), outBoundP(&ackSize, sizeof(ackSize)))
+        .will(returnValue(DRV_ERROR_NONE));
+    EXPECT_EQ(
+        GetStackBuffer(nullptr, 0U, RT_STACK_TYPE_SIMT, RT_CORE_TYPE_AIC, 1U, &stack_, &stackSize_), RT_ERROR_NONE);
+    EXPECT_EQ(stackSize_, 64U * (128U + 32U));
+    EXPECT_EQ(PtrToValue(stack_), 0x200000ULL + stackSize_);
+}
+
+TEST_F(DeviceStackBufferTestDavid, GetStackBufferSimtSharedStackDriverFailure)
+{
+    MOCKER_CPP_VIRTUAL(static_cast<Device*>(&stackDevice_), &Device::CheckFeatureSupport)
+        .stubs()
+        .with(TS_FEATURE_SIMT_STK_SHARE)
+        .will(returnValue(true));
+    MOCKER(halTsdrvCtl).expects(once()).will(returnValue(DRV_ERROR_INVALID_VALUE));
+    EXPECT_EQ(
+        GetStackBuffer(nullptr, 0U, RT_STACK_TYPE_SIMT, RT_CORE_TYPE_AIV, 0U, &stack_, &stackSize_),
+        RT_GET_DRV_ERRCODE(DRV_ERROR_INVALID_VALUE));
+    EXPECT_EQ(stack_, nullptr);
+}
+
+TEST_F(DeviceStackBufferTestDavid, GetStackBufferSimtRejectsNonIntegratedAic)
+{
+    MOCKER(halTsdrvCtl).expects(never());
+    for (const DeviceCvArchType archType : {DeviceCvArchType::CV_ARCH_SEPARATION, DeviceCvArchType::CV_ARCH_INVALID}) {
+        stackDevice_.properties_.cvArchType = archType;
+        EXPECT_EQ(
+            GetStackBuffer(nullptr, 0U, RT_STACK_TYPE_SIMT, RT_CORE_TYPE_AIC, 0U, &stack_, &stackSize_),
+            RT_ERROR_FEATURE_NOT_SUPPORT);
+    }
+}
+
+TEST_F(DeviceStackBufferTestDavid, GetStackBufferNormalStackAllowsFDie)
+{
+    stackDevice_.tsId_ = static_cast<uint32_t>(RT_TSC_ID) + 1U;
+    PlainProgram program;
+    const void* base = ValueToPtr(0x300000ULL);
+    MOCKER_CPP(&Program::GetMaxMinStackSize).stubs().will(returnValue(KERNEL_STACK_SIZE_32K));
+    MOCKER_CPP_VIRTUAL(static_cast<Device*>(&stackDevice_), &Device::GetStackPhyBase32k)
+        .stubs()
+        .will(returnValue(base));
+    MOCKER(halTsdrvCtl).expects(never());
+    for (const uint32_t coreType : {RT_CORE_TYPE_AIC, RT_CORE_TYPE_AIV}) {
+        EXPECT_EQ(GetStackBuffer(&program, 0U, 0U, coreType, 0U, &stack_, &stackSize_), RT_ERROR_NONE);
+        EXPECT_EQ(stackSize_, KERNEL_STACK_SIZE_32K);
+        EXPECT_EQ(PtrToValue(stack_), PtrToValue(base) + KERNEL_STACK_SIZE_32K * coreType);
     }
 }
 

@@ -107,6 +107,7 @@ typedef enum {
     TS_FEATURE_FLIP_TASK_WITH_STREAM_ID = 50,
     TS_FEATURE_ACLGRAPH_COND_OP = 51, // ACL Graph support cond op
     TS_FEATURE_SQ_DYNAMIC_ENABLE_CQE = 52,
+    TS_FEATURE_SIMT_STK_SHARE = 53,
 } rtTschFeature;
 
 typedef enum {

@@ -40,10 +40,18 @@ constexpr uint32_t MAX_WARP_NUM_PER_VECTOR = 64U;
 static rtError_t CheckCoreParam(
     const Device* device, const uint32_t stackType, const uint32_t coreType, const uint32_t coreId)
 {
-    if (coreType == RT_CORE_TYPE_AIC && stackType == RT_STACK_TYPE_SIMT) {
+    if ((coreType == RT_CORE_TYPE_AIC) && (stackType == RT_STACK_TYPE_SIMT) &&
+        (device->GetDevProperties().cvArchType != DeviceCvArchType::CV_ARCH_INTERGRATION)) {
         RT_LOG(RT_LOG_WARNING, "stackType=%u and coreType=%u is not supported.", stackType, coreType);
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     }
+    if ((stackType == RT_STACK_TYPE_SIMT) && (device->DevGetTsId() != static_cast<uint32_t>(RT_TSC_ID))) {
+        RT_LOG(
+            RT_LOG_WARNING, "simt stack snapshot not supported on F die, tsId=%u, coreId=%u.", device->DevGetTsId(),
+            coreId);
+        return RT_ERROR_FEATURE_NOT_SUPPORT;
+    }
+
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         ((stackType > RT_STACK_TYPE_SIMT)), RT_ERROR_INVALID_VALUE,
         "Verifying the validity of the compute core type and stack type", stackType,
@@ -224,6 +232,32 @@ rtError_t DebugReadAICore(const rtDebugMemoryParam_t* const param, const Device*
     return DebugReleaseDevMem(curCtx);
 }
 
+static rtError_t GetSimtStackSharedAddr(const Device* device, uint64_t* simtStkSnapshotUserVaOut)
+{
+    ts_ctrl_msg_body_t ctrlMsgIn = {};
+    ts_ctrl_msg_body_t ctrlMsgAck = {};
+    size_t ackSize = sizeof(ts_ctrl_msg_body_t);
+    ctrlMsgIn.type = OP_GET_SIMT_STACK_SHARED_ADDR;
+    struct tsdrv_ctrl_msg para = {};
+    para.tsid = device->DevGetTsId();
+    para.msg_len = static_cast<uint32_t>(sizeof(ts_ctrl_msg_body_t));
+    para.msg = static_cast<void*>(&ctrlMsgIn);
+    COND_RETURN_WARN(&halTsdrvCtl == nullptr, RT_ERROR_DRV_NOT_SUPPORT, "halTsdrvCtl does not exist.");
+    const drvError_t drvRet = halTsdrvCtl(
+        device->Id_(), TSDRV_CTL_CMD_CTRL_MSG, static_cast<void*>(&para), sizeof(tsdrv_ctrl_msg),
+        static_cast<void*>(&ctrlMsgAck), &ackSize);
+    COND_RETURN_ERROR_MSG_CALL(
+        ERR_MODULE_DRV, drvRet != DRV_ERROR_NONE, RT_GET_DRV_ERRCODE(drvRet),
+        "halTsdrvCtl get simt stack shared addr failed, device_id=%u, ts_id=%u, drvRetCode=%d.", device->Id_(),
+        device->DevGetTsId(), static_cast<int32_t>(drvRet));
+    COND_RETURN_ERROR_MSG_CALL(
+        ERR_MODULE_DRV, (ackSize < sizeof(ts_simt_stack_snapshot_info_t)), RT_ERROR_DRV_ERR,
+        "halTsdrvCtl get simt stack shared addr failed, device_id=%u, ts_id=%u, drvRetCode=%d.", device->Id_(),
+        device->DevGetTsId(), static_cast<int32_t>(drvRet));
+    *simtStkSnapshotUserVaOut = ctrlMsgAck.u.simt_stack_snapshot_info.snapshot_user_va;
+    return static_cast<rtError_t>(ctrlMsgAck.u.simt_stack_snapshot_info.snapshot_errcode);
+}
+
 rtError_t GetStackBuffer(
     const Program* const programHdl, uint32_t deviceId, const uint32_t stackType, const uint32_t coreType,
     const uint32_t coreId, const void** stack, uint32_t* stackSize, const Device* const device)
@@ -241,8 +275,23 @@ rtError_t GetStackBuffer(
         const uint32_t simtWarpStkSize = currentDevice->GetSimtWarpStkSize();
         const uint32_t simtDvgWarpStkSize = currentDevice->GetSimtDvgWarpStkSize();
         *stackSize = MAX_WARP_NUM_PER_VECTOR * (simtWarpStkSize + simtDvgWarpStkSize);
+
         const void* stackPhyBase = currentDevice->GetSimtStackPhyBase();
-        *stack = ValueToPtr(PtrToValue(stackPhyBase) + (*stackSize) * coreId);
+
+        if ((stackPhyBase != nullptr) ||
+            ((stackPhyBase == nullptr) && !currentDevice->CheckFeatureSupport(TS_FEATURE_SIMT_STK_SHARE))) {
+            *stack = ValueToPtr(PtrToValue(stackPhyBase) + (*stackSize) * coreId);
+        } else {
+            uint64_t simtStkSnapshotUserVa = 0ULL;
+            const rtError_t queryRet = GetSimtStackSharedAddr(currentDevice, &simtStkSnapshotUserVa);
+            COND_RETURN_ERROR(
+                queryRet != RT_ERROR_NONE, queryRet, "get simt stack snapshot fail, retCode=%#x, coreId=%u.", queryRet,
+                coreId);
+            *stack = ValueToPtr(simtStkSnapshotUserVa + (*stackSize) * coreId);
+            RT_LOG(
+                RT_LOG_DEBUG, "simt stack snapshot ok, coreId=%u, stackSize=%u, userVa=0x%llx, offsetStack=%p.", coreId,
+                *stackSize, simtStkSnapshotUserVa, *stack);
+        }
     } else {
         *stackSize = KERNEL_STACK_SIZE_32K;
         const void* stackPhyBase = currentDevice->GetStackPhyBase32k();

@@ -487,6 +487,7 @@ enum OPERATION_TYPE {
     OP_QUERY_STREAM_PRIORITY,
     OP_QUERY_SWAP_BUFFER_INFO,
     OP_SET_MODEL_NAME,
+    OP_GET_SIMT_STACK_SHARED_ADDR,
     OP_INVALID
 };
 #pragma pack(push)
@@ -624,6 +625,12 @@ typedef struct {
 } ts_set_model_name_info_t;
 
 typedef struct {
+    volatile uint64_t snapshot_user_va;
+    volatile uint32_t snapshot_errcode;
+    volatile uint32_t reserved;
+} ts_simt_stack_snapshot_info_t;
+
+typedef struct {
     volatile uint32_t type;
     union {
         ts_kill_task_info_t kill_task_info;
@@ -647,6 +654,7 @@ typedef struct {
         ts_update_and_query_stream_priority_t update_and_query_stream_priority;
         ts_query_swap_buffer_info_t query_swap_buffer_info;
         ts_set_model_name_info_t set_model_name_info;
+        ts_simt_stack_snapshot_info_t simt_stack_snapshot_info;
     } u;              // 40 bytes
 } ts_ctrl_msg_body_t; // 44 bytes
 #pragma pack(pop)
