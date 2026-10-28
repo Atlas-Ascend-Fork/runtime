@@ -10,3 +10,4 @@
 - [3_cond_model](./3_cond_model/README.md)：演示 aclGraph 条件操作（IF/WHILE/SWITCH 及嵌套组合）的图捕获与执行。
 - [4_model_sync_external](./4_model_sync_external/README.md)：演示 ACL Graph 跨边界同步场景下 Event 的 Record External 和 Wait External 用法。
 - [5_reusable_buffer_reset](./5_reusable_buffer_reset/README.md)：枚举异步清零模型的 Stream/Task 结构，并在结构有效时执行模型和校验缓冲区结果。
+- [6_graph_task_annotation](./6_graph_task_annotation/README.md)：给两批数据的填充、复制任务添加批次编号和操作说明，并在导出的 ACL Graph 调试文件中查看。
