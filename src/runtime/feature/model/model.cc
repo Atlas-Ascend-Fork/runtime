@@ -661,7 +661,7 @@ rtError_t Model::AddStream(Stream* const streamIn, const uint32_t flag)
     }
 
     streamIn->SetModel(this);
-    streamIn->SetBindFlag(true); // set bind flag for alloc task resource;
+    streamIn->SetBindFlag(true); // set bind flag for alloc task resource
     streamIn->InsertCacheStream();
     RT_LOG(RT_LOG_DEBUG, "add stream to model end, stream_id=%d, model_id=%d.", streamIn->Id_(), id_);
     return RT_ERROR_NONE;
