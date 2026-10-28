@@ -499,17 +499,17 @@ set(runtimeut_src_tiny_exclude_list
 set(runtimeut_src_tiny_include_list
     ${RUNTIME_UT_TINY_GENERATED_API_STUB_SOURCE}
     ${TOP_DIR}/src/runtime/api/api_c_tiny.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_error_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_error_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_tiny.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_snapshot_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_kernel_func_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_ipc_memory_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_event_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_snapshot_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_kernel_func_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_ipc_memory_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_esched.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_decorator_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_device_topology_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_decorator_stub.cc
     ${TOP_DIR}/src/runtime/core/src/dfx/fast_recover.cc
     ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_v100.cc
     ${TOP_DIR}/src/runtime/core/src/context/context_stub.cc
@@ -1550,6 +1550,7 @@ set(RUNTIME_TEST_INC_DIR_COMMON
     ${TOP_DIR}/src/runtime/core/inc/dqs
     ${TOP_DIR}/src/runtime/api
     ${TOP_DIR}/src/runtime/api/impl
+    ${TOP_DIR}/src/runtime/api/impl/inc
     ${TOP_DIR}/src/runtime/core/src/engine
     ${TOP_DIR}/src/runtime/core/src/engine/hwts
     ${TOP_DIR}/src/runtime/core/src/engine/stars

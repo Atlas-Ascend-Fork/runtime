@@ -210,12 +210,12 @@ set(libruntime_callback_files
 )
 
 set(libruntime_src_files_include_for_tiny
-    ${RUNTIME_API_DIR}/impl/api_error_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_snapshot_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_rt_config_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_device_topology_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_ipc_memory_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_error_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_snapshot_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_rt_config_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_device_topology_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_ipc_memory_stub.cc
     ${RUNTIME_API_DIR}/impl/api_impl_tiny.cc
     ${RUNTIME_API_DIR}/impl/v100/api_impl_v100.cc
     ${RUNTIME_CORE_DIR}/src/context/context_stub.cc
@@ -244,17 +244,17 @@ set(libruntime_src_files_include_for_tiny
     ${RUNTIME_FEATURE_DIR}/aclgraph/tiny/capture_model_stub.cc
     ${RUNTIME_FEATURE_DIR}/aclgraph/tiny/event_capture_stub.cc
     ${RUNTIME_FEATURE_DIR}/aclgraph/tiny/capture_adapt_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_decorator_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_decorator_stub.cc
     ${RUNTIME_FEATURE_DIR}/model/tiny/model_aclgraph_stub.cc
     ${RUNTIME_FEATURE_DIR}/jetty/jetty_stub.cc
 )
 
 set(libruntime_event_src_files_include_for_tiny
-    ${RUNTIME_API_DIR}/impl/api_impl_event_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_event_stub.cc
 )
 
 set(libruntime_function_src_files_include_for_tiny
-    ${RUNTIME_API_DIR}/impl/api_impl_kernel_func_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_kernel_func_stub.cc
 )
 
 set(libruntime_api_src_files_include_for_tiny
@@ -588,6 +588,7 @@ set(RUNTIME_INC_DIR_TINY
     ${RUNTIME_DIR}/src/runtime/core/inc/utils
     ${RUNTIME_DIR}/src/runtime/api
     ${RUNTIME_API_DIR}/impl
+    ${RUNTIME_API_DIR}/impl/inc
     ${RUNTIME_CORE_DIR}/src/engine
     ${RUNTIME_CORE_DIR}/src/engine/hwts
     ${RUNTIME_CORE_DIR}/src/engine/stars

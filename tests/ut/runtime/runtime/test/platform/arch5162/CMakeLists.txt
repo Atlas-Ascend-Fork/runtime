@@ -65,8 +65,8 @@ set(runtimeut_src_task_list
 )
 
 set(libruntime_src_files_include_for_arch5162
-    ${TOP_DIR}/src/runtime/api/impl/api_error_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_error_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_v100.cc
     ${TOP_DIR}/src/runtime/core/src/context/context_stub.cc
     ${TOP_DIR}/src/runtime/core/src/dfx/printf_stub.cc
@@ -115,24 +115,24 @@ set(runtimeut_src_api_list
 
 set(runtimeut_src_api_impl_list
     ${TOP_DIR}/src/runtime/api/impl/api_decorator.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_decorator_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_decorator_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_error.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_kernel_args_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_kernel_func_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_kernel_args_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_kernel_func_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_creator.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_mbuf_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_esched_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_snapshot_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_ipc_memory_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_host_memory_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_vmm_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_mbuf_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_esched_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_snapshot_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_rt_config_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_device_topology_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_ipc_memory_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_host_memory_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_vmm_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_arch5162.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_memory_stub.cc
+    ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_memory_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_creator_c.cc
 )
 
@@ -501,6 +501,7 @@ set(RUNTIME_TEST_INC_DIR_COMMON
     ${TOP_DIR}/src/runtime/core/inc/dqs
     ${TOP_DIR}/src/runtime/api
     ${TOP_DIR}/src/runtime/api/impl
+    ${TOP_DIR}/src/runtime/api/impl/inc
     ${TOP_DIR}/src/runtime/core/src/engine
     ${TOP_DIR}/src/runtime/core/src/engine/hwts
     ${TOP_DIR}/src/runtime/core/src/engine/stars

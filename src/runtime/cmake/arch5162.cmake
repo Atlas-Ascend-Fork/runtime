@@ -130,24 +130,24 @@ set(libruntime_api_src_files
 
 set(libruntime_api_impl_src_files
     ${RUNTIME_API_DIR}/impl/api_decorator.cc
-    ${RUNTIME_API_DIR}/impl/api_decorator_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_decorator_stub.cc
     ${RUNTIME_API_DIR}/impl/api_error.cc
     ${RUNTIME_API_DIR}/impl/api_impl.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_kernel_args_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_kernel_func_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_kernel_args_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_kernel_func_stub.cc
     ${RUNTIME_API_DIR}/impl/api_impl_creator.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_mbuf_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_esched_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_snapshot_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_rt_config_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_device_topology_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_ipc_memory_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_host_memory_stub.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_vmm_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_mbuf_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_esched_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_snapshot_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_rt_config_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_device_topology_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_ipc_memory_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_host_memory_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_vmm_stub.cc
     ${RUNTIME_API_DIR}/impl/api_impl_event_common.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_stub.cc
     ${RUNTIME_API_DIR}/impl/api_impl_arch5162.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_memory_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_impl_memory_stub.cc
     ${RUNTIME_API_DIR}/impl/v100/api_impl_creator_c.cc
 )
 
@@ -243,7 +243,7 @@ set(runtime_src_aclgraph_list
 )
 
 set(libruntime_src_files_include_for_arch5162
-    ${RUNTIME_API_DIR}/impl/api_error_stub.cc
+    ${RUNTIME_API_DIR}/impl/stub/api_error_stub.cc
     ${RUNTIME_API_DIR}/impl/v100/api_impl_v100.cc
     ${RUNTIME_CORE_DIR}/src/context/context_stub.cc
     ${RUNTIME_CORE_DIR}/src/dfx/printf_stub.cc
@@ -397,6 +397,7 @@ set(RUNTIME_INC_DIR_ARCH5162
     ${RUNTIME_DIR}/src/runtime/core/inc/utils
     ${RUNTIME_DIR}/src/runtime/api
     ${RUNTIME_API_DIR}/impl
+    ${RUNTIME_API_DIR}/impl/inc
     ${RUNTIME_CORE_DIR}/src/engine
     ${RUNTIME_CORE_DIR}/src/engine/hwts
     ${RUNTIME_CORE_DIR}/src/engine/stars
