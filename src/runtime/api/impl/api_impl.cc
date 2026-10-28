@@ -6913,9 +6913,6 @@ rtError_t ApiImpl::StreamGetTasks(Stream* const stm, void** tasks, uint32_t* num
         "stm->modelNum", RtFmtMsg("The stream (stream_id=%d) is not bound to a model", stm->Id_()));
     Model* const mdl = stm->Model_();
     NULL_PTR_RETURN(mdl, RT_ERROR_MODEL_NULL);
-    COND_RETURN_WARN(
-        IsStreamBindWithSubModel(stm), RT_ERROR_FEATURE_NOT_SUPPORT,
-        "stream belongs to sub ACL Graph, does not support getting tasks");
     return stm->StreamGetTasks(tasks, numTasks);
 }
 
@@ -6933,9 +6930,6 @@ rtError_t ApiImpl::ModelGetTasks(const Model* const mdl, void** tasks, uint32_t*
 rtError_t ApiImpl::TaskGetType(rtTask_t task, rtTaskType* type)
 {
     const TaskInfo* const taskInfo = static_cast<const TaskInfo*>(task);
-    COND_RETURN_WARN(
-        IsTaskBelongToSubCaptureMdl(taskInfo), RT_ERROR_FEATURE_NOT_SUPPORT,
-        "task belongs to sub ACL Graph, does not support querying task type");
     return ConvertTaskType(taskInfo, type);
 }
 
@@ -7008,10 +7002,6 @@ rtError_t ApiImpl::TaskGetSeqId(rtTask_t task, uint32_t* id)
     COND_RETURN_AND_MSG_OUTER(
         mdl->GetModelType() != RT_MODEL_CAPTURE_MODEL, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1016,
         "Obtaining the Submission Queue Entry (SQE) ID of a task", "Non ACL Graph mode is not supported");
-    const CaptureModel* captureModel = dynamic_cast<const CaptureModel*>(mdl);
-    COND_RETURN_WARN(
-        ((captureModel != nullptr) && captureModel->IsSubCaptureModel()), RT_ERROR_FEATURE_NOT_SUPPORT,
-        "task belongs to sub ACL Graph, does not support querying task sequence ID");
     *id = taskInfo->modelSeqId;
     RT_LOG(RT_LOG_INFO, "Get task sequence id=%u, streamId=%d, taskId=%u.", *id, stm->Id_(), taskInfo->id);
     return RT_ERROR_NONE;

@@ -6536,9 +6536,6 @@ rtError_t ApiErrorDecorator::ModelGetStreams(const Model* const mdl, Stream** st
                 ModelTypeToString(mdl->GetModelType()).c_str(), mdl->Id_());
             return RT_ERROR_MODEL_NULL;
         }
-        COND_RETURN_WARN(
-            captureModel->IsSubCaptureModel(), RT_ERROR_FEATURE_NOT_SUPPORT,
-            "sub ACL Graph does not support getting streams");
     }
     return impl_->ModelGetStreams(mdl, streams, numStreams);
 }

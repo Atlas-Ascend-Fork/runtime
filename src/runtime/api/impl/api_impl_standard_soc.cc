@@ -1259,10 +1259,6 @@ rtError_t ApiImpl::TaskGetParams(rtTask_t task, rtTaskParams* const params)
         return RT_ERROR_INVALID_VALUE;
     }
 
-    COND_RETURN_WARN(
-        IsTaskBelongToSubCaptureMdl(taskInfo), RT_ERROR_FEATURE_NOT_SUPPORT,
-        "task belongs to sub ACL Graph, does not support getting task parameters");
-
     (void)memset_s(params, sizeof(rtTaskParams), 0, sizeof(rtTaskParams));
     const std::lock_guard<std::mutex> graphUpdateLock(captureModel->GetGraphUpdateInfo().updateMutex);
     if ((taskInfo->updateInfo != nullptr) && (taskInfo->updateInfo->latestParams.isValid == 1U)) {

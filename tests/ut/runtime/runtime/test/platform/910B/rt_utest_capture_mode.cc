@@ -1444,9 +1444,44 @@ TEST_F(CloudV2CondHandleTest, CondHandleWhileE2E)
     ret = rtStreamBeginCaptureToModel(subStream, subModels[0], RT_STREAM_CAPTURE_MODE_THREAD_LOCAL);
     EXPECT_EQ(ret, RT_ERROR_NONE);
 
+    constexpr uint64_t capturedValue = 0U;
+    ASSERT_EQ(rtsValueWrite(condDevPtr, capturedValue, 0U, subStream), RT_ERROR_NONE);
+
     rtModel_t subModelResult;
     ret = rtStreamEndCapture(subStream, &subModelResult);
-    EXPECT_EQ(ret, RT_ERROR_NONE);
+    ASSERT_EQ(ret, RT_ERROR_NONE);
+    ASSERT_EQ(subModelResult, subModels[0]);
+
+    uint32_t streamCount = 0U;
+    ASSERT_EQ(rtModelGetStreams(subModelResult, nullptr, &streamCount), RT_ERROR_NONE);
+    ASSERT_EQ(streamCount, 1U);
+    rtStream_t capturedStream = nullptr;
+    ASSERT_EQ(rtModelGetStreams(subModelResult, &capturedStream, &streamCount), RT_ERROR_NONE);
+    ASSERT_NE(capturedStream, nullptr);
+
+    uint32_t taskCount = 0U;
+    ASSERT_EQ(rtModelGetTasks(subModelResult, nullptr, &taskCount), RT_ERROR_NONE);
+    ASSERT_EQ(taskCount, 2U);
+    rtTask_t modelTasks[2] = {};
+    ASSERT_EQ(rtModelGetTasks(subModelResult, modelTasks, &taskCount), RT_ERROR_NONE);
+    ASSERT_EQ(taskCount, 2U);
+    rtTask_t streamTasks[2] = {};
+    ASSERT_EQ(rtStreamGetTasks(capturedStream, streamTasks, &taskCount), RT_ERROR_NONE);
+    ASSERT_EQ(taskCount, 2U);
+    EXPECT_EQ(modelTasks[0], streamTasks[0]);
+    EXPECT_EQ(modelTasks[1], streamTasks[1]);
+
+    rtTaskType taskType = RT_TASK_DEFAULT;
+    ASSERT_EQ(rtTaskGetType(modelTasks[0], &taskType), RT_ERROR_NONE);
+    EXPECT_EQ(taskType, RT_TASK_VALUE_WRITE);
+    uint32_t sequenceId = UINT32_MAX;
+    ASSERT_EQ(rtTaskGetSeqId(modelTasks[0], &sequenceId), RT_ERROR_NONE);
+    EXPECT_EQ(sequenceId, 0U);
+    rtTaskParams taskParams = {};
+    ASSERT_EQ(rtModelTaskGetParams(modelTasks[0], &taskParams), RT_ERROR_NONE);
+    EXPECT_EQ(taskParams.type, RT_TASK_VALUE_WRITE);
+    EXPECT_EQ(taskParams.valueWriteTaskParams.devAddr, condDevPtr);
+    EXPECT_EQ(taskParams.valueWriteTaskParams.value, capturedValue);
 
     MOCKER_CPP(&Context::CreateNotify).stubs().will(invoke(StubCreateNotifyForCondHandle));
     rtModel_t parentModelResult;

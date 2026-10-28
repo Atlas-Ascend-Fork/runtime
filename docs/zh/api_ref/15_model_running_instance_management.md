@@ -2256,6 +2256,20 @@ aclError aclmdlRIAddCondTask(aclmdlRICondTaskParams params, aclrtStream stream, 
 
 返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
 
+<a id="conditional_submodel_constraints"></a>
+
+### 约束说明
+
+条件子图是由本接口创建、用于承载IF、WHILE或SWITCH条件任务的分支或循环体的模型运行实例。执行父图时，由条件任务根据条件值选择并调度相应的条件子图。
+
+下述接口不支持操作由本接口创建的条件子图、其关联Stream及该Stream上的任务。
+
+| 操作对象 | 不支持的接口 |
+| --- | --- |
+| 条件子图 | [aclmdlRIExecute](#aclmdlRIExecute)、[aclmdlRIExecuteAsync](#aclmdlRIExecuteAsync)、[aclmdlRIDestroy](#aclmdlRIDestroy)、[aclmdlRIAbort](#aclmdlRIAbort)、[aclmdlRIUpdate](#aclmdlRIUpdate)、[aclmdlRIDestroyRegisterCallback](#aclmdlRIDestroyRegisterCallback)、[aclmdlRIDestroyUnregisterCallback](#aclmdlRIDestroyUnregisterCallback) |
+| 条件子图关联的Stream | [aclrtSetLabel](10_label_management.md#aclrtSetLabel)、[aclrtSwitchLabelByIndex](10_label_management.md#aclrtSwitchLabelByIndex)、[aclrtPersistentTaskClean](06_stream_management.md#aclrtPersistentTaskClean) |
+| 条件子图中的任务 | [aclmdlRITaskSetParams](#aclmdlRITaskSetParams)、[aclmdlRITaskDisable](#aclmdlRITaskDisable) |
+
 <br>
 <br>
 <br>
@@ -2318,3 +2332,7 @@ aclmdlRICaptureToModelRIBegin和[aclmdlRICaptureEnd](#aclmdlRICaptureEnd)接口�
 ### 返回值说明
 
 返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
+
+### 约束说明
+
+条件子图的接口使用限制，请参见[aclmdlRIAddCondTask接口的约束说明](#conditional_submodel_constraints)。
