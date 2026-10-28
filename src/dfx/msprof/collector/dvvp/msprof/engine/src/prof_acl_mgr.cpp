@@ -47,6 +47,7 @@
 #include "prof_reporter_mgr.h"
 #include "prof_hal_plugin.h"
 #include "prof_acl_intf.h"
+#include "profimpl/collect/sys_runner/include/runtime_system_mode_runner.h"
 
 using namespace analysis::dvvp::common::config;
 using namespace analysis::dvvp::common::error;
@@ -626,6 +627,8 @@ bool ProfAclMgr::IsAclApiReady() const
     }
     return false;
 }
+
+bool ProfAclMgr::IsSystemMode() const { return params_ != nullptr && params_->profMode == MSVP_PROF_SYSTEM_MODE; }
 
 bool ProfAclMgr::IsSubscribeMode() const
 {
@@ -2433,6 +2436,9 @@ int32_t ProfAclMgr::MsprofInitAclEnv(const std::string& envValue)
     MSPROF_LOGI(
         "MsprofInitAclEnv, mode:%d, dataTypeConfig:0x%llx, baseDir:%s", mode_, dataTypeConfig_,
         Utils::BaseName(baseDir_).c_str());
+    if (IsSystemMode()) {
+        return analysis::dvvp::runner::RuntimeSystemModeRunner::Run(params_, baseDir_);
+    }
     return MSPROF_ERROR_NONE;
 }
 

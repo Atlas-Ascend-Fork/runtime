@@ -17,7 +17,7 @@
 #include "config/config.h"
 #include "platform/platform.h"
 #include "task_relationship_mgr.h"
-#include "msprofbin_manager.h"
+#include "msprof_task.h"
 
 namespace Analysis {
 namespace Dvvp {
@@ -31,8 +31,33 @@ using namespace Analysis::Dvvp::Msprof;
 
 std::map<const google::protobuf::Descriptor*, PFMessagehandler> HdcTransportDataHandle::handlerMap_ =
     HdcTransportDataHandle::CreateHandlerMap();
+std::map<std::string, SHARED_PTR_ALIA<MsprofTask>> HdcTransportDataHandle::taskMap_;
+std::mutex HdcTransportDataHandle::taskMapMutex_;
 
 IDataHandleCB::~IDataHandleCB() {}
+
+void HdcTransportDataHandle::RegisterTask(const std::string& jobId, const SHARED_PTR_ALIA<MsprofTask>& task)
+{
+    if ((task == nullptr) || jobId.empty()) {
+        MSPROF_LOGE("Register hdc task failed, task is invalid.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(taskMapMutex_);
+    taskMap_[jobId] = task;
+}
+
+void HdcTransportDataHandle::UnregisterAllTask()
+{
+    std::lock_guard<std::mutex> lock(taskMapMutex_);
+    taskMap_.clear();
+}
+
+SHARED_PTR_ALIA<MsprofTask> HdcTransportDataHandle::GetTask(const std::string& jobId)
+{
+    std::lock_guard<std::mutex> lock(taskMapMutex_);
+    const auto iter = taskMap_.find(jobId);
+    return (iter == taskMap_.end()) ? nullptr : iter->second;
+}
 
 HdcTransportDataHandle::HdcTransportDataHandle() {}
 
@@ -131,7 +156,7 @@ int32_t HdcTransportDataHandle::ProcessDataChannelFinish(SHARED_PTR_ALIA<google:
         MSPROF_LOGE("Failed to parse jobCtx json %s.", dataChannFinish->hdr().job_ctx().c_str());
         return PROFILING_FAILED;
     }
-    auto task = MsprofManager::instance()->GetTask(jobCtx.job_id);
+    auto task = GetTask(jobCtx.job_id);
     if (task == nullptr) {
         MSPROF_LOGE("[ProcessDataChannelFinish]Failed to find task by job_id %s", jobCtx.job_id.c_str());
         return PROFILING_FAILED;
@@ -144,7 +169,7 @@ int32_t HdcTransportDataHandle::ProcessDataChannelFinish(SHARED_PTR_ALIA<google:
 
 int32_t HdcTransportDataHandle::ProcessRspCommon(const std::string& jobId, const std::string& encoded)
 {
-    auto task = MsprofManager::instance()->GetTask(jobId);
+    auto task = GetTask(jobId);
     if (task == nullptr) {
         MSPROF_LOGE("[RspCommon]Failed to find task by job_id %s", jobId.c_str());
         return PROFILING_FAILED;

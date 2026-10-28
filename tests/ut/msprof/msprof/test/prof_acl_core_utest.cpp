@@ -74,6 +74,7 @@
 #include "prof_reporter_mgr.h"
 #include "receive_data.h"
 #include "prof_l2cache_job.h"
+#include "runtime_system_mode_runner.h"
 #include "json_parser.h"
 #include "stats_analyzer.h"
 #include "error_manager_stub2.h"
@@ -1328,6 +1329,33 @@ TEST_F(MSPROF_ACL_CORE_UTEST, acl_app)
         .will(returnValue(false));
 
     EXPECT_EQ(MSPROF_ERROR_CONFIG_INVALID, Msprofiler::Api::ProfAclMgr::instance()->MsprofInitAclEnv(envsV));
+}
+
+TEST_F(MSPROF_ACL_CORE_UTEST, AclEnvSystemModeRunnerTest)
+{
+    GlobalMockObject::verify();
+    std::string envsV("{\"result_dir\":\"/tmp\", \"devices\":\"1\", \"job_id\":\"1\", \"profMode\":\"system\"}");
+    auto selfPath = std::string("/home");
+    MOCKER(&analysis::dvvp::common::utils::Utils::GetSelfPath).stubs().will(returnValue(selfPath));
+    MOCKER_CPP(&Msprofiler::Api::ProfAclMgr::CallbackInitPrecheck).stubs().will(returnValue(PROFILING_SUCCESS));
+    MOCKER_CPP(
+        &analysis::dvvp::common::validation::ParamValidation::CheckStorageLimit,
+        bool(ParamValidation::*)(SHARED_PTR_ALIA<analysis::dvvp::message::ProfileParams>, const std::string&) const)
+        .stubs()
+        .will(returnValue(false));
+
+    EXPECT_EQ(MSPROF_ERROR_CONFIG_INVALID, Msprofiler::Api::ProfAclMgr::instance()->MsprofInitAclEnv(envsV));
+}
+
+TEST_F(MSPROF_ACL_CORE_UTEST, SystemModeRunnerPlatformInitFailed)
+{
+    GlobalMockObject::verify();
+    auto params = std::make_shared<analysis::dvvp::message::ProfileParams>();
+    MOCKER_CPP(&Analysis::Dvvp::Common::Platform::Platform::PlatformInitByDriver)
+        .stubs()
+        .will(returnValue(PROFILING_FAILED));
+
+    EXPECT_EQ(PROFILING_FAILED, analysis::dvvp::runner::RuntimeSystemModeRunner::Run(params, "/tmp"));
 }
 
 TEST_F(MSPROF_ACL_CORE_UTEST, DISABLED_acl_json)

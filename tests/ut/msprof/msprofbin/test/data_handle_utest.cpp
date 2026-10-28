@@ -10,16 +10,18 @@
 #include "mockcpp/mockcpp.hpp"
 #include "gtest/gtest.h"
 #include <iostream>
+#include <thread>
 #include "errno/error_code.h"
 #include "data_handle.h"
 #include "message/codec.h"
+#include "msprof_task.h"
 
 using namespace analysis::dvvp::common::error;
 using namespace analysis::dvvp::common::config;
 
 class DATA_HANDLE_UTEST : public testing::Test {
 protected:
-    virtual void SetUp() {}
+    virtual void SetUp() { Analysis::Dvvp::Msprof::HdcTransportDataHandle::UnregisterAllTask(); }
     virtual void TearDown() {}
 };
 
@@ -76,4 +78,75 @@ TEST_F(DATA_HANDLE_UTEST, ReceiveStreamData)
     EXPECT_EQ(
         PROFILING_FAILED,
         Analysis::Dvvp::Msprof::HdcTransportDataHandle::ReceiveStreamData((void*)finishJob.c_str(), finishJob.size()));
+}
+
+TEST_F(DATA_HANDLE_UTEST, TaskRegistryLifecycle)
+{
+    GlobalMockObject::verify();
+
+    std::shared_ptr<analysis::dvvp::message::JobContext> jobCtx(new analysis::dvvp::message::JobContext);
+    jobCtx->job_id = "task_registry_ut";
+
+    std::shared_ptr<analysis::dvvp::message::ProfileParams> params(new analysis::dvvp::message::ProfileParams);
+    SHARED_PTR_ALIA<Analysis::Dvvp::Msprof::ProfSocTask> task(new Analysis::Dvvp::Msprof::ProfSocTask(0, params));
+
+    std::shared_ptr<analysis::dvvp::proto::DataChannelFinish> message(new analysis::dvvp::proto::DataChannelFinish);
+    message->mutable_hdr()->set_job_ctx(jobCtx->ToString());
+    std::string encoded = analysis::dvvp::message::EncodeMessage(message);
+
+    Analysis::Dvvp::Msprof::HdcTransportDataHandle::RegisterTask("", task);
+    Analysis::Dvvp::Msprof::HdcTransportDataHandle::RegisterTask(jobCtx->job_id, nullptr);
+    EXPECT_EQ(
+        PROFILING_FAILED,
+        Analysis::Dvvp::Msprof::HdcTransportDataHandle::ReceiveStreamData((void*)encoded.c_str(), encoded.size()));
+
+    Analysis::Dvvp::Msprof::HdcTransportDataHandle::RegisterTask(jobCtx->job_id, task);
+    EXPECT_EQ(
+        PROFILING_SUCCESS,
+        Analysis::Dvvp::Msprof::HdcTransportDataHandle::ReceiveStreamData((void*)encoded.c_str(), encoded.size()));
+
+    Analysis::Dvvp::Msprof::HdcTransportDataHandle::UnregisterAllTask();
+    EXPECT_EQ(
+        PROFILING_FAILED,
+        Analysis::Dvvp::Msprof::HdcTransportDataHandle::ReceiveStreamData((void*)encoded.c_str(), encoded.size()));
+}
+
+TEST_F(DATA_HANDLE_UTEST, TaskRegistryConcurrentAccess)
+{
+    GlobalMockObject::verify();
+
+    std::shared_ptr<analysis::dvvp::message::JobContext> jobCtx(new analysis::dvvp::message::JobContext);
+    jobCtx->job_id = "task_registry_concurrent_ut";
+
+    std::shared_ptr<analysis::dvvp::message::ProfileParams> params(new analysis::dvvp::message::ProfileParams);
+    SHARED_PTR_ALIA<Analysis::Dvvp::Msprof::ProfSocTask> task(new Analysis::Dvvp::Msprof::ProfSocTask(0, params));
+
+    std::shared_ptr<analysis::dvvp::proto::DataChannelFinish> message(new analysis::dvvp::proto::DataChannelFinish);
+    message->mutable_hdr()->set_job_ctx(jobCtx->ToString());
+    std::string encoded = analysis::dvvp::message::EncodeMessage(message);
+
+    std::thread registerThread([&task, &jobCtx]() {
+        for (int32_t i = 0; i < 100; ++i) {
+            Analysis::Dvvp::Msprof::HdcTransportDataHandle::RegisterTask(jobCtx->job_id, task);
+        }
+    });
+
+    std::thread callbackThread([&encoded]() {
+        for (int32_t i = 0; i < 100; ++i) {
+            (void)Analysis::Dvvp::Msprof::HdcTransportDataHandle::ReceiveStreamData(
+                (void*)encoded.c_str(), encoded.size());
+        }
+    });
+
+    std::thread unregisterThread([]() {
+        for (int32_t i = 0; i < 100; ++i) {
+            Analysis::Dvvp::Msprof::HdcTransportDataHandle::UnregisterAllTask();
+        }
+    });
+
+    registerThread.join();
+    callbackThread.join();
+    unregisterThread.join();
+
+    Analysis::Dvvp::Msprof::HdcTransportDataHandle::UnregisterAllTask();
 }

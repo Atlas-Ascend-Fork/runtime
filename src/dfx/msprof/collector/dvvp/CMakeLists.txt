@@ -22,6 +22,24 @@ set(hdcCpp
     profhal/adx/wrapper/memory_utils.cpp
 )
 
+# 1911EP(310B) has no channel 145 and still uses the adda system-mode link.
+# Keep adda/protobuf sources in one group so they can be removed together
+# after 1911EP is sunset. Do not add a product macro because no usable
+# 1911EP macro exists.
+set(profimplAddaSystemCpp
+    profimpl/collect/job_wrapper/src/job_device_rpc.cpp
+    message/codec.cpp
+    transport/hdc/data_handle.cpp
+    transport/hdc/device_transport.cpp
+    transport/hdc/hdc_transport.cpp
+    transport/hdc/platform/rpc/dev_mgr_api.cpp
+)
+
+set(profimplGeneratedProto
+    ${CMAKE_BINARY_DIR}/proto/profiler_proto/proto/profiler.pb.cc
+)
+set_source_files_properties(${profimplGeneratedProto} PROPERTIES GENERATED TRUE)
+
 ####################### libprofimpl.so ###########################
 set(profimplCpp
     analyze/src/analyzer.cpp
@@ -82,6 +100,10 @@ set(profimplCpp
     profimpl/collect/job_wrapper/src/prof_adprof_job.cpp
     profimpl/collect/job_wrapper/src/prof_drv_event.cpp
     profimpl/collect/job_wrapper/src/adprof_collector_proxy.cpp
+    profimpl/collect/sys_runner/src/runtime_system_mode_runner.cpp
+    # ProfSocTask is the CHANNEL_ADPROF main path. ProfRpcTask includes
+    # job_device_rpc.h and crosses into the adda group above.
+    msprofbin/src/msprof_task.cpp
     msprof/common/src/receive_data.cpp
     msprof/common/src/msprof_reporter.cpp
     msprof/dynamic_profiling/src/dyn_prof_server.cpp
@@ -213,11 +235,17 @@ set(profimplInc
     task_handle/include
     driver/inc
     profimpl/collect/job_wrapper/include
+    profimpl/collect/sys_runner/include
+    msprofbin/include
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set(profimplFwcSrc
     ${profimplCpp}
+    # 1911EP/310B adda compatibility sources; delete this group together
+    # with the protobuf definitions and link dependency after sunset.
+    ${profimplAddaSystemCpp}
+    ${profimplGeneratedProto}
 )
 
 add_library(profimpl_fwk_share SHARED
@@ -228,6 +256,7 @@ add_library(profimpl_fwk_share SHARED
 
 target_include_directories(profimpl_fwk_share PRIVATE
     ${profimplInc}
+    ${CMAKE_BINARY_DIR}/proto/profiler_proto
     ${RUNTIME_DIR}/graphengine/inc
     ${RUNTIME_DIR}/graphengine/inc/framework
     depend/include/wrapper
@@ -242,6 +271,8 @@ set_target_properties(profimpl_fwk_share
 )
 
 target_compile_definitions(profimpl_fwk_share PRIVATE
+    # Required by the generated profiler.pb.cc and adda codec sources.
+    google=ascend_private
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},Debug>:MSPROF_DEBUG>
     $<$<STREQUAL:${TARGET_SYSTEM_NAME},Windows>:NOMINMAX>
     $<$<STREQUAL:${TARGET_SYSTEM_NAME},Windows>:WIN32>
@@ -290,7 +321,12 @@ target_link_libraries(profimpl_fwk_share PRIVATE
     alog
     mmpa
     error_manager
+    # 1911EP/310B adda compatibility dependency; remove after sunset.
+    ascend_protobuf_static
 )
+
+# 1911EP/310B adda compatibility dependency; remove after sunset.
+add_dependencies(profimpl_fwk_share profiler_proto)
 
 install(TARGETS profimpl_fwk_share OPTIONAL
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}

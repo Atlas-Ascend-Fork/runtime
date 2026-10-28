@@ -84,6 +84,11 @@ set(profilerSrcFiles
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/dynamic_profiling/src/dyn_prof_thread.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/dynamic_profiling/src/dyn_prof_mgr.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/engine/src/prof_acl_mgr.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/src/runtime_system_mode_runner.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/msprofbin/src/msprof_task.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/job_device_rpc.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/device_transport.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/data_handle.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/engine/src/uploader_dumper.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/msproftx/src/msprof_tx_manager.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/msproftx/src/msprof_tx_reporter.cpp
@@ -245,6 +250,7 @@ target_include_directories(job_wrapper PRIVATE
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/include
     ${MSPROF_SOURCE_DIR}/dvvp/driver/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/include
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/include
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profhal/adx/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profhal/halinc

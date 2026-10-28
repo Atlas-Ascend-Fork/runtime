@@ -83,6 +83,7 @@ set(src_file
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/dynamic_profiling/src/dyn_prof_thread.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/dynamic_profiling/src/dyn_prof_mgr.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/engine/src/prof_acl_mgr.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/src/runtime_system_mode_runner.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprofiler/prof_ge_core.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprofiler/prof_acl_core.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprofiler/prof_api_common.cpp

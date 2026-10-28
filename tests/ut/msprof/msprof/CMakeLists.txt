@@ -77,6 +77,9 @@ set(profilerSrcList
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/prof_diagnostic_job.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/prof_drv_event.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/adprof_collector_proxy.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/job_device_rpc.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/src/runtime_system_mode_runner.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/msprofbin/src/msprof_task.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/message/codec.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/common/src/msprof_reporter.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/msprof/common/src/receive_data.cpp
@@ -110,6 +113,8 @@ set(profilerSrcList
     ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/hdc_transport.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/helper_transport.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/platform/soc/dev_mgr_api.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/device_transport.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/data_handle.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/transport/parser_transport.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/transport/prof_channel.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/transport/uploader.cpp
@@ -163,6 +168,7 @@ set(profilerSrcFile
     test/msprofiler_adapter_utest.cpp
     test/stats_analyzer_api_utest.cpp
     test/info_json_utest.cpp
+    test/system_mode_runner_utest.cpp
     ../stub/drv_stub.cpp
     ../stub/mmpa_stub.cpp
     ../stub/prof_api_stub.cpp
@@ -262,6 +268,8 @@ target_include_directories(msprofiler_utest PRIVATE
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/include
     ${MSPROF_SOURCE_DIR}/dvvp/driver/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/include
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/include
+    ${MSPROF_SOURCE_DIR}/dvvp/msprofbin/include
     ${MSPROF_SOURCE_DIR}/dvvp/profhal/adx/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profhal/halimpl
     ${MSPROF_SOURCE_DIR}/dvvp/profhal/halinc
@@ -435,6 +443,12 @@ add_executable(msprof_utest
     ${MSPROF_SOURCE_DIR}/dvvp/driver/devmgmt/mini/ai_drv_dsmi_api.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/streamio/client/src/sender.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/src/device.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/src/job_device_rpc.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/src/runtime_system_mode_runner.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/msprofbin/src/msprof_task.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/platform/soc/dev_mgr_api.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/device_transport.cpp
+    ${MSPROF_SOURCE_DIR}/dvvp/transport/hdc/data_handle.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/src/info_json.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/src/prof_params_adapter.cpp
     ${MSPROF_SOURCE_DIR}/dvvp/task_handle/src/prof_manager.cpp
@@ -518,6 +532,8 @@ target_include_directories(msprof_utest PRIVATE
     ${MSPROF_SOURCE_DIR}/basic/osal
     ${MSPROF_SOURCE_DIR}/dvvp/driver/inc
     ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/job_wrapper/include
+    ${MSPROF_SOURCE_DIR}/dvvp/profimpl/collect/sys_runner/include
+    ${MSPROF_SOURCE_DIR}/dvvp/msprofbin/include
     ${MSPROF_SOURCE_DIR}/dvvp/message
     ${MSPROF_SOURCE_DIR}/dvvp/transport
     ${MSPROF_SOURCE_DIR}/dvvp/msprofiler

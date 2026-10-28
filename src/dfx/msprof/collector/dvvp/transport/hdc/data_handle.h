@@ -12,6 +12,7 @@
 
 #include <map>
 #include "config/config.h"
+#include <mutex>
 #include "message/prof_params.h"
 #include "singleton/singleton.h"
 #include "proto/profiler.pb.h"
@@ -22,6 +23,7 @@ namespace Dvvp {
 namespace Msprof {
 using namespace analysis::dvvp::common::utils;
 using PFMessagehandler = int32_t (*)(SHARED_PTR_ALIA<google::protobuf::Message> message);
+class MsprofTask;
 class IDataHandleCB {
 public:
     virtual ~IDataHandleCB();
@@ -34,6 +36,8 @@ public:
     ~HdcTransportDataHandle() override;
     static std::map<const google::protobuf::Descriptor*, PFMessagehandler> CreateHandlerMap();
     static int32_t ReceiveStreamData(CONST_VOID_PTR data, uint32_t dataLen);
+    static void RegisterTask(const std::string& jobId, const SHARED_PTR_ALIA<MsprofTask>& task);
+    static void UnregisterAllTask();
 
 private:
     static int32_t ProcessStreamFileChunk(SHARED_PTR_ALIA<google::protobuf::Message> message);
@@ -41,9 +45,12 @@ private:
     static int32_t ProcessFinishJobRspMsg(SHARED_PTR_ALIA<google::protobuf::Message> message);
     static int32_t ProcessResponseMsg(SHARED_PTR_ALIA<google::protobuf::Message> message);
     static int32_t ProcessRspCommon(const std::string& jobId, const std::string& encoded);
+    static SHARED_PTR_ALIA<MsprofTask> GetTask(const std::string& jobId);
 
 private:
     static std::map<const google::protobuf::Descriptor*, PFMessagehandler> handlerMap_;
+    static std::map<std::string, SHARED_PTR_ALIA<MsprofTask>> taskMap_;
+    static std::mutex taskMapMutex_;
 };
 } // namespace Msprof
 } // namespace Dvvp

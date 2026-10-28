@@ -148,6 +148,11 @@ int32_t ProfInit(uint32_t type, VOID_PTR data, uint32_t len)
         MSPROF_LOGE("ProfInit failed, error code: %d (%s)", ret, MsprofErrorCodeName(ret));
         return ret;
     }
+    if (ProfAclMgr::instance()->IsSystemMode()) {
+        MSPROF_LOGI("System mode profiling cycle completed.");
+        ProfAclMgr::instance()->SetModeToOff();
+        return MSPROF_ERROR_NONE;
+    }
     return ProfInitProc(type);
 }
 
