@@ -7,7 +7,7 @@ This directory focuses on model runtime instance capture, update, and switch cap
 - [0_simple_model](./0_simple_model/README_en.md): Demonstrates task capture, model runtime instance creation, and execution.
 - [1_model_update](./1_model_update/README_en.md): Demonstrates task update for captured model runtime instance.
 - [2_model_switch](./2_model_switch/README_en.md): Demonstrates Stream binding, jumping, and switching in model runtime instance.
-- [3_cond_model](./3_cond_model/README_en.md): Demonstrates aclGraph conditional operation (IF/WHILE/SWITCH and nested combination) graph capture and execution.
+- [3_cond_model](./3_cond_model/README_en.md): Demonstrates ACL Graph conditional operation (IF/WHILE/SWITCH and nested combination) graph capture and execution.
 - [4_model_sync_external](./4_model_sync_external/README_en.md): Demonstrates Event Record External and Wait External usage in ACL Graph cross-boundary synchronization scenarios.
 - [5_reusable_buffer_reset](./5_reusable_buffer_reset/README_en.md): Enumerates the Stream/Task structure of an asynchronous reset model, then executes it and verifies the buffer when the structure is valid.
 - [6_graph_task_annotation](./6_graph_task_annotation/README_en.md): Adds batch IDs and operation descriptions to fill and copy tasks for two batches, then exports an ACL Graph debug file for inspection.

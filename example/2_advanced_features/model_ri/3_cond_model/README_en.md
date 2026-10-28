@@ -1,14 +1,14 @@
 # 3_cond_model
 
 ## Description
-This sample demonstrates aclGraph conditional operation (IF/WHILE/SWITCH) graph capture and execution, covering 3 typical scenarios:
+This sample demonstrates ACL Graph conditional operation (IF/WHILE/SWITCH) graph capture and execution, covering 3 typical scenarios:
 1. IF conditional double branch validation (true branch alpha=2.0, false branch alpha=0.5)
 2. WHILE single iteration loop (loop body executes once then exits)
 3. SWITCH multi-branch selection (3 cases each with different alpha)
 
-**Core conclusion**: aclGraph conditional operations use `aclmdlRICondHandle` + `aclmdlRIAddCondTask` to implement IF/WHILE/SWITCH branch capture, use `aclmdlRICondHandleGetCondPtr` to get device-side condition pointer, and execution dynamically determines branch direction by condition value.
+**Core conclusion**: ACL Graph conditional operations use `aclmdlRICondHandle` + `aclmdlRIAddCondTask` to implement IF/WHILE/SWITCH branch capture, use `aclmdlRICondHandleGetCondPtr` to get device-side condition pointer, and execution dynamically determines branch direction by condition value.
 
-**Note**: This sample requires CANN version support for aclGraph conditional operation APIs (`aclmdlRICondHandleCreate`, `aclmdlRIAddCondTask`, `aclmdlRICaptureToModelRIBegin`, and so on). Please confirm CANN version includes these interfaces before running.
+**Note**: This sample requires CANN version support for ACL Graph conditional operation APIs (`aclmdlRICondHandleCreate`, `aclmdlRIAddCondTask`, `aclmdlRICaptureToModelRIBegin`, and so on). Please confirm CANN version includes these interfaces before running.
 
 ## Product Support
 
@@ -16,7 +16,7 @@ This sample has the following support status on the following products:
 
 | Product | Supported |
 | --- | --- |
-| Ascend 950PR/Ascend 950DT | No |
+| Ascend 950PR/Ascend 950DT | Yes |
 | Atlas A3 training series products/Atlas A3 inference series products | Yes |
 | Atlas A2 training series products/Atlas A2 inference series products | Yes |
 
@@ -64,7 +64,7 @@ Key features and interfaces in this sample:
 - Data Transfer
     - Call `aclrtMemcpy` interface to implement data transfer by memory copy.
     - Call `aclrtMemcpyAsync` interface to perform asynchronous memory copy.
-- aclGraph Conditional Operations
+- ACL Graph Conditional Operations
     - Call `aclmdlRICaptureBegin` interface to start graph capture.
     - Call `aclmdlRICaptureEnd` interface to end graph capture and get modelRI handle.
     - Call `aclmdlRICaptureGetInfo` interface to get graph capture status and modelRI.
@@ -72,6 +72,7 @@ Key features and interfaces in this sample:
     - Call `aclmdlRICondHandleGetCondPtr` interface to get condition pointer.
     - Call `aclmdlRIAddCondTask` interface to register condition task (IF/WHILE/SWITCH).
     - Call `aclmdlRICaptureToModelRIBegin` interface to start sub-model capture.
+    - Call `aclmdlRICaptureEnd` interface to end sub-model capture.
     - Call `aclmdlRIExecuteAsync` interface to asynchronously execute model runtime instance.
     - Call `aclmdlRIDestroy` interface to destroy model runtime instance.
 - aclnn Operators

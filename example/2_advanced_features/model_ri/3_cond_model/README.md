@@ -1,14 +1,14 @@
 # 3_cond_model
 
 ## 描述
-本样例展示 aclGraph 条件操作（IF/WHILE/SWITCH）的图捕获与执行，覆盖 3 个典型场景：
+本样例展示 ACL Graph 条件操作（IF/WHILE/SWITCH）的图捕获与执行，覆盖 3 个典型场景：
 1. IF 条件双分支验证（true 分支 alpha=2.0，false 分支 alpha=0.5）
 2. WHILE 单次迭代循环（循环体执行一次后退出）
 3. SWITCH 多分支选择（3 个 case 各用不同 alpha）
 
-**核心结论**：aclGraph 条件操作通过 `aclmdlRICondHandle` + `aclmdlRIAddCondTask` 实现 IF/WHILE/SWITCH 分支捕获，通过 `aclmdlRICondHandleGetCondPtr` 获取设备端条件指针，执行时由条件值动态决定分支走向。
+**核心结论**：ACL Graph 条件操作通过 `aclmdlRICondHandle` + `aclmdlRIAddCondTask` 实现 IF/WHILE/SWITCH 分支捕获，通过 `aclmdlRICondHandleGetCondPtr` 获取设备端条件指针，执行时由条件值动态决定分支走向。
 
-**注意**：本样例需要 CANN 版本支持 aclGraph 条件操作 API（`aclmdlRICondHandleCreate`、`aclmdlRIAddCondTask`、`aclmdlRICaptureToModelRIBegin` 等），请确认 CANN 版本包含这些接口后再运行。
+**注意**：本样例需要 CANN 版本支持 ACL Graph 条件操作 API（`aclmdlRICondHandleCreate`、`aclmdlRIAddCondTask`、`aclmdlRICaptureToModelRIBegin` 等），请确认 CANN 版本包含这些接口后再运行。
 
 ## 产品支持情况
 
@@ -16,7 +16,7 @@
 
 | 产品 | 是否支持 |
 | --- | --- |
-| Ascend 950PR/Ascend 950DT | × |
+| Ascend 950PR/Ascend 950DT | √ |
 | Atlas A3 训练系列产品/Atlas A3 推理系列产品 | √ |
 | Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
 
@@ -64,14 +64,15 @@ bash run.sh
 - 数据传输
     - 调用 `aclrtMemcpy` 接口通过内存复制的方式实现数据传输。
     - 调用 `aclrtMemcpyAsync` 接口进行异步的内存复制。
-- aclGraph 条件操作
+- ACL Graph 条件操作
     - 调用 `aclmdlRICaptureBegin` 接口开始图捕获。
     - 调用 `aclmdlRICaptureEnd` 接口结束图捕获，得到 modelRI 句柄。
     - 调用 `aclmdlRICaptureGetInfo` 接口获取图捕获状态和 modelRI。
     - 调用 `aclmdlRICondHandleCreate` 接口创建条件句柄。
     - 调用 `aclmdlRICondHandleGetCondPtr` 接口获取条件指针。
     - 调用 `aclmdlRIAddCondTask` 接口注册条件任务（IF/WHILE/SWITCH）。
-    - 调用 `aclmdlRICaptureToModelRIBegin` 接口开始子模型捕获。
+    - 调用 `aclmdlRICaptureToModelRIBegin` 接口开始条件子图捕获。
+    - 调用 `aclmdlRICaptureEnd` 接口结束条件子图捕获。
     - 调用 `aclmdlRIExecuteAsync` 接口异步执行模型运行实例。
     - 调用 `aclmdlRIDestroy` 接口销毁模型运行实例。
 - aclnn 算子

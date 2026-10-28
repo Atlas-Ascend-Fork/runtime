@@ -76,15 +76,15 @@
 
 - **场景五**：条件控制流（Cond 场景）
   ```cpp
-  // 1. 开始父模型捕获
+  // 1. 开始父图捕获
   aclmdlRICaptureBegin(stream1, ACL_MODEL_RI_CAPTURE_MODE_GLOBAL);
   
-  // 2. 获取父模型（通过 aclmdlRICaptureGetInfo 或在 EndCapture 时获取）
+  // 2. 获取父图（通过 aclmdlRICaptureGetInfo 或在 EndCapture 时获取）
   aclmdlRI parentModel;
   aclmdlRICaptureStatus status;
   aclmdlRICaptureGetInfo(stream1, &status, &parentModel);
   
-  // 3. 在父模型捕获期间创建 CondHandle（要求父模型处于 CAPTURE_ACTIVE 状态）
+  // 3. 在父图捕获期间创建 CondHandle（要求父图处于 CAPTURE_ACTIVE 状态）
   aclmdlRICondHandle condHandle;
   aclmdlRICondHandleCreate(parentModel, 0U, ACL_MODEL_RI_COND_HANDLE_ASSIGN_DEFAULT, &condHandle);
   
@@ -92,7 +92,7 @@
   uint64_t *condDevPtr = nullptr;
   aclmdlRICondHandleGetCondPtr(condHandle, &condDevPtr);
   
-  // 5. 下发条件任务，创建子模型（要求流处于捕获状态）
+  // 5. 下发条件任务，创建条件子图（要求流处于捕获状态）
   aclmdlRI subModels[2];
   aclmdlRICondTaskParams params = {};
   params.handle = condHandle;
@@ -101,19 +101,19 @@
   params.modelRIArray = subModels;
   aclmdlRIAddCondTask(params, stream1, 0U);
   
-  // 6. 对每个子模型进行捕获（使用单独的流，子模型通过 aclmdlRICaptureToModelRIBegin 绑定）
+  // 6. 对每个条件子图进行捕获（使用单独的流，条件子图通过 aclmdlRICaptureToModelRIBegin 绑定）
   aclmdlRICaptureToModelRIBegin(stream2, subModels[0], ACL_MODEL_RI_CAPTURE_MODE_GLOBAL);
   aclrtKernelLaunch(stream2, kernel1, ...);
-  aclmdlRICaptureEnd(stream2, nullptr); // 子模型 0 结束捕获
+  aclmdlRICaptureEnd(stream2, nullptr); // 条件子图 0 结束捕获
   
   aclmdlRICaptureToModelRIBegin(stream3, subModels[1], ACL_MODEL_RI_CAPTURE_MODE_GLOBAL);
   aclrtKernelLaunch(stream3, kernel2, ...);
-  aclmdlRICaptureEnd(stream3, nullptr); // 子模型 1 结束捕获
+  aclmdlRICaptureEnd(stream3, nullptr); // 条件子图 1 结束捕获
   
-  // 7. 结束父模型捕获（所有子模型必须已 EndCapture，否则返回错误）
+  // 7. 结束父图捕获（所有条件子图必须已 EndCapture，否则返回错误）
   aclmdlRICaptureEnd(stream1, &parentModel);
   
-  // 8. 执行父模型，条件值决定执行哪个子模型分支
+  // 8. 执行父图，条件值决定执行哪个条件子图分支
   aclmdlRIExecuteAsync(parentModel, exeStream);
   ```
 
@@ -134,8 +134,8 @@
 | `aclmdlRICaptureThreadExchangeMode()` | `src/acl/aclrt_impl/model_ri.cpp` | 交换线程捕获模式           |
 | `aclmdlRICondHandleCreate()` | `src/acl/aclrt_impl/model_ri.cpp` | 创建条件句柄               |
 | `aclmdlRICondHandleGetCondPtr()` | `src/acl/aclrt_impl/model_ri.cpp` | 获取条件值 device 指针     |
-| `aclmdlRIAddCondTask()` | `src/acl/aclrt_impl/model_ri.cpp` | 下发条件任务，创建子模型   |
-| `aclmdlRICaptureToModelRIBegin()` | `src/acl/aclrt_impl/model_ri.cpp` | 子模型开始捕获 |
+| `aclmdlRIAddCondTask()` | `src/acl/aclrt_impl/model_ri.cpp` | 下发条件任务，创建条件子图   |
+| `aclmdlRICaptureToModelRIBegin()` | `src/acl/aclrt_impl/model_ri.cpp` | 条件子图开始捕获 |
 
 ### 2.3 捕获模式定义
 
@@ -192,7 +192,7 @@ typedef struct aclmdlRICondTaskParams {
     aclmdlRICondHandle handle;     // 条件句柄
     aclmdlRICondTaskType type;     // 条件类型
     uint32_t size;             // 分支个数
-    aclmdlRI *modelRIArray;   // 子模型数组
+    aclmdlRI *modelRIArray;   // 条件子图数组
 } aclmdlRICondTaskParams;
 ```
 
@@ -330,7 +330,7 @@ sequenceDiagram
     Api->>Api: StreamAddCondTaskParasCheck
     Api->>Api: CheckCondTaskParamsSize(params)
     Api->>Context: CreateSubCaptureModels(condHandle, params, stm)
-    loop 创建 params.size 个子模型
+    loop 创建 params.size 个条件子图
         Context->>SubModel: ModelCreate(RT_MODEL_CAPTURE_MODEL)
         SubModel->>SubModel: SetSubCaptureModel()
         SubModel->>SubModel: SetCondHandle(condHandle)
@@ -353,7 +353,7 @@ sequenceDiagram
     App->>Api: aclmdlRICaptureEnd(stm)
     Api->>Context: StreamEndCapture(stm)
     Context->>CaptureModel: CheckSubModelsIsEndCapture
-    CaptureModel->>SubModel: 检查所有子模型是否 READY
+    CaptureModel->>SubModel: 检查所有条件子图是否 READY
     Context-->>App: 返回 CaptureModel
 
     App->>CaptureModel: aclmdlRIExecuteAsync(parentModel, exeStream)
@@ -410,7 +410,7 @@ rtError_t Context::StreamBeginCapture(Stream * const stm, const rtStreamCaptureM
         return RT_ERROR_STREAM_CAPTURED;
     }
 
-    // 创建 CaptureModel（mdl 为 nullptr 时创建新模型，否则使用传入的子模型）
+    // 创建 CaptureModel（mdl 为 nullptr 时创建新模型，否则使用传入的条件子图）
     if (captureModel == nullptr) {
         error = ModelCreate(&captureModel, RT_MODEL_CAPTURE_MODEL);
         // ...
@@ -551,8 +551,8 @@ flowchart TD
     C -->|是| D[返回 ACL_ERROR_INVALID_PARAM]
     C -->|否| E[CheckCondTaskParamsSize]
     E --> F[CreateSubCaptureModels]
-    F --> G[创建 params.size 个子模型]
-    G --> H[子模型 SetSubCaptureModel/SetCondHandle]
+    F --> G[创建 params.size 个条件子图]
+    G --> H[条件子图 SetSubCaptureModel/SetCondHandle]
     H --> I[CondHandle.PushBackSubModel]
     I --> J[StreamAddCondTask]
     J --> K[创建/获取 Notify]
@@ -561,7 +561,7 @@ flowchart TD
     M --> N[CaptureConditionTaskInit]
     N --> O[SubmitTask]
     O --> P[PostProcCaptureConditionTask]
-    P --> Q[子模型 SetEndGraphNotify]
+    P --> Q[条件子图 SetEndGraphNotify]
     Q --> R[StoreCondHandleTaskInfo]
     R --> S[返回成功]
 ```
@@ -576,8 +576,8 @@ rtError_t Context::CreateSubCaptureModels(CondHandle *condHandle, rtCondTaskPara
         Model *subModel = nullptr;
         const rtError_t ret = ModelCreate(&subModel, RT_MODEL_CAPTURE_MODEL);
         // ...
-        models_.remove(subModel); // 子模型资源回收不遍历，靠父模型递归完成
-        subModel->SetExeStream(stm->GetCaptureStream()); // 子模型执行流固定
+        models_.remove(subModel); // 条件子图资源回收不遍历，靠父图递归完成
+        subModel->SetExeStream(stm->GetCaptureStream()); // 条件子图执行流固定
         CaptureModel *subCaptureModel = dynamic_cast<CaptureModel *>(subModel);
         subCaptureModel->SetSubCaptureModel();
         subCaptureModel->SetCondHandle(params.handle);
@@ -588,20 +588,20 @@ rtError_t Context::CreateSubCaptureModels(CondHandle *condHandle, rtCondTaskPara
 }
 ```
 
-#### 子模型捕获流程
+#### 条件子图捕获流程
 
 ```mermaid
 flowchart TD
     A[aclmdlRICaptureToModelRIBegin] --> B[StreamBeginCapture stm mode mdl]
     B --> C{mdl 是否为 nullptr}
     C -->|是| D[创建新 CaptureModel]
-    C -->|否| E[使用传入的子模型]
+    C -->|否| E[使用传入的条件子图]
     D --> F[StreamAddToCaptureModelProc]
     E --> F
     F --> G[检查 SoftwareSq 支持]
     G --> H[CaptureModeEnter]
     H --> I{mdl 是否有 condHandle}
-    I -->|是| J[记录子模型信息]
+    I -->|是| J[记录条件子图信息]
     I -->|否| K[返回成功]
     J --> K
 ```
@@ -645,7 +645,7 @@ flowchart TD
     C -->|ACTIVE| F[检查线程匹配]
     F --> G[CaptureModeExit]
     G --> H[CheckSubModelsIsEndCapture]
-    H --> I{所有子模型是否已 EndCapture}
+    H --> I{所有条件子图是否已 EndCapture}
     I -->|否| J[返回 ACL_ERROR_RT_SUB_ACLGRAPH_IS_CAPTURING]
     I -->|是| K[CheckCaptureModelValidity]
     K --> L[AddNotifyToAddedCaptureStream]
@@ -686,7 +686,7 @@ rtError_t Context::StreamEndCapture(Stream * const stm, Model ** const captureMd
     Model *captureModel = captureStream->Model_();
     CaptureModel *captureModelTmp = RtPtrToPtr<CaptureModel *, Model *>(captureModel);
     
-    // 检查所有子模型是否已 EndCapture（Cond 场景）
+    // 检查所有条件子图是否已 EndCapture（Cond 场景）
     const bool isCaptureFinished = CheckSubModelsIsEndCapture(captureStream);
     COND_PROC_RETURN_ERROR(!isCaptureFinished, RT_ERROR_STREAM_SUB_ACLGRAPH_IS_CAPTURING, ...);
 
@@ -757,11 +757,11 @@ rtError_t CaptureModel::ExecuteCommon(Stream * const stm, int32_t timeout, const
     error = SetNotifyBeforeExecute(stm, this);
     // ...
 
-    // 构建 SQ/CQ（含子模型处理）
+    // 构建 SQ/CQ（含条件子图处理）
     error = BuildSqCq(stm);
     // ...
 
-    // 初始化所有子模型条件值（Cond 场景）
+    // 初始化所有条件子图条件值（Cond 场景）
     error = InitAllSubCaptureModelCondTaskByDefValue(stm);
     // ...
 
@@ -1094,7 +1094,7 @@ rtError_t CaptureModel::BindSqCq(void)
 
 #### CondHandle 条件句柄
 
-**设计思想**：管理条件控制流的条件值（device 内存）和子模型列表，实现 IF/WHILE/SWITCH 动态分支执行。每个 CondHandle 归属于一个父 CaptureModel，管理多个子 CaptureModel，所有子模型共用同一个 Notify 资源。
+**设计思想**：管理条件控制流的条件值（device 内存）和条件子图列表，实现 IF/WHILE/SWITCH 动态分支执行。每个 CondHandle 归属于一个父 CaptureModel，管理多个子 CaptureModel，所有条件子图共用同一个 Notify 资源。
 
 ```mermaid
 classDiagram
@@ -1125,7 +1125,7 @@ classDiagram
         +isSubCaptureModel_
     }
     
-    CondHandle --> CaptureModel : model_ 归属父模型
+    CondHandle --> CaptureModel : model_ 归属父图
     CondHandle *-- Notify : subModelNotify_
     CaptureModel *-- CondHandle : condHandles_
 ```
@@ -1145,27 +1145,27 @@ public:
     void SubModelDestroy();
     // ...
 private:
-    Model *model_{nullptr};              // 归属的父模型
-    uint64_t defaultValue_{0U};          // 父模型执行时的默认条件值
+    Model *model_{nullptr};              // 归属的父图
+    uint64_t defaultValue_{0U};          // 父图执行时的默认条件值
     rtCondHandleFlag_t flag_;            // ASSIGN_DEFAULT 表示执行时初始化条件值
     rtCondTaskType_t condType_{RT_COND_TASK_TYPE_MAX}; // 条件类型
-    uint32_t condSize_{0U};              // 子模型个数
+    uint32_t condSize_{0U};              // 条件子图个数
     uint64_t *devAddr_{nullptr};         // device ptr，存储条件值
     Context *context_{nullptr};
-    std::vector<Model *> subCaptureModels_; // 当前condHandle的子模型列表
-    Notify *subModelNotify_{nullptr};    // 所有子模型共用同一个notify
+    std::vector<Model *> subCaptureModels_; // 当前condHandle的条件子图列表
+    Notify *subModelNotify_{nullptr};    // 所有条件子图共用同一个notify
 };
 ```
 
 **CondHandle 生命周期**：
-- **创建**：`aclmdlRICondHandleCreate` → `new CondHandle` → `Setup`（分配 device 内存）→ `ModelPushBackCondHandle`（加入父模型）
-- **使用**：`aclmdlRIAddCondTask` → 创建子模型 → 下发条件任务 → `StoreCondHandleTaskInfo`（记录到 `condHandleTaskMap_`）
+- **创建**：`aclmdlRICondHandleCreate` → `new CondHandle` → `Setup`（分配 device 内存）→ `ModelPushBackCondHandle`（加入父图）
+- **使用**：`aclmdlRIAddCondTask` → 创建条件子图 → 下发条件任务 → `StoreCondHandleTaskInfo`（记录到 `condHandleTaskMap_`）
 - **执行**：`InitAllSubCaptureModelCondTaskByDefValue` 初始化条件值
-- **销毁**：`CondHandle::~CondHandle` → 释放子模型 → 释放 device 内存
+- **销毁**：`CondHandle::~CondHandle` → 释放条件子图 → 释放 device 内存
 
-#### 子模型资源管理
+#### 条件子图资源管理
 
-**设计思想**：Cond 场景下，父模型 BuildSqCq 需要处理所有子模型的 EndGraph、SQ/CQ 分配、Notify 更新、条件任务刷新等操作。所有子模型资源随父模型一起申请和释放。
+**设计思想**：Cond 场景下，父图 BuildSqCq 需要处理所有条件子图的 EndGraph、SQ/CQ 分配、Notify 更新、条件任务刷新等操作。所有条件子图资源随父图一起申请和释放。
 
 ```cpp
 // 文件位置：src/runtime/feature/aclgraph/capture_model.cc:553-625
@@ -1195,7 +1195,7 @@ rtError_t CaptureModel::BuildSqCq(Stream * const exeStream)
 | SQE 序号 | 名称 | 说明 | 适用类型 |
 |----------|------|------|----------|
 | SQE[0] | CondFirst | 条件判断 FunctionCall | IF/WHILE/SWITCH |
-| SQE[1] | NotifyWait | 子模型完成通知等待 | IF/WHILE/SWITCH |
+| SQE[1] | NotifyWait | 条件子图完成通知等待 | IF/WHILE/SWITCH |
 | SQE[2] | JumpBack | 跳回循环头部 | 仅 WHILE |
 
 ```cpp
@@ -1221,14 +1221,14 @@ struct CaptureConditionTaskInfo {
 
 | 模块 | 职责 | 位置 |
 |------|------|------|
-| CaptureModel | 捕获模型管理、SQ/CQ 管理、执行调度、子模型管理 | `core/inc/model/capture_model.hpp` |
+| CaptureModel | 捕获模型管理、SQ/CQ 管理、执行调度、条件子图管理 | `core/inc/model/capture_model.hpp` |
 | Context | 捕获流程控制、捕获模式管理、条件任务创建与提交 | `feature/aclgraph/context_aclgraph.cc` |
 | Stream | 捕获状态管理、任务分配、级联流管理 | `feature/aclgraph/stream_capture.cc` |
 | Event | 事件捕获处理 | `feature/aclgraph/event_capture.cc` |
-| CondHandle | 条件句柄管理、条件值 device 内存、子模型生命周期 | `core/inc/cond_handle/cond_handle.hpp` |
+| CondHandle | 条件句柄管理、条件值 device 内存、条件子图生命周期 | `core/inc/cond_handle/cond_handle.hpp` |
 | CondTask | 条件任务初始化、SQE 构建、FuncCall 重构 | `core/src/task/inc/aclgraph_cond_task.h` |
 | CaptureModelUtils | 辅助函数（检查、获取捕获流等） | `feature/aclgraph/capture_model_utils.cc` |
-| Notify | 执行前/后同步、子模型 EndGraph 通知 | `capture_model.cc` |
+| Notify | 执行前/后同步、条件子图 EndGraph 通知 | `capture_model.cc` |
 
 ### 4.4 核心数据结构
 
@@ -1357,7 +1357,7 @@ SetNotifyAfterExecute(exeStream, captureModel);
 
 ### 5.6 条件控制流设计
 
-**父子模型关系**：
+**父子图关系**：
 
 ```mermaid
 graph TB
@@ -1378,10 +1378,10 @@ graph TB
 
 **关键设计决策**：
 
-1. **子模型共用 Notify**：同一 CondHandle 下的所有子模型共享一个 Notify 资源，避免重复申请。Notify id 在模型执行时统一申请和刷新。
-2. **子模型资源随父模型管理**：子模型的 SQ/CQ、Notify 申请和释放都由父模型处理（`AllocAllSqCq`、`ReleaseAllSqCq` 等），子模型不单独释放资源。
-3. **子模型流管理**：EndCapture 阶段遍历子模型，调用 `ModelAddStream` 将子模型流添加到父模型中（不加到 `headStreams_`），用于模型执行时的资源申请和释放。
-4. **EndCapture 同步检查**：父模型 EndCapture 时通过 `CheckSubModelsIsEndCapture` 检查所有子模型是否已完成 EndCapture，未完成则返回 `ACL_ERROR_RT_SUB_ACLGRAPH_IS_CAPTURING`。
+1. **条件子图共用 Notify**：同一 CondHandle 下的所有条件子图共享一个 Notify 资源，避免重复申请。Notify id 在模型执行时统一申请和刷新。
+2. **条件子图资源随父图管理**：条件子图的 SQ/CQ、Notify 申请和释放都由父图处理（`AllocAllSqCq`、`ReleaseAllSqCq` 等），条件子图不单独释放资源。
+3. **条件子图流管理**：EndCapture 阶段遍历条件子图，调用 `ModelAddStream` 将条件子图流添加到父图中（不加到 `headStreams_`），用于模型执行时的资源申请和释放。
+4. **EndCapture 同步检查**：父图 EndCapture 时通过 `CheckSubModelsIsEndCapture` 检查所有条件子图是否已完成 EndCapture，未完成则返回 `ACL_ERROR_RT_SUB_ACLGRAPH_IS_CAPTURING`。
 5. **条件值初始化**：模型执行前通过 `InitAllSubCaptureModelCondTaskByDefValue` 初始化所有 CondHandle 的条件值（当 flag 为 `ACL_MODEL_RI_COND_HANDLE_ASSIGN_DEFAULT` 时）。
 6. **条件任务 SQE 刷新**：模型执行时通过 `UpdateCondTaskFuncCallMemAll` 重构条件任务的 FunctionCall 内存，更新 SQ list、SVM list 等设备内存地址。
 
@@ -1390,7 +1390,7 @@ graph TB
 | 模块 | 文件路径 | 核心内容 |
 |------|----------|----------|
 | 捕获模型 | `src/runtime/core/inc/model/capture_model.hpp` | CaptureModel 类定义 |
-| 捕获模型实现 | `src/runtime/feature/aclgraph/capture_model.cc` | CaptureModel 实现（含子模型管理） |
+| 捕获模型实现 | `src/runtime/feature/aclgraph/capture_model.cc` | CaptureModel 实现（含条件子图管理） |
 | 上下文捕获 | `src/runtime/feature/aclgraph/context_aclgraph.cc` | BeginCapture/EndCapture/CondTask 流程 |
 | 流捕获 | `src/runtime/feature/aclgraph/stream_capture.cc` | AllocCaptureTask、级联流管理 |
 | 事件捕获 | `src/runtime/feature/aclgraph/event_capture.cc` | Event 捕获处理 |
@@ -1431,16 +1431,16 @@ stateDiagram-v2
     CAPTURE_INVALIDATED --> [*]: 模型销毁
     
     note right of CAPTURE_ACTIVE
-        子模型状态:
+        条件子图状态:
         SetSubCaptureModel() 标记
         EndCapture 时检查
         CheckSubModelsIsEndCapture
     end note
     
     note right of READY
-        子模型 READY 条件:
-        所有子模型均已完成 EndCapture
-        BuildSqCq 处理所有子模型
+        条件子图 READY 条件:
+        所有条件子图均已完成 EndCapture
+        BuildSqCq 处理所有条件子图
     end note
 ```
 
@@ -1449,7 +1449,7 @@ stateDiagram-v2
 - **级联流扩展**：支持无限级联流扩展捕获深度
 - **TaskGroup 更新**：支持捕获后的任务参数更新
 - **模型更新**：支持捕获模型的动态更新
-- **条件控制流嵌套**：子模型内部可继续创建 CondHandle，支持多级条件嵌套（处理）
+- **条件控制流嵌套**：条件子图内部可继续创建 CondHandle，支持多级条件嵌套（处理）
 
 ---
 
