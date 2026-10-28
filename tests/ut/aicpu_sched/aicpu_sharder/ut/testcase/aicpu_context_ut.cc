@@ -9,9 +9,14 @@
  */
 
 #include "aicpu_context.h"
+#include "aicpu_busy_state.h"
 #include "gtest/gtest.h"
 #include "mockcpp/mockcpp.hpp"
 #include <cstdint>
+#include <dlfcn.h>
+#include <atomic>
+#include <thread>
+#include <vector>
 #include <stdio.h>
 #include <stdlib.h>
 #include <queue>
@@ -29,6 +34,17 @@ public:
 
     virtual void TearDown() {}
 };
+
+// Run before any task monitor initialization in this executable.
+TEST_F(AiCPUContextUt, CpuUninitialized)
+{
+    EXPECT_EQ(AicpuMaxCpuCnt(), 0U);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 0U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 0U);
+    EXPECT_EQ(SetCoreBusyState(0U, true), AICPU_ERROR_FAILED);
+    AicpuSetReservedCpuCnt(0U, 1U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 0U);
+}
 
 // schedule run closure
 TEST_F(AiCPUContextUt, EventCallback000)
@@ -259,4 +275,128 @@ TEST_F(AiCPUContextUt, SetAndGetDfxInfoSuccess)
     uint64_t actualAddr = 0U;
     EXPECT_EQ(AicpuGetDfxInfo(&actualAddr), 0);
     EXPECT_EQ(actualAddr, expectAddr);
+}
+// Busy state is a snapshot; callers compare idle count with the reserved count.
+TEST_F(AiCPUContextUt, CpuBusyAccounting)
+{
+    ASSERT_EQ(InitTaskMonitorContext(4U), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuMaxCpuCnt(), 4U);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+    ASSERT_EQ(SetCoreBusyState(0U, true), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 3U);
+    EXPECT_EQ(SetCoreBusyState(0U, true), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 3U);
+    EXPECT_EQ(SetCoreBusyState(4U, true), AICPU_ERROR_FAILED);
+    EXPECT_EQ(SetCoreBusyState(64U, true), AICPU_ERROR_FAILED);
+    EXPECT_EQ(SetCoreBusyState(0U, false), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+}
+
+TEST_F(AiCPUContextUt, CpuReservedMaximum)
+{
+    ASSERT_EQ(InitTaskMonitorContext(4U), AICPU_ERROR_NONE);
+    AicpuSetReservedCpuCnt(0U, 2U);
+    AicpuSetReservedCpuCnt(1U, 3U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 3U);
+    AicpuSetReservedCpuCnt(1U, 1U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 2U);
+    AicpuSetReservedCpuCnt(16U, 4U);
+    AicpuSetReservedCpuCnt(0U, 5U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 2U);
+    AicpuSetReservedCpuCnt(0U, 0U);
+    AicpuSetReservedCpuCnt(1U, 0U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 1U);
+}
+
+TEST_F(AiCPUContextUt, CpuBusyBitmapBoundary)
+{
+    ASSERT_EQ(InitTaskMonitorContext(64U), AICPU_ERROR_NONE);
+    EXPECT_EQ(SetCoreBusyState(63U, true), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 63U);
+    EXPECT_EQ(SetCoreBusyState(63U, false), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 64U);
+    ASSERT_EQ(InitTaskMonitorContext(65U), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuMaxCpuCnt(), 65U);
+    EXPECT_EQ(SetAicpuThreadIndex(64U), AICPU_ERROR_NONE);
+    EXPECT_EQ(SetOpname("multi_device_op"), AICPU_ERROR_NONE);
+    std::string opname;
+    EXPECT_EQ(GetOpname(64U, opname), AICPU_ERROR_NONE);
+    EXPECT_EQ(opname, "multi_device_op");
+    EXPECT_EQ(SetCoreBusyState(64U, true), AICPU_ERROR_FAILED);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 0U);
+    EXPECT_EQ(InitTaskMonitorContext(0U), AICPU_ERROR_FAILED);
+    EXPECT_EQ(AicpuMaxCpuCnt(), 65U);
+}
+
+TEST_F(AiCPUContextUt, CpuConcurrentUpdates)
+{
+    constexpr uint32_t workerCount = 16U;
+    ASSERT_EQ(InitTaskMonitorContext(workerCount), AICPU_ERROR_NONE);
+    std::atomic<uint32_t> ready{0U};
+    std::atomic<bool> release{false};
+    std::vector<std::thread> workers;
+    for (uint32_t i = 0U; i < workerCount; ++i) {
+        workers.emplace_back([&, i]() {
+            EXPECT_EQ(SetCoreBusyState(i, true), AICPU_ERROR_NONE);
+            AicpuSetReservedCpuCnt(static_cast<uint8_t>(i), i + 1U);
+            ready.fetch_add(1U);
+            while (!release.load()) {
+                std::this_thread::yield();
+            }
+            EXPECT_EQ(SetCoreBusyState(i, false), AICPU_ERROR_NONE);
+            AicpuSetReservedCpuCnt(static_cast<uint8_t>(i), 0U);
+        });
+    }
+    while (ready.load() != workerCount) {
+        std::this_thread::yield();
+    }
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 0U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), workerCount);
+    release.store(true);
+    for (auto& worker : workers) {
+        worker.join();
+    }
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), workerCount);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 1U);
+}
+
+TEST_F(AiCPUContextUt, CpuDynamicSymbols)
+{
+    using Getter = uint32_t (*)();
+    using Setter = void (*)(uint8_t, uint32_t);
+    auto getIdle = reinterpret_cast<Getter>(dlsym(RTLD_DEFAULT, "AicpuGetIdleCpuCnt"));
+    auto getReserved = reinterpret_cast<Getter>(dlsym(RTLD_DEFAULT, "AicpuGetReservedCpuCnt"));
+    auto getMaximum = reinterpret_cast<Getter>(dlsym(RTLD_DEFAULT, "AicpuMaxCpuCnt"));
+    auto setReserved = reinterpret_cast<Setter>(dlsym(RTLD_DEFAULT, "AicpuSetReservedCpuCnt"));
+    ASSERT_NE(getIdle, nullptr);
+    ASSERT_NE(getReserved, nullptr);
+    ASSERT_NE(getMaximum, nullptr);
+    ASSERT_NE(setReserved, nullptr);
+    ASSERT_EQ(InitTaskMonitorContext(4U), AICPU_ERROR_NONE);
+    EXPECT_EQ(getMaximum(), 4U);
+    EXPECT_EQ(getIdle(), 4U);
+    ASSERT_EQ(SetCoreBusyState(0U, true), AICPU_ERROR_NONE);
+    EXPECT_EQ(getIdle(), 3U);
+    EXPECT_EQ(SetCoreBusyState(0U, false), AICPU_ERROR_NONE);
+    setReserved(0U, 2U);
+    EXPECT_EQ(getReserved(), 2U);
+    setReserved(0U, 0U);
+}
+
+TEST_F(AiCPUContextUt, CpuReinitializeResetsReservations)
+{
+    ASSERT_EQ(InitTaskMonitorContext(8U), AICPU_ERROR_NONE);
+    AicpuSetReservedCpuCnt(0U, 6U);
+    AicpuSetReservedCpuCnt(1U, 5U);
+    ASSERT_EQ(AicpuGetReservedCpuCnt(), 6U);
+    EXPECT_EQ(InitTaskMonitorContext(0U), AICPU_ERROR_FAILED);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 6U);
+    ASSERT_EQ(InitTaskMonitorContext(4U), AICPU_ERROR_NONE);
+    EXPECT_EQ(AicpuMaxCpuCnt(), 4U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 1U);
+    // Updating one component must not resurrect another component's old reservation.
+    AicpuSetReservedCpuCnt(0U, 2U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 2U);
+    AicpuSetReservedCpuCnt(0U, 0U);
+    EXPECT_EQ(AicpuGetReservedCpuCnt(), 1U);
 }

@@ -6107,3 +6107,36 @@ TEST_F(AICPUScheduleTEST, dumpHostPidInvalid)
     ret = AicpuSdCustDumpProcess::GetInstance().DoCustDatadumpTask(drvEventInfo);
     EXPECT_EQ(ret, AICPU_SCHEDULE_ERROR_PARAMETER_NOT_VALID);
 }
+
+TEST_F(AICPUScheduleTEST, CpuBusyGuardRestoresIdleOnScopeExit)
+{
+    ASSERT_EQ(aicpu::InitTaskMonitorContext(4U), aicpu::AICPU_ERROR_NONE);
+    auto handleEvent = []() {
+        const AicpuEventManager::CoreBusyGuard guard(0U);
+        EXPECT_EQ(AicpuGetIdleCpuCnt(), 3U);
+        return AICPU_SCHEDULE_ERROR_PARAMETER_NOT_VALID;
+    };
+    EXPECT_EQ(handleEvent(), AICPU_SCHEDULE_ERROR_PARAMETER_NOT_VALID);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+    {
+        const AicpuEventManager::CoreBusyGuard invalidGuard(64U);
+        EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+    }
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+}
+
+TEST_F(AICPUScheduleTEST, CpuWaitTimeoutDoesNotMarkBusy)
+{
+    MOCKER(aicpu::SetCoreBusyState).expects(never());
+    MOCKER(halEschedWaitEvent).stubs().will(returnValue(DRV_ERROR_SCHED_WAIT_TIMEOUT));
+    EXPECT_EQ(AicpuEventManager::GetInstance().DoOnceEsched(0U, 0U, 0), DRV_ERROR_SCHED_WAIT_TIMEOUT);
+}
+
+TEST_F(AICPUScheduleTEST, CpuMsqRescueRestoresIdle)
+{
+    ASSERT_EQ(aicpu::InitTaskMonitorContext(4U), aicpu::AICPU_ERROR_NONE);
+    MOCKER_CPP(&MessageQueue::SendResponse).stubs();
+    MOCKER_CPP(&MessageQueue::WaitMsqInfoOnce).stubs().will(invoke(WaitMsqInfoOnceFake));
+    EXPECT_EQ(AicpuEventManager::GetInstance().DoOnceMsq(0U, 0U, 0), AICPU_SCHEDULE_OK);
+    EXPECT_EQ(AicpuGetIdleCpuCnt(), 4U);
+}

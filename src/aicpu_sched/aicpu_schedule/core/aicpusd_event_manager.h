@@ -18,6 +18,7 @@
 #include <thread>
 #include <bitset>
 #include "aicpu_event_struct.h"
+#include "aicpu_busy_state.h"
 #include "aicpusd_status.h"
 #include "aicpusd_common.h"
 #include "aicpusd_info.h"
@@ -477,6 +478,26 @@ private:
 
     uint64_t recvEventStat_[MAX_AICPU_THREAD_NUM][EVENT_MAX_NUM];
     uint64_t procEventStat_[MAX_AICPU_THREAD_NUM][EVENT_MAX_NUM];
+    class CoreBusyGuard {
+    public:
+        explicit CoreBusyGuard(const uint32_t coreIndex)
+            : idx_(coreIndex), active_(aicpu::SetCoreBusyState(idx_, true) == aicpu::AICPU_ERROR_NONE)
+        {}
+        ~CoreBusyGuard()
+        {
+            if (active_) {
+                (void)aicpu::SetCoreBusyState(idx_, false);
+            }
+        }
+        CoreBusyGuard(const CoreBusyGuard&) = delete;
+        CoreBusyGuard& operator=(const CoreBusyGuard&) = delete;
+        CoreBusyGuard(CoreBusyGuard&&) = delete;
+        CoreBusyGuard& operator=(CoreBusyGuard&&) = delete;
+
+    private:
+        const uint32_t idx_;
+        const bool active_;
+    };
     std::function<void()> cancelLastword_ = nullptr;
 };
 } // namespace AicpuSchedule

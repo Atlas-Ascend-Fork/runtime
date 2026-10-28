@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_context.h"
+#include "aicpu_busy_state.h"
 #include "aicpu_pulse.h"
 
 #include <vector>
@@ -32,6 +33,14 @@ bool g_isCustAicpuSd = false;
 } // namespace
 
 namespace aicpu {
+// Host scheduler does not manage device AICPU worker busy states.
+status_t SetCoreBusyState(const uint32_t coreIndex, const bool busy)
+{
+    (void)coreIndex;
+    (void)busy;
+    return AICPU_ERROR_FAILED;
+}
+
 __attribute__((visibility("default"))) status_t aicpuSetContext(aicpuContext_t* ctx)
 {
     aicpusd_info("Aicpu set ctx in stub func[%s].", __func__);

@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_context.h"
+#include "aicpu_busy_state.h"
+#include <algorithm>
+#include <array>
 #include "aicpu_enum_name.h"
 
 #include <map>
@@ -32,6 +35,14 @@ thread_local std::map<std::string, std::string> g_threadLocalAicpuCtx;
 thread_local aicpu::streamAndTaskId_t g_streamAndTaskId;
 thread_local uint32_t g_blockIdx = 0U;
 thread_local uint32_t g_blockNum = 0U;
+std::atomic<uint64_t> g_coreBusyBitmap{0U};
+constexpr uint32_t MAX_BUSY_CPU_COUNT = 64U;
+constexpr uint32_t DEFAULT_RESERVED_NUM = 1U;
+constexpr uint32_t MAX_RESERVED_TYPE = 16U;
+std::mutex g_reservedMtx;
+std::array<uint32_t, MAX_RESERVED_TYPE> g_reservedCpuCntMap{};
+std::atomic<uint32_t> g_reservedMax{DEFAULT_RESERVED_NUM};
+
 // aicpu run mode
 uint32_t g_runMode = static_cast<uint32_t>(aicpu::AicpuRunMode::THREAD_MODE);
 // uniqueVfId
@@ -88,8 +99,54 @@ std::map<std::string, std::string>& GetThreadCtx(const aicpu::CtxType type, cons
     }
 }
 } // namespace
+extern "C" {
+void AicpuSetReservedCpuCnt(const uint8_t type, const uint32_t reservedCnt)
+{
+    if ((type >= MAX_RESERVED_TYPE) || (g_aicpuCoreCnt == 0U) || (reservedCnt > g_aicpuCoreCnt)) {
+        AICPUE_LOGW(
+            "Invalid reserved cpu request, type[%u], count[%u], total[%u].", static_cast<uint32_t>(type), reservedCnt,
+            g_aicpuCoreCnt);
+        return;
+    }
+    const std::lock_guard<std::mutex> lock(g_reservedMtx);
+    g_reservedCpuCntMap[type] = reservedCnt;
+    const uint32_t maximum = *std::max_element(g_reservedCpuCntMap.begin(), g_reservedCpuCntMap.end());
+    g_reservedMax.store(std::max(DEFAULT_RESERVED_NUM, maximum), std::memory_order_relaxed);
+}
+
+uint32_t AicpuGetReservedCpuCnt()
+{
+    return (g_aicpuCoreCnt == 0U) ? 0U : g_reservedMax.load(std::memory_order_relaxed);
+}
+
+uint32_t AicpuMaxCpuCnt() { return g_aicpuCoreCnt; }
+
+uint32_t AicpuGetIdleCpuCnt()
+{
+    if (g_aicpuCoreCnt > MAX_BUSY_CPU_COUNT) {
+        return 0U;
+    }
+    const uint64_t busyBitmap = g_coreBusyBitmap.load(std::memory_order_relaxed);
+    return g_aicpuCoreCnt - static_cast<uint32_t>(__builtin_popcountll(busyBitmap));
+}
+
+} // extern "C"
 
 namespace aicpu {
+status_t SetCoreBusyState(const uint32_t coreIndex, const bool busy)
+{
+    if ((coreIndex >= g_aicpuCoreCnt) || (coreIndex >= MAX_BUSY_CPU_COUNT)) {
+        return AICPU_ERROR_FAILED;
+    }
+    const uint64_t mask = uint64_t{1U} << coreIndex;
+    if (busy) {
+        g_coreBusyBitmap.fetch_or(mask, std::memory_order_relaxed);
+    } else {
+        g_coreBusyBitmap.fetch_and(~mask, std::memory_order_relaxed);
+    }
+    return AICPU_ERROR_NONE;
+}
+
 __attribute__((visibility("default"))) status_t aicpuSetContext(aicpuContext_t* ctx)
 {
     g_curCtx = *ctx;
@@ -142,12 +199,18 @@ status_t InitTaskMonitorContext(uint32_t aicpuCoreCnt)
         AICPUE_LOGE("invalid aicpu core count[%u]", aicpuCoreCnt);
         return AICPU_ERROR_FAILED;
     }
-    g_aicpuCoreCnt = aicpuCoreCnt;
     AICPUE_LOGI("aicpu core count[%u]", aicpuCoreCnt);
     g_opsname.reset(new (std::nothrow) std::string[aicpuCoreCnt]);
     if (g_opsname == nullptr) {
         AICPUE_LOGE("malloc ops name memory for task monitor failed");
         return AICPU_ERROR_FAILED;
+    }
+    {
+        const std::lock_guard<std::mutex> lock(g_reservedMtx);
+        g_reservedCpuCntMap.fill(0U);
+        g_reservedMax.store(DEFAULT_RESERVED_NUM, std::memory_order_relaxed);
+        g_coreBusyBitmap.store(0U, std::memory_order_relaxed);
+        g_aicpuCoreCnt = aicpuCoreCnt;
     }
     for (uint32_t idx = 0U; idx < aicpuCoreCnt; ++idx) {
         g_opsname[static_cast<size_t>(idx)] = "null";

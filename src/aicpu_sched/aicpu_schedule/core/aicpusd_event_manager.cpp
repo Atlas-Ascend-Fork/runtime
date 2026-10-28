@@ -1050,6 +1050,7 @@ int32_t AicpuEventManager::DoOnceEsched(const uint32_t threadIndex, const uint32
     event_info drvEventInfo;
     const int32_t retVal = halEschedWaitEvent(deviceId, groupId_, threadIndex, timeout, &drvEventInfo);
     if (retVal == DRV_ERROR_NONE) {
+        const CoreBusyGuard busyGuard(threadIndex);
         if (g_aicpuProfiler.GetHiperfSoStatus()) {
             g_aicpuProfiler.InitProfiler(getpid(), static_cast<pid_t>(GetTid()));
             g_aicpuProfiler.SetProcEventStart();
@@ -1092,6 +1093,7 @@ int32_t AicpuEventManager::DoOnceMsq(const uint32_t threadIndex, const uint32_t 
     (void)timeout;
     MsqDatas datas = {};
     if (MessageQueue::WaitMsqInfoOnce(datas)) {
+        const CoreBusyGuard busyGuard(threadIndex);
         event_info drvEventInfo = {};
         if (FillEvent(*(PtrToPtr<MsqDatas, AicpuTopicMailbox>(&datas)), drvEventInfo) != AICPU_SCHEDULE_OK) {
             // if the PID is 0, it indicates an AICPU rescue op, directly return success.

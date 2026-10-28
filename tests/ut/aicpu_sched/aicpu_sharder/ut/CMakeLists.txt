@@ -52,3 +52,6 @@ target_link_libraries(aicpu_sharder_utest PRIVATE
 target_compile_definitions(aicpu_sharder_utest PRIVATE
     AICPU_SHARDER_UTST
 )
+
+# Export executable symbols to exercise the dynamic CPU accounting ABI.
+target_link_libraries(aicpu_sharder_utest PRIVATE dl -Wl,--export-dynamic)
