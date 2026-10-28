@@ -9,7 +9,6 @@
  */
 #include "openssl_loader.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
 
@@ -20,7 +19,6 @@ namespace cce {
 namespace runtime {
 
 namespace {
-constexpr const char* AICC_CRYPTO_OPENSSL_LIB_ENV = "AICC_CRYPTO_OPENSSL_LIB";
 constexpr const char* AICC_CRYPTO_OPENSSL_LIB_DEFAULT = "libcrypto.so.3";
 // OpenSSL 3.x 版本号格式 0xMNN00PPSL（major/minor/fix/status），3.5.4 = 0x30500040
 constexpr const char* AICC_CRYPTO_OPENSSL_MIN_VERSION = "3.5.4";
@@ -57,9 +55,10 @@ OpenSSLLoader::~OpenSSLLoader()
 bool OpenSSLLoader::Init() noexcept
 {
     std::call_once(once_, [this]() {
-        const char* libPath = std::getenv(AICC_CRYPTO_OPENSSL_LIB_ENV);
-        const char* path = (libPath != nullptr && libPath[0] != '\0') ? libPath : AICC_CRYPTO_OPENSSL_LIB_DEFAULT;
+        const char* path = AICC_CRYPTO_OPENSSL_LIB_DEFAULT;
         // RTLD_LOCAL：libcrypto 符号不进入全局符号表，避免与宿主进程链接的其他版本 OpenSSL 冲突
+        // 无路径的 soname 由动态链接器按 DT_RPATH -> LD_LIBRARY_PATH -> DT_RUNPATH -> ld.so.cache -> 默认目录
+        // 解析，因此可通过 LD_LIBRARY_PATH 指定 OpenSSL 所在目录
         void* h = dlopen(path, static_cast<int>(RTLD_LAZY) | static_cast<int>(RTLD_LOCAL));
         if (h == nullptr) {
             RT_LOG(RT_LOG_ERROR, "OpenSSLLoader dlopen %s failed: %s", path, dlerror());
@@ -89,8 +88,8 @@ bool OpenSSLLoader::Init() noexcept
         RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
             ErrorCode::EE1016, "Loading the OpenSSL library",
             RtFmtMsg(
-                "Confidential computing requires OpenSSL %s or later. Please install or upgrade OpenSSL, or "
-                "set the environment variable AICC_CRYPTO_OPENSSL_LIB to the path of the libcrypto library",
+                "Confidential computing requires OpenSSL %s or later. Please install or upgrade OpenSSL, or add the "
+                "directory containing libcrypto.so.3 to LD_LIBRARY_PATH",
                 AICC_CRYPTO_OPENSSL_MIN_VERSION));
     }
     return inited_;
