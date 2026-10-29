@@ -46,6 +46,9 @@ aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
 <!-- npu="IPV350" id735 -->
 - IPV350：支持
 <!-- end id735 -->
+<!-- npu="5162A" id6793 -->
+- Hisilicon5162A：支持
+<!-- end id6793 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id1 -->
 
 ### 功能说明
@@ -181,6 +184,9 @@ aclError aclrtMallocAlign32(void **devPtr, size_t size, aclrtMemMallocPolicy pol
 <!-- npu="IPV350" id1792 -->
 - IPV350：支持
 <!-- end id1792 -->
+<!-- npu="5162A" id6794 -->
+- Hisilicon5162A：不支持
+<!-- end id6794 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id2 -->
 
 ### 功能说明
@@ -313,6 +319,9 @@ aclError aclrtMallocCached(void **devPtr, size_t size, aclrtMemMallocPolicy poli
 <!-- npu="IPV350" id322 -->
 - IPV350：不支持
 <!-- end id322 -->
+<!-- npu="5162A" id6795 -->
+- Hisilicon5162A：支持
+<!-- end id6795 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id3 -->
 
 ### 功能说明
@@ -372,6 +381,9 @@ aclError aclrtMemFlush(void *devPtr, size_t size)
 <!-- npu="IPV350" id2100 -->
 - IPV350：不支持
 <!-- end id2100 -->
+<!-- npu="5162A" id6796 -->
+- Hisilicon5162A：支持
+<!-- end id6796 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id16 -->
 
 ### 功能说明
@@ -426,6 +438,9 @@ aclError aclrtMemInvalidate(void *devPtr, size_t size)
 <!-- npu="IPV350" id2037 -->
 - IPV350：不支持
 <!-- end id2037 -->
+<!-- npu="5162A" id6797 -->
+- Hisilicon5162A：支持
+<!-- end id6797 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id17 -->
 
 ### 功能说明
@@ -480,6 +495,9 @@ aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy pol
 <!-- npu="IPV350" id595 -->
 - IPV350：不支持
 <!-- end id595 -->
+<!-- npu="5162A" id6798 -->
+- Hisilicon5162A：不支持
+<!-- end id6798 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id4 -->
 
 ### 功能说明
@@ -547,6 +565,9 @@ aclError aclrtMallocForTaskScheduler(void **devPtr, size_t size, aclrtMemMallocP
 <!-- npu="IPV350" id2387 -->
 - IPV350：不支持
 <!-- end id2387 -->
+<!-- npu="5162A" id6799 -->
+- Hisilicon5162A：不支持
+<!-- end id6799 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id5 -->
 
 ### 功能说明
@@ -603,6 +624,9 @@ aclError aclrtFree(void *devPtr)
 <!-- npu="IPV350" id329 -->
 - IPV350：支持
 <!-- end id329 -->
+<!-- npu="5162A" id6800 -->
+- Hisilicon5162A：支持
+<!-- end id6800 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id6 -->
 
 ### 功能说明
@@ -660,6 +684,9 @@ aclError aclrtFreeWithDevSync(void *devPtr)
 <!-- npu="IPV350" id1106 -->
 - IPV350：不支持
 <!-- end id1106 -->
+<!-- npu="5162A" id6801 -->
+- Hisilicon5162A：不支持
+<!-- end id6801 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id7 -->
 
 ### 功能说明
@@ -713,6 +740,9 @@ aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
 <!-- npu="IPV350" id469 -->
 - IPV350：支持
 <!-- end id469 -->
+<!-- npu="5162A" id6802 -->
+- Hisilicon5162A：不支持
+<!-- end id6802 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id8 -->
 
 ### 功能说明
@@ -771,6 +801,9 @@ aclError aclrtGetMemUsageInfo(int32_t deviceId, aclrtMemUsageInfo *memUsageInfo,
 <!-- npu="IPV350" id91 -->
 - IPV350：不支持
 <!-- end id91 -->
+<!-- npu="5162A" id6803 -->
+- Hisilicon5162A：不支持
+<!-- end id6803 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id9 -->
 
 ### 功能说明
@@ -825,6 +858,9 @@ aclError aclrtCheckMemType(void** addrList, uint32_t size, uint32_t memType, uin
 <!-- npu="IPV350" id2674 -->
 - IPV350：不支持
 <!-- end id2674 -->
+<!-- npu="5162A" id6804 -->
+- Hisilicon5162A：不支持
+<!-- end id6804 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-01_device_memory_malloc_and_free_res.md#id10 -->
 
 ### 功能说明

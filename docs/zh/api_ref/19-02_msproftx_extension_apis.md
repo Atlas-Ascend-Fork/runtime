@@ -53,6 +53,9 @@ void *aclprofCreateStamp()
 <!-- npu="IPV350" id959 -->
 - IPV350：不支持
 <!-- end id959 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id1 -->
 
 ### 功能说明
@@ -103,6 +106,9 @@ aclError aclprofSetStampTraceMessage(void *stamp, const char *msg, uint32_t msgL
 <!-- npu="IPV350" id1029 -->
 - IPV350：不支持
 <!-- end id1029 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id2 -->
 
 ### 功能说明
@@ -160,6 +166,9 @@ aclError aclprofMark(void *stamp)
 <!-- npu="IPV350" id2576 -->
 - IPV350：不支持
 <!-- end id2576 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id3 -->
 ### 功能说明
 
@@ -216,6 +225,9 @@ aclError aclprofMarkEx(const char *msg, size_t msgLen, aclrtStream stream)
 <!-- npu="IPV350" id2940 -->
 - IPV350：不支持
 <!-- end id2940 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id4 -->
 ### 功能说明
 
@@ -273,6 +285,9 @@ aclError aclprofPush(void *stamp)
 <!-- npu="IPV350" id1764 -->
 - IPV350：不支持
 <!-- end id1764 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id5 -->
 
 ### 功能说明
@@ -332,6 +347,9 @@ aclError aclprofPop()
 <!-- npu="IPV350" id273 -->
 - IPV350：不支持
 <!-- end id273 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id6 -->
 
 ### 功能说明
@@ -385,6 +403,9 @@ aclError aclprofRangeStart(void *stamp, uint32_t *rangeId)
 <!-- npu="IPV350" id2996 -->
 - IPV350：不支持
 <!-- end id2996 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id7 -->
 ### 功能说明
 
@@ -444,6 +465,9 @@ aclError aclprofRangeStop(uint32_t rangeId)
 <!-- npu="IPV350" id2562 -->
 - IPV350：不支持
 <!-- end id2562 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id8 -->
 
 ### 功能说明
@@ -503,6 +527,9 @@ aclError aclprofRangePushEx(aclprofEventAttributes *attr)
 <!-- npu="IPV350" id665 -->
 - IPV350：不支持
 <!-- end id665 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id9 -->
 
 ### 功能说明
@@ -560,6 +587,9 @@ aclError aclprofRangePop()
 <!-- npu="IPV350" id2163 -->
 - IPV350：不支持
 <!-- end id2163 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id10 -->
 
 ### 功能说明
@@ -611,6 +641,9 @@ void aclprofDestroyStamp(void *stamp)
 <!-- npu="IPV350" id1288 -->
 - IPV350：不支持
 <!-- end id1288 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id11 -->
 
 ### 功能说明
@@ -662,6 +695,9 @@ uint64_t aclprofStr2Id(const char *message)
 <!-- npu="IPV350" id3458 -->
 - IPV350：不支持
 <!-- end id3458 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-02_msproftx_extension_apis_res.md#id12 -->
 ### 功能说明
 

@@ -76,6 +76,9 @@ aclError aclprofInit(const char *profilerResultPath, size_t length)
 <!-- npu="IPV350" id651 -->
 - IPV350：不支持
 <!-- end id651 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-01_data_profiling_apis_res.md#id1 -->
 ### 功能说明
 
@@ -131,6 +134,9 @@ aclError aclprofSetConfig(aclprofConfigType configType, const char *config, size
 <!-- npu="IPV350" id42 -->
 - IPV350：不支持
 <!-- end id42 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-01_data_profiling_apis_res.md#id2 -->
 ### 功能说明
 
@@ -189,6 +195,9 @@ aclError aclprofStart(const aclprofConfig *profilerConfig)
 <!-- npu="IPV350" id3178 -->
 - IPV350：不支持
 <!-- end id3178 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-01_data_profiling_apis_res.md#id3 -->
 
 ### 功能说明
@@ -246,6 +255,9 @@ aclError aclprofStop(const aclprofConfig *profilerConfig)
 <!-- npu="IPV350" id2485 -->
 - IPV350：不支持
 <!-- end id2485 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-01_data_profiling_apis_res.md#id4 -->
 
 ### 功能说明
@@ -301,6 +313,9 @@ aclError aclprofFinalize()
 <!-- npu="IPV350" id1414 -->
 - IPV350：不支持
 <!-- end id1414 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-01_data_profiling_apis_res.md#id5 -->
 
 ### 功能说明

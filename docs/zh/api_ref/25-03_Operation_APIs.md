@@ -118,6 +118,9 @@ aclDataBuffer *aclCreateDataBuffer(void *data, size_t size)
 <!-- npu="IPV350" id3465 -->
 - IPV350：支持
 <!-- end id3465 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id1 -->
 
 ### 功能说明
@@ -170,6 +173,9 @@ aclError aclDestroyDataBuffer(const aclDataBuffer *dataBuffer)
 <!-- npu="IPV350" id2009 -->
 - IPV350：支持
 <!-- end id2009 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id2 -->
 
 ### 功能说明
@@ -221,6 +227,9 @@ void *aclGetDataBufferAddr(const aclDataBuffer *dataBuffer)
 <!-- npu="IPV350" id3325 -->
 - IPV350：支持
 <!-- end id3325 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id3 -->
 
 ### 功能说明
@@ -272,6 +281,9 @@ uint32_t aclGetDataBufferSize(const aclDataBuffer *dataBuffer)
 <!-- npu="IPV350" id3164 -->
 - IPV350：支持
 <!-- end id3164 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id4 -->
 
 ### 功能说明
@@ -321,6 +333,9 @@ size_t aclGetDataBufferSizeV2(const aclDataBuffer *dataBuffer)
 <!-- npu="IPV350" id1603 -->
 - IPV350：支持
 <!-- end id1603 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id5 -->
 
 ### 功能说明
@@ -370,6 +385,9 @@ aclError aclUpdateDataBuffer(aclDataBuffer *dataBuffer, void *data, size_t size)
 <!-- npu="IPV350" id2541 -->
 - IPV350：不支持
 <!-- end id2541 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id6 -->
 
 ### 功能说明
@@ -433,6 +451,9 @@ aclprofConfig *aclprofCreateConfig(uint32_t *deviceIdList, uint32_t deviceNums, 
 <!-- npu="IPV350" id2730 -->
 - IPV350：不支持
 <!-- end id2730 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id44 -->
 
 ### 功能说明
@@ -499,6 +520,9 @@ aclError aclprofDestroyConfig(const aclprofConfig *profilerConfig)
 <!-- npu="IPV350" id217 -->
 - IPV350：不支持
 <!-- end id217 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id45 -->
 ### 功能说明
 
@@ -562,6 +586,9 @@ aclprofStepInfo* aclprofCreateStepInfo()
 <!-- npu="IPV350" id1869 -->
 - IPV350：不支持
 <!-- end id1869 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id46 -->
 
 ### 功能说明
@@ -614,6 +641,9 @@ void aclprofDestroyStepInfo(aclprofStepInfo* stepinfo)
 <!-- npu="IPV350" id357 -->
 - IPV350：不支持
 <!-- end id357 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id47 -->
 
 ### 功能说明
@@ -674,6 +704,9 @@ aclprofSubscribeConfig *aclprofCreateSubscribeConfig(int8_t timeInfoSwitch, aclp
 <!-- npu="IPV350" id49 -->
 - IPV350：不支持
 <!-- end id49 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id48 -->
 ### 功能说明
 
@@ -733,6 +766,9 @@ aclError aclprofDestroySubscribeConfig(const aclprofSubscribeConfig *profSubscri
 <!-- npu="IPV350" id1750 -->
 - IPV350：不支持
 <!-- end id1750 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id49 -->
 
 ### 功能说明
@@ -807,6 +843,9 @@ aclrtAllocatorDesc aclrtAllocatorCreateDesc()
 <!-- npu="IPV350" id1540 -->
 - IPV350：不支持
 <!-- end id1540 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id7 -->
 
 ### 功能说明
@@ -851,6 +890,9 @@ aclError aclrtAllocatorDestroyDesc(aclrtAllocatorDesc allocatorDesc)
 <!-- npu="IPV350" id1169 -->
 - IPV350：不支持
 <!-- end id1169 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：不支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id8 -->
 
 ### 功能说明
@@ -900,6 +942,9 @@ aclError aclrtAllocatorSetObjToDesc(aclrtAllocatorDesc allocatorDesc,  aclrtAllo
 <!-- npu="IPV350" id3199 -->
 - IPV350：不支持
 <!-- end id3199 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：不支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id9 -->
 
 ### 功能说明
@@ -950,6 +995,9 @@ aclError aclrtAllocatorSetAllocFuncToDesc(aclrtAllocatorDesc allocatorDesc, aclr
 <!-- npu="IPV350" id2436 -->
 - IPV350：不支持
 <!-- end id2436 -->
+<!-- npu="5162A" id5016 -->
+- Hisilicon5162A：不支持
+<!-- end id5016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id10 -->
 
 ### 功能说明
@@ -1000,6 +1048,9 @@ aclError aclrtAllocatorSetAllocAdviseFuncToDesc(aclrtAllocatorDesc allocatorDesc
 <!-- npu="IPV350" id2688 -->
 - IPV350：不支持
 <!-- end id2688 -->
+<!-- npu="5162A" id5017 -->
+- Hisilicon5162A：不支持
+<!-- end id5017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id11 -->
 
 ### 功能说明
@@ -1050,6 +1101,9 @@ aclError aclrtAllocatorSetFreeFuncToDesc(aclrtAllocatorDesc allocatorDesc, aclrt
 <!-- npu="IPV350" id1757 -->
 - IPV350：不支持
 <!-- end id1757 -->
+<!-- npu="5162A" id5018 -->
+- Hisilicon5162A：不支持
+<!-- end id5018 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id12 -->
 
 ### 功能说明
@@ -1100,6 +1154,9 @@ aclError aclrtAllocatorSetGetAddrFromBlockFuncToDesc(aclrtAllocatorDesc allocato
 <!-- npu="IPV350" id1456 -->
 - IPV350：不支持
 <!-- end id1456 -->
+<!-- npu="5162A" id5019 -->
+- Hisilicon5162A：不支持
+<!-- end id5019 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id50 -->
 
 ### 功能说明
@@ -1160,6 +1217,9 @@ aclrtStreamConfigHandle *aclrtCreateStreamConfigHandle(void)
 <!-- npu="IPV350" id2380 -->
 - IPV350：支持
 <!-- end id2380 -->
+<!-- npu="5162A" id5020 -->
+- Hisilicon5162A：不支持
+<!-- end id5020 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id13 -->
 
 ### 功能说明
@@ -1210,6 +1270,9 @@ aclError aclrtDestroyStreamConfigHandle(aclrtStreamConfigHandle *handle)
 <!-- npu="IPV350" id1477 -->
 - IPV350：支持
 <!-- end id1477 -->
+<!-- npu="5162A" id5021 -->
+- Hisilicon5162A：不支持
+<!-- end id5021 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id14 -->
 
 ### 功能说明
@@ -1286,6 +1349,9 @@ size_t size)
 <!-- npu="IPV350" id1610 -->
 - IPV350：不支持
 <!-- end id1610 -->
+<!-- npu="5162A" id5022 -->
+- Hisilicon5162A：不支持
+<!-- end id5022 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id15 -->
 
 ### 功能说明
@@ -1343,6 +1409,9 @@ aclError acltdtDestroyDataItem(acltdtDataItem *dataItem)
 <!-- npu="IPV350" id3017 -->
 - IPV350：不支持
 <!-- end id3017 -->
+<!-- npu="5162A" id5023 -->
+- Hisilicon5162A：不支持
+<!-- end id5023 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id16 -->
 
 ### 功能说明
@@ -1392,6 +1461,9 @@ acltdtTensorType acltdtGetTensorTypeFromItem(const acltdtDataItem *dataItem)
 <!-- npu="IPV350" id3367 -->
 - IPV350：不支持
 <!-- end id3367 -->
+<!-- npu="5162A" id5024 -->
+- Hisilicon5162A：不支持
+<!-- end id5024 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id17 -->
 
 ### 功能说明
@@ -1441,6 +1513,9 @@ aclDataType acltdtGetDataTypeFromItem(const acltdtDataItem *dataItem)
 <!-- npu="IPV350" id2863 -->
 - IPV350：不支持
 <!-- end id2863 -->
+<!-- npu="5162A" id5025 -->
+- Hisilicon5162A：不支持
+<!-- end id5025 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id18 -->
 
 ### 功能说明
@@ -1490,6 +1565,9 @@ void *acltdtGetDataAddrFromItem(const acltdtDataItem *dataItem)
 <!-- npu="IPV350" id532 -->
 - IPV350：不支持
 <!-- end id532 -->
+<!-- npu="5162A" id5026 -->
+- Hisilicon5162A：不支持
+<!-- end id5026 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id19 -->
 
 ### 功能说明
@@ -1539,6 +1617,9 @@ size_t acltdtGetDataSizeFromItem(const acltdtDataItem *dataItem)
 <!-- npu="IPV350" id1463 -->
 - IPV350：不支持
 <!-- end id1463 -->
+<!-- npu="5162A" id5027 -->
+- Hisilicon5162A：不支持
+<!-- end id5027 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id20 -->
 
 ### 功能说明
@@ -1588,6 +1669,9 @@ size_t acltdtGetDimNumFromItem(const acltdtDataItem *dataItem)
 <!-- npu="IPV350" id2422 -->
 - IPV350：不支持
 <!-- end id2422 -->
+<!-- npu="5162A" id5028 -->
+- Hisilicon5162A：不支持
+<!-- end id5028 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id21 -->
 
 ### 功能说明
@@ -1637,6 +1721,9 @@ aclError acltdtGetDimsFromItem(const acltdtDataItem *dataItem, int64_t *dims, si
 <!-- npu="IPV350" id371 -->
 - IPV350：不支持
 <!-- end id371 -->
+<!-- npu="5162A" id5029 -->
+- Hisilicon5162A：不支持
+<!-- end id5029 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id22 -->
 
 ### 功能说明
@@ -1706,6 +1793,9 @@ acltdtDataset *acltdtCreateDataset()
 <!-- npu="IPV350" id749 -->
 - IPV350：不支持
 <!-- end id749 -->
+<!-- npu="5162A" id5030 -->
+- Hisilicon5162A：不支持
+<!-- end id5030 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id23 -->
 
 ### 功能说明
@@ -1756,6 +1846,9 @@ aclError acltdtDestroyDataset(acltdtDataset *dataset)
 <!-- npu="IPV350" id3283 -->
 - IPV350：不支持
 <!-- end id3283 -->
+<!-- npu="5162A" id5031 -->
+- Hisilicon5162A：不支持
+<!-- end id5031 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id24 -->
 
 ### 功能说明
@@ -1805,6 +1898,9 @@ acltdtDataItem *acltdtGetDataItem(const acltdtDataset *dataset, size_t index)
 <!-- npu="IPV350" id840 -->
 - IPV350：不支持
 <!-- end id840 -->
+<!-- npu="5162A" id5032 -->
+- Hisilicon5162A：不支持
+<!-- end id5032 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id25 -->
 
 ### 功能说明
@@ -1856,6 +1952,9 @@ aclError acltdtAddDataItem(acltdtDataset *dataset, acltdtDataItem *dataItem)
 <!-- npu="IPV350" id812 -->
 - IPV350：不支持
 <!-- end id812 -->
+<!-- npu="5162A" id5033 -->
+- Hisilicon5162A：不支持
+<!-- end id5033 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id26 -->
 
 ### 功能说明
@@ -1906,6 +2005,9 @@ size_t acltdtGetDatasetSize(const acltdtDataset *dataset)
 <!-- npu="IPV350" id1449 -->
 - IPV350：不支持
 <!-- end id1449 -->
+<!-- npu="5162A" id5034 -->
+- Hisilicon5162A：不支持
+<!-- end id5034 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id27 -->
 
 ### 功能说明
@@ -1955,6 +2057,9 @@ const char *acltdtGetDatasetName(const acltdtDataset *dataset)
 <!-- npu="IPV350" id3444 -->
 - IPV350：不支持
 <!-- end id3444 -->
+<!-- npu="5162A" id5035 -->
+- Hisilicon5162A：不支持
+<!-- end id5035 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id28 -->
 
 ### 功能说明
@@ -2018,6 +2123,9 @@ acltdtQueueAttr *acltdtCreateQueueAttr()
 <!-- npu="IPV350" id2891 -->
 - IPV350：不支持
 <!-- end id2891 -->
+<!-- npu="5162A" id5036 -->
+- Hisilicon5162A：不支持
+<!-- end id5036 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id29 -->
 
 ### 功能说明
@@ -2066,6 +2174,9 @@ aclError acltdtDestroyQueueAttr(const acltdtQueueAttr *attr)
 <!-- npu="IPV350" id882 -->
 - IPV350：不支持
 <!-- end id882 -->
+<!-- npu="5162A" id5037 -->
+- Hisilicon5162A：不支持
+<!-- end id5037 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id30 -->
 
 ### 功能说明
@@ -2115,6 +2226,9 @@ aclError acltdtSetQueueAttr(acltdtQueueAttr *attr, acltdtQueueAttrType type, siz
 <!-- npu="IPV350" id1330 -->
 - IPV350：不支持
 <!-- end id1330 -->
+<!-- npu="5162A" id5038 -->
+- Hisilicon5162A：不支持
+<!-- end id5038 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id31 -->
 
 ### 功能说明
@@ -2167,6 +2281,9 @@ aclError acltdtGetQueueAttr(const acltdtQueueAttr *attr, acltdtQueueAttrType typ
 <!-- npu="IPV350" id1848 -->
 - IPV350：不支持
 <!-- end id1848 -->
+<!-- npu="5162A" id5039 -->
+- Hisilicon5162A：不支持
+<!-- end id5039 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id32 -->
 
 ### 功能说明
@@ -2232,6 +2349,9 @@ acltdtQueueRoute* acltdtCreateQueueRoute(uint32_t srcId, uint32_t dstId)
 <!-- npu="IPV350" id1421 -->
 - IPV350：不支持
 <!-- end id1421 -->
+<!-- npu="5162A" id5040 -->
+- Hisilicon5162A：不支持
+<!-- end id5040 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id33 -->
 
 ### 功能说明
@@ -2283,6 +2403,9 @@ aclError acltdtDestroyQueueRoute(const acltdtQueueRoute *route)
 <!-- npu="IPV350" id1806 -->
 - IPV350：不支持
 <!-- end id1806 -->
+<!-- npu="5162A" id5041 -->
+- Hisilicon5162A：不支持
+<!-- end id5041 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id34 -->
 
 ### 功能说明
@@ -2332,6 +2455,9 @@ aclError acltdtGetQueueRouteParam(const acltdtQueueRoute *route, acltdtQueueRout
 <!-- npu="IPV350" id1827 -->
 - IPV350：不支持
 <!-- end id1827 -->
+<!-- npu="5162A" id5042 -->
+- Hisilicon5162A：不支持
+<!-- end id5042 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id35 -->
 
 ### 功能说明
@@ -2401,6 +2527,9 @@ acltdtQueueRouteList* acltdtCreateQueueRouteList()
 <!-- npu="IPV350" id98 -->
 - IPV350：不支持
 <!-- end id98 -->
+<!-- npu="5162A" id5043 -->
+- Hisilicon5162A：不支持
+<!-- end id5043 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id36 -->
 
 ### 功能说明
@@ -2449,6 +2578,9 @@ aclError acltdtDestroyQueueRouteList(const acltdtQueueRouteList *routeList)
 <!-- npu="IPV350" id805 -->
 - IPV350：不支持
 <!-- end id805 -->
+<!-- npu="5162A" id5044 -->
+- Hisilicon5162A：不支持
+<!-- end id5044 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id37 -->
 
 ### 功能说明
@@ -2498,6 +2630,9 @@ aclError acltdtAddQueueRoute(acltdtQueueRouteList *routeList, const acltdtQueueR
 <!-- npu="IPV350" id1120 -->
 - IPV350：不支持
 <!-- end id1120 -->
+<!-- npu="5162A" id5045 -->
+- Hisilicon5162A：不支持
+<!-- end id5045 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id38 -->
 
 ### 功能说明
@@ -2548,6 +2683,9 @@ aclError acltdtGetQueueRoute(const acltdtQueueRouteList *routeList, size_t index
 <!-- npu="IPV350" id476 -->
 - IPV350：不支持
 <!-- end id476 -->
+<!-- npu="5162A" id5046 -->
+- Hisilicon5162A：不支持
+<!-- end id5046 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id39 -->
 
 ### 功能说明
@@ -2599,6 +2737,9 @@ size_t acltdtGetQueueRouteNum(const acltdtQueueRouteList *routeList)
 <!-- npu="IPV350" id2548 -->
 - IPV350：不支持
 <!-- end id2548 -->
+<!-- npu="5162A" id5047 -->
+- Hisilicon5162A：不支持
+<!-- end id5047 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id40 -->
 
 ### 功能说明
@@ -2660,6 +2801,9 @@ acltdtQueueRouteQueryInfo* acltdtCreateQueueRouteQueryInfo()
 <!-- npu="IPV350" id2590 -->
 - IPV350：不支持
 <!-- end id2590 -->
+<!-- npu="5162A" id5048 -->
+- Hisilicon5162A：不支持
+<!-- end id5048 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id41 -->
 
 ### 功能说明
@@ -2708,6 +2852,9 @@ aclError acltdtDestroyQueueRouteQueryInfo(const acltdtQueueRouteQueryInfo *info)
 <!-- npu="IPV350" id3206 -->
 - IPV350：不支持
 <!-- end id3206 -->
+<!-- npu="5162A" id5049 -->
+- Hisilicon5162A：不支持
+<!-- end id5049 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id42 -->
 
 ### 功能说明
@@ -2757,6 +2904,9 @@ aclError acltdtSetQueueRouteQueryInfo(acltdtQueueRouteQueryInfo *param, acltdtQu
 <!-- npu="IPV350" id1393 -->
 - IPV350：不支持
 <!-- end id1393 -->
+<!-- npu="5162A" id5050 -->
+- Hisilicon5162A：不支持
+<!-- end id5050 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/25-03_Operation_APIs_res.md#id43 -->
 
 ### 功能说明

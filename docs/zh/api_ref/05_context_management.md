@@ -43,6 +43,9 @@ aclError aclrtCreateContext(aclrtContext *context, int32_t deviceId)
 <!-- npu="IPV350" id336 -->
 - IPV350：支持
 <!-- end id336 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id1 -->
 
 ### 功能说明
@@ -116,6 +119,9 @@ aclError aclrtDestroyContext(aclrtContext context)
 <!-- npu="IPV350" id1960 -->
 - IPV350：支持
 <!-- end id1960 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id2 -->
 
 ### 功能说明
@@ -167,6 +173,9 @@ aclError aclrtSetCurrentContext(aclrtContext context)
 <!-- npu="IPV350" id791 -->
 - IPV350：支持
 <!-- end id791 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id3 -->
 
 ### 功能说明
@@ -229,6 +238,9 @@ aclError aclrtGetCurrentContext(aclrtContext *context)
 <!-- npu="IPV350" id2835 -->
 - IPV350：支持
 <!-- end id2835 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id4 -->
 
 ### 功能说明
@@ -282,6 +294,9 @@ aclError aclrtCtxSetSysParamOpt(aclSysParamOpt opt, int64_t value)
 <!-- npu="IPV350" id3059 -->
 - IPV350：不支持
 <!-- end id3059 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id5 -->
 
 ### 功能说明
@@ -336,6 +351,9 @@ aclError aclrtCtxGetSysParamOpt(aclSysParamOpt opt, int64_t *value)
 <!-- npu="IPV350" id2121 -->
 - IPV350：不支持
 <!-- end id2121 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id6 -->
 
 ### 功能说明
@@ -390,6 +408,9 @@ aclError aclrtCtxGetCurrentDefaultStream(aclrtStream *stream)
 <!-- npu="IPV350" id1505 -->
 - IPV350：不支持
 <!-- end id1505 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id7 -->
 
 ### 功能说明
@@ -441,6 +462,9 @@ aclError aclrtGetPrimaryCtxState(int32_t deviceId, uint32_t *flags, int32_t *act
 <!-- npu="IPV350" id2793 -->
 - IPV350：不支持
 <!-- end id2793 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id8 -->
 
 ### 功能说明
@@ -494,6 +518,9 @@ aclError aclrtCtxGetFloatOverflowAddr(void **overflowAddr)
 <!-- npu="IPV350" id616 -->
 - IPV350：不支持
 <!-- end id616 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/05_context_management_res.md#id9 -->
 
 ### 功能说明

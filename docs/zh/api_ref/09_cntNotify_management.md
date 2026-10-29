@@ -40,6 +40,9 @@ aclError aclrtCntNotifyCreate(aclrtCntNotify *cntNotify, uint64_t flag)
 <!-- npu="IPV350" id1967 -->
 - IPV350：不支持
 <!-- end id1967 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id1 -->
 
 ### 功能说明
@@ -94,6 +97,9 @@ aclError aclrtCntNotifyRecord(aclrtCntNotify cntNotify, aclrtStream stream, aclr
 <!-- npu="IPV350" id3129 -->
 - IPV350：不支持
 <!-- end id3129 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id2 -->
 
 ### 功能说明
@@ -149,6 +155,9 @@ aclError aclrtCntNotifyWaitWithTimeout(aclrtCntNotify cntNotify, aclrtStream str
 <!-- npu="IPV350" id2205 -->
 - IPV350：不支持
 <!-- end id2205 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id3 -->
 
 ### 功能说明
@@ -202,6 +211,9 @@ aclError aclrtCntNotifyReset(aclrtCntNotify cntNotify, aclrtStream stream)
 <!-- npu="IPV350" id2051 -->
 - IPV350：不支持
 <!-- end id2051 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id4 -->
 
 ### 功能说明
@@ -254,6 +266,9 @@ aclError aclrtCntNotifyGetId(aclrtCntNotify cntNotify, uint32_t *notifyId)
 <!-- npu="IPV350" id364 -->
 - IPV350：不支持
 <!-- end id364 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id5 -->
 
 ### 功能说明
@@ -306,6 +321,9 @@ aclError aclrtCntNotifyDestroy(aclrtCntNotify cntNotify)
 <!-- npu="IPV350" id1064 -->
 - IPV350：不支持
 <!-- end id1064 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/09_cntNotify_management_res.md#id6 -->
 
 ### 功能说明

@@ -260,6 +260,9 @@ aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t fl
 <!-- npu="IPV350" id2611 -->
 - IPV350：不支持
 <!-- end id2611 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-05_unified_addressing_res.md#id7 -->
 
 ### 功能说明
@@ -315,6 +318,9 @@ aclError aclrtPointerGetAttributes(const void *ptr, aclrtPtrAttributes *attribut
 <!-- npu="IPV350" id1715 -->
 - IPV350：不支持
 <!-- end id1715 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-05_unified_addressing_res.md#id8 -->
 
 ### 功能说明

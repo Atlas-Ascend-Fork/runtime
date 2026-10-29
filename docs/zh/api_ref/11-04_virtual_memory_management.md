@@ -56,6 +56,9 @@ aclError aclrtMallocPhysical(aclrtDrvMemHandle *handle, size_t size, const aclrt
 <!-- npu="IPV350" id1498 -->
 - IPV350：不支持
 <!-- end id1498 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id1 -->
 
 ### 功能说明
@@ -190,6 +193,9 @@ aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
 <!-- npu="IPV350" id1953 -->
 - IPV350：不支持
 <!-- end id1953 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id2 -->
 
 ### 功能说明
@@ -249,6 +255,9 @@ aclError aclrtReserveMemAddress(void **virPtr, size_t size, size_t alignment, vo
 <!-- npu="IPV350" id1148 -->
 - IPV350：不支持
 <!-- end id1148 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id3 -->
 
 ### 功能说明
@@ -328,6 +337,9 @@ aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t ali
 <!-- npu="IPV350" id2198 -->
 - IPV350：不支持
 <!-- end id2198 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id4 -->
 
 ### 功能说明
@@ -387,6 +399,9 @@ aclError aclrtReleaseMemAddress(void *virPtr)
 <!-- npu="IPV350" id868 -->
 - IPV350：不支持
 <!-- end id868 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id5 -->
 
 ### 功能说明
@@ -456,6 +471,9 @@ aclError aclrtMapMem(void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle
 <!-- npu="IPV350" id504 -->
 - IPV350：不支持
 <!-- end id504 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id6 -->
 
 ### 功能说明
@@ -527,6 +545,9 @@ aclError aclrtMemMapNoAccess(void *virPtr, size_t size, size_t offset, aclrtDrvM
 <!-- npu="IPV350" id33 -->
 - IPV350：不支持
 <!-- end id33 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id21 -->
 
 ### 功能说明
@@ -606,6 +627,9 @@ aclError aclrtUnmapMem(void *virPtr)
 <!-- npu="IPV350" id3360 -->
 - IPV350：不支持
 <!-- end id3360 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id7 -->
 
 ### 功能说明
@@ -663,6 +687,9 @@ aclError aclrtMemExportToShareableHandle(aclrtDrvMemHandle handle, aclrtMemHandl
 <!-- npu="IPV350" id1946 -->
 - IPV350：不支持
 <!-- end id1946 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id8 -->
 
 ### 功能说明
@@ -762,6 +789,9 @@ aclError aclrtMemSetPidToShareableHandle(uint64_t shareableHandle, int32_t *pid,
 <!-- npu="IPV350" id1351 -->
 - IPV350：不支持
 <!-- end id1351 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id9 -->
 
 ### 功能说明
@@ -817,6 +847,9 @@ aclError aclrtMemImportFromShareableHandle(uint64_t shareableHandle, int32_t dev
 <!-- npu="IPV350" id1484 -->
 - IPV350：不支持
 <!-- end id1484 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id10 -->
 
 ### 功能说明
@@ -879,6 +912,9 @@ aclError aclrtMemExportToShareableHandleV2(aclrtDrvMemHandle handle, uint64_t fl
 <!-- npu="IPV350" id1652 -->
 - IPV350：不支持
 <!-- end id1652 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id11 -->
 
 ### 功能说明
@@ -953,6 +989,9 @@ aclError aclrtMemSetPidToShareableHandleV2(void *shareableHandle, aclrtMemShared
 <!-- npu="IPV350" id1372 -->
 - IPV350：不支持
 <!-- end id1372 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id12 -->
 
 ### 功能说明
@@ -1011,6 +1050,9 @@ aclError aclrtMemImportFromShareableHandleV2(void *shareableHandle, aclrtMemShar
 <!-- npu="IPV350" id833 -->
 - IPV350：不支持
 <!-- end id833 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：不支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id13 -->
 
 ### 功能说明
@@ -1075,6 +1117,9 @@ aclError aclrtMemGetAllocationGranularity(aclrtPhysicalMemProp *prop, aclrtMemGr
 <!-- npu="IPV350" id1001 -->
 - IPV350：不支持
 <!-- end id1001 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：不支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id14 -->
 
 ### 功能说明
@@ -1136,6 +1181,9 @@ aclError aclrtMemSetAccess(void* virPtr, size_t size, aclrtMemAccessDesc* desc, 
 <!-- npu="IPV350" id2709 -->
 - IPV350：不支持
 <!-- end id2709 -->
+<!-- npu="5162A" id5016 -->
+- Hisilicon5162A：不支持
+<!-- end id5016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id15 -->
 
 ### 功能说明
@@ -1190,6 +1238,9 @@ aclError aclrtMemGetAccess(void *virPtr, aclrtMemLocation *location, uint64_t *f
 <!-- npu="IPV350" id2681 -->
 - IPV350：不支持
 <!-- end id2681 -->
+<!-- npu="5162A" id5017 -->
+- Hisilicon5162A：不支持
+<!-- end id5017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id16 -->
 
 ### 功能说明
@@ -1243,6 +1294,9 @@ aclError aclrtMemRetainAllocationHandle(void* virPtr, aclrtDrvMemHandle *handle)
 <!-- npu="IPV350" id2632 -->
 - IPV350：不支持
 <!-- end id2632 -->
+<!-- npu="5162A" id5018 -->
+- Hisilicon5162A：不支持
+<!-- end id5018 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id17 -->
 
 ### 功能说明
@@ -1305,6 +1359,9 @@ aclError aclrtMemGetAllocationPropertiesFromHandle(aclrtDrvMemHandle handle, acl
 <!-- npu="IPV350" id2443 -->
 - IPV350：不支持
 <!-- end id2443 -->
+<!-- npu="5162A" id5019 -->
+- Hisilicon5162A：不支持
+<!-- end id5019 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id18 -->
 
 ### 功能说明
@@ -1363,6 +1420,9 @@ aclError aclrtMemGetAddressRange(void *ptr, void **pbase, size_t *psize)
 <!-- npu="IPV350" id980 -->
 - IPV350：不支持
 <!-- end id980 -->
+<!-- npu="5162A" id5020 -->
+- Hisilicon5162A：不支持
+<!-- end id5020 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id19 -->
 
 ### 功能说明
@@ -1424,6 +1484,9 @@ aclError aclrtMemMapSelectedLink(void *virPtrDst, size_t size, void *virPtrSrc, 
 <!-- npu="IPV350" id658 -->
 - IPV350：不支持
 <!-- end id658 -->
+<!-- npu="5162A" id5021 -->
+- Hisilicon5162A：不支持
+<!-- end id5021 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id20 -->
 
 ### 功能说明
@@ -1482,6 +1545,9 @@ aclError aclrtMemMapSetLink(aclrtDrvMemHandle handle, aclrtMemLinkType adviceLin
 <!-- npu="IPV350" id3367 -->
 - IPV350：不支持
 <!-- end id3367 -->
+<!-- npu="5162A" id5022 -->
+- Hisilicon5162A：不支持
+<!-- end id5022 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-04_virtual_memory_management_res.md#id22 -->
 
 ### 功能说明

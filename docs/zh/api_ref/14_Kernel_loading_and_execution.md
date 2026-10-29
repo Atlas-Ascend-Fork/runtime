@@ -143,6 +143,9 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
 <!-- npu="IPV350" id3003 -->
 - IPV350：不支持
 <!-- end id3003 -->
+<!-- npu="5162A" id84254 -->
+- Hisilicon5162A：支持
+<!-- end id84254 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id1 -->
 
 ### 功能说明
@@ -202,6 +205,9 @@ aclError aclrtBinaryLoadFromData(const void *data, size_t length, const aclrtBin
 <!-- npu="IPV350" id77 -->
 - IPV350：不支持
 <!-- end id77 -->
+<!-- npu="5162A" id84255 -->
+- Hisilicon5162A：支持
+<!-- end id84255 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id2 -->
 
 ### 功能说明
@@ -260,6 +266,9 @@ aclError aclrtBinaryGetFunction(const aclrtBinHandle binHandle, const char *kern
 <!-- npu="IPV350" id3395 -->
 - IPV350：不支持
 <!-- end id3395 -->
+<!-- npu="5162A" id84256 -->
+- Hisilicon5162A：支持
+<!-- end id84256 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id3 -->
 
 ### 功能说明
@@ -347,6 +356,9 @@ aclError aclrtBinaryGetDevAddress(const aclrtBinHandle binHandle, void **binAddr
 <!-- npu="IPV350" id2800 -->
 - IPV350：不支持
 <!-- end id2800 -->
+<!-- npu="5162A" id84257 -->
+- Hisilicon5162A：不支持
+<!-- end id84257 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id4 -->
 
 ### 功能说明
@@ -400,6 +412,9 @@ aclError aclrtBinaryGetGlobal(aclrtBinHandle binHandle, const char *name, void *
 <!-- npu="IPV350" id1729 -->
 - IPV350：不支持
 <!-- end id1729 -->
+<!-- npu="5162A" id84258 -->
+- Hisilicon5162A：不支持
+<!-- end id84258 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id5 -->
 
 ### 功能说明
@@ -454,6 +469,9 @@ aclError aclrtBinarySetExceptionCallback(aclrtBinHandle binHandle, aclrtOpExcept
 <!-- npu="IPV350" id280 -->
 - IPV350：不支持
 <!-- end id280 -->
+<!-- npu="5162A" id84259 -->
+- Hisilicon5162A：不支持
+<!-- end id84259 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id6 -->
 
 ### 功能说明
@@ -509,6 +527,9 @@ aclError aclrtGetArgsFromExceptionInfo(const aclrtExceptionInfo *info, void **de
 <!-- npu="IPV350" id259 -->
 - IPV350：不支持
 <!-- end id259 -->
+<!-- npu="5162A" id84260 -->
+- Hisilicon5162A：不支持
+<!-- end id84260 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id7 -->
 
 ### 功能说明
@@ -564,6 +585,9 @@ aclError aclrtGetFuncHandleFromExceptionInfo(const aclrtExceptionInfo *info, acl
 <!-- npu="IPV350" id2464 -->
 - IPV350：不支持
 <!-- end id2464 -->
+<!-- npu="5162A" id84261 -->
+- Hisilicon5162A：不支持
+<!-- end id84261 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id8 -->
 
 ### 功能说明
@@ -618,6 +642,9 @@ aclError aclrtGetFunctionAddr(const void *func, void **aicAddr, void **aivAddr)
 <!-- npu="IPV350" id1078 -->
 - IPV350：不支持
 <!-- end id1078 -->
+<!-- npu="5162A" id84262 -->
+- Hisilicon5162A：不支持
+<!-- end id84262 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id9 -->
 
 ### 功能说明
@@ -673,6 +700,9 @@ aclError aclrtGetFunctionSize(const void *func, size_t *aicSize, size_t *aivSize
 <!-- npu="IPV350" id679 -->
 - IPV350：不支持
 <!-- end id679 -->
+<!-- npu="5162A" id84263 -->
+- Hisilicon5162A：不支持
+<!-- end id84263 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id10 -->
 
 ### 功能说明
@@ -727,6 +757,9 @@ aclError aclrtGetFunctionName(const void *func, uint32_t maxLen, char *name)
 <!-- npu="IPV350" id168 -->
 - IPV350：不支持
 <!-- end id168 -->
+<!-- npu="5162A" id84264 -->
+- Hisilicon5162A：不支持
+<!-- end id84264 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id11 -->
 
 ### 功能说明
@@ -780,6 +813,9 @@ aclError aclrtGetFunctionAttribute(const void *func, aclrtFuncAttribute attrType
 <!-- npu="IPV350" id63 -->
 - IPV350：不支持
 <!-- end id63 -->
+<!-- npu="5162A" id84265 -->
+- Hisilicon5162A：不支持
+<!-- end id84265 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id12 -->
 
 ### 功能说明
@@ -835,6 +871,9 @@ aclError aclrtGetHardwareSyncAddr(void **addr)
 <!-- npu="IPV350" id28 -->
 - IPV350：不支持
 <!-- end id28 -->
+<!-- npu="5162A" id84266 -->
+- Hisilicon5162A：不支持
+<!-- end id84266 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id13 -->
 
 ### 功能说明
@@ -886,6 +925,9 @@ aclError aclrtRegisterCpuFunc(const aclrtBinHandle handle, const char *funcName,
 <!-- npu="IPV350" id413 -->
 - IPV350：不支持
 <!-- end id413 -->
+<!-- npu="5162A" id84267 -->
+- Hisilicon5162A：支持
+<!-- end id84267 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id14 -->
 
 ### 功能说明
@@ -942,6 +984,9 @@ aclError aclrtKernelArgsInit(aclrtFuncHandle funcHandle, aclrtArgsHandle *argsHa
 <!-- npu="IPV350" id945 -->
 - IPV350：不支持
 <!-- end id945 -->
+<!-- npu="5162A" id84268 -->
+- Hisilicon5162A：不支持
+<!-- end id84268 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id15 -->
 
 ### 功能说明
@@ -998,6 +1043,9 @@ aclError aclrtKernelArgsInitByUserMem(aclrtFuncHandle funcHandle, aclrtArgsHandl
 <!-- npu="IPV350" id637 -->
 - IPV350：不支持
 <!-- end id637 -->
+<!-- npu="5162A" id84269 -->
+- Hisilicon5162A：不支持
+<!-- end id84269 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id16 -->
 
 ### 功能说明
@@ -1056,6 +1104,9 @@ aclError aclrtKernelArgsGetMemSize(aclrtFuncHandle funcHandle, size_t userArgsSi
 <!-- npu="IPV350" id1533 -->
 - IPV350：不支持
 <!-- end id1533 -->
+<!-- npu="5162A" id84270 -->
+- Hisilicon5162A：不支持
+<!-- end id84270 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id17 -->
 
 ### 功能说明
@@ -1109,6 +1160,9 @@ aclError aclrtKernelArgsGetHandleMemSize(aclrtFuncHandle funcHandle, size_t *mem
 <!-- npu="IPV350" id1470 -->
 - IPV350：不支持
 <!-- end id1470 -->
+<!-- npu="5162A" id84271 -->
+- Hisilicon5162A：不支持
+<!-- end id84271 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id18 -->
 
 ### 功能说明
@@ -1161,6 +1215,9 @@ aclError aclrtKernelArgsAppend(aclrtArgsHandle argsHandle, void *param, size_t p
 <!-- npu="IPV350" id1204 -->
 - IPV350：不支持
 <!-- end id1204 -->
+<!-- npu="5162A" id84272 -->
+- Hisilicon5162A：不支持
+<!-- end id84272 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id19 -->
 
 ### 功能说明
@@ -1217,6 +1274,9 @@ aclError aclrtKernelArgsAppendPlaceHolder(aclrtArgsHandle argsHandle, aclrtParam
 <!-- npu="IPV350" id2842 -->
 - IPV350：不支持
 <!-- end id2842 -->
+<!-- npu="5162A" id84273 -->
+- Hisilicon5162A：不支持
+<!-- end id84273 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id20 -->
 
 ### 功能说明
@@ -1271,6 +1331,9 @@ aclError aclrtKernelArgsGetPlaceHolderBuffer(aclrtArgsHandle argsHandle, aclrtPa
 <!-- npu="IPV350" id203 -->
 - IPV350：不支持
 <!-- end id203 -->
+<!-- npu="5162A" id84274 -->
+- Hisilicon5162A：不支持
+<!-- end id84274 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id21 -->
 
 ### 功能说明
@@ -1325,6 +1388,9 @@ aclError aclrtKernelArgsParaUpdate(aclrtArgsHandle argsHandle, aclrtParamHandle 
 <!-- npu="IPV350" id3416 -->
 - IPV350：不支持
 <!-- end id3416 -->
+<!-- npu="5162A" id84275 -->
+- Hisilicon5162A：不支持
+<!-- end id84275 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id22 -->
 
 ### 功能说明
@@ -1379,6 +1445,9 @@ aclError aclrtKernelArgsFinalize(aclrtArgsHandle argsHandle)
 <!-- npu="IPV350" id3437 -->
 - IPV350：不支持
 <!-- end id3437 -->
+<!-- npu="5162A" id84276 -->
+- Hisilicon5162A：不支持
+<!-- end id84276 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id23 -->
 
 ### 功能说明
@@ -1430,6 +1499,9 @@ aclError aclrtLaunchKernel(aclrtFuncHandle funcHandle, uint32_t numBlocks, const
 <!-- npu="IPV350" id3493 -->
 - IPV350：支持
 <!-- end id3493 -->
+<!-- npu="5162A" id84277 -->
+- Hisilicon5162A：不支持
+<!-- end id84277 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id24 -->
 
 ### 功能说明
@@ -1501,6 +1573,9 @@ aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uint32_t numBlocks, con
 <!-- npu="IPV350" id2975 -->
 - IPV350：不支持
 <!-- end id2975 -->
+<!-- npu="5162A" id84278 -->
+- Hisilicon5162A：支持
+<!-- end id84278 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id25 -->
 
 ### 功能说明
@@ -1561,6 +1636,9 @@ aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlo
 <!-- npu="IPV350" id2569 -->
 - IPV350：不支持
 <!-- end id2569 -->
+<!-- npu="5162A" id84279 -->
+- Hisilicon5162A：不支持
+<!-- end id84279 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id26 -->
 
 ### 功能说明
@@ -1623,6 +1701,9 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numB
 <!-- npu="IPV350" id847 -->
 - IPV350：不支持
 <!-- end id847 -->
+<!-- npu="5162A" id84280 -->
+- Hisilicon5162A：不支持
+<!-- end id84280 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id27 -->
 
 ### 功能说明
@@ -1685,6 +1766,9 @@ aclError aclrtLaunchKernelWithArgsArray(void *func, uint32_t numBlocks, aclrtStr
 <!-- npu="IPV350" id707 -->
 - IPV350：不支持
 <!-- end id707 -->
+<!-- npu="5162A" id84281 -->
+- Hisilicon5162A：不支持
+<!-- end id84281 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id28 -->
 
 ### 功能说明
@@ -1749,6 +1833,9 @@ aclrtBinary aclrtCreateBinary(const void *data, size_t dataLen)
 <!-- npu="IPV350" id3409 -->
 - IPV350：不支持
 <!-- end id3409 -->
+<!-- npu="5162A" id84282 -->
+- Hisilicon5162A：支持
+<!-- end id84282 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id29 -->
 
 ### 功能说明
@@ -1819,6 +1906,9 @@ aclError aclrtDestroyBinary(aclrtBinary binary)
 <!-- npu="IPV350" id2247 -->
 - IPV350：不支持
 <!-- end id2247 -->
+<!-- npu="5162A" id84283 -->
+- Hisilicon5162A：支持
+<!-- end id84283 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id30 -->
 
 ### 功能说明
@@ -1872,6 +1962,9 @@ aclError aclrtBinaryLoad(const aclrtBinary binary, aclrtBinHandle *binHandle)
 <!-- npu="IPV350" id539 -->
 - IPV350：不支持
 <!-- end id539 -->
+<!-- npu="5162A" id84284 -->
+- Hisilicon5162A：不支持
+<!-- end id84284 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id31 -->
 
 ### 功能说明
@@ -1924,6 +2017,9 @@ aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
 <!-- npu="IPV350" id2520 -->
 - IPV350：不支持
 <!-- end id2520 -->
+<!-- npu="5162A" id84285 -->
+- Hisilicon5162A：支持
+<!-- end id84285 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id32 -->
 
 ### 功能说明
@@ -1980,6 +2076,9 @@ aclError aclrtFunctionGetBinary(const void *func, aclrtBinHandle *binHandle)
 <!-- npu="IPV350" id2849 -->
 - IPV350：不支持
 <!-- end id2849 -->
+<!-- npu="5162A" id84286 -->
+- Hisilicon5162A：不支持
+<!-- end id84286 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id33 -->
 
 ### 功能说明
@@ -2032,6 +2131,9 @@ aclError aclrtFunctionGetParamCount(const void *func, size_t *paramCount)
 <!-- npu="IPV350" id266 -->
 - IPV350：不支持
 <!-- end id266 -->
+<!-- npu="5162A" id84287 -->
+- Hisilicon5162A：不支持
+<!-- end id84287 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id34 -->
 
 ### 功能说明
@@ -2086,6 +2188,9 @@ aclError aclrtFunctionGetParamInfo(const void *func, size_t paramIndex, size_t *
 <!-- npu="IPV350" id2254 -->
 - IPV350：不支持
 <!-- end id2254 -->
+<!-- npu="5162A" id84288 -->
+- Hisilicon5162A：不支持
+<!-- end id84288 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id35 -->
 
 ### 功能说明
@@ -2141,6 +2246,9 @@ aclError aclrtFunctionGetAvailDynUbufPerBlock(const void *func, uint32_t flags, 
 <!-- npu="IPV350" id3269 -->
 - IPV350：不支持
 <!-- end id3269 -->
+<!-- npu="5162A" id84289 -->
+- Hisilicon5162A：不支持
+<!-- end id84289 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id36 -->
 
 ### 功能说明
@@ -2196,6 +2304,9 @@ aclError aclrtGetFuncBySymbol(const void *symbol, aclrtFuncHandle *funcHandle)
 <!-- npu="IPV350" id609 -->
 - IPV350：不支持
 <!-- end id609 -->
+<!-- npu="5162A" id84290 -->
+- Hisilicon5162A：不支持
+<!-- end id84290 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id37 -->
 
 ### 功能说明
@@ -2256,6 +2367,9 @@ aclError aclrtLaunchSIMTKernelWithArgsArray(void *func, dim3 gridDim, dim3 block
 <!-- npu="IPV350" id3500 -->
 - IPV350：不支持
 <!-- end id3500 -->
+<!-- npu="5162A" id84291 -->
+- Hisilicon5162A：不支持
+<!-- end id84291 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id39 -->
 
 ### 功能说明
@@ -2322,6 +2436,9 @@ aclError aclrtLaunchSIMTKernelWithHostArgs(void *func, dim3 gridDim, dim3 blockD
 <!-- npu="IPV350" id3507 -->
 - IPV350：不支持
 <!-- end id3507 -->
+<!-- npu="5162A" id84292 -->
+- Hisilicon5162A：不支持
+<!-- end id84292 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id40 -->
 
 ### 功能说明
@@ -2392,6 +2509,9 @@ aclError aclrtBinaryGetFunctionCount(const aclrtBinHandle binHandle, uint32_t *c
 <!-- npu="IPV350" id4007 -->
 - IPV350：不支持
 <!-- end id4007 -->
+<!-- npu="5162A" id84293 -->
+- Hisilicon5162A：不支持
+<!-- end id84293 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id41 -->
 
 ### 功能说明
@@ -2445,6 +2565,9 @@ aclError aclrtBinaryEnumerateFunctions(const aclrtBinHandle binHandle, aclrtFunc
 <!-- npu="IPV350" id84253 -->
 - IPV350：不支持
 <!-- end id84253 -->
+<!-- npu="5162A" id84294 -->
+- Hisilicon5162A：不支持
+<!-- end id84294 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/14_Kernel_loading_and_execution_res.md#id42 -->
 ### 功能说明
 

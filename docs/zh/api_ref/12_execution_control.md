@@ -49,6 +49,9 @@ aclError aclrtLaunchCallback(aclrtCallback fn, void *userData, aclrtCallbackBloc
 <!-- npu="IPV350" id2779 -->
 - IPV350：支持
 <!-- end id2779 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id1 -->
 
 ### 功能说明
@@ -120,6 +123,9 @@ aclError aclrtSubscribeReport(uint64_t threadId, aclrtStream stream)
 <!-- npu="IPV350" id2016 -->
 - IPV350：支持
 <!-- end id2016 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id2 -->
 
 ### 功能说明
@@ -191,6 +197,9 @@ aclError aclrtProcessReport(int32_t timeout)
 <!-- npu="IPV350" id1365 -->
 - IPV350：支持
 <!-- end id1365 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id3 -->
 
 ### 功能说明
@@ -251,6 +260,9 @@ aclError aclrtUnSubscribeReport(uint64_t threadId, aclrtStream stream)
 <!-- npu="IPV350" id2149 -->
 - IPV350：支持
 <!-- end id2149 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id4 -->
 
 ### 功能说明
@@ -312,6 +324,9 @@ aclError aclrtGetOpTimeOutInterval(uint64_t *interval)
 <!-- npu="IPV350" id7 -->
 - IPV350：不支持
 <!-- end id7 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id5 -->
 
 ### 功能说明
@@ -368,6 +383,9 @@ aclError aclrtSetOpExecuteTimeOut(uint32_t timeout)
 <!-- npu="IPV350" id553 -->
 - IPV350：支持
 <!-- end id553 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id6 -->
 
 ### 功能说明
@@ -463,6 +481,9 @@ aclError aclrtSetOpExecuteTimeOutV2(uint64_t timeout,  uint64_t *actualTimeout)
 <!-- npu="IPV350" id1260 -->
 - IPV350：不支持
 <!-- end id1260 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id7 -->
 
 ### 功能说明
@@ -527,6 +548,9 @@ aclError aclrtSetOpExecuteTimeOutWithMs(uint32_t timeout)
 <!-- npu="IPV350" id1890 -->
 - IPV350：不支持
 <!-- end id1890 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id8 -->
 
 ### 功能说明
@@ -580,6 +604,9 @@ aclError aclrtGetOpExecuteTimeout(uint32_t *const timeoutMs)
 <!-- npu="IPV350" id455 -->
 - IPV350：不支持
 <!-- end id455 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id9 -->
 
 ### 功能说明
@@ -635,6 +662,9 @@ aclError aclrtGetThreadLastTaskId(uint32_t *taskId)
 <!-- npu="IPV350" id3339 -->
 - IPV350：不支持
 <!-- end id3339 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id10 -->
 
 ### 功能说明
@@ -686,6 +716,9 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
 <!-- npu="IPV350" id2128 -->
 - IPV350：不支持
 <!-- end id2128 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id11 -->
 
 ### 功能说明
@@ -773,6 +806,9 @@ aclError aclrtLaunchHostFunc(aclrtStream stream, aclrtHostFunc fn, void *args)
 <!-- npu="IPV350" id1981 -->
 - IPV350：不支持
 <!-- end id1981 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id12 -->
 
 ### 功能说明
@@ -834,6 +870,9 @@ aclError aclrtRandomNumAsync(const aclrtRandomNumTaskInfo *taskInfo, const aclrt
 <!-- npu="IPV350" id2954 -->
 - IPV350：不支持
 <!-- end id2954 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id13 -->
 
 ### 功能说明
@@ -887,6 +926,9 @@ aclError aclrtTaskUpdateAsync(aclrtStream taskStream, uint32_t taskId, aclrtTask
 <!-- npu="IPV350" id3024 -->
 - IPV350：不支持
 <!-- end id3024 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：不支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id14 -->
 
 ### 功能说明
@@ -949,6 +991,9 @@ aclError aclrtGetThreadLastTaskIdAndStreamId(uint32_t *taskId, uint32_t *streamI
 <!-- npu="IPV350" id3346 -->
 - IPV350：不支持
 <!-- end id3346 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：不支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/12_execution_control_res.md#id20 -->
 
 ### 功能说明

@@ -40,6 +40,9 @@ aclError aclrtCreateLabel(aclrtLabel *label)
 <!-- npu="IPV350" id490 -->
 - IPV350：不支持
 <!-- end id490 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id1 -->
 
 ### 功能说明
@@ -93,6 +96,9 @@ aclError aclrtSetLabel(aclrtLabel label, aclrtStream stream)
 <!-- npu="IPV350" id392 -->
 - IPV350：不支持
 <!-- end id392 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id2 -->
 
 ### 功能说明
@@ -145,6 +151,9 @@ aclError aclrtDestroyLabel(aclrtLabel label)
 <!-- npu="IPV350" id2191 -->
 - IPV350：不支持
 <!-- end id2191 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id3 -->
 
 ### 功能说明
@@ -196,6 +205,9 @@ aclError aclrtCreateLabelList(aclrtLabel *labels, size_t num, aclrtLabelList *la
 <!-- npu="IPV350" id1617 -->
 - IPV350：不支持
 <!-- end id1617 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id4 -->
 
 ### 功能说明
@@ -249,6 +261,9 @@ aclError aclrtDestroyLabelList(aclrtLabelList labelList)
 <!-- npu="IPV350" id1099 -->
 - IPV350：不支持
 <!-- end id1099 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id5 -->
 
 ### 功能说明
@@ -300,6 +315,9 @@ aclError aclrtSwitchLabelByIndex(void *ptr, uint32_t maxValue, aclrtLabelList la
 <!-- npu="IPV350" id1239 -->
 - IPV350：不支持
 <!-- end id1239 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/10_label_management_res.md#id6 -->
 
 ### 功能说明

@@ -77,6 +77,9 @@ aclError aclprofModelSubscribe(uint32_t modelId, const aclprofSubscribeConfig *p
 <!-- npu="IPV350" id1358 -->
 - IPV350：不支持
 <!-- end id1358 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id1 -->
 ### 功能说明
 
@@ -132,6 +135,9 @@ aclError aclprofModelUnSubscribe(uint32_t modelId)
 <!-- npu="IPV350" id2926 -->
 - IPV350：不支持
 <!-- end id2926 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id2 -->
 
 ### 功能说明
@@ -187,6 +193,9 @@ aclError aclprofGetOpDescSize(size_t *opDescSize)
 <!-- npu="IPV350" id2653 -->
 - IPV350：不支持
 <!-- end id2653 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id3 -->
 ### 功能说明
 
@@ -239,6 +248,9 @@ aclError aclprofGetOpNum(const void *opInfo, size_t opInfoLen, uint32_t *opNumbe
 <!-- npu="IPV350" id1400 -->
 - IPV350：不支持
 <!-- end id1400 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id4 -->
 
 ### 功能说明
@@ -294,6 +306,9 @@ aclError aclprofGetOpTypeLen(const void *opInfo, size_t opInfoLen, uint32_t inde
 <!-- npu="IPV350" id903 -->
 - IPV350：不支持
 <!-- end id903 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id5 -->
 
 ### 功能说明
@@ -350,6 +365,9 @@ aclError aclprofGetOpType(const void *opInfo, size_t opInfoLen, uint32_t index, 
 <!-- npu="IPV350" id2667 -->
 - IPV350：不支持
 <!-- end id2667 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id6 -->
 ### 功能说明
 
@@ -406,6 +424,9 @@ aclError aclprofGetOpNameLen(const void *opInfo, size_t opInfoLen, uint32_t inde
 <!-- npu="IPV350" id1526 -->
 - IPV350：不支持
 <!-- end id1526 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id7 -->
 ### 功能说明
 
@@ -461,6 +482,9 @@ aclError aclprofGetOpName(const void *opInfo, size_t opInfoLen, uint32_t index, 
 <!-- npu="IPV350" id2072 -->
 - IPV350：不支持
 <!-- end id2072 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id8 -->
 
 ### 功能说明
@@ -518,6 +542,9 @@ uint64_t aclprofGetOpStart(const void *opInfo, size_t opInfoLen, uint32_t index)
 <!-- npu="IPV350" id1554 -->
 - IPV350：不支持
 <!-- end id1554 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id9 -->
 
 ### 功能说明
@@ -573,6 +600,9 @@ uint64_t aclprofGetOpEnd(const void *opInfo, size_t opInfoLen, uint32_t index)
 <!-- npu="IPV350" id3374 -->
 - IPV350：不支持
 <!-- end id3374 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id10 -->
 ### 功能说明
 
@@ -627,6 +657,9 @@ uint64_t aclprofGetOpDuration(const void *opInfo, size_t opInfoLen, uint32_t ind
 <!-- npu="IPV350" id1246 -->
 - IPV350：不支持
 <!-- end id1246 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id11 -->
 
 ### 功能说明
@@ -682,6 +715,9 @@ size_t aclprofGetModelId(const void *opInfo, size_t opInfoLen, uint32_t index)
 <!-- npu="IPV350" id3115 -->
 - IPV350：不支持
 <!-- end id3115 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id12 -->
 
 ### 功能说明
@@ -737,6 +773,9 @@ aclprofSubscribeOpFlag aclprofGetOpFlag(const void *opInfo, size_t opInfoLen, ui
 <!-- npu="IPV350" id2246 -->
 - IPV350：不支持
 <!-- end id2246 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id13 -->
 
 ### 功能说明
@@ -801,6 +840,9 @@ const char *aclprofGetOpAttriValue(const void *opInfo, size_t opInfoLen, uint32_
 <!-- npu="IPV350" id4246 -->
 - IPV350：不支持
 <!-- end id4246 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：不支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/19-03_subscription_to_operator_information_res.md#id14 -->
 
 ### 功能说明

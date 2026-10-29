@@ -67,6 +67,9 @@ int32_t AlogRecord(uint32_t moduleId, uint32_t logType, int32_t level, const cha
 <!-- npu="IPV350" id1176 -->
 - IPV350：不支持
 <!-- end id1176 -->
+<!-- npu="5162A" id84247 -->
+- Hisilicon5162A：不支持
+<!-- end id84247 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id1 -->
 
 ### 函数功能
@@ -130,6 +133,9 @@ int32_t AlogCheckDebugLevel(uint32_t moduleId, int32_t level)
 <!-- npu="IPV350" id2044 -->
 - IPV350：不支持
 <!-- end id2044 -->
+<!-- npu="5162A" id84248 -->
+- Hisilicon5162A：不支持
+<!-- end id84248 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id2 -->
 
 ### 函数功能
@@ -197,6 +203,9 @@ void acllogRecord(int32_t moduleId, int32_t level, const char *fmt, ...)
 <!-- npu="IPV350" id52044 -->
 - IPV350：不支持
 <!-- end id52044 -->
+<!-- npu="5162A" id84249 -->
+- Hisilicon5162A：不支持
+<!-- end id84249 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id7 -->
 ### 函数功能
 
@@ -256,6 +265,9 @@ void acllogVaList(int32_t moduleId, int32_t level, const char *fmt, va_list list
 <!-- npu="IPV350" id84246 -->
 - IPV350：不支持
 <!-- end id84246 -->
+<!-- npu="5162A" id84250 -->
+- Hisilicon5162A：不支持
+<!-- end id84250 -->
 
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id4 -->
 
@@ -326,6 +338,9 @@ int32_t acllogCheckDebugLevel(int32_t moduleId, int32_t logLevel)
 <!-- npu="IPV350" id3246 -->
 - IPV350：不支持
 <!-- end id3246 -->
+<!-- npu="5162A" id84251 -->
+- Hisilicon5162A：不支持
+<!-- end id84251 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id5 -->
 
 ### 函数功能
@@ -390,6 +405,9 @@ int32_t acllogRegisterCallback(acllogRecordCallback callbackFunc, void *userData
 <!-- npu="IPV350" id246 -->
 - IPV350：不支持
 <!-- end id246 -->
+<!-- npu="5162A" id84252 -->
+- Hisilicon5162A：不支持
+<!-- end id84252 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id6 -->
 
 ### 函数功能
@@ -468,6 +486,9 @@ int32_t acllogUnregisterCallback(acllogCallbackHandle callback)
 <!-- npu="IPV350" id1911 -->
 - IPV350：不支持
 <!-- end id1911 -->
+<!-- npu="5162A" id84253 -->
+- Hisilicon5162A：不支持
+<!-- end id84253 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/23_log_APIs_res.md#id3 -->
 
 ### 函数功能

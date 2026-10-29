@@ -51,6 +51,9 @@ aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, a
 <!-- npu="IPV350" id1337 -->
 - IPV350：支持
 <!-- end id1337 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id1 -->
 
 ### 功能说明
@@ -131,6 +134,9 @@ aclError aclrtMemcpyAsync(void *dst, size_t destMax, const void *src, size_t cou
 <!-- npu="IPV350" id2737 -->
 - IPV350：不支持
 <!-- end id2737 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id2 -->
 
 ### 功能说明
@@ -204,6 +210,9 @@ aclError aclrtMemcpyAsyncWithCondition(void *dst, size_t destMax, const void *sr
 <!-- npu="IPV350" id3500 -->
 - IPV350：支持
 <!-- end id3500 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id3 -->
 
 ### 功能说明
@@ -275,6 +284,9 @@ aclError aclrtMemcpyBatch(void **dsts, size_t *destMaxs, void **srcs, size_t *si
 <!-- npu="IPV350" id3388 -->
 - IPV350：不支持
 <!-- end id3388 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id4 -->
 
 ### 功能说明
@@ -343,6 +355,9 @@ aclError aclrtMemcpyBatchAsync(void **dsts, size_t *destMaxs, void **srcs, size_
 <!-- npu="IPV350" id2086 -->
 - IPV350：不支持
 <!-- end id2086 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id5 -->
 
 ### 功能说明
@@ -412,6 +427,9 @@ aclError aclrtMemcpyBatchV2(void **dsts, size_t *destMaxs, void **srcs, size_t *
 <!-- npu="IPV350" id56 -->
 - IPV350：不支持
 <!-- end id56 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id6 -->
 
 ### 功能说明
@@ -481,6 +499,9 @@ aclError aclrtMemcpyBatchAsyncV2(void **dsts, size_t *destMaxs, void **srcs, siz
 <!-- npu="IPV350" id3346 -->
 - IPV350：不支持
 <!-- end id3346 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id7 -->
 
 ### 功能说明
@@ -551,6 +572,9 @@ aclError aclrtMemcpy2d(void *dst, size_t dpitch, const void *src, size_t spitch,
 <!-- npu="IPV350" id1785 -->
 - IPV350：不支持
 <!-- end id1785 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id8 -->
 
 ### 功能说明
@@ -624,6 +648,9 @@ aclError aclrtMemcpy2dAsync(void *dst, size_t dpitch, const void *src, size_t sp
 <!-- npu="IPV350" id1589 -->
 - IPV350：不支持
 <!-- end id1589 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id9 -->
 
 ### 功能说明
@@ -705,6 +732,9 @@ aclError aclrtGetMemcpyDescSize(aclrtMemcpyKind kind, size_t *descSize)
 <!-- npu="IPV350" id1820 -->
 - IPV350：不支持
 <!-- end id1820 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id10 -->
 
 ### 功能说明
@@ -759,6 +789,9 @@ aclError aclrtSetMemcpyDesc(void *desc, aclrtMemcpyKind kind, void *srcAddr, voi
 <!-- npu="IPV350" id1134 -->
 - IPV350：不支持
 <!-- end id1134 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id11 -->
 
 ### 功能说明
@@ -817,6 +850,9 @@ aclError aclrtMemcpyAsyncWithDesc(void *desc, aclrtMemcpyKind kind, aclrtStream 
 <!-- npu="IPV350" id3262 -->
 - IPV350：不支持
 <!-- end id3262 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id12 -->
 
 ### 功能说明
@@ -878,6 +914,9 @@ aclError aclrtMemcpyAsyncWithOffset(void **dst, size_t destMax, size_t dstDataOf
 <!-- npu="IPV350" id2989 -->
 - IPV350：不支持
 <!-- end id2989 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id13 -->
 
 ### 功能说明
@@ -936,6 +975,9 @@ aclError aclrtMemset(void *devPtr, size_t maxCount, int32_t value, size_t count)
 <!-- npu="IPV350" id2002 -->
 - IPV350：支持
 <!-- end id2002 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id14 -->
 
 ### 功能说明
@@ -996,6 +1038,9 @@ aclError aclrtMemsetAsync(void *devPtr, size_t maxCount, int32_t value, size_t c
 <!-- npu="IPV350" id2065 -->
 - IPV350：不支持
 <!-- end id2065 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id15 -->
 
 ### 功能说明
@@ -1053,6 +1098,9 @@ aclError aclrtMemsetD32(void *ptr, size_t memSize, uint32_t value, size_t N)
 <!-- npu="IPV350" id2898 -->
 - IPV350：不支持
 <!-- end id2898 -->
+<!-- npu="5162A" id5016 -->
+- Hisilicon5162A：不支持
+<!-- end id5016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id16 -->
 
 ### 功能说明
@@ -1113,6 +1161,9 @@ aclError aclrtMemsetD32Async(void *ptr, size_t memSize, uint32_t value, size_t N
 <!-- npu="IPV350" id2058 -->
 - IPV350：不支持
 <!-- end id2058 -->
+<!-- npu="5162A" id5017 -->
+- Hisilicon5162A：不支持
+<!-- end id5017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-03_memory_copy_and_set_res.md#id17 -->
 
 ### 功能说明

@@ -43,6 +43,9 @@ aclError aclrtSnapShotProcessLock(int pid, void* reserve)
 <!-- npu="IPV350" id1645 -->
 - IPV350：不支持
 <!-- end id1645 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id1 -->
 
 ### 功能说明
@@ -100,6 +103,9 @@ aclError aclrtSnapShotProcessBackup(int pid, aclrtSnapShotBackupArgs *args)
 <!-- npu="IPV350" id1386 -->
 - IPV350：不支持
 <!-- end id1386 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id2 -->
 
 ### 功能说明
@@ -157,6 +163,9 @@ aclError aclrtSnapShotProcessRestore(int pid, aclrtSnapShotRestoreArgs *args)
 <!-- npu="IPV350" id3136 -->
 - IPV350：不支持
 <!-- end id3136 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id3 -->
 
 ### 功能说明
@@ -218,6 +227,9 @@ aclError aclrtSnapShotProcessUnlock(int pid, void* reserve)
 <!-- npu="IPV350" id2828 -->
 - IPV350：不支持
 <!-- end id2828 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id4 -->
 
 ### 功能说明
@@ -275,6 +287,9 @@ aclError aclrtSnapShotCallbackRegister(aclrtSnapShotStage stage, aclrtSnapShotCa
 <!-- npu="IPV350" id2772 -->
 - IPV350：不支持
 <!-- end id2772 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id5 -->
 
 ### 功能说明
@@ -336,6 +351,9 @@ aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShot
 <!-- npu="IPV350" id1778 -->
 - IPV350：不支持
 <!-- end id1778 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/21_snapshot_management_res.md#id6 -->
 
 ### 功能说明

@@ -56,6 +56,9 @@ int32_t ReportInnerErrMsg(const char_t *file_name, const char_t *func, uint32_t 
 <!-- npu="IPV350" id7 -->
 - IPV350：不支持
 <!-- end id7 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/22_error_reporting_APIs_res.md#id1 -->
 
 ### 函数功能
@@ -130,6 +133,9 @@ int32_t ReportInnerErrMsg(const char_t *file_name, const char_t *func, uint32_t 
 <!-- npu="IPV350" id14 -->
 - IPV350：不支持
 <!-- end id14 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/22_error_reporting_APIs_res.md#id2 -->
 
 ### 函数功能
@@ -196,6 +202,9 @@ int32_t ReportUserDefinedErrMsg(const char *error_code, const char *format, ...)
 <!-- npu="IPV350" id21 -->
 - IPV350：不支持
 <!-- end id21 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/22_error_reporting_APIs_res.md#id3 -->
 
 ### 函数功能
@@ -254,6 +263,9 @@ int32_t RegisterFormatErrorMessage(const char *error_msg, size_t error_msg_len)
 <!-- npu="IPV350" id28 -->
 - IPV350：不支持
 <!-- end id28 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/22_error_reporting_APIs_res.md#id4 -->
 
 ### 函数功能

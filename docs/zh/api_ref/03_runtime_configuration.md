@@ -45,6 +45,9 @@ aclError aclrtSetSysParamOpt(aclSysParamOpt opt, int64_t value)
 <!-- npu="IPV350" id14 -->
 - IPV350：不支持
 <!-- end id14 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id1 -->
 
 ### 功能说明
@@ -99,6 +102,9 @@ aclError aclrtGetSysParamOpt(aclSysParamOpt opt, int64_t *value)
 <!-- npu="IPV350" id2758 -->
 - IPV350：不支持
 <!-- end id2758 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id2 -->
 
 ### 功能说明
@@ -153,6 +159,9 @@ aclError aclrtGetDeviceResLimit(int32_t deviceId, aclrtDevResLimitType type, uin
 <!-- npu="IPV350" id3311 -->
 - IPV350：不支持
 <!-- end id3311 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id3 -->
 
 ### 功能说明
@@ -208,6 +217,9 @@ aclError aclrtSetDeviceResLimit(int32_t deviceId, aclrtDevResLimitType type, uin
 <!-- npu="IPV350" id238 -->
 - IPV350：不支持
 <!-- end id238 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id4 -->
 
 ### 功能说明
@@ -271,6 +283,9 @@ aclError aclrtResetDeviceResLimit(int32_t deviceId)
 <!-- npu="IPV350" id287 -->
 - IPV350：不支持
 <!-- end id287 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id5 -->
 
 ### 功能说明
@@ -322,6 +337,9 @@ aclError aclrtGetStreamResLimit(aclrtStream stream, aclrtDevResLimitType type, u
 <!-- npu="IPV350" id3066 -->
 - IPV350：不支持
 <!-- end id3066 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id6 -->
 
 ### 功能说明
@@ -377,6 +395,9 @@ aclError aclrtSetStreamResLimit(aclrtStream stream, aclrtDevResLimitType type, u
 <!-- npu="IPV350" id3080 -->
 - IPV350：不支持
 <!-- end id3080 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id7 -->
 
 ### 功能说明
@@ -434,6 +455,9 @@ aclError aclrtResetStreamResLimit(aclrtStream stream)
 <!-- npu="IPV350" id1680 -->
 - IPV350：不支持
 <!-- end id1680 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id8 -->
 
 ### 功能说明
@@ -485,6 +509,9 @@ aclError aclrtUseStreamResInCurrentThread(aclrtStream stream)
 <!-- npu="IPV350" id1232 -->
 - IPV350：不支持
 <!-- end id1232 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id9 -->
 
 ### 功能说明
@@ -536,6 +563,9 @@ aclError aclrtUnuseStreamResInCurrentThread(aclrtStream stream)
 <!-- npu="IPV350" id406 -->
 - IPV350：不支持
 <!-- end id406 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id10 -->
 
 ### 功能说明
@@ -587,6 +617,9 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
 <!-- npu="IPV350" id2919 -->
 - IPV350：不支持
 <!-- end id2919 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/03_runtime_configuration_res.md#id11 -->
 
 ### 功能说明

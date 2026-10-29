@@ -45,6 +45,9 @@ aclError acltdtCreateQueue(const acltdtQueueAttr *attr, uint32_t *qid)
 <!-- npu="IPV350" id2821 -->
 - IPV350：不支持
 <!-- end id2821 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id1 -->
 
 ### 功能说明
@@ -97,6 +100,9 @@ aclError acltdtDestroyQueue(uint32_t qid)
 <!-- npu="IPV350" id3255 -->
 - IPV350：不支持
 <!-- end id3255 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id2 -->
 
 ### 功能说明
@@ -148,6 +154,9 @@ aclError acltdtEnqueueData(uint32_t qid, const void *data, size_t dataSize, cons
 <!-- npu="IPV350" id3157 -->
 - IPV350：不支持
 <!-- end id3157 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id3 -->
 
 ### 功能说明
@@ -205,6 +214,9 @@ aclError acltdtDequeueData(uint32_t qid, void *data, size_t dataSize, size_t *re
 <!-- npu="IPV350" id2716 -->
 - IPV350：不支持
 <!-- end id2716 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id4 -->
 
 ### 功能说明
@@ -262,6 +274,9 @@ aclError acltdtEnqueue(uint32_t qid, acltdtBuf buf, int32_t timeout)
 <!-- npu="IPV350" id2870 -->
 - IPV350：不支持
 <!-- end id2870 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id5 -->
 
 ### 功能说明
@@ -315,6 +330,9 @@ aclError acltdtDequeue(uint32_t qid, acltdtBuf *buf, int32_t timeout)
 <!-- npu="IPV350" id938 -->
 - IPV350：不支持
 <!-- end id938 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id6 -->
 
 ### 功能说明
@@ -368,6 +386,9 @@ aclError acltdtBindQueueRoutes(acltdtQueueRouteList *qRouteList)
 <!-- npu="IPV350" id2807 -->
 - IPV350：不支持
 <!-- end id2807 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id7 -->
 
 ### 功能说明
@@ -430,6 +451,9 @@ aclError acltdtUnbindQueueRoutes(acltdtQueueRouteList *qRouteList)
 <!-- npu="IPV350" id1442 -->
 - IPV350：不支持
 <!-- end id1442 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id8 -->
 
 ### 功能说明
@@ -483,6 +507,9 @@ aclError acltdtQueryQueueRoutes(const acltdtQueueRouteQueryInfo *queryInfo, aclt
 <!-- npu="IPV350" id3031 -->
 - IPV350：不支持
 <!-- end id3031 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id9 -->
 
 ### 功能说明
@@ -535,6 +562,9 @@ aclError acltdtGrantQueue(uint32_t qid, int32_t pid, uint32_t permission, int32_
 <!-- npu="IPV350" id189 -->
 - IPV350：不支持
 <!-- end id189 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id10 -->
 
 ### 功能说明
@@ -591,6 +621,9 @@ aclError acltdtAttachQueue(uint32_t qid, int32_t timeout, uint32_t *permission)
 <!-- npu="IPV350" id3451 -->
 - IPV350：不支持
 <!-- end id3451 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/17-02_shared_queue_management_res.md#id11 -->
 
 ### 功能说明

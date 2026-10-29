@@ -56,6 +56,9 @@ aclError aclrtCreateEvent(aclrtEvent *event)
 <!-- npu="IPV350" id693 -->
 - IPV350：不支持
 <!-- end id693 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id1 -->
 
 ### 功能说明
@@ -142,6 +145,9 @@ aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 <!-- npu="IPV350" id2814 -->
 - IPV350：不支持
 <!-- end id2814 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id2 -->
 
 ### 功能说明
@@ -243,6 +249,9 @@ aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
 <!-- npu="IPV350" id2786 -->
 - IPV350：不支持
 <!-- end id2786 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id3 -->
 
 ### 功能说明
@@ -330,6 +339,9 @@ aclError aclrtDestroyEvent(aclrtEvent event)
 <!-- npu="IPV350" id1344 -->
 - IPV350：不支持
 <!-- end id1344 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id4 -->
 
 ### 功能说明
@@ -385,6 +397,9 @@ aclError aclrtRecordEvent(aclrtEvent event, aclrtStream stream)
 <!-- npu="IPV350" id987 -->
 - IPV350：不支持
 <!-- end id987 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id5 -->
 
 ### 功能说明
@@ -446,6 +461,9 @@ aclError aclrtRecordEventWithFlag(aclrtEvent event, aclrtStream stream, uint32_t
 <!-- npu="IPV350" id7 -->
 - IPV350：不支持
 <!-- end id7 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id6 -->
 
 ### 功能说明
@@ -508,6 +526,9 @@ aclError aclrtResetEvent(aclrtEvent event, aclrtStream stream)
 <!-- npu="IPV350" id252 -->
 - IPV350：不支持
 <!-- end id252 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id7 -->
 
 ### 功能说明
@@ -572,6 +593,9 @@ aclError aclrtQueryEvent(aclrtEvent event, aclrtEventStatus *status)
 <!-- npu="IPV350" id826 -->
 - IPV350：不支持
 <!-- end id826 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id8 -->
 
 ### 功能说明
@@ -624,6 +648,9 @@ aclError aclrtQueryEventStatus(aclrtEvent event, aclrtEventRecordedStatus *statu
 <!-- npu="IPV350" id3101 -->
 - IPV350：不支持
 <!-- end id3101 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id9 -->
 
 ### 功能说明
@@ -680,6 +707,9 @@ aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *statu
 <!-- npu="IPV350" id231 -->
 - IPV350：不支持
 <!-- end id231 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id10 -->
 
 ### 功能说明
@@ -736,6 +766,9 @@ aclError aclrtSynchronizeEvent(aclrtEvent event)
 <!-- npu="IPV350" id917 -->
 - IPV350：不支持
 <!-- end id917 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id11 -->
 
 ### 功能说明
@@ -787,6 +820,9 @@ aclError aclrtSynchronizeEventWithTimeout(aclrtEvent event, int32_t timeout)
 <!-- npu="IPV350" id1799 -->
 - IPV350：不支持
 <!-- end id1799 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id12 -->
 
 ### 功能说明
@@ -841,6 +877,9 @@ aclError aclrtEventElapsedTime(float *ms, aclrtEvent startEvent, aclrtEvent endE
 <!-- npu="IPV350" id1673 -->
 - IPV350：不支持
 <!-- end id1673 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id13 -->
 
 ### 功能说明
@@ -896,6 +935,9 @@ aclError aclrtStreamWaitEvent(aclrtStream stream, aclrtEvent event)
 <!-- npu="IPV350" id70 -->
 - IPV350：不支持
 <!-- end id70 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id14 -->
 
 ### 功能说明
@@ -954,6 +996,9 @@ aclError aclrtStreamWaitEventWithFlag(aclrtStream stream, aclrtEvent event, uint
 <!-- npu="IPV350" id14 -->
 - IPV350：不支持
 <!-- end id14 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：不支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id15 -->
 
 ### 功能说明
@@ -1017,6 +1062,9 @@ aclError aclrtStreamWaitEventWithTimeout(aclrtStream stream, aclrtEvent event, i
 <!-- npu="IPV350" id2135 -->
 - IPV350：不支持
 <!-- end id2135 -->
+<!-- npu="5162A" id5016 -->
+- Hisilicon5162A：支持
+<!-- end id5016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id16 -->
 
 ### 功能说明
@@ -1070,6 +1118,9 @@ aclError aclrtSetOpWaitTimeout(uint32_t timeout)
 <!-- npu="IPV350" id420 -->
 - IPV350：不支持
 <!-- end id420 -->
+<!-- npu="5162A" id5017 -->
+- Hisilicon5162A：不支持
+<!-- end id5017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id17 -->
 
 ### 功能说明
@@ -1127,6 +1178,9 @@ aclError aclrtEventGetTimestamp(aclrtEvent event, uint64_t *timestamp)
 <!-- npu="IPV350" id2415 -->
 - IPV350：不支持
 <!-- end id2415 -->
+<!-- npu="5162A" id5018 -->
+- Hisilicon5162A：支持
+<!-- end id5018 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id18 -->
 
 ### 功能说明
@@ -1181,6 +1235,9 @@ aclError aclrtGetEventId(aclrtEvent event, uint32_t *eventId)
 <!-- npu="IPV350" id133 -->
 - IPV350：不支持
 <!-- end id133 -->
+<!-- npu="5162A" id5019 -->
+- Hisilicon5162A：支持
+<!-- end id5019 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id19 -->
 
 ### 功能说明
@@ -1233,6 +1290,9 @@ aclError aclrtGetEventAvailNum(uint32_t *eventCount)
 <!-- npu="IPV350" id623 -->
 - IPV350：不支持
 <!-- end id623 -->
+<!-- npu="5162A" id5020 -->
+- Hisilicon5162A：支持
+<!-- end id5020 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id20 -->
 
 ### 功能说明
@@ -1285,6 +1345,9 @@ aclError aclrtIpcGetEventHandle(aclrtEvent event, aclrtIpcEventHandle *handle)
 <!-- npu="IPV350" id1897 -->
 - IPV350：不支持
 <!-- end id1897 -->
+<!-- npu="5162A" id5021 -->
+- Hisilicon5162A：不支持
+<!-- end id5021 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id21 -->
 
 ### 功能说明
@@ -1352,6 +1415,9 @@ aclError aclrtIpcOpenEventHandle(aclrtIpcEventHandle handle, aclrtEvent *event)
 <!-- npu="IPV350" id2170 -->
 - IPV350：不支持
 <!-- end id2170 -->
+<!-- npu="5162A" id5022 -->
+- Hisilicon5162A：不支持
+<!-- end id5022 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id22 -->
 
 ### 功能说明

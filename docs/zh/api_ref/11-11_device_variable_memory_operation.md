@@ -40,6 +40,9 @@ aclError aclrtGetSymbolAddress(const void *symbol, void **devPtr)
 <!-- npu="IPV350" id1624 -->
 - IPV350：不支持
 <!-- end id1624 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id1 -->
 
 ### 功能说明
@@ -101,6 +104,9 @@ aclError aclrtGetSymbolSize(const void *symbol, size_t *size)
 <!-- npu="IPV350" id224 -->
 - IPV350：不支持
 <!-- end id224 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id2 -->
 
 ### 功能说明
@@ -158,6 +164,9 @@ aclError aclrtMemcpyFromSymbol(void *dst, size_t dstMax, const void *symbol,
 <!-- npu="IPV350" id1253 -->
 - IPV350：不支持
 <!-- end id1253 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id3 -->
 
 ### 功能说明
@@ -220,6 +229,9 @@ aclError aclrtMemcpyFromSymbolAsync(void *dst, size_t dstMax, const void *symbol
 <!-- npu="IPV350" id2492 -->
 - IPV350：不支持
 <!-- end id2492 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id4 -->
 
 ### 功能说明
@@ -285,6 +297,9 @@ aclError aclrtMemcpyToSymbol(const void *symbol, const void *src,
 <!-- npu="IPV350" id3150 -->
 - IPV350：不支持
 <!-- end id3150 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id5 -->
 
 ### 功能说明
@@ -346,6 +361,9 @@ aclError aclrtMemcpyToSymbolAsync(const void *symbol, const void *src,
 <!-- npu="IPV350" id1519 -->
 - IPV350：不支持
 <!-- end id1519 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-11_device_variable_memory_operation_res.md#id6 -->
 
 ### 功能说明

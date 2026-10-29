@@ -58,6 +58,9 @@ aclError aclrtCreateStream(aclrtStream *stream)
 <!-- npu="IPV350" id2597 -->
 - IPV350：不支持
 <!-- end id2597 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id1 -->
 
 ### 功能说明
@@ -133,6 +136,9 @@ aclError aclrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uin
 <!-- npu="IPV350" id3143 -->
 - IPV350：不支持
 <!-- end id3143 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id2 -->
 
 ### 功能说明
@@ -243,6 +249,9 @@ aclError aclrtDestroyStream(aclrtStream stream)
 <!-- npu="IPV350" id3353 -->
 - IPV350：支持
 <!-- end id3353 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id3 -->
 
 ### 功能说明
@@ -300,6 +309,9 @@ aclError aclrtDestroyStreamForce(aclrtStream stream)
 <!-- npu="IPV350" id3528 -->
 - IPV350：不支持
 <!-- end id3528 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id4 -->
 
 ### 功能说明
@@ -355,6 +367,9 @@ aclError aclrtSetStreamOverflowSwitch(aclrtStream stream, uint32_t flag)
 <!-- npu="IPV350" id2233 -->
 - IPV350：不支持
 <!-- end id2233 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id5 -->
 
 ### 功能说明
@@ -411,6 +426,9 @@ aclError aclrtGetStreamOverflowSwitch(aclrtStream stream, uint32_t *flag)
 <!-- npu="IPV350" id315 -->
 - IPV350：不支持
 <!-- end id315 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id6 -->
 
 ### 功能说明
@@ -463,6 +481,9 @@ aclError aclrtSetStreamFailureMode(aclrtStream stream, uint64_t mode)
 <!-- npu="IPV350" id1113 -->
 - IPV350：不支持
 <!-- end id1113 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id7 -->
 
 ### 功能说明
@@ -529,6 +550,9 @@ aclError aclrtStreamQuery(aclrtStream stream, aclrtStreamStatus *status)
 <!-- npu="IPV350" id1316 -->
 - IPV350：不支持
 <!-- end id1316 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id8 -->
 
 ### 功能说明
@@ -585,6 +609,9 @@ aclError aclrtSynchronizeStream(aclrtStream stream)
 <!-- npu="IPV350" id2618 -->
 - IPV350：支持
 <!-- end id2618 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id9 -->
 
 ### 功能说明
@@ -640,6 +667,9 @@ aclError aclrtSynchronizeStreamWithTimeout(aclrtStream stream, int32_t timeout)
 <!-- npu="IPV350" id1988 -->
 - IPV350：不支持
 <!-- end id1988 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id10 -->
 
 ### 功能说明
@@ -696,6 +726,9 @@ aclError aclrtNonBlockingLaunchBegin(aclrtStream stream, uint64_t flag)
 <!-- npu="IPV350" id3606 -->
 - IPV350：不支持
 <!-- end id3606 -->
+<!-- npu="5162A" id5011 -->
+- Hisilicon5162A：不支持
+<!-- end id5011 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id29 -->
 
 ### 功能说明
@@ -775,6 +808,9 @@ aclError aclrtNonBlockingLaunchEnd(aclrtStream stream, uint64_t flag)
 <!-- npu="IPV350" id3613 -->
 - IPV350：不支持
 <!-- end id3613 -->
+<!-- npu="5162A" id5012 -->
+- Hisilicon5162A：不支持
+<!-- end id5012 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id30 -->
 
 ### 功能说明
@@ -848,6 +884,9 @@ aclError aclrtStreamAbort(aclrtStream stream)
 <!-- npu="IPV350" id952 -->
 - IPV350：不支持
 <!-- end id952 -->
+<!-- npu="5162A" id5013 -->
+- Hisilicon5162A：不支持
+<!-- end id5013 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id11 -->
 
 ### 功能说明
@@ -909,6 +948,9 @@ aclError aclrtStreamGetId(aclrtStream stream, int32_t *streamId)
 <!-- npu="IPV350" id1939 -->
 - IPV350：不支持
 <!-- end id1939 -->
+<!-- npu="5162A" id5014 -->
+- Hisilicon5162A：支持
+<!-- end id5014 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id12 -->
 
 ### 功能说明
@@ -961,6 +1003,9 @@ aclError aclrtGetStreamAvailableNum(uint32_t *streamCount)
 <!-- npu="IPV350" id966 -->
 - IPV350：不支持
 <!-- end id966 -->
+<!-- npu="5162A" id5015 -->
+- Hisilicon5162A：支持
+<!-- end id5015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id13 -->
 
 ### 功能说明
@@ -1012,6 +1057,9 @@ aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
 <!-- npu="IPV350" id1071 -->
 - IPV350：不支持
 <!-- end id1071 -->
+<!-- npu="5162A" id5016 -->
+- Hisilicon5162A：不支持
+<!-- end id5016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id14 -->
 
 ### 功能说明
@@ -1082,6 +1130,9 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
 <!-- npu="IPV350" id2982 -->
 - IPV350：不支持
 <!-- end id2982 -->
+<!-- npu="5162A" id5017 -->
+- Hisilicon5162A：不支持
+<!-- end id5017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id15 -->
 
 ### 功能说明
@@ -1151,6 +1202,9 @@ aclError aclrtActiveStream(aclrtStream activeStream, aclrtStream stream)
 <!-- npu="IPV350" id343 -->
 - IPV350：不支持
 <!-- end id343 -->
+<!-- npu="5162A" id5018 -->
+- Hisilicon5162A：支持
+<!-- end id5018 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id16 -->
 
 ### 功能说明
@@ -1205,6 +1259,9 @@ aclError aclrtSwitchStream(void *leftValue, aclrtCondition cond, void *rightValu
 <!-- npu="IPV350" id2219 -->
 - IPV350：不支持
 <!-- end id2219 -->
+<!-- npu="5162A" id5019 -->
+- Hisilicon5162A：支持
+<!-- end id5019 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id17 -->
 
 ### 功能说明
@@ -1264,6 +1321,9 @@ aclError aclrtRegStreamStateCallback(const char *regName, aclrtStreamStateCallba
 <!-- npu="IPV350" id1925 -->
 - IPV350：不支持
 <!-- end id1925 -->
+<!-- npu="5162A" id5020 -->
+- Hisilicon5162A：不支持
+<!-- end id5020 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id18 -->
 
 ### 功能说明
@@ -1329,6 +1389,9 @@ aclError aclrtStreamStop(aclrtStream stream)
 <!-- npu="IPV350" id2506 -->
 - IPV350：不支持
 <!-- end id2506 -->
+<!-- npu="5162A" id5021 -->
+- Hisilicon5162A：不支持
+<!-- end id5021 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id19 -->
 
 ### 功能说明
@@ -1385,6 +1448,9 @@ aclError aclrtPersistentTaskClean(aclrtStream stream)
 <!-- npu="IPV350" id434 -->
 - IPV350：不支持
 <!-- end id434 -->
+<!-- npu="5162A" id5022 -->
+- Hisilicon5162A：不支持
+<!-- end id5022 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id20 -->
 
 ### 功能说明
@@ -1438,6 +1504,9 @@ aclError aclrtStreamGetPriority(aclrtStream stream, uint32_t *priority)
 <!-- npu="IPV350" id3094 -->
 - IPV350：不支持
 <!-- end id3094 -->
+<!-- npu="5162A" id5023 -->
+- Hisilicon5162A：支持
+<!-- end id5023 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id21 -->
 
 ### 功能说明
@@ -1490,6 +1559,9 @@ aclError aclrtStreamGetFlags(aclrtStream stream, uint32_t *flags)
 <!-- npu="IPV350" id1568 -->
 - IPV350：不支持
 <!-- end id1568 -->
+<!-- npu="5162A" id5024 -->
+- Hisilicon5162A：不支持
+<!-- end id5024 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/06_stream_management_res.md#id22 -->
 
 ### 功能说明

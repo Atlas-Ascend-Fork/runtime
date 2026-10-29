@@ -44,6 +44,9 @@ aclError aclrtCreateNotify(aclrtNotify *notify, uint64_t flag)
 <!-- npu="IPV350" id2555 -->
 - IPV350：不支持
 <!-- end id2555 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id1 -->
 
 ### 功能说明
@@ -114,6 +117,9 @@ aclError aclrtDestroyNotify(aclrtNotify notify)
 <!-- npu="IPV350" id1666 -->
 - IPV350：不支持
 <!-- end id1666 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id2 -->
 
 ### 功能说明
@@ -165,6 +171,9 @@ aclError aclrtRecordNotify(aclrtNotify notify, aclrtStream stream)
 <!-- npu="IPV350" id2583 -->
 - IPV350：不支持
 <!-- end id2583 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id3 -->
 
 ### 功能说明
@@ -219,6 +228,9 @@ aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_
 <!-- npu="IPV350" id1008 -->
 - IPV350：不支持
 <!-- end id1008 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id4 -->
 
 ### 功能说明
@@ -272,6 +284,9 @@ aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 <!-- npu="IPV350" id3507 -->
 - IPV350：不支持
 <!-- end id3507 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id5 -->
 
 ### 功能说明
@@ -324,6 +339,9 @@ aclError aclrtNotifyBatchReset(aclrtNotify *notifies, size_t num)
 <!-- npu="IPV350" id448 -->
 - IPV350：不支持
 <!-- end id448 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id6 -->
 
 ### 功能说明
@@ -381,6 +399,9 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 <!-- npu="IPV350" id3171 -->
 - IPV350：不支持
 <!-- end id3171 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id7 -->
 
 ### 功能说明
@@ -465,6 +486,9 @@ aclError aclrtNotifySetImportPid(aclrtNotify notify, int32_t *pid, size_t num)
 <!-- npu="IPV350" id1813 -->
 - IPV350：不支持
 <!-- end id1813 -->
+<!-- npu="5162A" id5008 -->
+- Hisilicon5162A：不支持
+<!-- end id5008 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id8 -->
 
 ### 功能说明
@@ -526,6 +550,9 @@ aclError aclrtNotifySetImportPidInterServer(aclrtNotify notify, aclrtServerPid *
 <!-- npu="IPV350" id3276 -->
 - IPV350：不支持
 <!-- end id3276 -->
+<!-- npu="5162A" id5009 -->
+- Hisilicon5162A：不支持
+<!-- end id5009 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id9 -->
 
 ### 功能说明
@@ -584,6 +611,9 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *key, uint64_t f
 <!-- npu="IPV350" id2107 -->
 - IPV350：不支持
 <!-- end id2107 -->
+<!-- npu="5162A" id5010 -->
+- Hisilicon5162A：不支持
+<!-- end id5010 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/08_notify_management_res.md#id10 -->
 
 ### 功能说明

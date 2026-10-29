@@ -41,6 +41,9 @@ aclError aclInit(const char *configPath)
 <!-- npu="IPV350" id3241 -->
 - IPV350：支持
 <!-- end id3241 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id1 -->
 
 ### 功能说明
@@ -588,6 +591,9 @@ aclError aclFinalize()
 <!-- npu="IPV350" id672 -->
 - IPV350：支持
 <!-- end id672 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id2 -->
 
 ### 功能说明
@@ -647,6 +653,9 @@ aclError aclFinalizeReference(uint64_t *refCount)
 <!-- npu="IPV350" id3213 -->
 - IPV350：不支持
 <!-- end id3213 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id3 -->
 
 ### 功能说明
@@ -706,6 +715,9 @@ aclError aclInitCallbackRegister(aclRegisterCallbackType type, aclInitCallbackFu
 <!-- npu="IPV350" id994 -->
 - IPV350：不支持
 <!-- end id994 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id4 -->
 
 ### 功能说明
@@ -761,6 +773,9 @@ aclError aclInitCallbackUnRegister(aclRegisterCallbackType type, aclInitCallback
 <!-- npu="IPV350" id2450 -->
 - IPV350：不支持
 <!-- end id2450 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id5 -->
 
 ### 功能说明
@@ -813,6 +828,9 @@ aclError aclFinalizeCallbackRegister(aclRegisterCallbackType type, aclFinalizeCa
 <!-- npu="IPV350" id2338 -->
 - IPV350：不支持
 <!-- end id2338 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id6 -->
 
 ### 功能说明
@@ -868,6 +886,9 @@ aclError aclFinalizeCallbackUnRegister(aclRegisterCallbackType type, aclFinalize
 <!-- npu="IPV350" id161 -->
 - IPV350：不支持
 <!-- end id161 -->
+<!-- npu="5162A" id5007 -->
+- Hisilicon5162A：不支持
+<!-- end id5007 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/02_initialization_and_deinitialization_res.md#id7 -->
 
 ### 功能说明

@@ -44,6 +44,9 @@ aclError aclmdlInitDump()
 <!-- npu="IPV350" id2114 -->
 - IPV350：不支持
 <!-- end id2114 -->
+<!-- npu="5162A" id9015 -->
+- Hisilicon5162A：支持
+<!-- end id9015 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id1 -->
 
 ### 功能说明
@@ -123,6 +126,9 @@ aclError aclmdlSetDump(const char *dumpCfgPath)
 <!-- npu="IPV350" id560 -->
 - IPV350：不支持
 <!-- end id560 -->
+<!-- npu="5162A" id9016 -->
+- Hisilicon5162A：支持
+<!-- end id9016 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id2 -->
 
 ### 功能说明
@@ -426,6 +432,9 @@ aclError acldumpRegCallback(int32_t (* const messageCallback)(const acldumpChunk
 <!-- npu="IPV350" id1547 -->
 - IPV350：不支持
 <!-- end id1547 -->
+<!-- npu="5162A" id9017 -->
+- Hisilicon5162A：不支持
+<!-- end id9017 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id3 -->
 
 ### 功能说明
@@ -514,6 +523,9 @@ void acldumpUnregCallback()
 <!-- npu="IPV350" id441 -->
 - IPV350：不支持
 <!-- end id441 -->
+<!-- npu="5162A" id9018 -->
+- Hisilicon5162A：不支持
+<!-- end id9018 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id4 -->
 
 ### 功能说明
@@ -573,6 +585,9 @@ const char* acldumpGetPath(acldumpType dumpType)
 <!-- npu="IPV350" id2856 -->
 - IPV350：不支持
 <!-- end id2856 -->
+<!-- npu="5162A" id9019 -->
+- Hisilicon5162A：不支持
+<!-- end id9019 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id5 -->
 
 ### 功能说明
@@ -626,6 +641,9 @@ aclError aclmdlFinalizeDump()
 <!-- npu="IPV350" id1862 -->
 - IPV350：不支持
 <!-- end id1862 -->
+<!-- npu="5162A" id9020 -->
+- Hisilicon5162A：支持
+<!-- end id9020 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id6 -->
 
 ### 功能说明
@@ -700,6 +718,9 @@ aclError aclopStartDumpArgs(uint32_t dumpType, const char *path)
 <!-- npu="IPV350" id3402 -->
 - IPV350：不支持
 <!-- end id3402 -->
+<!-- npu="5162A" id9021 -->
+- Hisilicon5162A：不支持
+<!-- end id9021 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id7 -->
 
 ### 功能说明
@@ -760,6 +781,9 @@ aclError aclopStopDumpArgs(uint32_t dumpType)
 <!-- npu="IPV350" id1596 -->
 - IPV350：不支持
 <!-- end id1596 -->
+<!-- npu="5162A" id9022 -->
+- Hisilicon5162A：不支持
+<!-- end id9022 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id8 -->
 
 ### 功能说明
@@ -819,6 +843,9 @@ aclError acldumpGetExceptionInfoPath(char *path, size_t maxLen)
 <!-- npu="IPV350" id9007 -->
 - IPV350：不支持
 <!-- end id9007 -->
+<!-- npu="5162A" id9023 -->
+- Hisilicon5162A：不支持
+<!-- end id9023 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id9 -->
 
 ### 功能说明
@@ -878,6 +905,9 @@ aclError acldumpSaveExceptionInfo(const char *fileName, const char *userTag, con
 <!-- npu="IPV350" id9014 -->
 - IPV350：不支持
 <!-- end id9014 -->
+<!-- npu="5162A" id9024 -->
+- Hisilicon5162A：不支持
+<!-- end id9024 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/18_dump_configuration_res.md#id10 -->
 
 ### 功能说明

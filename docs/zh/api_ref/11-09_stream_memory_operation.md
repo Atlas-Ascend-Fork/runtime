@@ -36,6 +36,9 @@ aclError aclrtValueWrite(void* devAddr, uint64_t value, uint32_t flag, aclrtStre
 <!-- npu="IPV350" id2240 -->
 - IPV350：不支持
 <!-- end id2240 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-09_stream_memory_operation_res.md#id1 -->
 
 ### 功能说明
@@ -90,6 +93,9 @@ aclError aclrtValueWait(void* devAddr, uint64_t value, uint32_t flag, aclrtStrea
 <!-- npu="IPV350" id889 -->
 - IPV350：不支持
 <!-- end id889 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-09_stream_memory_operation_res.md#id2 -->
 
 ### 功能说明

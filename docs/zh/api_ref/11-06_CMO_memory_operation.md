@@ -40,6 +40,9 @@ aclError aclrtCmoAsync(void *src, size_t size, aclrtCmoType cmoType, aclrtStream
 <!-- npu="IPV350" id3087 -->
 - IPV350：不支持
 <!-- end id3087 -->
+<!-- npu="5162A" id5001 -->
+- Hisilicon5162A：不支持
+<!-- end id5001 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id1 -->
 
 ### 功能说明
@@ -94,6 +97,9 @@ aclError aclrtCmoAsyncWithBarrier(void *src, size_t size, aclrtCmoType cmoType, 
 <!-- npu="IPV350" id3486 -->
 - IPV350：不支持
 <!-- end id3486 -->
+<!-- npu="5162A" id5002 -->
+- Hisilicon5162A：不支持
+<!-- end id5002 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id2 -->
 
 ### 功能说明
@@ -149,6 +155,9 @@ aclError aclrtCmoWaitBarrier(aclrtBarrierTaskInfo *taskInfo, aclrtStream stream,
 <!-- npu="IPV350" id1092 -->
 - IPV350：不支持
 <!-- end id1092 -->
+<!-- npu="5162A" id5003 -->
+- Hisilicon5162A：不支持
+<!-- end id5003 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id3 -->
 
 ### 功能说明
@@ -202,6 +211,9 @@ aclError aclrtCmoGetDescSize(size_t *size)
 <!-- npu="IPV350" id2751 -->
 - IPV350：不支持
 <!-- end id2751 -->
+<!-- npu="5162A" id5004 -->
+- Hisilicon5162A：不支持
+<!-- end id5004 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id4 -->
 
 ### 功能说明
@@ -253,6 +265,9 @@ aclError aclrtCmoSetDesc(void *cmoDesc, void *src, size_t size)
 <!-- npu="IPV350" id931 -->
 - IPV350：不支持
 <!-- end id931 -->
+<!-- npu="5162A" id5005 -->
+- Hisilicon5162A：不支持
+<!-- end id5005 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id5 -->
 
 ### 功能说明
@@ -306,6 +321,9 @@ aclError aclrtCmoAsyncWithDesc(void *cmoDesc, aclrtCmoType cmoType, aclrtStream 
 <!-- npu="IPV350" id2625 -->
 - IPV350：不支持
 <!-- end id2625 -->
+<!-- npu="5162A" id5006 -->
+- Hisilicon5162A：不支持
+<!-- end id5006 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/11-06_CMO_memory_operation_res.md#id6 -->
 
 ### 功能说明
