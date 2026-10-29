@@ -109,6 +109,9 @@ aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
   <!-- npu="IPV350" id11 -->
   但对于IPV350，policy处支持配置单个枚举项，也支持配置多个枚举项位或。位或时，支持这三项（ACL\_MEM\_MALLOC\_HUGE\_FIRST、ACL\_MEM\_MALLOC\_HUGE\_ONLY、ACL\_MEM\_MALLOC\_NORMAL\_ONLY）与这两项（ACL\_MEM\_TYPE\_LOW\_BAND\_WIDTH、ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH）组合，**例如**：ACL\_MEM\_MALLOC\_HUGE\_FIRST | ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH
   <!-- end id11 -->
+  <!-- npu="5162A" id10 -->
+  对于Hisilicon5162A，policy仅支持ACL\_MEM\_MALLOC\_NORMAL\_ONLY。
+  <!-- end id10 -->
 
 - 频繁调用aclrtMalloc接口申请内存、调用[aclrtFree](#aclrtFree)接口释放内存，会损耗性能，建议用户提前做内存预先分配或二次管理，避免频繁申请/释放内存。
 - 若用户需申请大块内存并自行划分、管理内存时，每段内存需同时满足以下需求，其中，len表示某段内存的大小，ALIGN\_UP\[len,k\]表示向上按k字节对齐：\(\(len-1\)/k+1\)\*k：
