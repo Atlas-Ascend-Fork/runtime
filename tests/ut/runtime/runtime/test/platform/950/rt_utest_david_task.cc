@@ -1055,7 +1055,7 @@ TEST_F(TaskTestDavid, DebugReadAICore_register_direct_uses_va_and_releases_memor
     uint8_t buffer[4096U] = {};
     uint8_t output[4113U] = {};
     void* deviceMemory = buffer;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&deviceMemory, sizeof(deviceMemory)))
         .will(returnValue(RT_ERROR_NONE));
@@ -1098,7 +1098,7 @@ TEST_F(TaskTestDavid, DebugReadAICore_release_report_failure_frees_memory)
     device->SetCoredumpEnable();
     uint8_t buffer[4096U] = {};
     void* deviceMemory = buffer;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&deviceMemory, sizeof(deviceMemory)))
         .will(returnValue(RT_ERROR_NONE));
@@ -1131,7 +1131,7 @@ TEST_F(TaskTestDavid, DebugReadAICore_l1_boundary)
     ASSERT_NE(ctx, nullptr);
     Device* const device = ctx->Device_();
     device->SetCoredumpEnable();
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).expects(never());
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).expects(never());
 
     rtDebugMemoryParam_t param = {};
     param.debugMemType = RT_MEM_TYPE_L1;
@@ -2146,7 +2146,7 @@ TEST_F(TaskTestDavid, device_error_proc_ringbuffer_create_stop_on_david)
 {
     DeviceErrorProc* errorProc = new DeviceErrorProc(device_);
     void* memBase = (void*)100;
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -3840,7 +3840,7 @@ TEST_F(TaskTestDavid, CpuKernelLaunchForAicpuStream)
 
     void* memBase = reinterpret_cast<void*>(100);
     MOCKER(memcpy_s).stubs().will(returnValue(0));
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -3879,7 +3879,7 @@ TEST_F(TaskTestDavid, CpuKernelLaunchForAicpuStreamFail)
 
     void* memBase = reinterpret_cast<void*>(100);
     MOCKER(memcpy_s).stubs().will(returnValue(0));
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

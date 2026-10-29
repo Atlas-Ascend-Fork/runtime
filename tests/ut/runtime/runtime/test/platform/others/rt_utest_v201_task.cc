@@ -996,7 +996,7 @@ TEST_F(TaskTestV201, Test_DqsTask_06)
     error = DqsLaunchTask(stm, &cfg);
     EXPECT_NE(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE));
     DqsTaskConfig taskCfg = {};
@@ -1053,7 +1053,7 @@ TEST_F(TaskTestV201, Test_DqsTask_ZeroCopyAllocOffsetFail)
     StreamWithDqs* streamWithDqs = (StreamWithDqs*)stm;
     streamWithDqs->SetDqsCtrlSpace(&ctrlSpace);
 
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_NONE))
@@ -1115,7 +1115,7 @@ TEST_F(TaskTestV201, Test_DqsTask_07)
     rtError_t error = DqsLaunchTask(stm, &cfg);
     EXPECT_NE(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE));
     error = DqsConditionCopyTaskInit(&task1, stm, &dqsTaskConfig);
@@ -1482,8 +1482,8 @@ TEST_F(TaskTestV201, Test_DqsTaskAllocFuncCallNullPtr)
     StreamWithDqs* streamWithDqs = (StreamWithDqs*)stm;
     streamWithDqs->SetDqsCtrlSpace(&ctrlSpace);
 
-    // DevMemAlloc returns success but leaves the output pointer null
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAlloc)
+    // DevMemAllocWithBackupFlag returns success but leaves the output pointer null
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device_->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE));
 
@@ -1580,10 +1580,10 @@ TEST_F(TaskTestV201, Test_GetIpcSqeWriteAddrForNotifyRecordTask)
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
     void* dptr = nullptr;
     error = ((NpuDriver*)(device_->Driver_()))
-                ->MemAllocHugePolicyPageOffline(&dptr, HUGE_PAGE_MEM_CRITICAL_VALUE + 1, RT_MEMORY_P2P_DDR, 0, 0);
+                ->DevMemAllocHugePolicyPageOffline(&dptr, HUGE_PAGE_MEM_CRITICAL_VALUE + 1, RT_MEMORY_P2P_DDR, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = ((NpuDriver*)(device_->Driver_()))
-                ->MemAllocHugePolicyPageOffline(&dptr, HUGE_PAGE_MEM_CRITICAL_VALUE, RT_MEMORY_P2P_DDR, 0, 0);
+                ->DevMemAllocHugePolicyPageOffline(&dptr, HUGE_PAGE_MEM_CRITICAL_VALUE, RT_MEMORY_P2P_DDR, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
     rtInstance->SetChipType(oriChipType);
     GlobalContainer::SetRtChipType(oriChipType);

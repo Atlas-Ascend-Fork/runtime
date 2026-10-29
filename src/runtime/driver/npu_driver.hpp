@@ -22,6 +22,13 @@
 
 namespace cce {
 namespace runtime {
+
+// bit30(host rw / dev ro) and bit32(cp only) are currently honored only by DevMemAllocNormalPage and
+// DevMemAllocHugePage. Allocation paths that must keep the legacy behavior mask them off with
+// DEV_MEM_ACCESS_BITS_MASK at their dispatch site.
+constexpr uint64_t DEV_MEM_ACCESS_BITS_MASK =
+    static_cast<uint64_t>(MEM_HOST_RW_DEV_RO) | static_cast<uint64_t>(MEM_DEV_CP_ONLY);
+
 // Real driver
 class NpuDriver : public Driver {
 public:
@@ -286,24 +293,16 @@ public:
         const uint32_t devId, const uint32_t tsId, const uint32_t cqId, uint8_t* const report,
         uint32_t& realCnt) override;
 
-    // Alloc device global memory.
-    rtError_t DevMemAlloc(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, const DevMemAllocConfig config = {},
-        const bool isNewApi = false) override;
+    // Alloc device global memory with an explicit backup flag. Fast path when only the backup type is non-default.
     rtError_t DevMemAllocWithBackupFlag(
         void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
         const DevMemBackupType type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, DevMemAllocConfig config = {},
-        const bool isNewApi = false) override;
-
-    static uint64_t BuildDevMemAllocFlag(
-        const uint32_t deviceId, const uint16_t moduleId, const bool readOnlyFlag = false,
-        const bool cpOnlyFlag = false, const bool privateFlag = false);
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) override;
+    static uint64_t BuildDevMemAllocFlag(const uint32_t deviceId, const DevMemAllocConfig* const config);
 
     rtError_t DevMemAllocWithFlag(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
-        const bool isLogError = true, const bool starsTillingFlag = false) override;
+        void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
+        const DevMemAllocConfig* const config, const uint64_t curFlag) override;
 
     // Alloc contiguous memory.
     rtError_t DevMemAllocConPhy(
@@ -324,15 +323,13 @@ public:
     // free system cache memory
     rtError_t DevSCMemFree(void* const dptr, const uint32_t deviceId) override;
 
-    rtError_t DevMemAllocHugePageManaged(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const DevMemAllocConfig config = {},
-        const bool isLogError = true) override;
+    rtError_t DevMemAllocHugePage(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag = 0U,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
 
     rtError_t DevMemAlloc1GHugePage(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t memPolicy,
-        const uint32_t deviceId, const uint16_t moduleId = MODULEID_RUNTIME, const DevMemAllocConfig config = {},
-        const bool isLogError = true) override;
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
 
     // Free device global memory.
     rtError_t DevMemFree(void* const dptr, const uint32_t deviceId) override;
@@ -804,47 +801,22 @@ private:
     rtError_t ManagedMemAllocInner(
         void** const dptr, const uint64_t size, const ManagedMemFlag flag, const uint32_t deviceId,
         const uint16_t moduleId = MODULEID_RUNTIME) const;
-    rtError_t DevMemAllocManaged(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const DevMemAllocConfig config = {},
-        const bool isLogError = true) const;
+    rtError_t DevMemAllocNormalPage(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag = 0U,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
     rtError_t DevMemAllocOnline(
-        void** const dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, const DevMemAllocConfig config = {},
-        const bool isNewApi = false);
-    rtError_t DevUserMemAllocNormalPage(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
-        const bool starsTillingFlag) const;
-    rtError_t DevUserMemAllocHugePage(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
-        const bool isLogError) const;
-    rtError_t DevUserMemAlloc1GHugePage(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
-        const bool isLogError) const;
-    rtError_t DevUserMemAllocOnline(
-        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError,
-        const bool starsTillingFlag);
-    rtError_t DevUserMemAllocHugePolicyPageOffline(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
-        const bool isLogError) const;
-    rtError_t DevUserMemAllocPolicyOffline(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
-        const bool isLogError) const;
-    rtError_t DevUserMemAllocOffline(
-        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag, const bool isLogError) const;
+        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag = 0U,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig);
     rtError_t DevMemAllocOffline(
-        void** dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true,
-        const DevMemAllocConfig config = {}) const;
-    rtError_t MemAllocHugePolicyPageOffline(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true,
-        const DevMemAllocConfig config = {}) const;
+        void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag = 0U,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
+    rtError_t DevMemAllocHugePolicyPageOffline(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag = 0U,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
 
-    rtError_t MemAllocPolicyOffline(
-        void** const dptr, const uint64_t size, const uint32_t memPolicy, const rtMemType_t type,
-        const uint32_t deviceId, const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true,
-        const DevMemAllocConfig config = {}) const;
+    rtError_t DevMemAllocPolicyOffline(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) const;
 
     rtError_t transMemAttribute(const uint32_t memPolicy, rtMemType_t* const type) const;
 
@@ -875,6 +847,11 @@ private:
 static inline uint64_t FlagAddModuleId(uint64_t drvFlag, uint16_t moduleId)
 {
     return (drvFlag | (static_cast<uint64_t>(moduleId) << 56U)); // 56 is shift. flag high 8 bit for moduleId
+}
+
+static inline uint16_t FlagGetModuleId(const uint64_t drvFlag)
+{
+    return static_cast<uint16_t>(drvFlag >> 56U); // 56 is shift. flag high 8 bit for moduleId
 }
 
 static inline uint64_t FlagAddBackupBit(uint64_t drvFlag, const DevMemBackupType backupType)

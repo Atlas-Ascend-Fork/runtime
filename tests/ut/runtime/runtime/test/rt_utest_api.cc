@@ -6659,8 +6659,8 @@ TEST_F(ApiTest, dev_alloc_mem_offline_1910_test)
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
 
     NpuDriver* rawDrv = new NpuDriver();
-    int32_t ret = rawDrv->MemAllocHugePolicyPageOffline(&dptr, 1024 * 1024 + 1, RT_MEMORY_TS, 0, 2);
-    ret = rawDrv->MemAllocHugePolicyPageOffline(&dptr, 1024, RT_MEMORY_TS, 0, 2);
+    int32_t ret = rawDrv->DevMemAllocHugePolicyPageOffline(&dptr, 1024 * 1024 + 1, RT_MEMORY_TS, 0);
+    ret = rawDrv->DevMemAllocHugePolicyPageOffline(&dptr, 1024, RT_MEMORY_TS, 0);
     EXPECT_EQ(ret, RT_ERROR_NONE);
     rtInstance->SetChipType(oriChipType);
     GlobalContainer::SetRtChipType(oriChipType);

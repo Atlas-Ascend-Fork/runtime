@@ -307,7 +307,9 @@ TEST_F(CloudV2AicpuErrMsgTest, ParseErrMsg_abnormal)
 
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_DRV_ERR));
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_ERR));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_ERR));
 
     aicpuErrObj->SetErrMsgBufAddr();
 

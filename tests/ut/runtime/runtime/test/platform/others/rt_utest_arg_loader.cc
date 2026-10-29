@@ -81,7 +81,7 @@ TEST_F(ChipArgLoaderTest, uma_arg_loader_with_kernel_info_rollback)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

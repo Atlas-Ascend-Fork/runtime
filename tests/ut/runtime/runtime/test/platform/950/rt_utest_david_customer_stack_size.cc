@@ -487,7 +487,9 @@ TEST_F(CustomerStackSize, AllocCustomerStackPhyBaseFailed)
     EXPECT_EQ(error, ACL_RT_SUCCESS);
     RawDevice* dev = new RawDevice(0);
     dev->Init();
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_INVALID_VALUE));
     rtError_t ret = dev->AllocCustomerStackPhyBase();
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
     delete dev;
@@ -512,7 +514,7 @@ TEST_F(CustomerStackSize, AllocCustomerStackPhyBaseSuccess)
     dev->Init();
     uint32_t tmp = 0;
     void* addr = &tmp;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -531,7 +533,7 @@ TEST_F(CustomerStackSize, AllocCustomerStackPhyBaseSuccess_align128B)
     dev->Init();
     alignas(128) uint32_t tmp = 0;
     void* addr = &tmp;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),

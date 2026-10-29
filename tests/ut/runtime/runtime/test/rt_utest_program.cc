@@ -20,6 +20,22 @@
 using namespace testing;
 using namespace cce::runtime;
 
+static uint64_t g_capturedDevMemAllocFlag = 0U;
+
+static rtError_t DevMemAllocFlagCaptureStub(
+    Driver* const driver, void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
+    const DevMemAllocConfig* const config, const uint64_t curFlag)
+{
+    UNUSED(driver);
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(deviceId);
+    UNUSED(config);
+    g_capturedDevMemAllocFlag = curFlag;
+    return RT_ERROR_DRV_ERR;
+}
+
 class ProgramTest : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "program test start" << std::endl; }
@@ -35,7 +51,7 @@ protected:
     }
 };
 
-TEST_F(ProgramTest, ModuleLoadDevMemAllocUsesRuntimeModuleId)
+TEST_F(ProgramTest, ModuleLoadDevMemAllocUsesRequiredBackupType)
 {
     Context* ctx = Runtime::Instance()->CurrentContext();
     ASSERT_NE(ctx, nullptr);
@@ -53,19 +69,21 @@ TEST_F(ProgramTest, ModuleLoadDevMemAllocUsesRuntimeModuleId)
     prog.binarySize_ = sizeof(binary);
     Module module(device);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+    g_capturedDevMemAllocFlag = 0U;
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithFlag)
         .expects(once())
         .with(
-            mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(static_cast<uint32_t>(device->Id_())),
-            eq(DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP), eq(static_cast<uint16_t>(MODULEID_RUNTIME)), eq(true))
-        .will(returnValue(RT_ERROR_DRV_ERR));
+            mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(static_cast<uint32_t>(device->Id_())), mockcpp::any(),
+            mockcpp::any())
+        .will(invoke(DevMemAllocFlagCaptureStub));
 
     EXPECT_EQ(module.Load(&prog), RT_ERROR_DRV_ERR);
+    EXPECT_NE(g_capturedDevMemAllocFlag & static_cast<uint64_t>(MEM_SNAPSHOT_REQUIRED), 0U);
     rtInstance->SetChipType(originRtChipType);
     device->SetChipType(originDevChipType);
 }
 
-TEST_F(ProgramTest, RuntimeBinaryLoadDevMemAllocUsesRuntimeModuleId)
+TEST_F(ProgramTest, RuntimeBinaryLoadDevMemAllocUsesRequiredBackupType)
 {
     Context* ctx = Runtime::Instance()->CurrentContext();
     ASSERT_NE(ctx, nullptr);
@@ -82,14 +100,16 @@ TEST_F(ProgramTest, RuntimeBinaryLoadDevMemAllocUsesRuntimeModuleId)
     prog.binary_ = binary;
     prog.binarySize_ = sizeof(binary);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+    g_capturedDevMemAllocFlag = 0U;
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithFlag)
         .expects(once())
         .with(
-            mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(static_cast<uint32_t>(device->Id_())),
-            eq(DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP), eq(static_cast<uint16_t>(MODULEID_RUNTIME)), eq(true))
-        .will(returnValue(RT_ERROR_DRV_ERR));
+            mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(static_cast<uint32_t>(device->Id_())), mockcpp::any(),
+            mockcpp::any())
+        .will(invoke(DevMemAllocFlagCaptureStub));
 
     EXPECT_EQ(Runtime::Instance()->BinaryLoad(device, &prog), RT_ERROR_DRV_ERR);
+    EXPECT_NE(g_capturedDevMemAllocFlag & static_cast<uint64_t>(MEM_SNAPSHOT_REQUIRED), 0U);
     rtInstance->SetChipType(originRtChipType);
     device->SetChipType(originDevChipType);
 }
@@ -828,17 +848,14 @@ TEST_F(ProgramTest, CopySoAndNameToCurrentDevice_StoreKernelLiteralNameFailed)
 
 static rtError_t DevMemAllocSuccessStub(
     Driver* drv, void** dptr, uint64_t size, rtMemType_t type, uint32_t deviceId, DevMemBackupType backupType,
-    uint16_t moduleId, bool isLogError, DevMemAllocConfig config, bool isNewApi)
+    const DevMemAllocConfig* const config)
 {
     UNUSED(drv);
     UNUSED(size);
     UNUSED(type);
     UNUSED(deviceId);
     UNUSED(backupType);
-    UNUSED(moduleId);
-    UNUSED(isLogError);
     UNUSED(config);
-    UNUSED(isNewApi);
     *dptr = reinterpret_cast<void*>(0x1000);
     return RT_ERROR_NONE;
 }

@@ -640,7 +640,9 @@ TEST_F(StarsTaskTest, FuncCallAllocDevMem_devMem_failed)
     headSream->SetBindFlag(true);
 
     InitByStream(&mdlExecTask, headSream);
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_INPUT));
     ret = ModelExecuteTaskInit(
         &mdlExecTask, rt_ut::UnwrapOrNull<Model>(model), rt_ut::UnwrapOrNull<Model>(model)->Id_(), 0);
     (void)ret;
@@ -671,7 +673,7 @@ TEST_F(StarsTaskTest, FuncCallAllocDevMem_devDfxMem_failed)
 
     MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
 
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE))
@@ -1499,7 +1501,7 @@ TEST_F(StarsTaskTest, FftsPlusTaskInitTest)
     ctx->contextType = RT_CTX_TYPE_AICORE;
     fftsPlusTaskInfo.descBuf = descBuf.data();
     fftsPlusTaskInfo.descBufLen = descBuf.size();
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     error = FftsPlusTaskInit(&task, &fftsPlusTaskInfo, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
@@ -1586,7 +1588,7 @@ TEST_F(StarsTaskTest, HCCLFftsPlusTaskInitTest)
 
     InitByStream(&task, stream);
 
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     std::vector<cce::runtime::rtFftsPlusTaskErrInfo_t>* ss = new std::vector<rtFftsPlusTaskErrInfo_t>();
     task.stream->SetBindFlag(false);
@@ -1614,7 +1616,7 @@ TEST_F(StarsTaskTest, HCCLFftsPlusTaskInitTest2)
     rtStreamCreate(&stm, 0);
     stream = rt_ut::UnwrapOrNull<Stream>(stm);
     InitByStream(&task, stream);
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     std::vector<cce::runtime::rtFftsPlusTaskErrInfo_t>* ss = new std::vector<rtFftsPlusTaskErrInfo_t>();
     task.u.fftsPlusTask.errInfo = ss;
@@ -1654,7 +1656,7 @@ TEST_F(StarsTaskTest, SameTaskIdForAll)
     rtStreamCreate(&stm, 0);
     stream = rt_ut::UnwrapOrNull<Stream>(stm);
     InitByStream(&task, stream);
-    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev_->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     std::vector<cce::runtime::rtFftsPlusTaskErrInfo_t>* ss = new std::vector<rtFftsPlusTaskErrInfo_t>();
     task.u.fftsPlusTask.errInfo = ss;

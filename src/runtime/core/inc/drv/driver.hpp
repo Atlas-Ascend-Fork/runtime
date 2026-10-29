@@ -58,8 +58,13 @@ struct DevMemAllocConfig {
     bool readOnlyFlag = false;
     bool starsTillingFlag = false;
     bool cpOnlyFlag = false;
+    bool privateFlag = false;
+    bool isLogError = true;
     DevMemBackupType type = DevMemBackupType::SNAPSHOT_NO_BACKUP;
+    uint16_t moduleId = MODULEID_RUNTIME;
 };
+
+static const DevMemAllocConfig defaultDevMemAllocConfig;
 
 // facade interface for driver.
 class Driver : public NoCopy {
@@ -337,19 +342,16 @@ public:
     virtual rtError_t WriteNotifyRecord(const uint32_t deviceId, const uint32_t tsId, const uint32_t notifyId) = 0;
     virtual rtError_t DebugCqReport(
         const uint32_t devId, const uint32_t tsId, const uint32_t cqId, uint8_t* const report, uint32_t& realCnt) = 0;
-    // Alloc device global memory.
-    virtual rtError_t DevMemAlloc(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, const DevMemAllocConfig config = {},
-        const bool isNewApi = false) = 0;
+    // Alloc device global memory with an explicit backup flag. Fast path when only the backup type is non-default.
     virtual rtError_t DevMemAllocWithBackupFlag(
         void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
         const DevMemBackupType type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP,
-        const uint16_t moduleId = MODULEID_RUNTIME, const bool isLogError = true, DevMemAllocConfig config = {},
-        const bool isNewApi = false) = 0;
+        const DevMemAllocConfig* const config = &defaultDevMemAllocConfig) = 0;
+    // Alloc device global memory with an explicit driver flag. Set config attributes first, then use
+    // NpuDriver::BuildDevMemAllocFlag(deviceId, config) to build the flag when any attribute is non-default.
     virtual rtError_t DevMemAllocWithFlag(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
-        const bool isLogError = true, const bool starsTillingFlag = false) = 0;
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
+        const DevMemAllocConfig* const config, const uint64_t curFlag) = 0;
 
     // Alloc contiguous memory
     virtual rtError_t DevMemAllocConPhy(
@@ -371,15 +373,6 @@ public:
     // free system cache memory
     virtual rtError_t DevSCMemFree(void* dptr, uint32_t deviceId) = 0;
 
-    virtual rtError_t DevMemAllocHugePageManaged(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId = MODULEID_RUNTIME, const DevMemAllocConfig config = {},
-        const bool isLogError = true) = 0;
-
-    virtual rtError_t DevMemAlloc1GHugePage(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t memPolicy,
-        const uint32_t deviceId, const uint16_t moduleId = MODULEID_RUNTIME, const DevMemAllocConfig config = {},
-        const bool isLogError = true) = 0;
     // Free device global memory.
     virtual rtError_t DevMemFree(void* const dptr, const uint32_t deviceId) = 0;
     // Free device Continuous memory.

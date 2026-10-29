@@ -1574,133 +1574,110 @@ rtError_t NpuDriver::ManagedMemFree(const void* const dptr)
     return RT_ERROR_NONE;
 }
 
-rtError_t NpuDriver::DevMemAllocHugePageManaged(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const DevMemAllocConfig config, const bool isLogError)
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAlloc1GHugePage(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t memPolicy, const uint32_t deviceId,
-    const uint16_t moduleId, const DevMemAllocConfig config, const bool isLogError)
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(memPolicy);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAllocManaged(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const DevMemAllocConfig config, const bool isLogError) const
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAllocOnline(
-    void** const dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const bool isLogError, const DevMemAllocConfig config, const bool isNewApi)
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    UNUSED(isNewApi);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::MemAllocHugePolicyPageOffline(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const bool isLogError, const DevMemAllocConfig config) const
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::MemAllocPolicyOffline(
-    void** const dptr, const uint64_t size, const uint32_t memPolicy, const rtMemType_t type, const uint32_t deviceId,
-    const uint16_t moduleId, const bool isLogError, const DevMemAllocConfig config) const
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(memPolicy);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAllocOffline(
-    void** dptr, const uint64_t size, rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const bool isLogError, const DevMemAllocConfig config) const
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAlloc(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const bool isLogError, const DevMemAllocConfig config, const bool isNewApi)
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(type);
-    UNUSED(isLogError);
-    UNUSED(config);
-    UNUSED(isNewApi);
-    return RT_ERROR_NONE;
-}
-
-rtError_t NpuDriver::DevMemAllocWithFlag(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const bool isLogError,
-    const bool starsTillingFlag)
+rtError_t NpuDriver::DevMemAllocHugePage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+    const DevMemAllocConfig* const config) const
 {
     UNUSED(dptr);
     UNUSED(size);
     UNUSED(type);
     UNUSED(flag);
-    UNUSED(isLogError);
-    UNUSED(starsTillingFlag);
+    UNUSED(config);
     return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAlloc1GHugePage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+    const DevMemAllocConfig* const config) const
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(memPolicy);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocNormalPage(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+    const DevMemAllocConfig* const config) const
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocOnline(
+    void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag,
+    const DevMemAllocConfig* const config)
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocHugePolicyPageOffline(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag,
+    const DevMemAllocConfig* const config) const
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocPolicyOffline(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint64_t flag, const uint32_t memPolicy,
+    const DevMemAllocConfig* const config) const
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(memPolicy);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocOffline(
+    void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag,
+    const DevMemAllocConfig* const config) const
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(flag);
+    UNUSED(config);
+    return RT_ERROR_NONE;
+}
+
+rtError_t NpuDriver::DevMemAllocWithFlag(
+    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
+    const DevMemAllocConfig* const config, const uint64_t curFlag)
+{
+    UNUSED(dptr);
+    UNUSED(size);
+    UNUSED(type);
+    UNUSED(deviceId);
+    UNUSED(config);
+    UNUSED(curFlag);
+    return RT_ERROR_NONE;
+}
+
+uint64_t NpuDriver::BuildDevMemAllocFlag(const uint32_t deviceId, const DevMemAllocConfig* const config)
+{
+    UNUSED(deviceId);
+    UNUSED(config);
+    return 0ULL;
 }
 
 rtError_t NpuDriver::DevMemAllocConPhy(

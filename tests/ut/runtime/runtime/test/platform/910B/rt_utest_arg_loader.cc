@@ -379,7 +379,7 @@ TEST_F(CloudV2ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     Stream* trueStreamPtr[] = {&stream};
     StreamSwitchNLoadResult result = {};
 
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_DRV_ERR));
@@ -390,7 +390,7 @@ TEST_F(CloudV2ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     EXPECT_EQ(RT_ERROR_DRV_ERR, err);
 
     GlobalMockObject::verify();
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::MemCopySync)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))

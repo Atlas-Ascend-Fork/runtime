@@ -2459,7 +2459,9 @@ TEST_F(DeviceTest, SqAddrPoolAllocFail)
     SqAddrMemoryOrder* sqAddrMemoryManage = device->GetSqAddrMemoryManage();
     uint64_t* sqAddr = nullptr;
 
-    MOCKER_CPP_VIRTUAL((NpuDriver*)(device->Driver_()), &NpuDriver::DevMemAlloc).stubs().will(returnValue(1U));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)(device->Driver_()), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(1U));
     rtError_t ret = sqAddrMemoryManage->AllocSqAddr(static_cast<SQ_ADDR_MEM_ORDER_TYPE>(11), &sqAddr);
     EXPECT_NE(ret, RT_ERROR_NONE);
 

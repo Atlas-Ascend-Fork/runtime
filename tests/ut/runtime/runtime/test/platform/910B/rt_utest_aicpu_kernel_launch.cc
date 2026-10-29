@@ -60,7 +60,7 @@ void InitRtArgs(rtAicpuArgsEx_t& rtArgs)
 void MockCopyAndDevAlloc(void* memBase, const NpuDriver* rawDrv)
 {
     MOCKER(memcpy_s).stubs().will(returnValue(nullptr));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

@@ -189,10 +189,40 @@ sequenceDiagram
 
     App->>API: aclrtMalloc
     API->>Manager: DevMalloc
-    Manager->>Adapter: DevMemAlloc
+    Manager->>Manager: 构造 config 并设置非默认成员
+    Manager->>Manager: BuildDevMemAllocFlag(deviceId, &config) 生成 devid/访问位/moduleId/快照位
+    Manager->>Adapter: DevMemAllocWithFlag(flag, config)，NO_BACKUP
+    Adapter->>Adapter: 按 run mode 分发 Online/Offline
+    Adapter->>Adapter: 叶子分配器拼基础位，DevMemAllocByFlag 统一收口
     Adapter->>HW: halMemAlloc
     HW-->>App: devAddr
 ```
+
+驱动抽象层（`src/runtime/core/inc/drv/driver.hpp`）提供两个设备内存申请入口，按"是否需要修改 config"选择：
+
+| 入口 | 定位 | 使用方式 |
+|------|------|---------|
+| `DevMemAllocWithBackupFlag` | **通用快速通道（显式传入备份标签）** | 备份标签 `type` 经第 5 个位置参数显式传入（默认 `SNAPSHOT_REQUIRED_BACKUP`），config 其余成员全默认 |
+| `DevMemAllocWithFlag` | **通用方法（config 需要修改时）** | 先构造 config 并对非默认成员赋值，再由 `BuildDevMemAllocFlag(deviceId, &config)` 生成 `drvFlag`，最后携带两者调用 |
+
+**`DevMemAllocWithBackupFlag`：通用快速接口。** 6 参签名，各属性均为默认值、仅备份类型需指定时使用，备份标签经 `type` 位置参数显式传入：Runtime 内部内存按快照需求传入 required / optional，aclrt 相关接口的外部用户内存传入 `SNAPSHOT_NO_BACKUP`；调用点无需构造 config，实现内部将 `type` 写入 config 的局部拷贝，不影响调用点变量。
+
+**`DevMemAllocWithFlag`：config 需要修改时的通用使用方法。** 当任意 config 成员需偏离默认值（自定义 `moduleId`、`isLogError=false`、`readOnlyFlag` / `cpOnlyFlag` / `privateFlag`）时，标准三步：
+
+```cpp
+// 1. 构造 config，仅对非默认成员赋值
+DevMemAllocConfig allocConfig = {};
+allocConfig.moduleId = moduleId;
+allocConfig.isLogError = false;
+// 2. 从 config 生成 drvFlag（deviceId、moduleId、访问位、备份标签统一编码）
+const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, &allocConfig);
+// 3. 携带 drvFlag 与 config 调用
+rtError_t ret = driver->DevMemAllocWithFlag(devPtr, tmpSize, type, devId, &allocConfig, drvFlag);
+```
+
+`BuildDevMemAllocFlag` 接收 `deviceId` 和 `const DevMemAllocConfig* const config`，从 config 统一读取 `moduleId`、`readOnlyFlag`、`cpOnlyFlag`、`privateFlag` 和 `type`，避免调用方重复传递这些属性。`deviceId` 不属于 config，仍单独传入。config 指针由调用方保证非空，与其他设备内存申请入口保持一致。
+
+两个入口最终收敛到同一条分发链：`DevMemAllocWithBackupFlag` 内部基于 config 经 `BuildDevMemAllocFlag` 构建 flag 后委托 `DevMemAllocWithFlag`，由其按 run mode 分发至 Online/Offline 叶子分配器（offline 路径掩掉访问位、保持历史行为），最终经 `DevMemAllocByFlag` 统一收口调用 `halMemAlloc`。
 
 #### 内存拷贝流程
 常用的内存拷贝分为同步拷贝和异步拷贝：

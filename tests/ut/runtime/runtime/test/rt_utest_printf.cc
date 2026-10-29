@@ -899,7 +899,7 @@ TEST_F(PrintfTest, TestCheckAicpuDfxSupport_DfxSupported)
     cmodelDrvMemcpy_flag = 1;
     int32_t checkResult = 0;
     void* checkResultPtr = &checkResult;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&checkResultPtr, sizeof(checkResultPtr)), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -934,7 +934,7 @@ TEST_F(PrintfTest, TestCheckAicpuDfxSupport_MemCopyFail)
     dev->aicpuDfxSupport_ = false;
 
     cmodelDrvMemcpy_flag = 0;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
 
@@ -943,7 +943,7 @@ TEST_F(PrintfTest, TestCheckAicpuDfxSupport_MemCopyFail)
     EXPECT_EQ(dev->aicpuDfxSupport_, false);
     GlobalMockObject::verify();
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::MemCopySync)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
@@ -975,7 +975,7 @@ TEST_F(PrintfTest, TestInitAicpuPrintInfo_FailAndRetry)
     dev->aicpuPrintfAddr_ = nullptr;
     uint64_t addr = 0;
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_ERR));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_DRV_ERR));
     rtError = dev->GetPrintFifoAddrAndCreateThread(&addr, PRINT_AICPU);
     EXPECT_NE(rtError, RT_ERROR_NONE);
     EXPECT_EQ(dev->aicpuPrintfAddr_, nullptr);
@@ -1003,7 +1003,7 @@ TEST_F(PrintfTest, TestInitAicpuPrintInfo_FailAndRetry)
 
 static void SetupProcCpuKernelH2DMemCommonMocks(RawDevice* dev)
 {
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&Runtime::StartAicpuSd).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER(LaunchAicpuKernelForCpuSo).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP(&StreamFactory::CreateStream).stubs().will(returnValue(dev->primaryStream_));
@@ -1060,11 +1060,13 @@ TEST_F(PrintfTest, InitPrintInfoDevMemAllocUsesRuntimeModuleId)
     RawDevice* dev = (RawDevice*)((Runtime*)Runtime::Instance())->GetDevice(0U, 0U);
     ASSERT_NE(dev, nullptr);
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .expects(once())
         .with(
             mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(dev->deviceId_),
-            eq(static_cast<uint16_t>(MODULEID_RUNTIME)))
+            eq(DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP),
+            checkWith(
+                [](const DevMemAllocConfig* const config) mutable { return config->moduleId == MODULEID_RUNTIME; }))
         .will(returnValue(RT_ERROR_DRV_ERR));
 
     EXPECT_EQ(dev->InitPrintInfo(), RT_ERROR_DRV_ERR);
@@ -1078,11 +1080,13 @@ TEST_F(PrintfTest, InitSimtPrintInfoDevMemAllocUsesRuntimeModuleId)
     RawDevice* dev = (RawDevice*)((Runtime*)Runtime::Instance())->GetDevice(0U, 0U);
     ASSERT_NE(dev, nullptr);
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .expects(once())
         .with(
             mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(dev->deviceId_),
-            eq(static_cast<uint16_t>(MODULEID_RUNTIME)))
+            eq(DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP),
+            checkWith(
+                [](const DevMemAllocConfig* const config) mutable { return config->moduleId == MODULEID_RUNTIME; }))
         .will(returnValue(RT_ERROR_DRV_ERR));
 
     EXPECT_EQ(dev->InitSimtPrintInfo(), RT_ERROR_DRV_ERR);
@@ -1101,11 +1105,13 @@ TEST_F(PrintfTest, ProcCpuKernelH2DMemDevMemAllocUsesRuntimeModuleId)
     prog->SetHasPrintfTlv(false);
     dev->aicpuDfxSupport_ = false;
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .expects(exactly(3))
         .with(
             mockcpp::any(), mockcpp::any(), eq(RT_MEMORY_HBM), eq(static_cast<uint32_t>(dev->Id_())),
-            eq(static_cast<uint16_t>(MODULEID_RUNTIME)))
+            eq(DevMemBackupType::SNAPSHOT_NO_BACKUP), checkWith([](const DevMemAllocConfig* const config) mutable {
+                return config->moduleId == MODULEID_RUNTIME;
+            }))
         .will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));

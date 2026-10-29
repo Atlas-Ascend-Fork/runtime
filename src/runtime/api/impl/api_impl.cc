@@ -2406,14 +2406,19 @@ rtError_t ApiImpl::DevMalloc(void** const devPtr, const uint64_t size, const rtM
 
     auto driver = curCtx->Device_()->Driver_();
     const uint32_t devId = curCtx->Device_()->Id_();
-    rtError_t ret = driver->DevMemAlloc(devPtr, tmpSize, type, devId, moduleId, false);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.moduleId = moduleId;
+    allocConfig.isLogError = false;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, &allocConfig);
+    rtError_t ret = driver->DevMemAllocWithFlag(devPtr, tmpSize, type, devId, &allocConfig, drvFlag);
     if (ret != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_INFO, "DevMemAlloc first try not successful, ret=%d, trigger implicit mempool trim.", ret);
         rtError_t trimRet = Runtime::Instance()->ApiSoma_()->MemPoolTrimImplicit(true);
         if (trimRet != RT_ERROR_NONE) {
             RT_LOG(RT_LOG_WARNING, "Implicit mempool trim with errors, ret=%d.", trimRet);
         }
-        ret = driver->DevMemAlloc(devPtr, tmpSize, type, devId, moduleId, true);
+        allocConfig.isLogError = true;
+        ret = driver->DevMemAllocWithFlag(devPtr, tmpSize, type, devId, &allocConfig, drvFlag);
         COND_RETURN_ERROR(ret != RT_ERROR_NONE, ret, "DevMemAlloc retry after trim failed, ret=%d.", ret);
     }
     return ret;

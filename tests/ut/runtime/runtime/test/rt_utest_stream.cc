@@ -3825,7 +3825,7 @@ TEST_F(StreamTest, StreamSetupAllocSqCqNoResource)
         .will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(driver, &Driver::StreamIdFree).stubs().will(returnValue(RT_ERROR_NONE));
     void* executedTimes = reinterpret_cast<void*>(0x1000);
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&executedTimes, sizeof(executedTimes)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

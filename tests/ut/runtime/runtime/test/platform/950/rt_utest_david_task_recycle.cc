@@ -139,7 +139,7 @@ TEST_F(DavidTaskRecycleTest, TestTaskRes)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
 
     rtStream_t stream = nullptr;
@@ -292,7 +292,7 @@ TEST_F(DavidTaskRecycleTest, SyncTaskRecycleBySqHead)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -346,7 +346,7 @@ TEST_F(DavidTaskRecycleTest, SyncTaskRecycleBySqHeadV2)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -544,7 +544,7 @@ TEST_F(DavidTaskRecycleTest, ProcLogicCqReport)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -581,7 +581,7 @@ TEST_F(DavidTaskRecycleTest, TryRecycleTaskV2)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -626,7 +626,7 @@ TEST_F(DavidTaskRecycleTest, TryRecycleTaskAbort)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -673,7 +673,7 @@ TEST_F(DavidTaskRecycleTest, TaskReclaimByStreamV2)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -712,7 +712,7 @@ TEST_F(DavidTaskRecycleTest, TryReclaimToTask)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -767,7 +767,7 @@ TEST_F(DavidTaskRecycleTest, FinishedTaskReclaim)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -1302,7 +1302,7 @@ TEST_F(DavidTaskRecycleTest, RecycleModeLabel)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -1629,7 +1629,7 @@ TEST_F(DavidTaskRecycleTest, TryReclaimToTask_DelWorkTaskIsNull)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -1670,7 +1670,7 @@ TEST_F(DavidTaskRecycleTest, TryReclaimToTask_EarlyBreak)
         .will(returnValue(RT_ERROR_NONE));
 
     void* addr = &support;
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),

@@ -786,7 +786,7 @@ TEST_F(ExternalEventTaskTest910B, ExternalEventRefreshLayoutAllocationFailureRes
 
     CaptureModel* model = UnwrapCaptureModel(captureMdlHandle);
     ASSERT_NE(model, nullptr);
-    MOCKER_CPP_VIRTUAL(model->context_->Device_()->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(model->context_->Device_()->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_DRV_ERR));
 
@@ -1211,7 +1211,7 @@ TEST_F(ExternalEventTaskTest910B, ExternalPlaceholderBuildFailuresReleaseRefresh
     waitModel.context_ = Runtime::Instance()->CurrentContext();
     ASSERT_EQ(recordModel.AddExternalRecordEvent(&event, 0U, 0U), RT_ERROR_NONE);
     ASSERT_EQ(waitModel.AddExternalWaitEvent(nullptr, 0U, 0U), RT_ERROR_NONE);
-    MOCKER_CPP_VIRTUAL(recordModel.context_->Device_()->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(recordModel.context_->Device_()->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&deviceTablePtr, sizeof(deviceTablePtr)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

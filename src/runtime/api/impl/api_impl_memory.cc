@@ -400,8 +400,10 @@ rtError_t ApiImpl::DevMalloc(
         return func.memProcFunc.devMallocWithCfg(devPtr, tmpSize, type, realDeviceId, cfgVal.moduleId);
     }
     DevMemAllocConfig allocConfig = {};
+    allocConfig.moduleId = cfgVal.moduleId;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(realDeviceId, &allocConfig);
     return (curCtx->Device_()->Driver_())
-        ->DevMemAlloc(devPtr, tmpSize, type, realDeviceId, cfgVal.moduleId, true, allocConfig, true);
+        ->DevMemAllocWithFlag(devPtr, tmpSize, type, realDeviceId, &allocConfig, drvFlag);
 }
 
 rtError_t ApiImpl::MemcpyBatch(

@@ -20,18 +20,30 @@ namespace ut {
 // A concrete virtual override preserves the complete allocation signature, including allocation config flags.
 class MemoryTransferTestDriver final : public NpuDriver {
 public:
-    rtError_t DevMemAlloc(
-        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-        const uint16_t moduleId, const bool isLogError, const DevMemAllocConfig config, const bool isNewApi) override
+    rtError_t DevMemAllocWithBackupFlag(
+        void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
+        const DevMemBackupType type, const DevMemAllocConfig* const config) override
     {
+        UNUSED(memType);
         UNUSED(type);
-        UNUSED(moduleId);
-        UNUSED(isLogError);
-        UNUSED(isNewApi);
         ++allocationCalls;
         allocationSize = size;
         allocationDeviceId = deviceId;
-        phyContinuous = config.starsTillingFlag;
+        phyContinuous = config->starsTillingFlag;
+        *dptr = (allocationResult == RT_ERROR_NONE || allocateOnFailure) ? storage : nullptr;
+        return allocationResult;
+    }
+
+    rtError_t DevMemAllocWithFlag(
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
+        const DevMemAllocConfig* const config, const uint64_t curFlag) override
+    {
+        UNUSED(type);
+        UNUSED(curFlag);
+        ++allocationCalls;
+        allocationSize = size;
+        allocationDeviceId = deviceId;
+        phyContinuous = config->starsTillingFlag;
         *dptr = (allocationResult == RT_ERROR_NONE || allocateOnFailure) ? storage : nullptr;
         return allocationResult;
     }

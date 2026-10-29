@@ -877,11 +877,9 @@ TEST_F(CloudV2ApiTestSOMA, rtMemPoolTrimImplicit_Malloc)
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), outBoundP(&totalSize, sizeof(totalSize)))
         .will(returnValue(RT_ERROR_NONE));
 
-    MOCKER_CPP_VIRTUAL(*device->driver_, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(*device->driver_, &Driver::DevMemAllocWithFlag)
         .stubs()
-        .with(
-            mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
-            mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_INVALID_VALUE));
 
     MOCKER_CPP_VIRTUAL(*device, &RawDevice::CheckFeatureSupport).stubs().with(mockcpp::any()).will(returnValue(true));

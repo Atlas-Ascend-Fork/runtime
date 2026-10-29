@@ -87,9 +87,11 @@ TEST_F(MemoryPoolManagerTest, kernel_memory_pool_test)
 
     void* memBase = (void*)100;
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithFlag)
         .stubs()
-        .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(
+            outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
 
     int64_t aiCpuCnt = 1;
@@ -170,9 +172,11 @@ TEST_F(MemoryPoolManagerTest, kernel_memory_list_test)
 
     void* memBase = (void*)100;
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithFlag)
         .stubs()
-        .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(
+            outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
 
     int64_t aiCpuCnt = 1;
@@ -217,9 +221,11 @@ TEST_F(MemoryPoolManagerTest, kernel_memory_pool_allocate_fail)
 
     void* memBase = (void*)100;
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithFlag)
         .stubs()
-        .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(
+            outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
         .will(returnValue(RT_ERROR_DRV_ERR));
 
     int64_t aiCpuCnt = 1;
@@ -251,9 +257,11 @@ TEST_F(MemoryPoolManagerTest, kernel_memory_pool_add_pool_fail)
 
     void* memBase = (void*)100;
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithFlag)
         .stubs()
-        .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(
+            outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+            mockcpp::any())
         .will(returnValue(RT_ERROR_DRV_ERR));
 
     int64_t aiCpuCnt = 1;

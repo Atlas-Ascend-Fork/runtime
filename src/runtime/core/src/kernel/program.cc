@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "program_common.hpp"
+#include "npu_driver.hpp"
 #include <thread>
 #include "securec.h"
 #include "context.hpp"
@@ -1960,9 +1961,6 @@ rtError_t Program::CopyTilingTabToDev(
     } else {
         /* 构建拷贝的内容 */
         TilingTabl* tilingTab = nullptr;
-        DevMemAllocConfig allocConfig = {};
-        allocConfig.starsTillingFlag = sourceContext->Device_()->IsSupportFeature(
-            RtOptionalFeatureType::RT_FEATURE_KERNEL_TILING_TABLE_PHY_CONTIGUOUS);
         ret = BuildTilingTbl(&tilingTab, &kernelLen);
         if (ret != RT_ERROR_NONE) {
             RT_LOG(RT_LOG_ERROR, "BuildTilingTbl fail");
@@ -1970,9 +1968,13 @@ rtError_t Program::CopyTilingTabToDev(
         }
         copyLen = static_cast<uint32_t>(kernelLen * sizeof(TilingTabl));
         /* 拷贝内容到device */
-        error = curDrv->DevMemAllocWithBackupFlag(
-            &devMem, static_cast<uint64_t>(copyLen), RT_MEMORY_TS, targetDevice->Id_(),
-            DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP, MODULEID_RUNTIME, true, allocConfig);
+        DevMemAllocConfig allocConfig = {};
+        allocConfig.starsTillingFlag = sourceContext->Device_()->IsSupportFeature(
+            RtOptionalFeatureType::RT_FEATURE_KERNEL_TILING_TABLE_PHY_CONTIGUOUS);
+        allocConfig.type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP;
+        const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(targetDevice->Id_(), &allocConfig);
+        error = curDrv->DevMemAllocWithFlag(
+            &devMem, static_cast<uint64_t>(copyLen), RT_MEMORY_TS, targetDevice->Id_(), &allocConfig, drvFlag);
         if (error != RT_ERROR_NONE) {
             RT_LOG(RT_LOG_ERROR, "DevMemAlloc fail copyLen=%u.", copyLen);
             if (devMem != nullptr) {

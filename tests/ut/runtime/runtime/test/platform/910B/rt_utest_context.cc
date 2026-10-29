@@ -2552,7 +2552,7 @@ TEST_F(CloudV2ContextTest, DebugReadAICore_translate_failure_frees_memory)
     device->SetCoredumpEnable();
     uint8_t buffer[4096U] = {};
     void* deviceMemory = buffer;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&deviceMemory, sizeof(deviceMemory)))
         .will(returnValue(RT_ERROR_NONE));
@@ -2580,7 +2580,7 @@ TEST_F(CloudV2ContextTest, DebugReadAICore_l1_chunks_use_physical_address)
     uint8_t output[4113U] = {};
     void* deviceMemory = buffer;
     uint64_t physicalAddress = 0x12345000U;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&deviceMemory, sizeof(deviceMemory)))
         .will(returnValue(RT_ERROR_NONE));
@@ -3836,7 +3836,7 @@ TEST_F(CloudV2ContextTest, SetOverflowAddrDevMemAllocFailed)
     ctx->overflowAddr_ = nullptr;
     ctx->overflowAddrOffset_ = 0ULL;
 
-    MOCKER_CPP_VIRTUAL(ctx->device_->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(ctx->device_->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_DRV_OUT_MEMORY))
         .then(returnValue(RT_ERROR_INVALID_VALUE));
@@ -4033,7 +4033,7 @@ TEST_F(CloudV2ContextTest, LabelSwitchListCreateMemSetFailed)
     void* labelList = nullptr;
     uint8_t devMem = 0U;
     void* devMemPtr = &devMem;
-    MOCKER_CPP_VIRTUAL(ctx->device_->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(ctx->device_->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&devMemPtr, sizeof(devMemPtr)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

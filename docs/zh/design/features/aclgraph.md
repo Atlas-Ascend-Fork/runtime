@@ -509,7 +509,7 @@ flowchart TD
     M --> N[返回 condHandle]
 ```
 
-条件值设备内存属于 Runtime 内部辅助内存，`CondHandle::Setup` 通过 `DevMemAllocWithBackupFlag(..., SNAPSHOT_OPTIONAL_BACKUP)` 申请。
+条件值设备内存属于 Runtime 内部辅助内存，`CondHandle::Setup` 通过 `DevMemAllocWithBackupFlag` 申请，并经 `DevMemAllocWithBackupFlag` 的 `type` 入参指定 `SNAPSHOT_OPTIONAL_BACKUP` 标签。
 
 **关键代码**：
 

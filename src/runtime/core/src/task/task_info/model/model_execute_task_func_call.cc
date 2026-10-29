@@ -13,6 +13,7 @@
 #include "context.hpp"
 #include "device.hpp"
 #include "driver.hpp"
+#include "npu_driver.hpp"
 #include "notify.hpp"
 #include "stars_cond_isa_helper.hpp"
 #include "device/device_error_proc.hpp"
@@ -145,10 +146,10 @@ static rtError_t DfxSplitFuncCallDevMemAlloc(Model* model, TaskInfo* const taskI
     uint64_t allocSize = model->GetFunCallMemSize() + static_cast<uint64_t>(FUNC_CALL_INSTR_ALIGN_SIZE);
     DevMemAllocConfig allocConfig = {};
     allocConfig.readOnlyFlag = readonly;
+    allocConfig.type = DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(dev->Id_(), &allocConfig);
     // alloc funcCall devMem which is readonly.
-    ret = dev->Driver_()->DevMemAllocWithBackupFlag(
-        &devMem, allocSize, RT_MEMORY_DDR, dev->Id_(), DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP, MODULEID_RUNTIME,
-        true, allocConfig);
+    ret = dev->Driver_()->DevMemAllocWithFlag(&devMem, allocSize, RT_MEMORY_DDR, dev->Id_(), &allocConfig, drvFlag);
     if ((ret != RT_ERROR_NONE) || (devMem == nullptr)) {
         RT_LOG(
             RT_LOG_ERROR, "alloc funcCall memory failed, retCode=%#x, size=%" PRIu64 "(bytes), device_id=%u", ret,

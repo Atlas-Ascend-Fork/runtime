@@ -71,7 +71,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_test_310M)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -120,7 +120,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -297,7 +297,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -337,7 +337,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_Ex00)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -378,7 +378,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_Ex01)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -419,7 +419,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_Ex02)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -460,7 +460,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_Ex03)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -516,7 +516,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_super)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -556,7 +556,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_super_fail)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -582,13 +582,13 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_kernel_info_super_fail)
         error = loader->Release(results[i].handle);
         // EXPECT_EQ(error, RT_ERROR_NONE);
     }
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
     MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
 
     MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemFree).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
     MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
 
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_DEVICE_NULL));
     GlobalMockObject::verify();
     delete loader;
@@ -634,7 +634,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy)
     drv.runMode_ = RT_RUN_MODE_ONLINE;
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::CheckSupportPcieBarCopy).stubs().will(returnValue(RT_ERROR_NONE));
 
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::GetRunMode).stubs().will(returnValue((uint32_t)RT_RUN_MODE_ONLINE));
@@ -671,7 +671,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_2)
     drv.runMode_ = RT_RUN_MODE_ONLINE;
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::CheckSupportPcieBarCopy).stubs().will(returnValue(RT_ERROR_NONE));
 
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::GetRunMode).stubs().will(returnValue((uint32_t)RT_RUN_MODE_ONLINE));
@@ -721,7 +721,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err1)
     char memBase1[2000];
     void* mem = memBase;
     void* mem1 = memBase1;
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -844,7 +844,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_with_switchN)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -884,7 +884,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err2)
     char memBase1[2000];
     void* mem = memBase;
     void* mem1 = memBase1;
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -946,7 +946,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err6)
     char memBase1[2000];
     void* mem = memBase;
     void* mem1 = memBase1;
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1125,7 +1125,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err)
     char memBase1[2000];
     void* mem = memBase;
     void* mem1 = memBase1;
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_DRV_ERR));
@@ -1169,10 +1169,11 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err3)
     char memBase1[2000];
     void* mem = memBase;
     void* mem1 = memBase1;
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_DRV_ERR));
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithFlag).stubs().will(returnValue(RT_ERROR_DRV_ERR));
 
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::HostMemAlloc)
         .stubs()
@@ -1226,7 +1227,7 @@ TEST_F(ArgLoaderTest, uma_arg_loader_copy_err4)
     drv.runMode_ = RT_RUN_MODE_ONLINE;
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::CheckSupportPcieBarCopy).stubs().will(returnValue(RT_ERROR_NONE));
 
-    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_DRV_ERR));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(&drv, &NpuDriver::GetRunMode).stubs().will(returnValue((uint32_t)RT_RUN_MODE_ONLINE));
@@ -1254,7 +1255,7 @@ TEST_F(ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     Stream* trueStreamPtr[] = {&stream};
     StreamSwitchNLoadResult result = {};
 
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_DRV_ERR));
@@ -1266,7 +1267,7 @@ TEST_F(ArgLoaderTest, load_stream_switch_n_args_with_drv_error)
     EXPECT_TRUE(stream.switchNArg_.empty());
 
     GlobalMockObject::verify();
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::MemCopySync)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
@@ -1308,7 +1309,7 @@ TEST_F(ArgLoaderTest, AllocCopyPtrWithPolicy_AICORE_maxArgNull_fallback_random)
     void* memBase = reinterpret_cast<void*>(0x100);
     NpuDriver* rawDrv = new (std::nothrow) NpuDriver();
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1350,7 +1351,7 @@ TEST_F(ArgLoaderTest, SelectFallbackAllocator_maxArgNull_fallback_random)
     NpuDriver* rawDrv = new (std::nothrow) NpuDriver();
 
     MOCKER(memcpy_s).stubs().will(returnValue(NULL));
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

@@ -299,13 +299,15 @@ flowchart TD
     B --> C[CopySoAndNameToCurrentDevice]
     C --> D[Load2Device]
     D --> E[Runtime::BinaryLoad]
-    E --> F[DevMemAllocWithBackupFlag - KernelMemoryPool]
-    F --> G[4K 地址对齐 - ARM ADRP]
-    G --> H[H2D 拷贝二进制]
-    H --> I[SetBinBaseAddr/SetBinAlignBaseAddr]
+    E --> F[构造 config 并设置非默认成员]
+    F --> G[BuildDevMemAllocFlag 基于 config 构建 flag]
+    G --> H[DevMemAllocWithFlag - KernelMemoryPool]
+    H --> I[4K 地址对齐 - ARM ADRP]
+    I --> J[H2D 拷贝二进制]
+    J --> K[SetBinBaseAddr/SetBinAlignBaseAddr]
 ```
 
-**流程步骤说明**：设备侧加载在 aclrtBinaryGetFunction 内部通过 CopySoAndNameToCurrentDevice 触发。Program::Load2Device 调用 Runtime::BinaryLoad 完成实际拷贝：通过 `DevMemAllocWithBackupFlag` 分配 Runtime 内部设备内存（优先使用 KernelMemoryPool 内存池）、4K 地址对齐（ARM ADRP 指令要求）、H2D 拷贝、记录 baseAddr/baseAddrAlign。
+**流程步骤说明**：设备侧加载在 aclrtBinaryGetFunction 内部通过 CopySoAndNameToCurrentDevice 触发。Program::Load2Device 调用 Runtime::BinaryLoad 完成实际拷贝：由于此处存在多处非默认的 config 成员，先构造 config 并设置非默认成员，再经 `NpuDriver::BuildDevMemAllocFlag(deviceId, &config)` 构建 flag，然后通过 `DevMemAllocWithFlag` 分配 Runtime 内部设备内存（优先使用 KernelMemoryPool 内存池）、4K 地址对齐（ARM ADRP 指令要求）、H2D 拷贝、记录 baseAddr/baseAddrAlign。
 
 #### 内核执行流程
 

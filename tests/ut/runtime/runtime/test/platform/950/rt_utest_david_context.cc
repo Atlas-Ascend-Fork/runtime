@@ -90,14 +90,14 @@ TEST_F(ContextTestDavid, CopyTilingTabToDevForDavid_ForNewBinaryLoadFlow_Test)
     error = prog.CopyTilingTabToDev(ctx, device, &devMem, &tilingTabLen);
     EXPECT_EQ(error, 1);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
     error = prog.CopyTilingTabToDev(ctx, device, &devMem, &tilingTabLen);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_NONE));
@@ -105,14 +105,14 @@ TEST_F(ContextTestDavid, CopyTilingTabToDevForDavid_ForNewBinaryLoadFlow_Test)
     error = prog.CopyTilingTabToDev(ctx, device, &devMem, &tilingTabLen);
     EXPECT_NE(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
     error = prog.CopyTilingTabToDev(ctx, device, &devMem, &tilingTabLen);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)memoryPtr))
         .will(returnValue(RT_ERROR_NONE));
@@ -155,14 +155,14 @@ TEST_F(ContextTestDavid, CopyTilingTabToDevForDavid_test)
     error = prog.CopyTilingTabToDev(ctx, device, nullptr, nullptr);
     EXPECT_EQ(error, 1);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
     error = prog.CopyTilingTabToDev(ctx, device, nullptr, nullptr);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_NONE));
@@ -170,14 +170,14 @@ TEST_F(ContextTestDavid, CopyTilingTabToDevForDavid_test)
     error = prog.CopyTilingTabToDev(ctx, device, nullptr, nullptr);
     EXPECT_NE(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)&memoryPtr))
         .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
     error = prog.CopyTilingTabToDev(ctx, device, nullptr, nullptr);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP((void**)memoryPtr))
         .will(returnValue(RT_ERROR_NONE));

@@ -61,8 +61,8 @@ rtError_t CCWorker::Init(
     hostCryptoRegistered_ = true;
 
     for (uint32_t i = 0U; i < CC_BUFFER_SLOT_NUM; ++i) {
-        ret = device_->Driver_()->DevMemAlloc(
-            &deviceBuffers_[i], maxSliceSize_, RT_MEMORY_HBM, device_->Id_(), MODULEID_RUNTIME);
+        ret = device_->Driver_()->DevMemAllocWithBackupFlag(
+            &deviceBuffers_[i], maxSliceSize_, RT_MEMORY_HBM, device_->Id_(), DevMemBackupType::SNAPSHOT_NO_BACKUP);
         if (ret != RT_ERROR_NONE) {
             RT_LOG(
                 RT_LOG_ERROR, "CC worker %u failed to allocate Device buffer %u, size=%u, ret=%#x", workerId_, i,

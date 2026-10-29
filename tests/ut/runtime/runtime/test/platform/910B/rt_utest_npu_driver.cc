@@ -30,7 +30,15 @@ using namespace cce::runtime;
 
 namespace {
 uint32_t g_halMapErrorCodeCallCount = 0U;
+uint32_t g_halMemAllocCallCount = 0U;
 uint64_t g_processResReserve = 0U;
+
+const DevMemAllocConfig* NoLogAllocConfig()
+{
+    static DevMemAllocConfig config = {};
+    config.isLogError = false;
+    return &config;
+}
 
 drvError_t HalProcessResBackupStub(halProcResBackupInfo* info)
 {
@@ -43,7 +51,17 @@ drvError_t HalProcessResRestoreStub(halProcResRestoreInfo* info)
     g_processResReserve = (info == nullptr) ? 0U : info->reserve[0];
     return DRV_ERROR_NONE;
 }
+
+drvError_t HalMemAllocFailThenSuccess(void** dptr, UINT64 size, UINT64 flag)
+{
+    UNUSED(size);
+    UNUSED(flag);
+    ++g_halMemAllocCallCount;
+    *dptr = reinterpret_cast<void*>(0x3000);
+    return (g_halMemAllocCallCount == 1U) ? DRV_ERROR_IOCRL_FAIL : DRV_ERROR_NONE;
+}
 } // namespace
+
 class CloudV2NpuDriverTest : public testing::Test {
 protected:
     static void SetUpTestCase() {}
@@ -110,10 +128,11 @@ TEST_F(CloudV2NpuDriverTest, DevMemAlloc1GHugePage_1)
     rtInstance->SetIsSupport1GHugePage(false);
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_IOCRL_FAIL));
-    error = rawDrv->DevMemAlloc1GHugePage(&ptr, size, RT_MEMORY_HBM, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY, 255, false);
+    error = rawDrv->DevMemAlloc1GHugePage(
+        &ptr, size, RT_MEMORY_HBM, 255U, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_DRV_IOCTRL);
 
-    error = rawDrv->DevMemAlloc1GHugePage(&ptr, size, RT_MEMORY_HBM, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY_P2P, 255, true);
+    error = rawDrv->DevMemAlloc1GHugePage(&ptr, size, RT_MEMORY_HBM, 255U, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY_P2P);
     EXPECT_EQ(error, RT_ERROR_DRV_IOCTRL);
     delete rawDrv;
     free(ptr);
@@ -265,7 +284,7 @@ TEST_F(CloudV2NpuDriverTest, Test_GetIpcSqeWriteAddrForNotifyRecordTask)
     delete notify;
 }
 
-TEST_F(CloudV2NpuDriverTest, MemAllocPolicyOffline_fail_2)
+TEST_F(CloudV2NpuDriverTest, DevMemAllocPolicyOffline_fail_2)
 {
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
 
@@ -275,7 +294,7 @@ TEST_F(CloudV2NpuDriverTest, MemAllocPolicyOffline_fail_2)
 
     Runtime* rtInstance = (Runtime*)Runtime::Instance();
     rtInstance->SetIsSupport1GHugePage(false);
-    error = rawDrv->MemAllocPolicyOffline(&ptr, 10, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY, RT_MEMORY_HBM, 0);
+    error = rawDrv->DevMemAllocPolicyOffline(&ptr, 10, RT_MEMORY_HBM, 0, RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
     delete rawDrv;
@@ -320,7 +339,7 @@ TEST_F(CloudV2NpuDriverTest, DevMemAlloc1GHugePage_3)
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
     error = rawDrv->DevMemAlloc1GHugePage(
-        &ptr, size, RT_MEMORY_HBM, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, 255, false, {}, true);
+        &ptr, size, RT_MEMORY_HBM, 255U, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
     delete rawDrv;
     free(ptr);
@@ -337,11 +356,11 @@ TEST_F(CloudV2NpuDriverTest, DevMemAlloc1GHugePage_4)
     rtInstance->SetIsSupport1GHugePage(false);
 
     error = rawDrv->DevMemAlloc1GHugePage(
-        &ptr, size, RT_MEMORY_DEFAULT, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, 255, false, {}, true);
+        &ptr, size, RT_MEMORY_DEFAULT, 255U, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
     error = rawDrv->DevMemAlloc1GHugePage(
-        &ptr, size, RT_MEMORY_HOST, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, 255, false, {}, true);
+        &ptr, size, RT_MEMORY_HOST, 255U, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
     delete rawDrv;
     free(ptr);
@@ -740,10 +759,10 @@ TEST_F(CloudV2NpuDriverTest, device_memory_alloc)
     uint64_t size = HUGE_PAGE_MEM_CRITICAL_VALUE + 1;
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
-    error = rawDrv->DevMemAlloc((void**)NULL, size, (rtMemType_t)0, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag((void**)NULL, size, (rtMemType_t)0, 0);
     EXPECT_NE(error, RT_ERROR_NONE);
 
-    error = rawDrv->DevMemAlloc((void**)NULL, 100, (rtMemType_t)0, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag((void**)NULL, 100, (rtMemType_t)0, 0);
     EXPECT_NE(error, RT_ERROR_NONE);
 
     MOCKER(halMemFree).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
@@ -762,13 +781,13 @@ TEST_F(CloudV2NpuDriverTest, device_memory_alloc_offline_p2p)
 
     rawDrv->runMode_ = RT_RUN_MODE_OFFLINE;
 
-    error = rawDrv->DevMemAlloc(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_HUGE_PAGE_FIRST_P2P, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_HUGE_PAGE_FIRST_P2P, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    error = rawDrv->DevMemAlloc(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_HUGE_PAGE_ONLY_P2P, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_HUGE_PAGE_ONLY_P2P, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
-    error = rawDrv->DevMemAlloc(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag(&ptr, size, (rtMemType_t)RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 
     delete rawDrv;
@@ -878,7 +897,7 @@ TEST_F(CloudV2NpuDriverTest, memory_dev_free_online_01)
     void* ptr = NULL;
     NpuDriver* rawDrv = new NpuDriver();
 
-    error = rawDrv->DevMemAlloc(&ptr, size, (rtMemType_t)0, 0);
+    error = rawDrv->DevMemAllocWithBackupFlag(&ptr, size, (rtMemType_t)0, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::GetRunMode).stubs().will(returnValue(1));
@@ -935,7 +954,7 @@ TEST_F(CloudV2NpuDriverTest, memory_dev_alloc_online_06)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
-    error = rawDrv->DevMemAllocHugePageManaged(&ptr, size, RT_MEMORY_HBM, 0);
+    error = rawDrv->DevMemAllocHugePage(&ptr, size, RT_MEMORY_HBM, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
     delete rawDrv;
     free(ptr);
@@ -950,7 +969,7 @@ TEST_F(CloudV2NpuDriverTest, memory_dev_alloc_online_07)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
-    error = rawDrv->DevMemAllocHugePageManaged(&ptr, size, RT_MEMORY_HBM, 0);
+    error = rawDrv->DevMemAllocHugePage(&ptr, size, RT_MEMORY_HBM, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
     delete rawDrv;
     free(ptr);
@@ -965,7 +984,7 @@ TEST_F(CloudV2NpuDriverTest, memory_dev_alloc_online_10)
     NpuDriver* rawDrv = new NpuDriver();
 
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_NONE));
-    error = rawDrv->DevMemAllocHugePageManaged(&ptr, size, RT_MEMORY_HOST_SVM, 0);
+    error = rawDrv->DevMemAllocHugePage(&ptr, size, RT_MEMORY_HOST_SVM, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
     delete rawDrv;
     free(ptr);
@@ -981,13 +1000,16 @@ TEST_F(CloudV2NpuDriverTest, memory_dev_alloc_online_11)
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_IOCRL_FAIL));
     DevMemAllocConfig config = {};
     config.readOnlyFlag = true;
-    error = rawDrv->DevMemAllocHugePageManaged(&ptr, size, RT_MEMORY_HBM, 0, 255, config, false);
+    config.moduleId = 255U;
+    config.isLogError = false;
+    const uint64_t curFlag = NpuDriver::BuildDevMemAllocFlag(0U, &config);
+    error = rawDrv->DevMemAllocHugePage(&ptr, size, RT_MEMORY_HBM, curFlag, &config);
     EXPECT_EQ(error, RT_ERROR_DRV_IOCTRL);
     delete rawDrv;
     free(ptr);
 }
 
-TEST_F(CloudV2NpuDriverTest, DevMemAllocManaged_11)
+TEST_F(CloudV2NpuDriverTest, DevMemAllocNormalPage_11)
 {
     rtError_t error;
     uint32_t size = 100;
@@ -997,7 +1019,10 @@ TEST_F(CloudV2NpuDriverTest, DevMemAllocManaged_11)
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_IOCRL_FAIL));
     DevMemAllocConfig config = {};
     config.readOnlyFlag = true;
-    error = rawDrv->DevMemAllocManaged(&ptr, size, RT_MEMORY_HBM, 0, 255, config, false);
+    config.moduleId = 255U;
+    config.isLogError = false;
+    const uint64_t curFlag = NpuDriver::BuildDevMemAllocFlag(0U, &config);
+    error = rawDrv->DevMemAllocNormalPage(&ptr, size, RT_MEMORY_HBM, curFlag, &config);
     EXPECT_EQ(error, RT_ERROR_DRV_IOCTRL);
     delete rawDrv;
     free(ptr);
@@ -1740,39 +1765,39 @@ TEST_F(CloudV2NpuDriverTest, LogicCqFree_fail)
     delete rawDrv;
 }
 
-TEST_F(CloudV2NpuDriverTest, MemAllocPolicyOffline_fail)
+TEST_F(CloudV2NpuDriverTest, DevMemAllocPolicyOffline_fail)
 {
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
 
     rtError_t error;
     NpuDriver* rawDrv = new NpuDriver();
     void* ptr;
-    error = rawDrv->MemAllocPolicyOffline(&ptr, 10, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY, 0, 0);
+    error = rawDrv->DevMemAllocPolicyOffline(&ptr, 10, (rtMemType_t)0, 0, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY);
     EXPECT_EQ(error, RT_ERROR_DRV_INPUT);
     delete rawDrv;
 }
 
-TEST_F(CloudV2NpuDriverTest, MemAllocPolicyOffline_first_attempt_failure)
+TEST_F(CloudV2NpuDriverTest, DevMemAllocPolicyOffline_first_attempt_failure)
 {
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
 
     g_halMapErrorCodeCallCount = 0U;
     NpuDriver rawDrv;
     void* ptr = nullptr;
-    const rtError_t error = rawDrv.MemAllocPolicyOffline(
-        &ptr, 10U, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY, RT_MEMORY_HBM, 0U, MODULEID_RUNTIME, false);
+    const rtError_t error = rawDrv.DevMemAllocPolicyOffline(
+        &ptr, 10U, RT_MEMORY_HBM, 0U, RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_DRV_INPUT);
     EXPECT_EQ(g_halMapErrorCodeCallCount, 0U);
 }
 
-TEST_F(CloudV2NpuDriverTest, MemAllocHugePolicyPageOffline_first_attempt_failure)
+TEST_F(CloudV2NpuDriverTest, DevMemAllocHugePolicyPageOffline_first_attempt_failure)
 {
     MOCKER(halMemAlloc).stubs().will(returnValue(DRV_ERROR_INVALID_VALUE));
 
     g_halMapErrorCodeCallCount = 0U;
     NpuDriver rawDrv;
     void* ptr = nullptr;
-    const rtError_t error = rawDrv.MemAllocHugePolicyPageOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, MODULEID_RUNTIME, false);
+    const rtError_t error = rawDrv.DevMemAllocHugePolicyPageOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_DRV_INPUT);
     EXPECT_EQ(g_halMapErrorCodeCallCount, 0U);
 }
@@ -1785,7 +1810,7 @@ TEST_F(CloudV2NpuDriverTest, DevMemAllocOffline_first_attempt_allocation_failure
     NpuDriver rawDrv;
     rawDrv.chipType_ = CHIP_CLOUD;
     void* ptr = nullptr;
-    const rtError_t error = rawDrv.DevMemAllocOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, MODULEID_RUNTIME, false);
+    const rtError_t error = rawDrv.DevMemAllocOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_DRV_INPUT);
     EXPECT_EQ(g_halMapErrorCodeCallCount, 0U);
 }
@@ -1800,7 +1825,7 @@ TEST_F(CloudV2NpuDriverTest, DevMemAllocOffline_first_attempt_mbind_failure)
     NpuDriver rawDrv;
     rawDrv.chipType_ = CHIP_CLOUD;
     void* ptr = reinterpret_cast<void*>(0x1000);
-    const rtError_t error = rawDrv.DevMemAllocOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, MODULEID_RUNTIME, false);
+    const rtError_t error = rawDrv.DevMemAllocOffline(&ptr, 10U, RT_MEMORY_HBM, 0U, NoLogAllocConfig());
     EXPECT_EQ(error, RT_ERROR_DRV_INPUT);
     EXPECT_EQ(g_halMapErrorCodeCallCount, 0U);
 }
@@ -2892,4 +2917,53 @@ TEST_F(CloudV2NpuDriverTest, get_topology_type_device_id)
     error = rawDrv->GetTopologyType(0, 0, 0, &val);
     EXPECT_EQ(error, RT_ERROR_NONE);
     delete rawDrv;
+}
+
+TEST_F(CloudV2NpuDriverTest, BuildDevMemAllocFlag_BitsComposition)
+{
+    DevMemAllocConfig config = {};
+    EXPECT_EQ(
+        NpuDriver::BuildDevMemAllocFlag(0U, &config),
+        static_cast<uint64_t>(NODE_TO_DEVICE(0U)) | (static_cast<uint64_t>(MODULEID_RUNTIME) << MEM_MODULE_ID_BIT));
+
+    config.readOnlyFlag = true;
+    config.cpOnlyFlag = true;
+    config.privateFlag = true;
+    config.type = DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP;
+    config.moduleId = 7U;
+    const uint64_t flag = NpuDriver::BuildDevMemAllocFlag(3U, &config);
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_HOST_RW_DEV_RO), static_cast<uint64_t>(MEM_HOST_RW_DEV_RO));
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_DEV_CP_ONLY), static_cast<uint64_t>(MEM_DEV_CP_ONLY));
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_DEV_PRIVATE), static_cast<uint64_t>(MEM_DEV_PRIVATE));
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_SNAPSHOT_OPTIONAL), static_cast<uint64_t>(MEM_SNAPSHOT_OPTIONAL));
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_SNAPSHOT_REQUIRED), 0U);
+    EXPECT_EQ((flag >> MEM_MODULE_ID_BIT) & MEM_MODULE_ID_MASK, 7U);
+    EXPECT_EQ(flag & static_cast<uint64_t>(MEM_DEVID_MASK), static_cast<uint64_t>(NODE_TO_DEVICE(3U)));
+}
+
+TEST_F(CloudV2NpuDriverTest, DevMemAllocOnline_HugeFirstFallsBackToNormalPage)
+{
+    g_halMemAllocCallCount = 0U;
+    MOCKER(halMemAlloc).stubs().will(invoke(HalMemAllocFailThenSuccess));
+    NpuDriver rawDrv;
+    void* ptr = nullptr;
+    const uint64_t size = HUGE_PAGE_MEM_CRITICAL_VALUE + 1;
+    const rtError_t error = rawDrv.DevMemAllocOnline(&ptr, size, RT_MEMORY_HBM, 0U);
+    EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(g_halMemAllocCallCount, 2U);
+}
+
+TEST_F(CloudV2NpuDriverTest, DevMemAllocOnline_HugeOnlyFailureDoesNotFallBackToNormalPage)
+{
+    const uint32_t originalCallCount = g_halMemAllocCallCount;
+    g_halMemAllocCallCount = 0U;
+    MOCKER(halMemAlloc).stubs().will(invoke(HalMemAllocFailThenSuccess));
+    NpuDriver rawDrv;
+    void* ptr = nullptr;
+    const uint64_t size = HUGE_PAGE_MEM_CRITICAL_VALUE + 1;
+    const rtError_t error = rawDrv.DevMemAllocOnline(
+        &ptr, size, static_cast<rtMemType_t>(RT_MEMORY_HBM | RT_MEMORY_POLICY_HUGE_PAGE_ONLY), 0U);
+    EXPECT_EQ(error, RT_ERROR_DRV_IOCTRL);
+    EXPECT_EQ(g_halMemAllocCallCount, 1U);
+    g_halMemAllocCallCount = originalCallCount;
 }

@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "runtime.hpp"
+#include "npu_driver.hpp"
 #include "sq_addr_memory_pool.hpp"
 #include "error_message_manage.hpp"
 namespace {
@@ -136,9 +137,12 @@ void* SqAddrMemoryOrder::DrvAllocSqAddr(const size_t size, void* const para)
 
     Device* const device = RtPtrToPtr<Device*, void*>(para);
     void* addr = nullptr;
-    const rtError_t error = device->Driver_()->DevMemAllocWithBackupFlag(
-        &addr, static_cast<uint64_t>(size), RT_MEMORY_P2P_HBM, device->Id_(),
-        DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP, MODULEID_RUNTIME, false);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.isLogError = false;
+    allocConfig.type = DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(device->Id_(), &allocConfig);
+    const rtError_t error = device->Driver_()->DevMemAllocWithFlag(
+        &addr, static_cast<uint64_t>(size), RT_MEMORY_P2P_HBM, device->Id_(), &allocConfig, drvFlag);
     COND_RETURN_WARN(
         error != RT_ERROR_NONE, nullptr,
         "device mem alloc sqAddr order failed, "

@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "device.hpp"
+#include "npu_driver.hpp"
 #include "kernel.hpp"
 #include "program.hpp"
 #include "runtime.hpp"
@@ -148,10 +149,12 @@ rtError_t Module::Load(Program* const prog)
 
         DevMemAllocConfig allocConfig = {};
         allocConfig.readOnlyFlag = readonly;
+        allocConfig.type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP;
+        const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(device_->Id_(), &allocConfig);
         if (devMem == nullptr) {
-            error = curDrv->DevMemAllocWithBackupFlag(
-                &devMem, static_cast<uint64_t>(devSize + INSTR_ALIGN_SIZE), RT_MEMORY_HBM, device_->Id_(),
-                DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP, MODULEID_RUNTIME, true, allocConfig);
+            error = curDrv->DevMemAllocWithFlag(
+                &devMem, static_cast<uint64_t>(devSize + INSTR_ALIGN_SIZE), RT_MEMORY_HBM, device_->Id_(), &allocConfig,
+                drvFlag);
             isPoolMem = false;
             ERROR_GOTO(error, FAIL_FREE, "Malloc device program failed, retCode=%#x.", static_cast<uint32_t>(error));
         }

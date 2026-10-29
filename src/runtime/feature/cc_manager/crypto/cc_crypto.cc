@@ -186,8 +186,11 @@ rtError_t CCrypto::InitKey(uint32_t deviceId)
     void* devKeyBuf = nullptr;
     Driver* const driver = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
     const uint64_t alignSize = (((AICC_DEV_KEY_REGION_SIZE + 0x1FU) >> 5U) << 5U);
-    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(deviceId, MODULEID_RUNTIME, false, false, true);
-    const rtError_t merr = driver->DevMemAllocWithFlag(&devKeyBuf, alignSize, RT_MEMORY_HBM, drvFlag);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.privateFlag = true;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(deviceId, &allocConfig);
+    const rtError_t merr =
+        driver->DevMemAllocWithFlag(&devKeyBuf, alignSize, RT_MEMORY_HBM, deviceId, &allocConfig, drvFlag);
     if (merr != RT_ERROR_NONE || devKeyBuf == nullptr) {
         RT_LOG(RT_LOG_ERROR, "CC Crypto InitKey alloc device key mem failed, deviceId=%u, ret=%#x", deviceId, merr);
         RT_LOG_OUTER_MSG_IMPL(

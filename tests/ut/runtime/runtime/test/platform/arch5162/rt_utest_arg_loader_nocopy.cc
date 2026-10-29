@@ -44,17 +44,14 @@ uint32_t g_pcieBarCapability = RT_CAPABILITY_NOT_SUPPORT;
 
 rtError_t DevMemAllocForArgLoader(
     Driver* drv, void** dptr, uint64_t size, rtMemType_t type, uint32_t deviceId, DevMemBackupType backupType,
-    uint16_t moduleId, bool isLogError, DevMemAllocConfig config, bool isNewApi)
+    const DevMemAllocConfig* const config)
 {
     UNUSED(drv);
     UNUSED(size);
     UNUSED(type);
     UNUSED(deviceId);
     UNUSED(backupType);
-    UNUSED(moduleId);
-    UNUSED(isLogError);
     UNUSED(config);
-    UNUSED(isNewApi);
 
     if (!g_allocResults.empty()) {
         const AllocResult result = g_allocResults.front();

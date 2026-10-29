@@ -113,11 +113,11 @@ TEST_F(CloudV2DcacheDeviceTest, Alloc32kStackAddrForDcache)
     void* stackAddr = &temp;
     Driver* driver_ = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
     dev->driver_ = driver_;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .expects(once())
         .with(
             outBoundP(&stackAddr, sizeof(stackAddr)), eq(RT_SCALAR_BUFFER_SIZE_32K_75), eq(RT_MEMORY_DDR),
-            eq(dev->Id_()))
+            eq(static_cast<uint32_t>(dev->Id_())))
         .will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree)
         .expects(once())
@@ -201,7 +201,9 @@ TEST_F(CloudV2DcacheDeviceTest, AllocStackPhyAddrForDcache_05)
     RawDevice* dev = new RawDevice(1);
     dev->InitRawDriver();
     MOCKER(AllocAddrForDcache).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_INVALID_VALUE));
     rtError_t ret = dev->AllocStackPhyAddrForDcache();
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
     delete dev;
@@ -214,7 +216,7 @@ TEST_F(CloudV2DcacheDeviceTest, AllocStackPhyAddrForDcache_06)
     MOCKER(AllocAddrForDcache).stubs().will(returnValue(RT_ERROR_NONE));
     uint32_t tmp = 0;
     void* addr = &tmp;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),

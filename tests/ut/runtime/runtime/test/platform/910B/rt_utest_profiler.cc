@@ -2866,7 +2866,7 @@ TEST_F(ProfilerTest, OnlineProfMallocTest)
     EXPECT_NE(drv, nullptr);
     Stream* stream = new Stream(device, 0);
     EXPECT_NE(stream, nullptr);
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::MemSetSync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemFlushCache).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &NpuDriver::HostMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));

@@ -214,20 +214,18 @@ struct DevMemAllocRetryTestData {
 DevMemAllocRetryTestData g_devMemAllocRetryTestData;
 
 rtError_t DevMemAllocRetryStub(
-    Driver* driver, void** dptr, uint64_t size, rtMemType_t type, uint32_t deviceId, uint16_t moduleId, bool isLogError,
-    DevMemAllocConfig config, bool isNewApi)
+    Driver* driver, void** dptr, uint64_t size, rtMemType_t type, uint32_t deviceId,
+    const DevMemAllocConfig* const config, const uint64_t curFlag)
 {
     UNUSED(driver);
     UNUSED(size);
     UNUSED(type);
     UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(config);
-    UNUSED(isNewApi);
+    UNUSED(curFlag);
 
     const uint32_t callIndex = g_devMemAllocRetryTestData.callCount++;
     if (callIndex < 2U) {
-        g_devMemAllocRetryTestData.isLogError[callIndex] = isLogError;
+        g_devMemAllocRetryTestData.isLogError[callIndex] = config->isLogError;
     }
     if (callIndex == 0U) {
         return RT_ERROR_MEMORY_ALLOCATION;
@@ -1196,8 +1194,8 @@ TEST_F(ApiImplTest, KERNEL_CONFIG_DUMP_TEST_2)
     void** dumpBaseAddr = &dumpBaseAddr_;
     NpuDriver drv;
 
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
-    error = drv.DevMemAlloc((void**)NULL, 100, (rtMemType_t)0, 0);
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    error = drv.DevMemAllocWithBackupFlag((void**)NULL, 100, (rtMemType_t)0, 0);
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
     free(devMem);
 }
@@ -2968,7 +2966,7 @@ TEST_F(ApiImplTest, rts_api_impl_test6)
 TEST_F(ApiImplTest, TestDevMalloc_01)
 {
     Driver* driver = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithFlag).stubs().will(returnValue(RT_ERROR_NONE));
 
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     ApiImpl impl;
@@ -2991,7 +2989,7 @@ TEST_F(ApiImplTest, DevMallocRetrySuccessOnlyEnablesErrorReportingForFinalAttemp
 
     g_devMemAllocRetryTestData = {};
     g_devMemAllocRetryTestData.retryResult = RT_ERROR_NONE;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc).expects(exactly(2)).will(invoke(DevMemAllocRetryStub));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithFlag).expects(exactly(2)).will(invoke(DevMemAllocRetryStub));
 
     ApiImpl impl;
     void* ptr = nullptr;
@@ -3013,7 +3011,7 @@ TEST_F(ApiImplTest, DevMallocRetryFailureEnablesErrorReportingForFinalAttempt)
 
     g_devMemAllocRetryTestData = {};
     g_devMemAllocRetryTestData.retryResult = RT_ERROR_MEMORY_ALLOCATION;
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc).expects(exactly(2)).will(invoke(DevMemAllocRetryStub));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithFlag).expects(exactly(2)).will(invoke(DevMemAllocRetryStub));
 
     ApiImpl impl;
     void* ptr = nullptr;

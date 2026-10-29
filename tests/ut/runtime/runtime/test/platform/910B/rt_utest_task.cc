@@ -401,7 +401,7 @@ TEST_F(CloudV2TaskTest, stars_mix_sqe_biu)
     delete aicKernel6;
     EXPECT_EQ(task.type, TS_TASK_TYPE_KERNEL_AICORE);
     Driver* driver_ = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(driver_, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(driver_, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_DRV_OUT_MEMORY));

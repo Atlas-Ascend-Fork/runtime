@@ -110,7 +110,6 @@ aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
   但对于IPV350，policy处支持配置单个枚举项，也支持配置多个枚举项位或。位或时，支持这三项（ACL\_MEM\_MALLOC\_HUGE\_FIRST、ACL\_MEM\_MALLOC\_HUGE\_ONLY、ACL\_MEM\_MALLOC\_NORMAL\_ONLY）与这两项（ACL\_MEM\_TYPE\_LOW\_BAND\_WIDTH、ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH）组合，**例如**：ACL\_MEM\_MALLOC\_HUGE\_FIRST | ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH
   <!-- end id11 -->
 
-- 针对ACL\_MEM\_MALLOC\_HUGE\_FIRST\_P2P、ACL\_MEM\_MALLOC\_HUGE\_ONLY\_P2P内存分配规则，建议使用aclrtMallocWithCfg接口，否则可能存在性能问题或无法申请到内存。
 - 频繁调用aclrtMalloc接口申请内存、调用[aclrtFree](#aclrtFree)接口释放内存，会损耗性能，建议用户提前做内存预先分配或二次管理，避免频繁申请/释放内存。
 - 若用户需申请大块内存并自行划分、管理内存时，每段内存需同时满足以下需求，其中，len表示某段内存的大小，ALIGN\_UP\[len,k\]表示向上按k字节对齐：\(\(len-1\)/k+1\)\*k：
     <!-- npu="950,A3,910b,910,310p,310b" id12 -->
@@ -245,7 +244,6 @@ aclError aclrtMallocAlign32(void **devPtr, size_t size, aclrtMemMallocPolicy pol
   但对于IPV350，policy处支持配置单个枚举项，也支持配置多个枚举项位或。位或时，支持这三项（ACL\_MEM\_MALLOC\_HUGE\_FIRST、ACL\_MEM\_MALLOC\_HUGE\_ONLY、ACL\_MEM\_MALLOC\_NORMAL\_ONLY）与这两项（ACL\_MEM\_TYPE\_LOW\_BAND\_WIDTH、ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH）组合，**例如**：ACL\_MEM\_MALLOC\_HUGE\_FIRST | ACL\_MEM\_TYPE\_HIGH\_BAND\_WIDTH
   <!-- end id29 -->
 
-- 针对ACL_MEM_MALLOC_HUGE_FIRST_P2P、ACL_MEM_MALLOC_HUGE_ONLY_P2P内存分配规则，建议使用aclrtMallocWithCfg接口，否则可能存在性能问题或无法申请到内存。
 - 频繁调用aclrtMallocAlign32接口申请内存、调用[aclrtFree](11-01_device_memory_malloc_and_free.md#aclrtFree)接口释放内存，会损耗性能，建议用户提前做内存预先分配或二次管理，避免频繁申请/释放内存。
 - 若用户使用本接口申请大块内存并自行划分、管理内存时，每段内存需同时满足以下需求，其中，len表示某段内存的大小，ALIGN\_UP\[len,k\]表示向上按k字节对齐：\(\(len-1\)/k+1\)\*k：
     <!-- npu="950,A3,910b,910,310p,310b" id30 -->

@@ -444,7 +444,9 @@ TEST_F(ModelTest, TestModelSetupWithDevMemAllocFailed)
 
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::ModelIdAlloc).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_INPUT));
     error = rtModelCreate(&rtModel, 0);
     EXPECT_NE(error, RT_ERROR_NONE);
 
@@ -487,7 +489,7 @@ TEST_F(ModelTest, TestModelSetupWithMallocDevValueFailed)
 
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::ModelIdAlloc).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_DRV_INPUT));
@@ -507,7 +509,7 @@ TEST_F(ModelTest, TestModelSetupWithMallocDevStringEndGraphFailed)
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::ModelIdAlloc).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_NONE))
@@ -528,7 +530,7 @@ TEST_F(ModelTest, TestModelSetupWithMallocDevStringAtiveEntryStreamFailed)
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::ModelIdAlloc).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_NONE))
         .then(returnValue(RT_ERROR_NONE))
@@ -551,7 +553,9 @@ TEST_F(ModelTest, TestMallocDevStringFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_INPUT));
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
     char* str = "demo";
@@ -573,7 +577,7 @@ TEST_F(ModelTest, TestMallocDevStringWithMemSetFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemSetSync).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
@@ -596,7 +600,7 @@ TEST_F(ModelTest, TestMallocDevStringWithMemSyncFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemSetSync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
 
@@ -620,7 +624,9 @@ TEST_F(ModelTest, TestMallocDevValueStringFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_INPUT));
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
     char* str = "demo";
@@ -642,7 +648,7 @@ TEST_F(ModelTest, TestMallocDevValueWithMemSetFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemSetSync).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
@@ -665,7 +671,7 @@ TEST_F(ModelTest, TestMallocDevValueWithMemSyncFailed)
     error = rtModelCreate(&rtModel, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemSetSync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
 
@@ -818,7 +824,9 @@ TEST_F(ModelTest, TestPacketAllStreamInfoWithAllocFailed)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_DRV_INPUT));
 
     rtAicpuModelInfo_t infoAicpuModel;
     error = model->PacketAllStreamInfo(&infoAicpuModel);
@@ -839,7 +847,7 @@ TEST_F(ModelTest, TestPacketAllStreamInfoWithCopyFailed)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::GetRunMode)
         .stubs()
@@ -864,7 +872,7 @@ TEST_F(ModelTest, TestPacketAllStreamInfoWithFlushFailed)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemFlushCache).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::GetRunMode)
@@ -890,7 +898,7 @@ TEST_F(ModelTest, TestPacketAicpuModelInfoWithCopyFailed)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemFlushCache).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::GetRunMode)
@@ -915,7 +923,7 @@ TEST_F(ModelTest, TestPacketAicpuModelInfoWithFlushFailed)
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     Model* model = rt_ut::UnwrapOrNull<Model>(rtModel);
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemFlushCache).stubs().will(returnValue(RT_ERROR_DRV_INPUT));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::GetRunMode)

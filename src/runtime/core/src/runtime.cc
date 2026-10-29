@@ -30,6 +30,7 @@
 #include "api_profile_log_decorator.hpp"
 #include "stub_task.hpp"
 #include "driver.hpp"
+#include "npu_driver.hpp"
 #include "subscribe.hpp"
 #include "base.hpp"
 #include "device_state_callback_manager.hpp"
@@ -5026,10 +5027,12 @@ rtError_t Runtime::BinaryLoad(const Device* const device, Program* const prog)
 
     DevMemAllocConfig allocConfig = {};
     allocConfig.readOnlyFlag = readonly;
+    allocConfig.type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(device->Id_(), &allocConfig);
     if (devMem == nullptr) {
-        error = curDrv->DevMemAllocWithBackupFlag(
-            &devMem, static_cast<uint64_t>(devSize + INSTR_ALIGN_SIZE), RT_MEMORY_HBM, device->Id_(),
-            DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP, MODULEID_RUNTIME, true, allocConfig);
+        error = curDrv->DevMemAllocWithFlag(
+            &devMem, static_cast<uint64_t>(devSize + INSTR_ALIGN_SIZE), RT_MEMORY_HBM, device->Id_(), &allocConfig,
+            drvFlag);
         isPoolMem = false;
     }
     TIMESTAMP_END(rtBinaryLoad_DevMemAlloc);

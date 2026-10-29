@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "h2d_copy_mgr.hpp"
+#include "npu_driver.hpp"
 
 #include "device.hpp"
 #include "runtime.hpp"
@@ -414,9 +415,12 @@ void* H2DCopyMgr::MallocPcieBarBuffer(size_t size, void* para)
     const bool isLogError = (IS_SUPPORT_CHIP_FEATURE(
         Runtime::Instance()->GetChipType(), RtOptionalFeatureType::RT_FEATURE_DFX_ARGS_DOT_ALLOC_ERROR_LOG));
     Device* const dev = static_cast<Device*>(para);
-    rtError_t ret = dev->Driver_()->DevMemAllocWithBackupFlag(
-        &addr, static_cast<uint64_t>(size), RT_MEMORY_P2P_HBM, dev->Id_(), DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP,
-        MODULEID_RUNTIME, isLogError);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.isLogError = isLogError;
+    allocConfig.type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(dev->Id_(), &allocConfig);
+    rtError_t ret = dev->Driver_()->DevMemAllocWithFlag(
+        &addr, static_cast<uint64_t>(size), RT_MEMORY_P2P_HBM, dev->Id_(), &allocConfig, drvFlag);
     if (ret != RT_ERROR_NONE) {
         RtLogErrorLevelControl(
             isLogError, "alloc dev mem failed, retCode=%#x, size=%u(bytes), dev_id=%u.", ret, size, dev->Id_());

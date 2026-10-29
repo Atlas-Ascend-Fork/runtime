@@ -469,7 +469,9 @@ TEST_F(DavidStreamTest, setup_persisit_logic_alloc)
 
 TEST_F(DavidStreamTest, setup_persisit_modelexe)
 {
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::GetSqRegVirtualAddrBySqid)
         .stubs()
         .will(returnValue(1));
@@ -480,7 +482,9 @@ TEST_F(DavidStreamTest, setup_persisit_modelexe)
 
 TEST_F(DavidStreamTest, setup_persisit_modelexe_suc)
 {
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::GetSqRegVirtualAddrBySqid)
         .stubs()
         .will(returnValue(0));
@@ -493,7 +497,9 @@ TEST_F(DavidStreamTest, setup_persisit_modelexe_suc)
 
 TEST_F(DavidStreamTest, auto_split_stream_destroy)
 {
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::GetSqRegVirtualAddrBySqid)
         .stubs()
         .will(returnValue(0));
@@ -531,7 +537,7 @@ TEST_F(DavidStreamTest, auto_split_stream_destroy)
 TEST_F(DavidStreamTest, auto_split_task_clean)
 {
     void* mockSvmAddr = reinterpret_cast<void*>(0x1000);
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mockSvmAddr), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(0));
@@ -610,7 +616,9 @@ TEST_F(DavidStreamTest, setup_normal_delete)
     rtStream_t stream = 0;
     rtError_t res = rtStreamCreateWithFlags(&stream, 0, 0);
     EXPECT_EQ(res, RT_ERROR_NONE);
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     (rt_ut::UnwrapOrNull<Stream>(stream))->GetDvppRRTaskAddr();
     (rt_ut::UnwrapOrNull<Stream>(stream))->SetSubscribeFlag(StreamSubscribeFlag::SUBSCRIBE_USER);
     rtStreamDestroy(stream);
@@ -1036,7 +1044,9 @@ TEST_F(DavidStreamTest, davidstream_IsReclaimAsync)
 
 TEST_F(DavidStreamTest, TestCreateStreamAndGet)
 {
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::GetSqRegVirtualAddrBySqid)
         .stubs()
         .will(returnValue(0));
@@ -1053,7 +1063,9 @@ TEST_F(DavidStreamTest, TestCreateStreamAndGet)
 TEST_F(DavidStreamTest, TestCreateAutoSplitStreamAndGet)
 {
     MOCKER_CPP(&Stream::AllocExecutedTimesSvm).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAlloc).stubs().will(returnValue(0));
+    MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(0));
     MOCKER_CPP_VIRTUAL((NpuDriver*)device_->Driver_(), &NpuDriver::GetSqRegVirtualAddrBySqid)
         .stubs()
         .will(returnValue(0));

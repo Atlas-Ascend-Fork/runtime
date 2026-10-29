@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "memory_pool.hpp"
+#include "npu_driver.hpp"
 #include "error_message_manage.hpp"
 
 namespace cce {
@@ -96,10 +97,11 @@ void* MemoryPool::AllocDevMem(const uint32_t size) const
         (!device_->IsSupportFeature(RtOptionalFeatureType::RT_FEATURE_KERNEL_DATA_READ_ONLY)) ? isReadOnly_ : false;
     DevMemAllocConfig allocConfig = {};
     allocConfig.readOnlyFlag = readOnly;
+    allocConfig.type = DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(device_->Id_(), &allocConfig);
 
-    error = driver_->DevMemAllocWithBackupFlag(
-        &addr, static_cast<uint64_t>(size), RT_MEMORY_HBM, device_->Id_(), DevMemBackupType::SNAPSHOT_REQUIRED_BACKUP,
-        MODULEID_RUNTIME, true, allocConfig);
+    error = driver_->DevMemAllocWithFlag(
+        &addr, static_cast<uint64_t>(size), RT_MEMORY_HBM, device_->Id_(), &allocConfig, drvFlag);
     if (error != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_ERROR, "DevMemAlloc failed, device_id=%u, retCode=%#x", device_->Id_(), error);
         return nullptr;

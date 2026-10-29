@@ -320,34 +320,6 @@ rtError_t NpuDriver::StreamMemPoolAsyncConfig(
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
-rtError_t NpuDriver::DevMemAllocHugePageManaged(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const DevMemAllocConfig config, const bool isLogError)
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(type);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t NpuDriver::DevMemAllocManaged(
-    void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId, const uint16_t moduleId,
-    const DevMemAllocConfig config, const bool isLogError) const
-{
-    UNUSED(dptr);
-    UNUSED(size);
-    UNUSED(type);
-    UNUSED(deviceId);
-    UNUSED(moduleId);
-    UNUSED(isLogError);
-    UNUSED(config);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
 rtError_t NpuDriver::HostGetDevicePointerAddrCount(uint32_t deviceId, uint32_t* count)
 {
     UNUSED(deviceId);

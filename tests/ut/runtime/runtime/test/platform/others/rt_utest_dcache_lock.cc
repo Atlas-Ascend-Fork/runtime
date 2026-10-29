@@ -89,7 +89,9 @@ TEST_F(DcacheDeviceTest, AllocStackPhyBase_02)
     GlobalContainer::SetRtChipType(CHIP_ASCEND_031);
     RawDevice* dev = new RawDevice(1);
     dev->Init();
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_INVALID_VALUE));
     rtError_t ret = dev->AllocStackPhyBase();
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
     delete dev;
@@ -102,7 +104,9 @@ TEST_F(DcacheDeviceTest, AllocStackPhyBase_03)
     GlobalContainer::SetRtChipType(CHIP_MINI_V3);
     RawDevice* dev = new RawDevice(1);
     dev->Init();
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_INVALID_VALUE));
     rtError_t ret = dev->AllocStackPhyBase();
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
     delete dev;
@@ -117,7 +121,7 @@ TEST_F(DcacheDeviceTest, AllocStackPhyBase_04)
     dev->Init();
     uint32_t tmp = 0;
     void* addr = &tmp;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
@@ -138,7 +142,7 @@ TEST_F(DcacheDeviceTest, AllocStackPhyBase_05)
     dev->Init();
     uint32_t tmp = 0;
     void* addr = &tmp;
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(
             outBoundP(&addr, sizeof(void*)), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),

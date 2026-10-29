@@ -762,7 +762,7 @@ typedef struct {
 #define MEM_PAGE_GIANT (0X1UL << MEM_PAGE_GIANT_BIT)
 /* device cp only, not support share(prefetch/register/ipc/p2p) and op(host ldst/memcpy/memset) */
 #define MEM_DEV_CP_ONLY_BIT 32
-#define MEM_DEV_CP_ONLY (0X1UL << MEM_DEV_CP_ONLY_BIT)
+#define MEM_DEV_CP_ONLY (0X1ULL << MEM_DEV_CP_ONLY_BIT)
 
 /* process snapshot classification, only used by process resource backup/restore */
 #define MEM_SNAPSHOT_OPTIONAL_BIT 33U

@@ -53,7 +53,7 @@ static void SetupDriverMockForPcie()
     // 使用真实可用的静态内存，避免 H2DArgCopy 向假地址写入导致 coredump
     static char realMemBuffer[4096 * 1024]; // 4MB 真实内存
     void* memBase = realMemBuffer;
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -66,7 +66,7 @@ static void SetupDriverMockForPcieWithAllocFailure()
     // 第一次失败，第二次成功返回真实地址
     static char realMemBuffer[4096 * 1024];
     void* memBase = realMemBuffer;
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(1))
@@ -321,7 +321,7 @@ TEST_F(ArgManageUbTest, ub_arg_loader_alloc_exception)
     EXPECT_EQ(ret, RT_ERROR_MEMORY_ALLOCATION);
     EXPECT_EQ(result.handle, nullptr);
 
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .will(returnValue(RT_ERROR_DRV_OUT_MEMORY))
         .then(returnValue(RT_ERROR_NONE));
@@ -348,7 +348,7 @@ TEST_F(ArgManageUbTest, ub_arg_loader_init_exception)
     void* mem1 = memBase1;
 
     Driver* drv = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&mem, sizeof(mem)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(1))
@@ -417,7 +417,10 @@ TEST_F(ArgManageUbTest, stream_arg_res_create_exception)
     device_->argStreamNum_ = 0;
 
     Driver* drv = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc).stubs().will(returnValue(1)).then(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(1))
+        .then(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(drv, &Driver::HostMemAlloc).stubs().will(returnValue(2)).then(returnValue(RT_ERROR_NONE));
 
     // exception2: DevMemAlloc fail
@@ -835,7 +838,7 @@ static void MockPcieDriverForArgPool(void* memAddr)
         .stubs()
         .with(mockcpp::any(), outBound(val), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memAddr, sizeof(memAddr)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1287,7 +1290,7 @@ static void TestLoadSimtArgsFromArrayMemcpyFailCommon(DavidStream* stm, bool nee
         // PCIe 需要 mock Driver::DevMemAlloc，但不 mock memcpy_s（让后面单独设置）
         Driver* drv = SetupPcieBarCopySupportMock();
         void* memBase = (void*)100;
-        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
             .stubs()
             .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
             .will(returnValue(RT_ERROR_NONE));
@@ -1523,7 +1526,7 @@ static void TestLoadSimtHostArgsMemcpyImplicitFailCommon(DavidStream* stm, bool 
     if (needPcieMock) {
         Driver* drv = SetupPcieBarCopySupportMock();
         void* memBase = (void*)100;
-        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
             .stubs()
             .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
             .will(returnValue(RT_ERROR_NONE));
@@ -1571,7 +1574,7 @@ static void TestLoadSimtHostArgsMemcpyHostArgsFailCommon(DavidStream* stm, bool 
     if (needPcieMock) {
         Driver* drv = SetupPcieBarCopySupportMock();
         void* memBase = (void*)100;
-        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAlloc)
+        MOCKER_CPP_VIRTUAL(drv, &Driver::DevMemAllocWithBackupFlag)
             .stubs()
             .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
             .will(returnValue(RT_ERROR_NONE));

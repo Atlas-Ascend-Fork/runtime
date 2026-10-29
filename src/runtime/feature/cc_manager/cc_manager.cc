@@ -313,8 +313,11 @@ rtError_t CCManager::CCDevMalloc(
     uint32_t devId = curCtx->Device_()->Id_();
 
     const uint64_t alignSize = (((size + 0x1FU) >> 5U) << 5U);
-    uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, moduleId, false, false, true);
-    return driver->DevMemAllocWithFlag(devPtr, alignSize, type, drvFlag);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.moduleId = moduleId;
+    allocConfig.privateFlag = true;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, &allocConfig);
+    return driver->DevMemAllocWithFlag(devPtr, alignSize, type, devId, &allocConfig, drvFlag);
 }
 
 rtError_t CCManager::CCDevMallocWithCfg(
@@ -324,8 +327,11 @@ rtError_t CCManager::CCDevMallocWithCfg(
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
     auto driver = curCtx->Device_()->Driver_();
 
-    uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, moduleId, false, false, true);
-    return driver->DevMemAllocWithFlag(devPtr, size, type, drvFlag);
+    DevMemAllocConfig allocConfig = {};
+    allocConfig.moduleId = moduleId;
+    allocConfig.privateFlag = true;
+    const uint64_t drvFlag = NpuDriver::BuildDevMemAllocFlag(devId, &allocConfig);
+    return driver->DevMemAllocWithFlag(devPtr, size, type, devId, &allocConfig, drvFlag);
 }
 
 void CCManager::SubmitCcTaskCallback(void* userData)

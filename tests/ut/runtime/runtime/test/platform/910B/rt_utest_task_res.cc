@@ -138,7 +138,9 @@ TEST_F(TaskResManageTest, TestMallocPcieBarBufferWithDevMemAllocFailed)
         .stubs()
         .with(mockcpp::any(), outBound(support), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));
     void* ret = taskResMng->MallocPcieBarBuffer(0, device, true);
     EXPECT_EQ(ret, nullptr);
     ((Runtime*)Runtime::Instance())->DeviceRelease(device);
@@ -154,7 +156,7 @@ TEST_F(TaskResManageTest, TestMallocPcieBarBufferWithPcieHostRegisterFailed)
         .stubs()
         .with(mockcpp::any(), outBound(support), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::DevMemAllocWithFlag).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(device->Driver_(), &Driver::PcieHostRegister)
         .stubs()
         .will(returnValue(RT_ERROR_FEATURE_NOT_SUPPORT));

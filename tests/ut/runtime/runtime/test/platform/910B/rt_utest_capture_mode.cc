@@ -678,7 +678,7 @@ TEST_F(CloudV2CaptureModelTest, RDMA_PI_VALUE_MODIFY_TASK_INIT_FAILED)
     taskInfo.stream = stm;
     std::vector<uint64_t> rdmaPiValueDeviceAddrVec{1};
 
-    MOCKER_CPP_VIRTUAL(stm->Device_()->Driver_(), &Driver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(stm->Device_()->Driver_(), &Driver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_INVALID_VALUE));
@@ -1494,7 +1494,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleWhileE2E)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1587,7 +1587,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleWhileWithAssignDefault)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1689,7 +1689,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleIfE2E)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1783,7 +1783,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleIfSizeOneE2E)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -1880,7 +1880,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleSwitchE2E)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));
@@ -2017,7 +2017,7 @@ TEST_F(CloudV2CondHandleTest, CondHandleIfNestedIfE2E)
 
     NpuDriver* rawDrv = new NpuDriver();
     void* memBase = (void*)0x1000;
-    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAlloc)
+    MOCKER_CPP_VIRTUAL(rawDrv, &NpuDriver::DevMemAllocWithBackupFlag)
         .stubs()
         .with(outBoundP(&memBase, sizeof(memBase)), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(RT_ERROR_NONE));

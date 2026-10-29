@@ -348,9 +348,12 @@ Snapshot 通过 `args` 是否为空选择新旧流程；仅 `args` 非空时进�
 |------|----------|
 | `SNAPSHOT_REQUIRED_BACKUP` | 兼容性通过时，无论 `backupFlags` / `restoreFlags` 为 `0U` 还是 `1U`，驱动都必须备份/恢复的内存。适用于恢复后必须保持内容一致的 Runtime 内部设备内存。 |
 | `SNAPSHOT_OPTIONAL_BACKUP` | 兼容性通过且 `backupFlags` / `restoreFlags` 为 `1U` 时，才由驱动备份/恢复的内存。适用于非必须备份，或恢复阶段可重新构建/重新下发的 Runtime 辅助内存。 |
-| `SNAPSHOT_NO_BACKUP` | 兼容性通过时也不需要驱动备份/恢复的内存。适用于恢复过程中的临时设备 buffer，用完即释放，不参与 Snapshot 备份恢复。 |
+| `SNAPSHOT_NO_BACKUP` | 兼容性通过时也不需要驱动备份/恢复的内存。适用于 aclrt 相关接口申请的外部用户内存，不参与 Snapshot 备份恢复。 |
 
-`DevMemAllocWithBackupFlag` 是 Runtime 内部申请设备内存时写入快照标签的统一入口，默认标签为 `SNAPSHOT_REQUIRED_BACKUP`；optional/no_backup 场景显式传参。底层通过 `FlagAddBackupBit` 将 Runtime 标签转换为驱动侧 `MEM_SNAPSHOT_REQUIRED` / `MEM_SNAPSHOT_OPTIONAL` 标志位。对于不能在申请点传入标签、但兼容性通过时应由驱动按 required 处理的设备地址，由内部实现调用 `NpuDriver::MemAdvise(..., ADVISE_SNAPSHOT_REQUIRED, ...)` 补充 required 标记。
+只有 Runtime 内部申请的设备内存需要参与快照备份，按恢复后内容一致性要求选择 required 或 optional 标签；aclrt 相关接口申请的外部用户内存统一使用 `SNAPSHOT_NO_BACKUP`，不参与快照。设备内存申请使用 `DevMemAllocWithBackupFlag` 与 `DevMemAllocWithFlag` 两种方式（接口说明见 `docs/zh/design/modules/memory/memory.md`）：
+
+- config 各成员均使用默认值时，调用 `DevMemAllocWithBackupFlag`，备份标签经 `type` 位置参数显式传入；
+- config 存在不适用默认值的成员时，调用 `DevMemAllocWithFlag`，先构造 config 并对非默认成员赋值，再经 `NpuDriver::BuildDevMemAllocFlag(deviceId, &config)` 生成 `drvFlag`，携带两者申请。
 
 ### 4.2 核心组件详解
 
@@ -478,7 +481,7 @@ DeviceSnapshot --> TaskHandlers
 核心职责：
 - `ProcessResBackup`：调用 `halProcessResBackup`，当 `backupFlags == 1U` 时携带 optional 备份标记。
 - `ProcessResRestore`：调用 `halProcessResRestore`，当 `restoreFlags == 1U` 时携带 optional 恢复标记。
-- `DevMemAllocWithBackupFlag`：在设备内存申请时写入 `DevMemBackupType` 标签。
+- `DevMemAllocWithBackupFlag` / `DevMemAllocWithFlag`：在设备内存申请时写入 `DevMemBackupType` 标签（前者经 `type` 入参传入；后者由调用方设置 `config.type`，再通过 `NpuDriver::BuildDevMemAllocFlag(deviceId, &config)` 将备份类型与其他申请属性统一编入 flag）。
 - `MemAdvise`：对已申请或由任务持有的设备地址补充 required 标签。
 
 关键文件位置：
@@ -496,7 +499,8 @@ DeviceSnapshot --> TaskHandlers
 | DeviceSnapshot | 设备内存备份/恢复实现 | `feature/snapshot/device_snapshot.hpp` |
 | SnapShotProcessHelper | 备份恢复辅助函数 | `feature/snapshot/snapshot_process_helper.hpp` |
 | NpuDriver | 驱动侧进程资源备份/恢复和内存标签转换 | `driver/npu_driver.hpp` |
-| DevMemAllocWithBackupFlag | Runtime 内部设备内存申请标签入口 | `core/inc/drv/driver.hpp` |
+| DevMemAllocWithBackupFlag | 通用快速通道入口（备份标签 `type` 位置参数显式传入；Runtime 内部内存按需 required / optional，aclrt 相关接口传入 `SNAPSHOT_NO_BACKUP`） | `core/inc/drv/driver.hpp` |
+| DevMemAllocWithFlag | 常规接口（config 存在非默认成员时使用）：调用方先设置 config，再经 `NpuDriver::BuildDevMemAllocFlag(deviceId, &config)` 构建 flag，连同 config 一起显式传入 | `core/inc/drv/driver.hpp` |
 | ApiImpl | API 实现与流程协调 | `api/impl/api_impl_snapshot.cc` |
 | TaskHandlers | 任务类型处理器 | `feature/snapshot/device_snapshot.hpp` |
 
@@ -534,7 +538,13 @@ SNAPSHOT_OPTIONAL_BACKUP
 SNAPSHOT_REQUIRED_BACKUP
 }
 class DevMemAllocConfig {
++bool readOnlyFlag
++bool starsTillingFlag
++bool cpOnlyFlag
++bool privateFlag
++bool isLogError
 +DevMemBackupType type
++uint16_t moduleId
 }
 class SnapShotCallBackInfo {
 +rtSnapShotCallBack callback
@@ -564,6 +574,8 @@ class NpuDriver {
 +ProcessResBackup(backupFlags)
 +ProcessResRestore(restoreFlags)
 +DevMemAllocWithBackupFlag(type)
++DevMemAllocWithFlag(flag)
++BuildDevMemAllocFlag(deviceId, config)
 +MemAdvise(advise)
 }
 GlobalStateManager --> rtProcessState

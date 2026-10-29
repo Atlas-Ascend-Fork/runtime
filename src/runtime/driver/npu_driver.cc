@@ -102,11 +102,12 @@ uint32_t NpuDriver::GetAicpuDeploy() const { return aicpuDeploy_; }
 
 rtError_t NpuDriver::DevMemAllocWithBackupFlag(
     void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
-    const DevMemBackupType type, const uint16_t moduleId, const bool isLogError, DevMemAllocConfig config,
-    const bool isNewApi)
+    const DevMemBackupType type, const DevMemAllocConfig* const config)
 {
-    config.type = type;
-    return DevMemAlloc(dptr, size, memType, deviceId, moduleId, isLogError, config, isNewApi);
+    DevMemAllocConfig localConfig = *config;
+    localConfig.type = type;
+    const uint64_t curFlag = BuildDevMemAllocFlag(deviceId, &localConfig);
+    return DevMemAllocWithFlag(dptr, size, memType, deviceId, &localConfig, curFlag);
 }
 
 Driver* NpuDriver::Instance_() { return new (std::nothrow) NpuDriver(); }

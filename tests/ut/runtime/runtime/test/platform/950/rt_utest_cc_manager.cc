@@ -161,19 +161,17 @@ drvError_t QueryCcInfoStub(
     return DRV_ERROR_NONE;
 }
 
-// DevMemAlloc 输出参数 stub：第 1 次为 BAR 队列（需可写，约 112B），第 2/3 次为 Device Buffer A/B（仅取地址）。
+// DevMemAllocWithFlag 输出参数 stub：第 1 次为 BAR 队列（需可写，约 112B），第 2/3 次为 Device Buffer A/B（仅取地址）。
 rtError_t DevMemAllocStub(
     Driver* const driver, void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
-    const uint16_t moduleId, const bool isLogError, const DevMemAllocConfig config, const bool isNewApi)
+    const DevMemAllocConfig* const config, const uint64_t curFlag)
 {
     (void)driver;
     (void)size;
     (void)type;
     (void)deviceId;
-    (void)moduleId;
-    (void)isLogError;
     (void)config;
-    (void)isNewApi;
+    (void)curFlag;
     if (gInStreamCreate) {
         // 流创建阶段系统内部申请（SQ/BW 等），仅占位返回，不计入 CC 资源计数。
         static uint8_t fakeStreamMem[16 * 1024];
@@ -193,6 +191,15 @@ rtError_t DevMemAllocStub(
         *dptr = (gDevMemAllocCount == 2U) ? bufA : bufB;
     }
     return RT_ERROR_NONE;
+}
+
+// DevMemAllocWithBackupFlag 入口 stub（6 参签名）：CCWorker/CCStreamResManage 申请路径使用。
+rtError_t DevMemAllocEntryStub(
+    Driver* const driver, void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
+    const DevMemBackupType backupType, const DevMemAllocConfig* const config)
+{
+    (void)backupType;
+    return DevMemAllocStub(driver, dptr, size, type, deviceId, config, 0U);
 }
 
 rtError_t HostRegisterStub(Driver* drv, void* ptr, uint64_t size, uint32_t type, void** devPtr, uint32_t deviceId)
@@ -231,7 +238,7 @@ rtError_t HostMemFreeStub(Driver* drv, void* dptr)
 bool CreatePersistentStream(rtStream_t& handle)
 {
     Driver* driver = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
     MOCKER_CPP_VIRTUAL(driver, &Driver::GetSqRegVirtualAddrBySqid).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(driver, &Driver::MemCopySync).stubs().will(returnValue(RT_ERROR_NONE));
     gInStreamCreate = true;
@@ -609,7 +616,7 @@ TEST_F(CCManagerTest, StreamResManage_Init_Destroy)
 
     CCStreamResManage resource;
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
@@ -640,7 +647,7 @@ TEST_F(CCManagerTest, StreamResManage_Reset)
 
     CCStreamResManage resource;
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::PcieHostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
@@ -670,7 +677,9 @@ TEST_F(CCManagerTest, StreamResManage_Init_AllocFails)
 
     CCStreamResManage resource;
 
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag)
+        .stubs()
+        .will(returnValue(RT_ERROR_MEMORY_ALLOCATION));
 
     rtError_t ret = resource.Init(dev);
     EXPECT_NE(ret, RT_ERROR_NONE);
@@ -685,7 +694,7 @@ TEST_F(CCManagerTest, StreamResManage_Init_ErrorPaths)
     Driver* realDriver = dev->Driver_();
 
     MOCKER_CPP_VIRTUAL(dev, &Device::Driver_).stubs().will(invoke(FakeDeviceDriverStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostRegister).stubs().will(invoke(PcieHostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemFree).stubs().will(invoke(DevMemFreeStub));
@@ -728,7 +737,7 @@ TEST_F(CCManagerTest, StreamResManage_BasicLifeCycle)
     Driver* realDriver = dev->Driver_();
 
     CCStreamResManage resource;
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostRegister).stubs().will(invoke(PcieHostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemFree).stubs().will(invoke(DevMemFreeStub));
@@ -821,7 +830,7 @@ TEST_F(CCManagerTest, Worker_Init_ErrorPaths)
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostRegister).stubs().will(invoke(HostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostUnregister).stubs().will(invoke(HostUnregisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostMemFree).stubs().will(invoke(HostMemFreeStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
 
     // // ② HostRegister 失败：hostCryptoBuf 已申请，需 HostMemFree 回滚
     // {
@@ -1829,7 +1838,8 @@ TEST_F(CCManagerTest, CCResManage_SubmitTask_GrowsOneWorkerPerSubmitUpToSix)
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostUnregister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostMemFree).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
 
     CCResManage resource(dev);
@@ -1865,7 +1875,8 @@ TEST_F(CCManagerTest, CCResManage_SubmitTask_ContinuesWithExistingWorkerWhenExpa
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostUnregister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::HostMemFree).stubs().will(returnValue(RT_ERROR_NONE));
-    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
     MOCKER_CPP_VIRTUAL(dev->Driver_(), &Driver::DevMemFree).stubs().will(returnValue(RT_ERROR_NONE));
 
     gHostAllocFailAt = 2U;
@@ -1948,7 +1959,8 @@ TEST_F(CCManagerTest, CCResManage_Init_ErrorPaths)
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostRegister).stubs().will(invoke(HostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostUnregister).stubs().will(invoke(HostUnregisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostMemFree).stubs().will(invoke(HostMemFreeStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
 
     CCResManage resource(dev);
     gHostAllocFailAt = 1U;
@@ -2082,7 +2094,8 @@ TEST_F(CCManagerTest, CCResManage_SubmitTask_Basics)
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostRegister).stubs().will(invoke(HostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostUnregister).stubs().will(invoke(HostUnregisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostMemFree).stubs().will(invoke(HostMemFreeStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
 
     ASSERT_EQ(resource.InitCcResource(), RT_ERROR_NONE);
     EXPECT_EQ(resource.SubmitTask(task), RT_ERROR_NONE);
@@ -2179,7 +2192,8 @@ TEST_F(CCManagerTest, Manager_ReleaseDeviceResource_Basics)
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostRegister).stubs().will(invoke(HostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostUnregister).stubs().will(invoke(HostUnregisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostMemFree).stubs().will(invoke(HostMemFreeStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
 
     ASSERT_EQ(CCManager::InitDeviceResource(dev), RT_ERROR_NONE);
     ASSERT_NE(CCManager::Instance().resources_[0], nullptr);
@@ -2237,7 +2251,8 @@ TEST_F(CCManagerTest, Manager_GetOrCreateStreamResource_Integration)
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostRegister).stubs().will(invoke(HostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostUnregister).stubs().will(invoke(HostUnregisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::HostMemFree).stubs().will(invoke(HostMemFreeStub));
-    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAlloc).stubs().will(invoke(DevMemAllocStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithBackupFlag).stubs().will(invoke(DevMemAllocEntryStub));
+    MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemAllocWithFlag).stubs().will(invoke(DevMemAllocStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostRegister).stubs().will(invoke(PcieHostRegisterStub));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::PcieHostUnRegister).stubs().will(returnValue(RT_ERROR_NONE));
     MOCKER_CPP_VIRTUAL(realDriver, &Driver::DevMemFree).stubs().will(invoke(DevMemFreeStub));

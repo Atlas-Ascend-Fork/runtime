@@ -35,14 +35,11 @@ rtError_t StubAllocAddrForDcache(const uint32_t deviceId, void*& dcacheAddr, con
 
 rtError_t StubSimtStackAlloc(
     Driver* driver, void** addr, uint64_t size, rtMemType_t memType, uint32_t deviceId, DevMemBackupType backupType,
-    uint16_t moduleId, bool isLogError, DevMemAllocConfig config, bool isNewApi)
+    const DevMemAllocConfig* config)
 {
     UNUSED(driver);
     UNUSED(addr);
-    UNUSED(moduleId);
-    UNUSED(isLogError);
     UNUSED(config);
-    UNUSED(isNewApi);
     EXPECT_EQ(memType, RT_MEMORY_DDR);
     EXPECT_EQ(deviceId, 0U);
     EXPECT_EQ(backupType, DevMemBackupType::SNAPSHOT_OPTIONAL_BACKUP);

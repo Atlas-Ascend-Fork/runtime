@@ -54,9 +54,11 @@ public:
         errorProc_ = new DeviceErrorProc(dev);
         drv_ = dynamic_cast<NpuDriver*>(dev->Driver_());
         if (drv_ != nullptr) {
-            drv_->DevMemAlloc(&devMem_, 4096, RT_MEMORY_TS, dev->Id_());
+            drv_->DevMemAllocWithBackupFlag(
+                &devMem_, 4096, RT_MEMORY_TS, dev->Id_(), DevMemBackupType::SNAPSHOT_NO_BACKUP);
             if (needFastMem_) {
-                drv_->DevMemAlloc(&fastDevMem_, 4096, RT_MEMORY_TS, dev->Id_());
+                drv_->DevMemAllocWithBackupFlag(
+                    &fastDevMem_, 4096, RT_MEMORY_TS, dev->Id_(), DevMemBackupType::SNAPSHOT_NO_BACKUP);
             }
         }
         if (errorProc_ != nullptr && devMem_ != nullptr) {

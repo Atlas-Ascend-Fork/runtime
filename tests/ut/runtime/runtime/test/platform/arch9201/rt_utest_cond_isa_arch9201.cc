@@ -344,7 +344,7 @@ protected:
         void* const memory = reinterpret_cast<void*>(0x10000000ULL);
         memory_ = memory;
         MOCKER_CPP_VIRTUAL(driver, &Driver::MemAddressTranslate).stubs().will(returnValue(RT_ERROR_NONE));
-        MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc)
+        MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithBackupFlag)
             .stubs()
             .with(outBoundP(&memory_, sizeof(memory_)), mockcpp::any(), mockcpp::any(), mockcpp::any())
             .will(returnValue(RT_ERROR_NONE));

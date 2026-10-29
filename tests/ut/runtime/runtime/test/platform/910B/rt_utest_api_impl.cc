@@ -687,8 +687,8 @@ TEST_F(CloudV2ApiImplTest, KERNEL_CONFIG_DUMP_TEST_2)
     void** dumpBaseAddr = &dumpBaseAddr_;
     NpuDriver drv;
 
-    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
-    error = drv.DevMemAlloc((void**)NULL, 100, (rtMemType_t)0, 0);
+    MOCKER_CPP_VIRTUAL(drv, &NpuDriver::DevMemAllocWithBackupFlag).stubs().will(returnValue(RT_ERROR_INVALID_VALUE));
+    error = drv.DevMemAllocWithBackupFlag((void**)NULL, 100, (rtMemType_t)0, 0);
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
     free(devMem);
 }
@@ -1776,7 +1776,7 @@ TEST_F(CloudV2ApiImplTest, rts_api_impl_test6)
 TEST_F(CloudV2ApiImplTest, TestDevMalloc_01)
 {
     Driver* driver = ((Runtime*)Runtime::Instance())->driverFactory_.GetDriver(NPU_DRIVER);
-    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAlloc).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP_VIRTUAL(driver, &Driver::DevMemAllocWithFlag).stubs().will(returnValue(RT_ERROR_NONE));
 
     Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
     ApiImpl impl;

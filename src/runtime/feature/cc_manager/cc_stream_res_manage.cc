@@ -29,8 +29,8 @@ rtError_t CCStreamResManage::Init(Device* device)
     COND_RETURN_ERROR(device->Driver_() == nullptr, RT_ERROR_DRV_NULL, "CC stream resource driver is null.");
     device_ = device;
 
-    rtError_t ret = device_->Driver_()->DevMemAlloc(
-        &barDeviceAddr_, CC_BAR_RESOURCE_SIZE, RT_MEMORY_P2P_HBM, device_->Id_(), MODULEID_RUNTIME);
+    rtError_t ret = device_->Driver_()->DevMemAllocWithBackupFlag(
+        &barDeviceAddr_, CC_BAR_RESOURCE_SIZE, RT_MEMORY_P2P_HBM, device_->Id_(), DevMemBackupType::SNAPSHOT_NO_BACKUP);
     if (ret != RT_ERROR_NONE) {
         Destroy();
         return ret;
