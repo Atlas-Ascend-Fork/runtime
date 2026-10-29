@@ -104,6 +104,30 @@ std::vector<std::string> GetParamNames(ErrorCode code)
 }
 
 namespace {
+struct LogMeta {
+    size_t expectedSize;
+    const char* fmt;
+    int32_t logLevel;
+};
+
+#define RT_PARAM_LIST(...) __VA_ARGS__
+#define RT_GET_LOG_META(code, name, params, msg, level)                      \
+    case ErrorCode::code: {                                                  \
+        constexpr const char* paramNames[] = {RT_PARAM_LIST params};         \
+        return {sizeof(paramNames) / sizeof(paramNames[0]), (msg), (level)}; \
+    }
+
+LogMeta GetLogMeta(const ErrorCode errCode)
+{
+    switch (errCode) {
+        RUNTIME_ERROR_CODE_TABLE(RT_GET_LOG_META)
+        default:
+            return {0U, nullptr, DLOG_ERROR};
+    }
+}
+#undef RT_GET_LOG_META
+#undef RT_PARAM_LIST
+
 // 辅助宏：为 DispatchErrMsg 生成一个 switch case
 #define RT_DISPATCH(n, ...)                                             \
     case n:                                                             \
@@ -142,42 +166,20 @@ static void DispatchErrMsg(
 void PrintErrMsgToLog(
     ErrorCode errCode, const char* file, const int32_t line, const char* func, const std::vector<std::string>& values)
 {
-    size_t expectedSize = 0U;
-    const char* fmt = nullptr;
-    int32_t logLevel = DLOG_ERROR;
-
-#define RT_PARAM_LIST(...) __VA_ARGS__
-#define RT_GET_LOG_META(code, name, params, msg, level)              \
-    case ErrorCode::code: {                                          \
-        constexpr const char* paramNames[] = {RT_PARAM_LIST params}; \
-        expectedSize = sizeof(paramNames) / sizeof(paramNames[0]);   \
-        fmt = (msg);                                                 \
-        logLevel = (level);                                          \
-        break;                                                       \
-    }
-
-    switch (errCode) {
-        RUNTIME_ERROR_CODE_TABLE(RT_GET_LOG_META)
-        default:
-            break;
-    }
-
-#undef RT_GET_LOG_META
-#undef RT_PARAM_LIST
-
-    if (values.size() != expectedSize) {
+    const LogMeta meta = GetLogMeta(errCode);
+    if (values.size() != meta.expectedSize) {
         RecordLog(
             DLOG_WARN, file, line, func, "Parameter count mismatch for error code %d. Expected %zu, got %zu.\n",
-            static_cast<int32_t>(errCode), expectedSize, values.size());
+            static_cast<int32_t>(errCode), meta.expectedSize, values.size());
         return;
     }
 
-    if (fmt == nullptr) {
+    if (meta.fmt == nullptr) {
         RecordErrorLog(file, line, func, "Unknown error code: %d\n", static_cast<int32_t>(errCode));
         return;
     }
 
-    DispatchErrMsg(logLevel, file, line, func, fmt, values);
+    DispatchErrMsg(meta.logLevel, file, line, func, meta.fmt, values);
 }
 
 void ProcessErrorCodeImpl(
