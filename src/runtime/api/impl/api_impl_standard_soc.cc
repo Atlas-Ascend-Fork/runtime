@@ -949,7 +949,7 @@ rtError_t ApiImpl::LaunchSqeUpdateTask(
             static_cast<uint8_t*>(task->u.starsCommTask.randomDevAddr) + randomIuputParamSize);
 
         // built aicpu task param
-        const std::string soName = "libaicpu_extend_kernels.so";
+        const std::string soName = "librt_aicpu_kernels.so";
         const std::string kernelName = "RuntimeAicpuKernel";
         constexpr uint32_t argsSize = 96U;
         uint8_t args[argsSize];

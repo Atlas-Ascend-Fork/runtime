@@ -37,6 +37,7 @@ add_cann_subdirectories_relative(${RUNTIME_DIR}
     ${RUNTIME_DIR}/src/dfx/log/liblog
     ${RUNTIME_DIR}/src/platform
     ${RUNTIME_DIR}/src/aicpu_sched/aicpu_kernel
+    ${RUNTIME_DIR}/src/runtime/rt_aicpu_kernels
     ${RUNTIME_DIR}/src/queue_schedule
     ${RUNTIME_DIR}/src/aicpu_sched
     ${RUNTIME_DIR}/cmake/stub
@@ -128,6 +129,30 @@ install(FILES
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/cann-tsch-compat.ini
+  DESTINATION compat
+  COMPONENT npu-runtime
+)
+
+cann_pack_targets_and_files(
+  OUTPUT_TARGET "pack_cann_rt_compat"
+  OUTPUT "cann-rt-compat.tar.gz"
+  TAR_ROOT_DIR "aicpu_kernels_device"
+  TARGETS rt_aicpu_kernels
+  MANIFEST "rt_compat_bin_hash.cfg"
+  GEN_INI
+)
+
+add_cann_sign_file(
+  INPUT "cann-rt-compat.tar.gz"
+  CONFIG "${RUNTIME_DIR}/scripts/package/sign.xml"
+  RESULT_VAR "rt_compat_sign_file"
+  VERSION "${CANN_VERSION_npu-runtime_VERSION}"
+  DEPENDS pack_cann_rt_compat
+)
+
+install(FILES
+  ${rt_compat_sign_file}
+  ${CMAKE_CURRENT_BINARY_DIR}/cann-rt-compat.ini
   DESTINATION compat
   COMPONENT npu-runtime
 )

@@ -80,8 +80,8 @@ void ComputeProcess::LoadExtendKernelSo()
     // extend kernel so 走mc2流程，如果有就必须加载
     try {
         aicpusd_run_info("Start to preload extend kernel so.");
-        const uint32_t loadSoCnt = 1U;
-        const char_t* soNames[loadSoCnt] = {"libaicpu_extend_kernels.so"};
+        const uint32_t loadSoCnt = 2U;
+        const char_t* soNames[loadSoCnt] = {"libaicpu_extend_kernels.so", "librt_aicpu_kernels.so"};
         (void)aeBatchLoadKernelSo(static_cast<uint32_t>(aicpu::KERNEL_TYPE_AICPU), loadSoCnt, &(soNames[0]));
         aicpusd_run_info("End to preload extend kernel so.");
     } catch (...) {
