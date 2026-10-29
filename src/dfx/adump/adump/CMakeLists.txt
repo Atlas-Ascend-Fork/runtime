@@ -45,7 +45,8 @@ target_include_directories(adump_headers INTERFACE
 
 ########################### build artifacts ##########################
 if(PRODUCT)
-    if(PRODUCT STREQUAL "ascend031")
+    if(PRODUCT STREQUAL "ascend031" OR
+            PRODUCT STREQUAL "ascend5162a")
         include(adump_ascend031/adump_server.cmake)
         include(adump_ascend031/ascend_dump.cmake)
         include(adump_ascend031/adump.cmake)
