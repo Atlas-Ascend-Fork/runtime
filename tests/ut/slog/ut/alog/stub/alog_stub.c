@@ -43,3 +43,10 @@ void* LoadDllFuncSingle(ArgPtr handle, const char* symbol)
     (void)symbol;
     return NULL;
 }
+
+void* LoadDllFuncSingleQuiet(ArgPtr handle, const char* symbol)
+{
+    (void)handle;
+    (void)symbol;
+    return NULL;
+}

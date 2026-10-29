@@ -12,6 +12,7 @@
 
 static uint32_t g_errLogNum = 0;
 static uint32_t g_warnLogNum = 0;
+static uint32_t g_infoLogNum = 0;
 void LogPrintSys(int priority, const char* format, ...)
 {
     va_list args;
@@ -33,6 +34,9 @@ void LogPrintSys(int priority, const char* format, ...)
     }
     if (priority == LOG_WARNING) {
         g_warnLogNum++;
+    }
+    if (priority == LOG_INFO) {
+        g_infoLogNum++;
     }
 #ifdef LLT_DEBUG
     char logFile[200] = {0};
@@ -84,6 +88,8 @@ uint32_t GetErrLogNum(void) { return g_errLogNum; }
 
 uint32_t GetWarnLogNum(void) { return g_warnLogNum; }
 
+uint32_t GetInfoLogNum(void) { return g_infoLogNum; }
+
 void ResetErrLog(void)
 {
     g_errLogNum = 0;
@@ -96,6 +102,8 @@ void ResetErrLog(void)
 }
 
 void ResetWarnLog(void) { g_warnLogNum = 0; }
+
+void ResetInfoLog(void) { g_infoLogNum = 0; }
 
 int32_t CheckErrLog(char* msg)
 {

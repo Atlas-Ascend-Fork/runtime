@@ -82,6 +82,26 @@ int32_t LoadDllFunc(ArgPtr handle, SymbolInfo* symbolInfos, uint32_t symbolNum)
 }
 
 /**
+ * @brief LoadDllFuncSingleQuiet: find one library symbol without logging, for
+ *        call sites that treat an absent symbol as a supported configuration
+ *        and report it in their own words and severity
+ * @param [in]handle: library load handle
+ * @param [in]symbol: function name
+ * @return: On success, return the address associated with symbol
+ *     On failure, return NULL
+ */
+ArgPtr LoadDllFuncSingleQuiet(ArgPtr handle, const char* symbol)
+{
+    ONE_ACT_NO_LOG((handle == NULL) || (symbol == NULL), return NULL);
+
+#if (OS_TYPE_DEF == LINUX)
+    return dlsym(handle, symbol);
+#else
+    return GetProcAddress(handle, symbol);
+#endif
+}
+
+/**
  * @brief LoadDllFuncSingle: find one library symbol and load it
  * @param [in]handle: library load handle
  * @param [in]symbol: function name
