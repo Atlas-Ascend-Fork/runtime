@@ -33,6 +33,7 @@ PyObject* WrapPtrToBytes(PyObject* /* self */, PyObject* args)
     PyObject* bytesObj = nullptr;
 
     CHECK_NULL(PyArg_ParseTuple(args, "kk", &ptr, &size), "acl.util.ptr_to_bytes args parse failed");
+    CHECK_NULL(ptr != nullptr || size == 0, "ptr must not be null when size is nonzero", PyExc_ValueError);
 
     bytesObj = PyBytes_FromStringAndSize(reinterpret_cast<const char*>(ptr), size);
     CHECK_NULL(bytesObj, "convert c pointer to bytes failed", PyExc_ValueError);

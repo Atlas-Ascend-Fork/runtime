@@ -44,6 +44,8 @@ bytes_out = acl.util.ptr_to_bytes(ptr, size)
 | --- | --- |
 | bytes_out | bytes对象。 |
 
+当`size`大于0时，`ptr`必须为非空的有效地址；传入空地址将抛出`ValueError`。`size`为0时可传入空地址并返回空bytes。
+
 ## 注意事项
 
 修改示例如下：
