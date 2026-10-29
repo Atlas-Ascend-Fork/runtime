@@ -2388,7 +2388,7 @@ rtError_t RawDevice::ParseSimtPrintInfo()
     }
 
     uint32_t userDeviceId = deviceId_;
-    if (Runtime::Instance()->GetUserDevIdByDeviceId(deviceId_, &userDeviceId) != RT_ERROR_NONE) {
+    if (Runtime::Instance()->GetUserDevIdByDeviceId(deviceId_, &userDeviceId, false, false, true) != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_WARNING, "GetUserDevIdByDeviceId failed, fallback to driver deviceId=%u.", deviceId_);
         userDeviceId = deviceId_;
     }
@@ -2415,7 +2415,7 @@ rtError_t RawDevice::ParseSimdPrintInfo()
     }
 
     uint32_t userDeviceId = deviceId_;
-    if (Runtime::Instance()->GetUserDevIdByDeviceId(deviceId_, &userDeviceId) != RT_ERROR_NONE) {
+    if (Runtime::Instance()->GetUserDevIdByDeviceId(deviceId_, &userDeviceId, false, false, true) != RT_ERROR_NONE) {
         RT_LOG(RT_LOG_WARNING, "GetUserDevIdByDeviceId failed, fallback to driver deviceId=%u.", deviceId_);
         userDeviceId = deviceId_;
     }
