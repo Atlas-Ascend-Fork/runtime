@@ -247,15 +247,13 @@ static rtError_t ConvertUBDmaBatchForModel(TaskInfo* const taskInfo, AsyncDmaBat
     AsyncWqeInputPara input = {};
     AsyncWqeOutputPara output = {};
     input.wqeType = static_cast<uint32_t>(DRV_ASYNC_DMA_TYPE_BATCH);
-    input.batch.count = batchInfo.count;
-    input.batch.len = batchInfo.sizes;
 
     error = ShiftBatchArrays(batchInfo, true);
     if (error != RT_ERROR_NONE) {
         return error;
     }
     input.batch.len = batchInfo.sizes;
-    input.batch.count = batchInfo.count;
+    input.batch.count = batchInfo.count > MAX_BATCH_DMA_CNT ? MAX_BATCH_DMA_CNT : batchInfo.count;
     input.batch.src = RtPtrToPtr<uint64_t*>(batchInfo.srcs);
     input.batch.dst = RtPtrToPtr<uint64_t*>(batchInfo.dsts);
 
@@ -302,7 +300,7 @@ rtError_t ConvertAsyncDmaBatch(TaskInfo* const taskInfo, AsyncDmaBatchInfo& batc
     input.srcs = batchInfo.srcs;
     input.dsts = batchInfo.dsts;
     input.lens = batchInfo.sizes;
-    input.count = batchInfo.count;
+    input.count = batchInfo.count > MAX_BATCH_DMA_CNT ? MAX_BATCH_DMA_CNT : batchInfo.count;
     AsyncDmaWqeOutputInfo output;
     (void)memset_s(&output, sizeof(AsyncDmaWqeOutputInfo), 0, sizeof(AsyncDmaWqeOutputInfo));
     const rtError_t error = driver->CreateAsyncDmaWqeBatch(devId, input, &output);

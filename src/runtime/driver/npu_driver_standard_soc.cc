@@ -177,14 +177,13 @@ rtError_t NpuDriver::CreateAsyncDmaWqeBatch(
     wqeDmaInput.src = RtPtrToPtr<UINT64*>(input.srcs);
     wqeDmaInput.len = RtPtrToPtr<UINT64*>(input.lens);
     wqeDmaInput.count = input.count;
-    wqeDmaInput.fixedCnt = input.fixedCnt;
 
     const drvError_t drvRet = halAsyncDmaCreateBatch(devId, &wqeDmaInput, &wqeDmaOutput);
     if (drvRet != DRV_ERROR_NONE) {
         DRV_ERROR_PROCESS(
             drvRet,
-            "[drv api] halAsyncDmaCreateBatch failed, device_id=%u, ts_id=%u, sq_id=%u, fixedCnt=%llu, drvRetCode=%d.",
-            devId, input.tsId, input.sqId, static_cast<UINT64>(input.fixedCnt), static_cast<int32_t>(drvRet));
+            "[drv api] halAsyncDmaCreateBatch failed, device_id=%u, ts_id=%u, sq_id=%u, count=%llu, drvRetCode=%d.",
+            devId, input.tsId, input.sqId, static_cast<UINT64>(input.count), static_cast<int32_t>(drvRet));
         return RT_ERROR_DRV_ERR;
     }
 

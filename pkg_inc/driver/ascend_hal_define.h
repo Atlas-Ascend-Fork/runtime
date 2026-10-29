@@ -1334,14 +1334,13 @@ struct halAsyncDmaDestroy2DPara {
 #define TRS_ASYNC_CPY_BATCH_IN_RSV_LEN 8
 struct halAsyncDmaInputBatchPara {
     drvSqCqType_t type;
-    unsigned int tsId;           /* default is 0 */
+    unsigned int tsId;        /* default is 0 */
     unsigned int sqId;
-    unsigned int dir;            /* reserved copy direction, the real dir is convert by src/dst addr */
-    unsigned long long* dst;     /* destination memory address array */
-    unsigned long long* src;     /* source memory address array */
-    unsigned long long* len;     /* cpy size array */
-    unsigned long long count;    /* cpy array elements count */
-    unsigned long long fixedCnt; /* Input: already converted array cnt */
+    unsigned int dir;         /* reserved copy direction, the real dir is convert by src/dst addr */
+    unsigned long long* dst;  /* destination memory address array */
+    unsigned long long* src;  /* source memory address array */
+    unsigned long long* len;  /* cpy size array */
+    unsigned long long count; /* cpy array elements count */
     unsigned int rsv[TRS_ASYNC_CPY_BATCH_IN_RSV_LEN];
 };
 
@@ -1465,13 +1464,15 @@ struct halAsyncDmaWqeInputPara {
 struct halAsyncDmaWqeOutputPara {
     unsigned int wqeCnt;
     /*
-     * batch: already complete-converted array element;
-     * others: 0 for partially-converted, 1 for complete-converted
+     * for fixedCnt in scene:
+     * drvAsyncDmaType_t batch/nop: already complete-converted array element;
+     * drvAsyncDmaType_t 2d/normal: 0 for partially-converted, 1 for complete-converted
      */
     unsigned long long fixedCnt;
     /*
-     * batch: the actual-converted size for the next partially-converted array element;
-     * others: fixedSize return the actual-converted size if fixedCnt is 1, otherwise return 0
+     * for fixedSize in scene:
+     * drvAsyncDmaType_t batch/nop: the actual-converted size for the array[fixedCnt] element;
+     * drvAsyncDmaType_t 2d/normal: fixedSize return the actual-converted size if fixedCnt is 0, otherwise return 0
      */
     unsigned long long fixedSize;
     unsigned int rsv[TRS_ASYNC_DMA_WQE_CONVERT_OUT_RSV_LEN];
