@@ -48,6 +48,8 @@ STATIC bool SlogdEventlogCheckLogType(const LogInfo* info)
 #endif
 
 #ifdef STATIC_BUFFER
+STATIC volatile uint32_t g_eventGetInfoPrintNum =
+    0; // rate limiter for the per-block Get callback info (1-in-N sampling)
 #include "log_session_manage.h"
 STATIC void SlogdEventlogGet(SessionItem* handle, void* buffer, uint32_t bufferLen, uint32_t devId)
 {
@@ -66,7 +68,13 @@ STATIC void SlogdEventlogGet(SessionItem* handle, void* buffer, uint32_t bufferL
         ret = snprintf_s(fileName, MAX_FILENAME_LEN, MAX_FILENAME_LEN - 1, "run/event/event_%s.log", msgData->timeStr);
         ONE_ACT_ERR_LOG(ret == -1, continue, "snprintf_s for event log failed, timestamp:%s", msgData->timeStr);
 
-        SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+        // rate-limit the per-block info (no INFO_N macro exists): a full buffer drain
+        // otherwise prints thousands of these lines per collection
+        // atomic increment: concurrent single-export HDC threads share this counter, a
+        // plain ++ is a data race (the sampler only needs a stable 1-in-N rhythm, relaxed)
+        if ((__atomic_fetch_add(&g_eventGetInfoPrintNum, 1, __ATOMIC_RELAXED) % GENERAL_PRINT_NUM) == 0) {
+            SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+        }
         ret = SessionMgrSendMsg(handle, fileName, (uint32_t)strlen(fileName));
         ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, continue, "send file name failed, fileName:%s.", fileName);
         ret = SessionMgrSendMsg(handle, msgData->data, (uint32_t)readLen);

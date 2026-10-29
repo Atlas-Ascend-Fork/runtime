@@ -23,6 +23,7 @@ static const char* const SORT_DIR_NAME[(int32_t)LOG_TYPE_NUM] = {DEBUG_DIR_NAME,
 STATIC bool SlogdSysLogCheckLogType(const LogInfo* info) { return info->processType == SYSTEM; }
 
 #ifdef STATIC_BUFFER
+STATIC volatile uint32_t g_sysGetInfoPrintNum = 0; // rate limiter for the per-block Get callback info (1-in-N sampling)
 #include "log_session_manage.h"
 STATIC void SlogdSysLogGet(SessionItem* handle, void* buffer, uint32_t bufferLen, uint32_t devId)
 {
@@ -47,7 +48,13 @@ STATIC void SlogdSysLogGet(SessionItem* handle, void* buffer, uint32_t bufferLen
                 ret == -1, continue, "snprintf_s for %s device os log failed, timestamp:%s", fileDir[i],
                 msgData->timeStr);
 
-            SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+            // rate-limit the per-block info (no INFO_N macro exists): a full buffer drain
+            // otherwise prints thousands of these lines per collection
+            // atomic increment: concurrent single-export HDC threads share this counter, a
+            // plain ++ is a data race (the sampler only needs a stable 1-in-N rhythm, relaxed)
+            if ((__atomic_fetch_add(&g_sysGetInfoPrintNum, 1, __ATOMIC_RELAXED) % GENERAL_PRINT_NUM) == 0) {
+                SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+            }
             ret = SessionMgrSendMsg(handle, fileName, (uint32_t)strlen(fileName));
             ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, continue, "send file name failed, fileName:%s.", fileName);
             ret = SessionMgrSendMsg(handle, msgData->data, (uint32_t)readLen);

@@ -234,6 +234,9 @@ STATIC void DlogSetMode(uint32_t mode)
  */
 void DlogSetUserAttr(const LogAttr* logAttr)
 {
+    // exported API: tree-internal callers pass a stack object, external consumers may
+    // pass NULL - guard like the sibling getter instead of dereferencing under the lock
+    ONE_ACT_WARN_LOG(logAttr == NULL, return, "[input] log attr is null.");
     LogAttr initAttr;
     (void)memset_s(&(initAttr), sizeof(initAttr), DLOG_ATTR_INIT_VALUE, sizeof(initAttr));
     DlogAttrWriteLock();

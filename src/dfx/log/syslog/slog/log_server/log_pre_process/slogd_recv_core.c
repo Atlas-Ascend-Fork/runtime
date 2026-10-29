@@ -139,7 +139,14 @@ int32_t SlogdReceiveInit(void)
         g_receiveMgr.comThreadMgr.priority[i] = i;
         if (g_receiveMgr.comThreadMgr.comNode[i].receive != NULL) { // 有日志注册才创建common线程
             g_receiveMgr.comThreadMgr.comThread[i].threadInfo.pulArg = (void*)&g_receiveMgr.comThreadMgr.priority[i];
-            (void)SlogdThreadMgrCreateCommonThread(&g_receiveMgr.comThreadMgr.comThread[i], SlogdComReceiveProc);
+            // propagate the failure like the device-thread creation above does: a silently
+            // missing receiver means that priority's logs are dropped with no init error.
+            // comThreadRet (not ret): a shadowed name is a hard error under -Wshadow
+            int32_t comThreadRet =
+                SlogdThreadMgrCreateCommonThread(&g_receiveMgr.comThreadMgr.comThread[i], SlogdComReceiveProc);
+            ONE_ACT_ERR_LOG(
+                comThreadRet != LOG_SUCCESS, return LOG_FAILURE,
+                "create common receive thread failed, priority=%d, ret=%d.", i, comThreadRet);
         }
     }
     return LOG_SUCCESS;

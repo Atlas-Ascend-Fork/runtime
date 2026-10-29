@@ -36,10 +36,13 @@ typedef struct {
 } DeviceRes;
 
 #define MAX_READY_RETRY_TIMES 10
+#define FULL_QUEUE_MAX_RETRY 50U
+
 STATIC DeviceRes g_deviceResource[MAX_DEV_NUM];
 STATIC unsigned int g_writeDPrintNum = 0;
 
 #ifdef STATIC_BUFFER
+STATIC volatile uint32_t g_fwGetInfoPrintNum = 0; // rate limiter for the per-block Get callback info (1-in-N sampling)
 #include "log_session_manage.h"
 static void SlogdFirmwareLogWrite(void* handle, uint32_t devId)
 {
@@ -141,7 +144,13 @@ void SlogdFirmwareLogGet(SessionItem* handle, void* buffer, uint32_t bufferLen, 
             GetHostDeviceID(devId), GetHostDeviceID(devId), msgData->timeStr);
         ONE_ACT_ERR_LOG(ret == -1, continue, "snprintf_s for event log, timestamp:%s", msgData->timeStr);
 
-        SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+        // rate-limit the per-block info (no INFO_N macro exists): a full buffer drain
+        // otherwise prints thousands of these lines per collection
+        // atomic increment: concurrent single-export HDC threads share this counter, a
+        // plain ++ is a data race (the sampler only needs a stable 1-in-N rhythm, relaxed)
+        if ((__atomic_fetch_add(&g_fwGetInfoPrintNum, 1, __ATOMIC_RELAXED) % GENERAL_PRINT_NUM) == 0) {
+            SELF_LOG_INFO("send file:%s, readLen:%d", fileName, readLen);
+        }
         ret = SessionMgrSendMsg(handle, fileName, (uint32_t)strlen(fileName));
         ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, continue, "send file name failed, fileName:%s.", fileName);
         ret = SessionMgrSendMsg(handle, msgData->data, (uint32_t)readLen);
@@ -276,6 +285,9 @@ STATIC LogRt
 FullAddBuffQueueS(LogQueue* queue, LogMsgHead* recvMsg, unsigned int* nodeCnt, LogBuff* buff, ToolMutex* threadLock)
 {
     LogRt ret = SUCCESS;
+    // bounded retry: a stopped consumer thread used to spin here forever (100ms cycle,
+    // one info line each) holding the device firmware channel down without any alarm
+    uint32_t fullRetry = 0;
     do {
         // save buffer to queue when buffer is full safely
         LOCK_WARN_LOG(threadLock);
@@ -284,6 +296,10 @@ FullAddBuffQueueS(LogQueue* queue, LogMsgHead* recvMsg, unsigned int* nodeCnt, L
             UNLOCK_WARN_LOG(threadLock);
             SELF_LOG_INFO("queue is full while enqueue.");
             (void)ToolSleep(ONE_HUNDRED_MILLISECOND);
+            if (++fullRetry >= FULL_QUEUE_MAX_RETRY) {
+                SELF_LOG_ERROR("queue stays full after %u retries, drop the block.", fullRetry);
+                return ret;
+            }
         }
     } while (ret == QUEUE_IS_FULL);
 

@@ -21,6 +21,9 @@
 
 // File lock, Just start a process
 STATIC int32_t g_lockFd = -1;
+// forward declaration: the failure paths inside JustStartAProcess call this before its
+// definition at the file tail, an implicit declaration conflicts with the STATIC one
+STATIC void SingleResourceReleaseLock(void);
 
 STATIC int32_t LockReg(const LockRegParams* params)
 {
@@ -59,31 +62,37 @@ LogStatus JustStartAProcess(const char* file)
 
     int32_t ret = ftruncate(g_lockFd, 0);
     TWO_ACT_ERR_LOG(
-        ret == -1, SingleResourceCleanup(file), return LOG_INVALID_DATA,
+        ret == -1, SingleResourceReleaseLock(), return LOG_INVALID_DATA,
         "reset file size to zero failed, file=%s, strerr=%s.", file, strerror(ToolGetErrorCode()));
 
     ret = sprintf_s(buf, sizeof(buf), "%d\n", ToolGetPid());
     TWO_ACT_ERR_LOG(
-        ret == -1, SingleResourceCleanup(file), return LOG_INVALID_DATA,
+        ret == -1, SingleResourceReleaseLock(), return LOG_INVALID_DATA,
         "sprintf_s process id failed, result=%d, strerr=%s.", ret, strerror(ToolGetErrorCode()));
 
     ret = ToolWrite(g_lockFd, buf, (UINT32)strlen(buf));
     TWO_ACT_ERR_LOG(
-        (ret < 0) || ((unsigned)ret != strlen(buf)), SingleResourceCleanup(file), return LOG_INVALID_DATA,
+        (ret < 0) || ((unsigned)ret != strlen(buf)), SingleResourceReleaseLock(), return LOG_INVALID_DATA,
         "write buffer to file failed, file=%s, strerr=%s.", file, strerror(ToolGetErrorCode()));
 
     ret = fcntl(g_lockFd, F_GETFD, 0);
     TWO_ACT_ERR_LOG(
-        ret == -1, SingleResourceCleanup(file), return LOG_INVALID_DATA, "fcntl file failed, file=%s, strerr=%s.", file,
+        ret == -1, SingleResourceReleaseLock(), return LOG_INVALID_DATA, "fcntl file failed, file=%s, strerr=%s.", file,
         strerror(ToolGetErrorCode()));
     unsigned int res = (unsigned int)ret;
     res |= FD_CLOEXEC;
     ret = fcntl(g_lockFd, F_SETFD, res);
     TWO_ACT_ERR_LOG(
-        ret == -1, SingleResourceCleanup(file), return LOG_INVALID_DATA, "fcntl file failed, file=%s, strerr=%s.", file,
+        ret == -1, SingleResourceReleaseLock(), return LOG_INVALID_DATA, "fcntl file failed, file=%s, strerr=%s.", file,
         strerror(ToolGetErrorCode()));
     return LOG_SUCCESS;
 }
+
+// release the file lock WITHOUT unlinking: on a failed single-instance init the lock file
+// must survive so concurrent starters keep contending on the same inode - unlinking here
+// lets the second starter own an orphaned inode while a third creates a fresh one and
+// both run as the "single" instance
+STATIC void SingleResourceReleaseLock(void) { LOG_CLOSE_FD(g_lockFd); }
 
 // File lock, end
 void SingleResourceCleanup(const char* file)

@@ -523,7 +523,9 @@ TEST_F(EP_ALOG_HOST_EXCP_UTEST, PlogOpenNoPemission)
     // 释放
     DlogDestructor();
     unsetenv("ASCEND_PROCESS_LOG_PATH");
-    EXPECT_EQ(2, GetErrLogNum());
+    // one error line since the chmod-on-failed-write was gated by the write result:
+    // the spurious "change log file mode failed, file=" line no longer fires
+    EXPECT_EQ(1, GetErrLogNum());
 }
 
 // init host file list failed(no permission to write)

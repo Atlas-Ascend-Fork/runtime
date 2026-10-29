@@ -211,6 +211,7 @@ STATIC LogStatus AddDeviceNewGroup(GroupInfo* groupInfo, char* groupLogPath, uns
     }
 
     newGroup->deviceNum = MAX_DEV_NUM;
+    uint32_t initedDev = 0;
     for (uint32_t idx = 0; idx < newGroup->deviceNum; idx++) {
         char deviceLogPath[MAX_FILEPATH_LEN + 1U] = {0};
         int32_t err = snprintf_s(
@@ -222,6 +223,7 @@ STATIC LogStatus AddDeviceNewGroup(GroupInfo* groupInfo, char* groupLogPath, uns
         StSubLogFileList* list = &(newGroup->deviceLogList[idx]);
         err = InitGroupLogList(list, groupInfo, deviceLogPath, LogStrlen(deviceLogPath));
         ONE_ACT_ERR_LOG(err != 0, goto fail_init_group_node, "Init group resource failed.");
+        initedDev++;
         GetGroupFileList(list);
     }
     SELF_LOG_INFO("Success add group. Group Id = [%d].", newGroup->groupId);
@@ -234,6 +236,12 @@ STATIC LogStatus AddDeviceNewGroup(GroupInfo* groupInfo, char* groupLogPath, uns
     }
     return LOG_SUCCESS;
 fail_init_group_node:
+    // release the write-limit objects of the devices whose InitGroupLogList already
+    // succeeded: the plain XFREE below only drops the array, leaking one limit object
+    // (with its period config) per completed device on every failed group add
+    for (uint32_t j = 0; j < initedDev; j++) {
+        WriteFileLimitUnInit(&newGroup->deviceLogList[j].limit);
+    }
     XFREE(newGroup->deviceLogList);
     XFREE(newGroup);
     return LOG_FAILURE;
@@ -358,7 +366,10 @@ STATIC int32_t SlogdGroupLogWrite(const char* msg, uint32_t msgLen, const LogInf
 
     void* handle = SlogdBufferHandleOpen(GROUP_LOG_TYPE, (void*)group, LOG_BUFFER_WRITE_MODE, 0);
     if (handle == NULL) {
-        SELF_LOG_ERROR("get group log[%s] buffer handle failed.", group->groupName);
+        // rate-limited like the sibling SlogdWriteDeviceGroupLog above: this fires once per
+        // dropped log line in the zombie-group scenario and floods the self log otherwise
+        SELF_LOG_ERROR_N(
+            &g_writeGroupFilePrintNum, GENERAL_PRINT_NUM, "get group log[%s] buffer handle failed.", group->groupName);
         return LOG_FAILURE;
     }
     if (SlogdBufferCheckFull(handle, msgLen)) {

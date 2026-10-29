@@ -15,6 +15,8 @@
 #include "log_print.h"
 
 #define MSG_RETRY_TIMES 90
+#define MSG_FAIL_PRINT_NUM 10U
+STATIC uint32_t g_recvFailPrintNum = 0; // rate limiter for the slogd-unreachable ERROR
 
 static ToolMutex g_logconfigLock;
 
@@ -43,7 +45,10 @@ STATIC int32_t LogCmdRecvLogMsg(LogCmdMsg* rcvMsg, int32_t queueId)
     } while (true);
 
     if (rcvRes != LOG_SUCCESS) {
-        SELF_LOG_ERROR(
+        // rate-limited across requests: with slogd down every host poll produces one of
+        // these ERROR lines after its own 9s retry burst and floods /var/log
+        SELF_LOG_ERROR_N(
+            &g_recvFailPrintNum, MSG_FAIL_PRINT_NUM,
             "receive level setting result failed from slogd, result=%d, strerr=%s, retry_time=%d.", rcvRes,
             strerror(ToolGetErrorCode()), retryTimes);
         return CONFIG_LOG_MSGQUEUE_FAILED;

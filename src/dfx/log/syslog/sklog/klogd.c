@@ -21,6 +21,7 @@
 #endif
 
 #define COMMON_BUFSIZE 1024
+#define KLOG_MAX_BACKOFF_SEC 30U
 #define BASE_HEX 16
 #define BASE_DECIMAL 10
 #define INDEX_UNIT 4
@@ -295,14 +296,21 @@ STATIC void ProcKernelLog(void)
         return;
     }
     (void)memset_s(logBuffer, COMMON_BUFSIZE, 0x00, COMMON_BUFSIZE);
+    // back off on persistent /dev/kmsg failures: a fixed 1s sleep plus one ERROR line per
+    // second floods the self log and burns CPU for the whole outage
+    uint32_t failBackoffSec = 1;
     while (LogGetSigNo() == 0) {
         int ret = ReadKernelLog(logBuffer, COMMON_BUFSIZE - 1);
         if (ret == -1) {
             ONE_ACT_NO_LOG(ToolGetErrorCode() == EINTR, continue);
             SELF_LOG_ERROR("read file(%s) failed, result=%d, strerr=%s.", KLOG_PATH, ret, strerror(ToolGetErrorCode()));
-            (void)ToolSleep(ONE_SECOND);
+            (void)ToolSleep(failBackoffSec * ONE_SECOND);
+            if (failBackoffSec < KLOG_MAX_BACKOFF_SEC) {
+                failBackoffSec++;
+            }
             continue;
         }
+        failBackoffSec = 1;
         logBuffer[ret] = '\0';
         ret = ProcessBuf(logBuffer, COMMON_BUFSIZE);
         if (ret == INVALID) {

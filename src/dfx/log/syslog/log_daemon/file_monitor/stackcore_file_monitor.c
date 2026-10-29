@@ -215,6 +215,11 @@ static int32_t InitStackCoreDir(void)
         SELF_LOG_ERROR(
             "scan directory failed, directory=%s, result=%d, strerr=%s.", CORE_DEFAULT_PATH, totalNum,
             strerror(ToolGetErrorCode()));
+        // free the scandir array on this branch too: the sibling failure paths below do,
+        // a >MAX_MONITOR_EVENT scan leaks one dirent per subdirectory on every start
+        if ((totalNum > 0) && (namelist != NULL)) {
+            ToolScandirFree(namelist, totalNum);
+        }
         return LOG_FAILURE;
     }
 
@@ -254,6 +259,13 @@ static int32_t InitStackCoreDir(void)
         stackcorePathNum++;
     }
     ToolScandirFree(namelist, totalNum);
+    // release the buffers of slots whose fill failed above (they are not counted in
+    // stackcorePathNum): without this every malformed entry leaks one MAX_FILEPATH_LEN
+    // buffer on every InitStackCoreDir call
+    for (i = stackcorePathNum; i < totalNum; i++) {
+        XFREE(g_stackcorePath[i]);
+        g_stackcorePath[i] = NULL;
+    }
     return stackcorePathNum;
 }
 

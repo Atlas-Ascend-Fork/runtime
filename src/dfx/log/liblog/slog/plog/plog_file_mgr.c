@@ -477,8 +477,9 @@ STATIC LogStatus PlogWriteFile(PlogFileList* subList, StLogDataBlock* logData)
     char logFileName[MAX_FULLPATH_LEN + 1U] = {0};
     LogStatus ret = PlogWrite(subList, logData, logFileName, sizeof(logFileName));
 
-    // change file mode if it was masked by umask
-    if (ToolChmod((const char*)logFileName, (INT32)LOG_FILE_RDWR_MODE) != SYS_OK) {
+    // change file mode if it was masked by umask - only after a successful write: on
+    // failure logFileName stays empty, chmod("") fails and the error line fires per log
+    if ((ret == LOG_SUCCESS) && (ToolChmod((const char*)logFileName, (INT32)LOG_FILE_RDWR_MODE) != SYS_OK)) {
         SELF_LOG_ERROR("change log file mode failed, file=%s.", logFileName);
     }
     return ret;

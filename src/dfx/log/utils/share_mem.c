@@ -143,11 +143,20 @@ ShmErr ShMemRead(int32_t shmId, char* value, size_t len, size_t offset)
     if (shmvalue == NULL) {
         return SHM_ERROR;
     }
-    if ((strlen(shmvalue) == 0) || (strlen(shmvalue) > len)) {
+    // validate the segment actually being read: the old check measured from the shm base,
+    // so an empty first segment rejected every later segment and a short first segment
+    // produced a wrong bound for it
+    if (offset >= SHM_SIZE) {
         (void)ToolShmDt(shmvalue);
         return SHM_ERROR;
     }
-    int32_t ret = snprintf_truncated_s(value, len, "%s", shmvalue + offset);
+    const char* seg = shmvalue + offset;
+    size_t segLen = strnlen(seg, SHM_SIZE - offset);
+    if ((segLen == 0) || (segLen > len)) {
+        (void)ToolShmDt(shmvalue);
+        return SHM_ERROR;
+    }
+    int32_t ret = snprintf_truncated_s(value, len, "%s", seg);
     if (ret < 0) {
         (void)ToolShmDt(shmvalue);
         return SHM_ERROR;

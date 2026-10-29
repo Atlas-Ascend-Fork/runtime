@@ -34,6 +34,12 @@
     } // Default ThreadSize(128KB)
 
 STATIC uint32_t g_threadStatus = MONITOR_THREAD_STATUS_INIT;
+// saved so SysmonitorExit can join the monitor thread: without a join the process return
+// kills it mid-collection (unflushed stdio, orphaned popen children)
+STATIC ToolThread g_monitorTid = 0;
+// the monitor sleeps a whole period between collections: split it into second slices so
+// the exit join waits at most one slice plus one collection instead of a full period
+#define SYS_MONITOR_EXIT_POLL_SLICE_MS 1000U
 STATIC SysmonitorInfo g_sysmonitorInfo[SYS_MONITOR_COUNT] = {0};
 
 /**
@@ -130,7 +136,11 @@ STATIC void* SysmonitorResProcessThread(void* arg)
         } else {
             sleepTime = sysmonitorResPeriod - (uint32_t)duration;
         }
-        (void)ToolSleep(sleepTime);
+        while ((sleepTime > 0) && (g_threadStatus == MONITOR_THREAD_STATUS_RUN)) {
+            uint32_t slice = (sleepTime > SYS_MONITOR_EXIT_POLL_SLICE_MS) ? SYS_MONITOR_EXIT_POLL_SLICE_MS : sleepTime;
+            (void)ToolSleep(slice);
+            sleepTime -= slice;
+        }
     }
     g_threadStatus = MONITOR_THREAD_STATUS_EXIT;
     return NULL;
@@ -155,6 +165,7 @@ STATIC int32_t SysmonitorResProcess(void)
         MONITOR_LOGE("create thread failed, result=%d.", ret);
         return ret;
     }
+    g_monitorTid = tid;
     return ret;
 }
 
@@ -173,4 +184,12 @@ int32_t SysmonitorProcess(void) { return SysmonitorResProcess(); }
 /**
  * @brief       : exit sys monitor process
  */
-void SysmonitorExit(void) { g_threadStatus = MONITOR_THREAD_STATUS_WAIT_EXIT; }
+void SysmonitorExit(void)
+{
+    g_threadStatus = MONITOR_THREAD_STATUS_WAIT_EXIT;
+    if (g_monitorTid != 0) {
+        int32_t ret = ToolJoinTask(&g_monitorTid);
+        NO_ACT_WARN_LOG(ret != SYS_OK, "join sys monitor thread failed, ret=%d.", ret);
+        g_monitorTid = 0;
+    }
+}
