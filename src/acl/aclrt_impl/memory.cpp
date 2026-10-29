@@ -411,7 +411,7 @@ static aclError aclrtMallocInnerWithCfg(
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
             std::vector<const char*>(
-                {funcDesc, "nullptr", "cfg->attrs", "cfg->attrs must not be nullptr when cfg->numAttrs is not 0"}));
+                {funcDesc, "nullptr", "cfg->attrs", "Provide a non-NULL attribute array when cfg->numAttrs is not 0"}));
         return ACL_ERROR_INVALID_PARAM;
     }
     // size must be greater than 0
@@ -1655,13 +1655,12 @@ aclError aclrtGetBufUserDataImpl(const aclrtMbuf buf, void* dataPtr, size_t size
         ACL_LOG_ERROR(
             "%s failed because the sum of size and offset is greater than %u, size=%zu, offset=%zu.", __func__,
             MEM_SIZE_MAX, size, offset);
-        const std::string sizeVal = std::to_string(size);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
-            "the sum of size and offset is greater than %u, size=%zu, offset=%zu.", MEM_SIZE_MAX, size, offset);
+            "The sum of size and offset must not exceed %u, size=%zu, offset=%zu", MEM_SIZE_MAX, size, offset);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
-            acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({funcName.c_str(), sizeVal.c_str(), "size", errMsg.c_str()}));
+            acl::INVALID_PARAM_NO_VALUE_MSG, std::vector<const char*>({"func", "param", "reason"}),
+            std::vector<const char*>({funcName.c_str(), "size or offset", errMsg.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -1701,13 +1700,12 @@ aclError aclrtSetBufUserDataImpl(aclrtMbuf buf, const void* dataPtr, size_t size
         ACL_LOG_ERROR(
             "%s failed because the sum of size and offset is greater than %u, size=%zu, offset=%zu.", __func__,
             MEM_SIZE_MAX, size, offset);
-        const std::string sizeVal = std::to_string(size);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
-            "the sum of size and offset is greater than %u, size=%zu, offset=%zu", MEM_SIZE_MAX, size, offset);
+            "The sum of size and offset must not exceed %u, size=%zu, offset=%zu", MEM_SIZE_MAX, size, offset);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
-            acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({funcName.c_str(), sizeVal.c_str(), "size", errMsg.c_str()}));
+            acl::INVALID_PARAM_NO_VALUE_MSG, std::vector<const char*>({"func", "param", "reason"}),
+            std::vector<const char*>({funcName.c_str(), "size or offset", errMsg.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
     ACL_REQUIRES_NOT_NULL_WITH_INPUT_REPORT(buf);

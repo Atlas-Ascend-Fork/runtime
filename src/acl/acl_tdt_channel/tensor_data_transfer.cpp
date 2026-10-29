@@ -843,7 +843,7 @@ aclError acltdtGetDimsFromItem(const acltdtDataItem* dataItem, int64_t* dims, si
             "[Check][dimNum]output dimNum[%zu] cannot be less than dims number[%zu]", dimNum, dataItem->dims.size());
         const std::string dimNumVal = std::to_string(dimNum);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
-            "dimNum %zu cannot be less than the size of dataItem's dims %zu", dimNum, dataItem->dims.size());
+            "DimNum %zu cannot be less than the size of dataItem's dims %zu", dimNum, dataItem->dims.size());
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
             std::vector<const char*>({__func__, dimNumVal.c_str(), "dimNum", errMsg.c_str()}));

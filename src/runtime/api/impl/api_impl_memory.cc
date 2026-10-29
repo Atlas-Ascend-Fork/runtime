@@ -372,7 +372,12 @@ rtError_t ApiImpl::DevMalloc(
             error != RT_ERROR_NONE, RT_ERROR_INVALID_VALUE,
             "Failed to convert the user device ID %u to driver device ID.", cfgVal.deviceId);
         if (realDeviceId != curCtx->Device_()->Id_()) {
-            RT_LOG(RT_LOG_ERROR, "invalid drv devId=%u, should be %u", realDeviceId, curCtx->Device_()->Id_());
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1011, "Allocating device memory", cfgVal.deviceId, "Parameter cfg deviceId",
+                RtFmtMsg(
+                    "The configured device resolves to device %u, but the current context uses device %u; "
+                    "select the current context device in Parameter cfg",
+                    realDeviceId, curCtx->Device_()->Id_()));
             return RT_ERROR_INVALID_VALUE;
         }
     }

@@ -285,6 +285,7 @@ rtError_t rtMemAlloc(void** devPtr, uint64_t size, rtMallocPolicy policy, rtMall
     const rtError_t error = apiInstance->DevMalloc(devPtr, size, policy, advise, cfg);
     TIMESTAMP_END(rtMemAlloc);
     if (unlikely(error != RT_ERROR_NONE)) {
+        REPORT_FUNC_ERROR_REASON(error);
         return GetRtExtErrCodeAndSetGlobalErr((error));
     }
     return ACL_RT_SUCCESS;

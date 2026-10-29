@@ -432,7 +432,7 @@ aclError acltdtGetQueueAttr(
                 acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
                 std::vector<const char*>(
                     {__func__, acl::GetQueueAttrTypeDesc(type), "type",
-                     "[ACL_TDT_QUEUE_NAME_PTR, ACL_TDT_QUEUE_DEPTH_UINT32]"}));
+                     "[ACL_TDT_QUEUE_NAME_PTR(0), ACL_TDT_QUEUE_DEPTH_UINT32(1)]"}));
             return ACL_ERROR_INVALID_PARAM;
         }
     }
@@ -479,7 +479,8 @@ aclError acltdtGetQueueRouteParam(
                 acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
                 std::vector<const char*>(
                     {__func__, acl::GetQueueRouteParamTypeDesc(type), "type",
-                     "[ACL_TDT_QUEUE_ROUTE_SRC_UINT32, ACL_TDT_QUEUE_ROUTE_STATUS_INT32]"}));
+                     "[ACL_TDT_QUEUE_ROUTE_SRC_UINT32(0), ACL_TDT_QUEUE_ROUTE_DST_UINT32(1), "
+                     "ACL_TDT_QUEUE_ROUTE_STATUS_INT32(2)]"}));
             return ACL_ERROR_INVALID_PARAM;
         }
     }
@@ -516,7 +517,7 @@ aclError acltdtGetQueueRoute(const acltdtQueueRouteList* routeList, size_t index
     if (index >= routeList->routeList.size()) {
         ACL_LOG_ERROR("[Check][index] index [%zu] must be smaller than [%zu]", index, routeList->routeList.size());
         const char_t* argList[] = {"func", "value", "param", "reason"};
-        std::string reason = "must be less than routeList size " + std::to_string(routeList->routeList.size());
+        std::string reason = "Index must be less than routeList size " + std::to_string(routeList->routeList.size());
         const std::string indexVal = std::to_string(index);
         const char_t* argVal[] = {__func__, indexVal.c_str(), "index", reason.c_str()};
         acl::AclErrorLogManager::ReportInputErrorWithChar(acl::INVALID_PARAM_REASON_MSG, argList, argVal, 4UL);
