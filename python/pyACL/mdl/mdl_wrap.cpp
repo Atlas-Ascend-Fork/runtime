@@ -1042,7 +1042,10 @@ PyObject* WrapAclMdlSetInputDynamicDims(PyObject* /* self */, PyObject* args)
     CHECK_NULL(PyDict_Check(pDict), "argument 4 is not dict");
 
     PyObject* pyCount = PyDict_GetItemString(pDict, "dimCount");
+    CHECK_NULL(pyCount != nullptr, "dimCount is required", PyExc_ValueError);
     dims.dimCount = PyLong_AsSize_t(pyCount);
+    CHECK_NULL(PyErr_Occurred() == nullptr, "dimCount must be a non-negative integer", PyExc_ValueError);
+    CHECK_NULL(dims.dimCount <= ACL_MAX_DIM_CNT, "dimCount exceeds ACL_MAX_DIM_CNT", PyExc_ValueError);
     PyObject* pyStrName = PyDict_GetItemString(pDict, "name");
     if (pyStrName != nullptr) {
         PyObject* bytes = PyUnicode_AsUTF8String(pyStrName);
