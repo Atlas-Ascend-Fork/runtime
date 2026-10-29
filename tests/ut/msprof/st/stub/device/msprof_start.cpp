@@ -30,7 +30,7 @@ namespace Dvvp {
 namespace Test {
 
 // In ge-option / acl-json based ST flows, MsprofStart/MsprofiInit is never called
-// directly, so the receive_data callbacks (apiTryPop_/compactTryPop_/...)
+// directly, so the receive_data callbacks
 // remain nullptr and would crash when the uploader thread runs.
 // Initialise ProfCannPlugin's report buffers here so those callbacks are wired
 // up before profiling kicks off.

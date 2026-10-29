@@ -174,13 +174,7 @@ struct aclprofConfig {
 
 class MSPROF_ACL_CORE_UTEST : public testing::Test {
 public:
-    void RegisterTryPop()
-    {
-        ProfImplSetApiBufPop(apiTryPop);
-        ProfImplSetCompactBufPop(compactTryPop);
-        ProfImplSetAdditionalBufPop(additionalTryPop);
-        ProfImplIfReportBufEmpty(ifReportBufEmpty);
-    }
+    void RegisterTryPop() { ProfImplIfReportBufEmpty(ifReportBufEmpty); }
 
 protected:
     virtual void SetUp() { RegisterTryPop(); }
@@ -2718,60 +2712,6 @@ TEST_F(MSPROF_ACL_CORE_UTEST, MsprofHostHandle)
     MOCKER_CPP(&ProfAclMgr::DoHostHandle).expects(once()).will(returnValue(PROFILING_SUCCESS));
     ProfAclMgr::instance()->MsprofHostHandle();
     ProfAclMgr::instance()->mode_ = WORK_MODE_OFF;
-}
-
-TEST_F(MSPROF_ACL_CORE_UTEST, ReporterApiData)
-{
-    GlobalMockObject::verify();
-    using namespace Msprof::Engine;
-    ReceiveData rData;
-    uint32_t age = 1;
-    MsprofApi data;
-    data.level = 10000;
-    MOCKER(apiTryPop).stubs().with(outBound(age), outBound(data)).will(returnValue(true)).then(returnValue(false));
-    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunksVec = {};
-    rData.ApiRun(fileChunksVec);
-    EXPECT_EQ(1, fileChunksVec.size());
-    GlobalMockObject::verify();
-
-    MsprofApi zero;
-    zero.level = 0;
-    MOCKER(apiTryPop).stubs().with(outBound(age), outBound(zero)).will(returnValue(true)).then(returnValue(false));
-    rData.ApiRun(fileChunksVec);
-    EXPECT_EQ(1, fileChunksVec.size());
-    GlobalMockObject::verify();
-}
-
-TEST_F(MSPROF_ACL_CORE_UTEST, ReporterCompactData)
-{
-    GlobalMockObject::verify();
-    using namespace Msprof::Engine;
-    ReceiveData rData;
-    uint32_t age = 1;
-    MsprofCompactInfo data;
-    data.level = 10000;
-    MOCKER(compactTryPop).stubs().with(outBound(age), outBound(data)).will(returnValue(true)).then(returnValue(false));
-    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunksVec = {};
-    rData.CompactRun(fileChunksVec);
-    EXPECT_EQ(1, fileChunksVec.size());
-}
-
-TEST_F(MSPROF_ACL_CORE_UTEST, ReporterAdditionalData)
-{
-    GlobalMockObject::verify();
-    using namespace Msprof::Engine;
-    ReceiveData rData;
-    uint32_t age = 1;
-    MsprofAdditionalInfo data;
-    data.level = 10000;
-    MOCKER(additionalTryPop)
-        .stubs()
-        .with(outBound(age), outBound(data))
-        .will(returnValue(true))
-        .then(returnValue(false));
-    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunksVec = {};
-    rData.AdditionalRun(fileChunksVec);
-    EXPECT_EQ(1, fileChunksVec.size());
 }
 
 TEST_F(MSPROF_ACL_CORE_UTEST, DISABLED_ReporterData)
@@ -7195,7 +7135,156 @@ static void* RecvVarAddPopNullStub(size_t& /*popSize*/) { return nullptr; }
 static void RecvVarAddIndexShiftStub(void* /*popPtr*/, const size_t /*popSize*/) {}
 static bool RecvBufEmptyTrueStub() { return true; }
 static bool RecvBufEmptyFalseStub() { return false; }
+static MsprofApi g_recv_api_batch_data[2] = {};
+static MsprofCompactInfo g_recv_compact_batch_data[2] = {};
+static MsprofAdditionalInfo g_recv_additional_batch_data[2] = {};
+static uint32_t g_recv_api_shift_count = 0;
+static uint32_t g_recv_compact_shift_count = 0;
+static uint32_t g_recv_additional_shift_count = 0;
+
+static void* RecvApiBatchPopStub(uint32_t aging, size_t& popSize, bool /*popForce*/)
+{
+    if (aging != 0U) {
+        popSize = 0;
+        return nullptr;
+    }
+    popSize = sizeof(g_recv_api_batch_data);
+    return reinterpret_cast<void*>(g_recv_api_batch_data);
+}
+static void RecvApiBatchIndexShiftStub(void* /*popPtr*/, const size_t /*popSize*/) { g_recv_api_shift_count++; }
+static void* RecvCompactBatchPopStub(uint32_t aging, size_t& popSize, bool /*popForce*/)
+{
+    if (aging != 0U) {
+        popSize = 0;
+        return nullptr;
+    }
+    popSize = sizeof(g_recv_compact_batch_data);
+    return reinterpret_cast<void*>(g_recv_compact_batch_data);
+}
+static void RecvCompactBatchIndexShiftStub(void* /*popPtr*/, const size_t /*popSize*/) { g_recv_compact_shift_count++; }
+static void* RecvAdditionalBatchPopStub(uint32_t aging, size_t& popSize, bool /*popForce*/)
+{
+    if (aging != 0U) {
+        popSize = 0;
+        return nullptr;
+    }
+    popSize = sizeof(g_recv_additional_batch_data);
+    return reinterpret_cast<void*>(g_recv_additional_batch_data);
+}
+static void RecvAdditionalBatchIndexShiftStub(void* /*popPtr*/, const size_t /*popSize*/)
+{
+    g_recv_additional_shift_count++;
+}
+static void* RecvBatchPopNullStub(uint32_t /*aging*/, size_t& popSize, bool /*popForce*/)
+{
+    popSize = 0;
+    return nullptr;
+}
+static void* RecvApiBatchPartialPopStub(uint32_t aging, size_t& popSize, bool popForce)
+{
+    if (aging != 0U) {
+        popSize = 0;
+        return nullptr;
+    }
+    if (!popForce) {
+        popSize = sizeof(MsprofApi);
+        return nullptr;
+    }
+    popSize = sizeof(MsprofApi);
+    return reinterpret_cast<void*>(g_recv_api_batch_data);
+}
 } // namespace
+
+TEST_F(MSPROF_ACL_CORE_UTEST, ReceiveData_HostBatchRun_KeepsFileChunkSemantics)
+{
+    using namespace Msprof::Engine;
+    ReceiveData rData;
+    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunks;
+
+    g_recv_api_shift_count = 0;
+    g_recv_api_batch_data[0] = MsprofApi{};
+    g_recv_api_batch_data[1] = MsprofApi{};
+    g_recv_api_batch_data[0].level = 10000;
+    g_recv_api_batch_data[1].level = 10000;
+    g_recv_api_batch_data[0].type = 1;
+    g_recv_api_batch_data[1].type = 2;
+    ReceiveData::apiBatchTryPop_ = RecvApiBatchPopStub;
+    ReceiveData::apiBatchBufferIndexShift_ = RecvApiBatchIndexShiftStub;
+    rData.moduleName_ = "api_event";
+    rData.ApiRun(fileChunks);
+    ASSERT_EQ(1U, fileChunks.size());
+    EXPECT_EQ(2U * sizeof(MsprofApi), fileChunks[0]->chunkSize);
+    EXPECT_EQ(1U, g_recv_api_shift_count);
+
+    fileChunks.clear();
+    g_recv_compact_shift_count = 0;
+    g_recv_compact_batch_data[0] = MsprofCompactInfo{};
+    g_recv_compact_batch_data[1] = MsprofCompactInfo{};
+    g_recv_compact_batch_data[0].level = 10000;
+    g_recv_compact_batch_data[1].level = 10000;
+    g_recv_compact_batch_data[0].type = 1;
+    g_recv_compact_batch_data[1].type = 2;
+    ReceiveData::compactBatchTryPop_ = RecvCompactBatchPopStub;
+    ReceiveData::compactBatchBufferIndexShift_ = RecvCompactBatchIndexShiftStub;
+    rData.moduleName_ = "compact";
+    rData.CompactRun(fileChunks);
+    ASSERT_EQ(2U, fileChunks.size());
+    EXPECT_EQ(sizeof(MsprofCompactInfo), fileChunks[0]->chunkSize);
+    EXPECT_EQ(sizeof(MsprofCompactInfo), fileChunks[1]->chunkSize);
+    EXPECT_EQ(1U, g_recv_compact_shift_count);
+
+    fileChunks.clear();
+    g_recv_additional_shift_count = 0;
+    g_recv_additional_batch_data[0] = MsprofAdditionalInfo{};
+    g_recv_additional_batch_data[1] = MsprofAdditionalInfo{};
+    g_recv_additional_batch_data[0].level = 10000;
+    g_recv_additional_batch_data[1].level = 10000;
+    g_recv_additional_batch_data[0].type = 1;
+    g_recv_additional_batch_data[1].type = 2;
+    ReceiveData::additionalBatchTryPop_ = RecvAdditionalBatchPopStub;
+    ReceiveData::additionalBatchBufferIndexShift_ = RecvAdditionalBatchIndexShiftStub;
+    rData.moduleName_ = "additional";
+    rData.AdditionalRun(fileChunks);
+    ASSERT_EQ(2U, fileChunks.size());
+    EXPECT_EQ(sizeof(MsprofAdditionalInfo), fileChunks[0]->chunkSize);
+    EXPECT_EQ(sizeof(MsprofAdditionalInfo), fileChunks[1]->chunkSize);
+    EXPECT_EQ(1U, g_recv_additional_shift_count);
+}
+
+TEST_F(MSPROF_ACL_CORE_UTEST, ReceiveData_HostBatchRun_EmptyBuffers)
+{
+    using namespace Msprof::Engine;
+    ReceiveData rData;
+    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunks;
+    ReceiveData::apiBatchTryPop_ = RecvBatchPopNullStub;
+    ReceiveData::compactBatchTryPop_ = RecvBatchPopNullStub;
+    ReceiveData::additionalBatchTryPop_ = RecvBatchPopNullStub;
+
+    rData.ApiRun(fileChunks);
+    rData.CompactRun(fileChunks);
+    rData.AdditionalRun(fileChunks);
+    EXPECT_EQ(0U, fileChunks.size());
+}
+
+TEST_F(MSPROF_ACL_CORE_UTEST, ReceiveData_HostBatchRun_PartialApiDataIsDrained)
+{
+    using namespace Msprof::Engine;
+    ReceiveData rData;
+    std::vector<std::shared_ptr<analysis::dvvp::ProfileFileChunk>> fileChunks;
+
+    g_recv_api_shift_count = 0;
+    g_recv_api_batch_data[0] = MsprofApi{};
+    g_recv_api_batch_data[0].level = 10000;
+    g_recv_api_batch_data[0].type = 1;
+    ReceiveData::apiBatchTryPop_ = RecvApiBatchPartialPopStub;
+    ReceiveData::apiBatchBufferIndexShift_ = RecvApiBatchIndexShiftStub;
+    rData.moduleName_ = "api_event";
+    rData.ApiRun(fileChunks);
+
+    ASSERT_EQ(1U, fileChunks.size());
+    EXPECT_EQ(sizeof(MsprofApi), fileChunks[0]->chunkSize);
+    EXPECT_EQ(1U, g_recv_api_shift_count);
+}
 
 TEST_F(MSPROF_ACL_CORE_UTEST, ReceiveData_AdprofRun_NullAndNonNull)
 {

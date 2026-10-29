@@ -28,7 +28,13 @@ enum ProfRegisterType {
     REPORT_ADPROF_POP,
     REPORT_ADPROF_INDEX_SHIFT,
     REPORT_VARIABLE_ADDITIONAL_POP,
-    REPORT_VARIABLE_ADDITIONAL_INDEX_SHIFT
+    REPORT_VARIABLE_ADDITIONAL_INDEX_SHIFT,
+    REPORT_API_BATCH_POP,
+    REPORT_API_BATCH_INDEX_SHIFT,
+    REPORT_COMPACT_BATCH_POP,
+    REPORT_COMPACT_BATCH_INDEX_SHIFT,
+    REPORT_ADDITIONAL_BATCH_POP,
+    REPORT_ADDITIONAL_BATCH_INDEX_SHIFT
 };
 
 struct ProfImplInfo {
@@ -37,9 +43,12 @@ struct ProfImplInfo {
     bool profInitFlag;
 };
 
-typedef bool (*ProfApiBufPopCallback)(uint32_t& aging, MsprofApi& data);
-typedef bool (*ProfCompactBufPopCallback)(uint32_t& aging, MsprofCompactInfo& data);
-typedef bool (*ProfAdditionalBufPopCallback)(uint32_t& aging, MsprofAdditionalInfo& data);
+typedef void* (*ProfApiBatchBufPopCallback)(uint32_t aging, size_t& popSize, bool popForce);
+typedef void (*ProfApiBatchBufIndexShiftCallback)(void* popPtr, const size_t popSize);
+typedef void* (*ProfCompactBatchBufPopCallback)(uint32_t aging, size_t& popSize, bool popForce);
+typedef void (*ProfCompactBatchBufIndexShiftCallback)(void* popPtr, const size_t popSize);
+typedef void* (*ProfAdditionalBatchBufPopCallback)(uint32_t aging, size_t& popSize, bool popForce);
+typedef void (*ProfAdditionalBatchBufIndexShiftCallback)(void* popPtr, const size_t popSize);
 typedef bool (*ProfReportBufEmptyCallback)();
 typedef void (*ProfUnInitReportBufCallback)();
 typedef int32_t (*ProfAdditionalBufPushCallback)(uint32_t aging, const VOID_PTR data, uint32_t len);

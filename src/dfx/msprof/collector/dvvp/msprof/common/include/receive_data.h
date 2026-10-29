@@ -76,9 +76,12 @@ public:
 
 public:
     virtual int32_t SendData(SHARED_PTR_ALIA<ProfileFileChunk> fileChunk);
-    static ProfApiBufPopCallback apiTryPop_;
-    static ProfCompactBufPopCallback compactTryPop_;
-    static ProfAdditionalBufPopCallback additionalTryPop_;
+    static ProfApiBatchBufPopCallback apiBatchTryPop_;
+    static ProfApiBatchBufIndexShiftCallback apiBatchBufferIndexShift_;
+    static ProfCompactBatchBufPopCallback compactBatchTryPop_;
+    static ProfCompactBatchBufIndexShiftCallback compactBatchBufferIndexShift_;
+    static ProfAdditionalBatchBufPopCallback additionalBatchTryPop_;
+    static ProfAdditionalBatchBufIndexShiftCallback additionalBatchBufferIndexShift_;
     static ProfReportBufEmptyCallback reportBufEmpty_;
     static ProfBatchAddBufPopCallback batchAdditionalTryPop_;
     static ProfBatchAddBufIndexShiftCallBack batchAdditionalBufferIndexShift_;

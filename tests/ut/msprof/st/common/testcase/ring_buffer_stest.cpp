@@ -25,32 +25,38 @@ protected:
 TEST_F(COMMON_QUEUE_RING_BUFFER_STEST, ReportBuffer_GetUsedSize)
 {
     std::shared_ptr<ReportBuffer<int> > bq(new ReportBuffer<int>(-1));
+    int data1 = 1;
+    int data2 = 2;
+    int data3 = 3;
+    int data4 = 4;
+    int data5 = 5;
 
     std::string name = "test";
     bq->Init(4, name);
     EXPECT_EQ(4, bq->capacity_);
 
-    bq->TryPush(1, 1);
+    bq->BatchPush(1, &data1, sizeof(data1));
     EXPECT_EQ(1, bq->GetUsedSize());
-    bq->TryPush(1, 2);
+    bq->BatchPush(1, &data2, sizeof(data2));
     EXPECT_EQ(2, bq->GetUsedSize());
-    bq->TryPush(1, 3);
+    bq->BatchPush(1, &data3, sizeof(data3));
     EXPECT_EQ(3, bq->GetUsedSize());
-    bq->TryPush(1, 4);
-    EXPECT_EQ(0, bq->GetUsedSize());
+    bq->BatchPush(1, &data4, sizeof(data4));
+    EXPECT_EQ(4, bq->GetUsedSize());
 
     EXPECT_EQ(0, bq->readIndex_.load());
     EXPECT_EQ(4, bq->writeIndex_.load());
 
-    bq->TryPush(1, 5);
+    bq->BatchPush(1, &data5, sizeof(data5));
     EXPECT_EQ(1, bq->GetUsedSize());
 
-    int data = -1;
-    uint32_t age = 0;
-    EXPECT_EQ(true, bq->TryPop(age, data));
-    EXPECT_EQ(5, data);
+    size_t popSize = sizeof(int);
+    void* popPtr = bq->BatchPop(1, popSize, true);
+    EXPECT_NE(nullptr, popPtr);
+    EXPECT_EQ(5, *static_cast<int*>(popPtr));
     EXPECT_EQ(0, bq->GetUsedSize());
 
-    EXPECT_EQ(false, bq->TryPop(age, data));
+    popSize = sizeof(int);
+    EXPECT_EQ(nullptr, bq->BatchPop(1, popSize, true));
     bq->UnInit();
 }

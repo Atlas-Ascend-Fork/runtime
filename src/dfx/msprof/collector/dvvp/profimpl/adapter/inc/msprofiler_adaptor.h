@@ -50,9 +50,13 @@ extern "C" MSVP_PROF_API std::string ProfImplReportGetHashInfo(uint64_t hashId);
 extern "C" MSVP_PROF_API std::string ProfImplGetOutputPath();
 extern "C" MSVP_PROF_API bool ProfImplHostFreqIsEnable();
 extern "C" MSVP_PROF_API void ProfImplGetImplInfo(ProfImplInfo& info);
-extern "C" MSVP_PROF_API void ProfImplSetApiBufPop(const ProfApiBufPopCallback func);
-extern "C" MSVP_PROF_API void ProfImplSetCompactBufPop(const ProfCompactBufPopCallback func);
-extern "C" MSVP_PROF_API void ProfImplSetAdditionalBufPop(const ProfAdditionalBufPopCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetApiBatchBufPop(const ProfApiBatchBufPopCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetApiBatchBufIndexShift(const ProfApiBatchBufIndexShiftCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetCompactBatchBufPop(const ProfCompactBatchBufPopCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetCompactBatchBufIndexShift(const ProfCompactBatchBufIndexShiftCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetAdditionalBatchBufPop(const ProfAdditionalBatchBufPopCallback func);
+extern "C" MSVP_PROF_API void ProfImplSetAdditionalBatchBufIndexShift(
+    const ProfAdditionalBatchBufIndexShiftCallback func);
 extern "C" MSVP_PROF_API void ProfImplIfReportBufEmpty(const ProfReportBufEmptyCallback func);
 extern "C" MSVP_PROF_API int32_t ProfAclGetCompatibleFeatures(size_t* featuresSize, void** featuresData);
 extern "C" MSVP_PROF_API int32_t ProfAclGetCompatibleFeaturesV2(size_t* featuresSize, void** featuresData);

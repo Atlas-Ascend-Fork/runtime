@@ -17,7 +17,7 @@
 #include "singleton/singleton.h"
 #include "prof_plugin.h"
 #include "prof_utils.h"
-#include "queue/report_buffer.h"
+#include "queue/host_report_buffer.h"
 #include "queue/block_buffer.h"
 #include "queue/variable_block_buffer.h"
 #include "prof_report_api.h"
@@ -45,9 +45,12 @@ using ProfSetDeviceIdFunc = int32_t (*)(const uint32_t geModelIdx, const uint32_
 using ProfNotifySetDeviceFunc = int32_t (*)(uint32_t chipId, uint32_t deviceId, bool isOpen);
 using ProfFinalizeFunc = int32_t (*)();
 using ProfGetImplInfoFunc = void (*)(ProfImplInfo& info);
-using ProfApiBufPopFunc = void (*)(const ProfApiBufPopCallback func);
-using ProfCompactBufPopFunc = void (*)(const ProfCompactBufPopCallback func);
-using ProfAdditionalBufPopFunc = void (*)(const ProfAdditionalBufPopCallback func);
+using ProfApiBatchBufPopFunc = void (*)(const ProfApiBatchBufPopCallback func);
+using ProfApiBatchBufIndexShiftFunc = void (*)(const ProfApiBatchBufIndexShiftCallback func);
+using ProfCompactBatchBufPopFunc = void (*)(const ProfCompactBatchBufPopCallback func);
+using ProfCompactBatchBufIndexShiftFunc = void (*)(const ProfCompactBatchBufIndexShiftCallback func);
+using ProfAdditionalBatchBufPopFunc = void (*)(const ProfAdditionalBatchBufPopCallback func);
+using ProfAdditionalBatchBufIndexShiftFunc = void (*)(const ProfAdditionalBatchBufIndexShiftCallback func);
 using ProfReportBufEmptyFunc = void (*)(const ProfReportBufEmptyCallback func);
 using ProfAdditionalBufPushFunc = void (*)(const ProfAdditionalBufPushCallback func);
 using ProfMarkExFunc = void (*)(const ProfMarkExCallback func);
@@ -105,9 +108,12 @@ public:
     void ProfInitReportBuf(uint32_t type = 0);
     void ProfUnInitReportBuf();
     bool ProfIfReportBufEmpty();
-    bool ProfReportBufPop(uint32_t& aging, MsprofApi& data);
-    bool ProfReportBufPop(uint32_t& aging, MsprofCompactInfo& data);
-    bool ProfReportBufPop(uint32_t& aging, MsprofAdditionalInfo& data);
+    void* ProfReportBufBatchPop(uint32_t aging, size_t& popSize, bool popForce, MsprofApi* /*tag*/);
+    void* ProfReportBufBatchPop(uint32_t aging, size_t& popSize, bool popForce, MsprofCompactInfo* /*tag*/);
+    void* ProfReportBufBatchPop(uint32_t aging, size_t& popSize, bool popForce, MsprofAdditionalInfo* /*tag*/);
+    void ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofApi* /*tag*/);
+    void ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofCompactInfo* /*tag*/);
+    void ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofAdditionalInfo* /*tag*/);
     void ProfTxInit();
     bool ProfCheckCommandLine();
 
@@ -177,13 +183,16 @@ private:
     ProfNotifySetDeviceFunc profNotifySetDevice_{nullptr};
     ProfFinalizeFunc profFinalize_{nullptr};
     ProfHostFreqIsEnableFunc profHostFreqIsEnable_{nullptr};
-    ReportBuffer<MsprofApi> apiBuffer_{MsprofApi{}};
-    ReportBuffer<MsprofCompactInfo> compactBuffer_{MsprofCompactInfo{}};
-    ReportBuffer<MsprofAdditionalInfo> additionalBuffer_{MsprofAdditionalInfo{}};
+    HostReportBuffer apiBuffer_{sizeof(MsprofApi)};
+    HostReportBuffer compactBuffer_{sizeof(MsprofCompactInfo)};
+    HostReportBuffer additionalBuffer_{sizeof(MsprofAdditionalInfo)};
     ProfGetImplInfoFunc profGetImplInfo_{nullptr};
-    ProfApiBufPopFunc profApiBufPop_{nullptr};
-    ProfCompactBufPopFunc profCompactBufPop_{nullptr};
-    ProfAdditionalBufPopFunc profAdditionalBufPop_{nullptr};
+    ProfApiBatchBufPopFunc profApiBatchBufPop_{nullptr};
+    ProfApiBatchBufIndexShiftFunc profApiBatchBufIndexShift_{nullptr};
+    ProfCompactBatchBufPopFunc profCompactBatchBufPop_{nullptr};
+    ProfCompactBatchBufIndexShiftFunc profCompactBatchBufIndexShift_{nullptr};
+    ProfAdditionalBatchBufPopFunc profAdditionalBatchBufPop_{nullptr};
+    ProfAdditionalBatchBufIndexShiftFunc profAdditionalBatchBufIndexShift_{nullptr};
     ProfReportBufEmptyFunc profReportBufEmpty_{nullptr};
     ProfAdditionalBufPushFunc profAdditionalBufPush_{nullptr};
     ProfMarkExFunc profMarkEx_{nullptr};
@@ -216,9 +225,12 @@ private:
     AtlsHostFreqIsEnableFunc atlsHostFreqIsEnable_{nullptr};
 };
 
-bool TryPopApiBuf(uint32_t& aging, MsprofApi& data);
-bool TryPopCompactBuf(uint32_t& aging, MsprofCompactInfo& data);
-bool TryPopAdditionalBuf(uint32_t& aging, MsprofAdditionalInfo& data);
+void* TryBatchPopApiBuf(uint32_t aging, size_t& popSize, bool popForce);
+void TryBatchPopApiBufIndexShift(void* popPtr, const size_t popSize);
+void* TryBatchPopCompactBuf(uint32_t aging, size_t& popSize, bool popForce);
+void TryBatchPopCompactBufIndexShift(void* popPtr, const size_t popSize);
+void* TryBatchPopAdditionalBuf(uint32_t aging, size_t& popSize, bool popForce);
+void TryBatchPopAdditionalBufIndexShift(void* popPtr, const size_t popSize);
 bool IsReportBufEmpty();
 int32_t TryPushAdditionalBuf(uint32_t aging, const VOID_PTR data, uint32_t len);
 int32_t TryMarkEx(uint64_t indexId, uint64_t modelId, uint16_t tagId, void* stm);

@@ -21,12 +21,7 @@ extern void profOstreamStub(void);
 #endif
 class PROF_API_STTEST : public testing::Test {
 public:
-    void mockReportBufInit()
-    {
-        MOCKER_CPP(&analysis::dvvp::common::queue::ReportBuffer<MsprofApi>::Init).stubs();
-        MOCKER_CPP(&analysis::dvvp::common::queue::ReportBuffer<MsprofCompactInfo>::Init).stubs();
-        MOCKER_CPP(&analysis::dvvp::common::queue::ReportBuffer<MsprofAdditionalInfo>::Init).stubs();
-    }
+    void mockReportBufInit() { MOCKER_CPP(&analysis::dvvp::common::queue::HostReportBuffer::Init).stubs(); }
 
 protected:
     virtual void SetUp() {}

@@ -130,9 +130,21 @@ void ProfCannPlugin::LoadProfReportApi()
 
 void ProfCannPlugin::LoadProfBufferApi()
 {
-    LOAD_MSPROF_API(profApiBufPop_, msProfLibHandle_, ProfApiBufPopFunc, "ProfImplSetApiBufPop");
-    LOAD_MSPROF_API(profCompactBufPop_, msProfLibHandle_, ProfCompactBufPopFunc, "ProfImplSetCompactBufPop");
-    LOAD_MSPROF_API(profAdditionalBufPop_, msProfLibHandle_, ProfAdditionalBufPopFunc, "ProfImplSetAdditionalBufPop");
+    LOAD_MSPROF_API(profApiBatchBufPop_, msProfLibHandle_, ProfApiBatchBufPopFunc, "ProfImplSetApiBatchBufPop");
+    LOAD_MSPROF_API(
+        profApiBatchBufIndexShift_, msProfLibHandle_, ProfApiBatchBufIndexShiftFunc,
+        "ProfImplSetApiBatchBufIndexShift");
+    LOAD_MSPROF_API(
+        profCompactBatchBufPop_, msProfLibHandle_, ProfCompactBatchBufPopFunc, "ProfImplSetCompactBatchBufPop");
+    LOAD_MSPROF_API(
+        profCompactBatchBufIndexShift_, msProfLibHandle_, ProfCompactBatchBufIndexShiftFunc,
+        "ProfImplSetCompactBatchBufIndexShift");
+    LOAD_MSPROF_API(
+        profAdditionalBatchBufPop_, msProfLibHandle_, ProfAdditionalBatchBufPopFunc,
+        "ProfImplSetAdditionalBatchBufPop");
+    LOAD_MSPROF_API(
+        profAdditionalBatchBufIndexShift_, msProfLibHandle_, ProfAdditionalBatchBufIndexShiftFunc,
+        "ProfImplSetAdditionalBatchBufIndexShift");
     LOAD_MSPROF_API(profReportBufEmpty_, msProfLibHandle_, ProfReportBufEmptyFunc, "ProfImplIfReportBufEmpty");
     LOAD_MSPROF_API(
         profAdditionalBufPush_, msProfLibHandle_, ProfAdditionalBufPushFunc, "ProfImplSetAdditionalBufPush");
@@ -287,7 +299,7 @@ int32_t ProfCannPlugin::RegisterProfileCallback(int32_t callbackType, VOID_PTR c
 size_t ProfCannPlugin::ProfInitReportBufSize(uint32_t type)
 {
     if (type == MSPROF_CTRL_INIT_PURE_CPU) {
-        return API_RING_BUFF_CAPACITY;
+        return HOST_API_RING_BUFF_CAPACITY;
     }
 
     ProfImplInfo info;
@@ -301,13 +313,13 @@ size_t ProfCannPlugin::ProfInitReportBufSize(uint32_t type)
         }
     }
 
-    size_t expectBuffer = MIN_RING_BUFF_CAPACITY;
-    for (size_t loopBuffer = MIN_RING_BUFF_CAPACITY; loopBuffer <= MAX_RING_BUFF_CAPACITY;) {
-        if (loopBuffer * NEG_RING_BUFF_PERCENT > info.sysFreeRam) {
+    size_t expectBuffer = HOST_MIN_RING_BUFF_CAPACITY;
+    for (size_t loopBuffer = HOST_MIN_RING_BUFF_CAPACITY; loopBuffer <= HOST_MAX_RING_BUFF_CAPACITY;) {
+        if (loopBuffer * HOST_NEG_RING_BUFF_PERCENT > info.sysFreeRam) {
             break;
         }
         expectBuffer = loopBuffer;
-        loopBuffer *= CARDINALITY_RING_BUFF;
+        loopBuffer *= HOST_CARDINALITY_RING_BUFF;
     }
 
     return expectBuffer;
@@ -326,9 +338,12 @@ void ProfCannPlugin::ProfInitReportBuf(uint32_t type)
         return;
     }
     // Init report buffer by dynamic expectBuffer
-    const size_t apiBufferSize = (expectBuffer < API_RING_BUFF_CAPACITY) ? expectBuffer : API_RING_BUFF_CAPACITY;
-    const size_t compactBufferSize = (expectBuffer < COM_RING_BUFF_CAPACITY) ? expectBuffer : COM_RING_BUFF_CAPACITY;
-    const size_t additionalBufferSize = (expectBuffer < ADD_RING_BUFF_CAPACITY) ? expectBuffer : ADD_RING_BUFF_CAPACITY;
+    const size_t apiBufferSize =
+        (expectBuffer < HOST_API_RING_BUFF_CAPACITY) ? expectBuffer : HOST_API_RING_BUFF_CAPACITY;
+    const size_t compactBufferSize =
+        (expectBuffer < HOST_COM_RING_BUFF_CAPACITY) ? expectBuffer : HOST_COM_RING_BUFF_CAPACITY;
+    const size_t additionalBufferSize =
+        (expectBuffer < HOST_ADD_RING_BUFF_CAPACITY) ? expectBuffer : HOST_ADD_RING_BUFF_CAPACITY;
     apiBuffer_.Init(apiBufferSize, "api_event");
     compactBuffer_.Init(compactBufferSize, "compact");
     additionalBuffer_.Init(additionalBufferSize, "additional");
@@ -336,9 +351,13 @@ void ProfCannPlugin::ProfInitReportBuf(uint32_t type)
     variableAdditionalBuffer_.Init("variable");
 
     // Register try pop function to libprofimpl.so
-    ProfRegisterFunc(REPORT_API_POP, reinterpret_cast<VOID_PTR>(TryPopApiBuf));
-    ProfRegisterFunc(REPORT_COMPACCT_POP, reinterpret_cast<VOID_PTR>(TryPopCompactBuf));
-    ProfRegisterFunc(REPORT_ADDITIONAL_POP, reinterpret_cast<VOID_PTR>(TryPopAdditionalBuf));
+    ProfRegisterFunc(REPORT_API_BATCH_POP, reinterpret_cast<VOID_PTR>(TryBatchPopApiBuf));
+    ProfRegisterFunc(REPORT_API_BATCH_INDEX_SHIFT, reinterpret_cast<VOID_PTR>(TryBatchPopApiBufIndexShift));
+    ProfRegisterFunc(REPORT_COMPACT_BATCH_POP, reinterpret_cast<VOID_PTR>(TryBatchPopCompactBuf));
+    ProfRegisterFunc(REPORT_COMPACT_BATCH_INDEX_SHIFT, reinterpret_cast<VOID_PTR>(TryBatchPopCompactBufIndexShift));
+    ProfRegisterFunc(REPORT_ADDITIONAL_BATCH_POP, reinterpret_cast<VOID_PTR>(TryBatchPopAdditionalBuf));
+    ProfRegisterFunc(
+        REPORT_ADDITIONAL_BATCH_INDEX_SHIFT, reinterpret_cast<VOID_PTR>(TryBatchPopAdditionalBufIndexShift));
     ProfRegisterFunc(REPORT_BUF_EMPTY, reinterpret_cast<VOID_PTR>(IsReportBufEmpty));
 
     ProfRegisterFunc(REPORT_VARIABLE_ADDITIONAL_POP, reinterpret_cast<VOID_PTR>(TryPopVariableAdditionalBuf));
@@ -515,7 +534,7 @@ int32_t ProfCannPlugin::ProfReportApi(uint32_t agingFlag, const MsprofApi* api)
     if (atlsReportApi_ != nullptr) {
         return atlsReportApi_(agingFlag, api);
     }
-    return apiBuffer_.TryPush(agingFlag, *api);
+    return apiBuffer_.BatchPush(agingFlag, api, sizeof(MsprofApi));
 }
 
 /**
@@ -531,7 +550,7 @@ int32_t ProfCannPlugin::ProfReportEvent(uint32_t agingFlag, const MsprofEvent* e
     if (atlsReportEvent_ != nullptr) {
         return atlsReportEvent_(agingFlag, event);
     }
-    return apiBuffer_.TryPush(agingFlag, *reinterpret_cast<const MsprofApi*>(event));
+    return apiBuffer_.BatchPush(agingFlag, reinterpret_cast<const MsprofApi*>(event), sizeof(MsprofApi));
 }
 
 /**
@@ -547,7 +566,7 @@ int32_t ProfCannPlugin::ProfReportCompactInfo(uint32_t agingFlag, const VOID_PTR
     if (atlsReportCompactInfo_ != nullptr) {
         return atlsReportCompactInfo_(agingFlag, data, len);
     }
-    return compactBuffer_.TryPush(agingFlag, *reinterpret_cast<const MsprofCompactInfo*>(data));
+    return compactBuffer_.BatchPush(agingFlag, reinterpret_cast<const MsprofCompactInfo*>(data), len);
 }
 
 /**
@@ -581,7 +600,7 @@ int32_t ProfCannPlugin::ProfReportAdditionalInfo(uint32_t agingFlag, const VOID_
                 MSPROF_LOGE("Memcpy failed in ProfReportAdditionalInfo, err=%d.", err);
                 return PROFILING_FAILED;
             }
-            return additionalBuffer_.TryPush(agingFlag, tempInfo);
+            return additionalBuffer_.BatchPush(agingFlag, &tempInfo, sizeof(MsprofAdditionalInfo));
         }
     }
 }
@@ -611,28 +630,35 @@ bool ProfCannPlugin::ProfIfReportBufEmpty()
     return false;
 }
 
-/**
- * @name  ProfReportBufPop
- * @brief pop from apiBuffer_
- */
-bool ProfCannPlugin::ProfReportBufPop(uint32_t& aging, MsprofApi& data) { return apiBuffer_.TryPop(aging, data); }
-
-/**
- * @name  ProfReportBufPop
- * @brief pop from compactBuffer_
- */
-bool ProfCannPlugin::ProfReportBufPop(uint32_t& aging, MsprofCompactInfo& data)
+void* ProfCannPlugin::ProfReportBufBatchPop(uint32_t aging, size_t& popSize, bool popForce, MsprofApi* /*tag*/)
 {
-    return compactBuffer_.TryPop(aging, data);
+    return apiBuffer_.BatchPop(aging, popSize, popForce);
 }
 
-/**
- * @name  ProfReportBufPop
- * @brief pop from additionalBuffer_
- */
-bool ProfCannPlugin::ProfReportBufPop(uint32_t& aging, MsprofAdditionalInfo& data)
+void* ProfCannPlugin::ProfReportBufBatchPop(uint32_t aging, size_t& popSize, bool popForce, MsprofCompactInfo* /*tag*/)
 {
-    return additionalBuffer_.TryPop(aging, data);
+    return compactBuffer_.BatchPop(aging, popSize, popForce);
+}
+
+void* ProfCannPlugin::ProfReportBufBatchPop(
+    uint32_t aging, size_t& popSize, bool popForce, MsprofAdditionalInfo* /*tag*/)
+{
+    return additionalBuffer_.BatchPop(aging, popSize, popForce);
+}
+
+void ProfCannPlugin::ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofApi* /*tag*/)
+{
+    apiBuffer_.BatchPopBufferIndexShift(popPtr, popSize);
+}
+
+void ProfCannPlugin::ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofCompactInfo* /*tag*/)
+{
+    compactBuffer_.BatchPopBufferIndexShift(popPtr, popSize);
+}
+
+void ProfCannPlugin::ProfReportBufBatchPopIndexShift(void* popPtr, const size_t popSize, MsprofAdditionalInfo* /*tag*/)
+{
+    additionalBuffer_.BatchPopBufferIndexShift(popPtr, popSize);
 }
 
 /**
@@ -657,19 +683,34 @@ void ProfCannPlugin::ProfVarAddBufIndexShift(void* popPtr, const size_t popSize)
 void ProfCannPlugin::ProfRegisterFunc(uint32_t type, VOID_PTR func)
 {
     switch (type) {
-        case REPORT_API_POP:
-            if (profApiBufPop_ != nullptr) {
-                profApiBufPop_(reinterpret_cast<ProfApiBufPopCallback>(func));
+        case REPORT_API_BATCH_POP:
+            if (profApiBatchBufPop_ != nullptr) {
+                profApiBatchBufPop_(reinterpret_cast<ProfApiBatchBufPopCallback>(func));
             }
             break;
-        case REPORT_COMPACCT_POP:
-            if (profCompactBufPop_ != nullptr) {
-                profCompactBufPop_(reinterpret_cast<ProfCompactBufPopCallback>(func));
+        case REPORT_API_BATCH_INDEX_SHIFT:
+            if (profApiBatchBufIndexShift_ != nullptr) {
+                profApiBatchBufIndexShift_(reinterpret_cast<ProfApiBatchBufIndexShiftCallback>(func));
             }
             break;
-        case REPORT_ADDITIONAL_POP:
-            if (profAdditionalBufPop_ != nullptr) {
-                profAdditionalBufPop_(reinterpret_cast<ProfAdditionalBufPopCallback>(func));
+        case REPORT_COMPACT_BATCH_POP:
+            if (profCompactBatchBufPop_ != nullptr) {
+                profCompactBatchBufPop_(reinterpret_cast<ProfCompactBatchBufPopCallback>(func));
+            }
+            break;
+        case REPORT_COMPACT_BATCH_INDEX_SHIFT:
+            if (profCompactBatchBufIndexShift_ != nullptr) {
+                profCompactBatchBufIndexShift_(reinterpret_cast<ProfCompactBatchBufIndexShiftCallback>(func));
+            }
+            break;
+        case REPORT_ADDITIONAL_BATCH_POP:
+            if (profAdditionalBatchBufPop_ != nullptr) {
+                profAdditionalBatchBufPop_(reinterpret_cast<ProfAdditionalBatchBufPopCallback>(func));
+            }
+            break;
+        case REPORT_ADDITIONAL_BATCH_INDEX_SHIFT:
+            if (profAdditionalBatchBufIndexShift_ != nullptr) {
+                profAdditionalBatchBufIndexShift_(reinterpret_cast<ProfAdditionalBatchBufIndexShiftCallback>(func));
             }
             break;
         case REPORT_BUF_EMPTY:
@@ -911,31 +952,40 @@ void ProfCannPlugin::ProfGetImplInfo(ProfImplInfo& info)
     }
 }
 
-/**
- * @name  TryPopApiBuf
- * @brief Static function to try pop from apiBuffer_
- */
-bool TryPopApiBuf(uint32_t& aging, MsprofApi& data)
+void* TryBatchPopApiBuf(uint32_t aging, size_t& popSize, bool popForce)
 {
-    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufPop(aging, data);
+    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPop(
+        aging, popSize, popForce, static_cast<MsprofApi*>(nullptr));
 }
 
-/**
- * @name  TryPopCompactBuf
- * @brief Static function to try pop from compactBuffer_
- */
-bool TryPopCompactBuf(uint32_t& aging, MsprofCompactInfo& data)
+void TryBatchPopApiBufIndexShift(void* popPtr, const size_t popSize)
 {
-    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufPop(aging, data);
+    ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPopIndexShift(
+        popPtr, popSize, static_cast<MsprofApi*>(nullptr));
 }
 
-/**
- * @name  TryPopAdditionalBuf
- * @brief Static function to try pop from additionalBuffer_
- */
-bool TryPopAdditionalBuf(uint32_t& aging, MsprofAdditionalInfo& data)
+void* TryBatchPopCompactBuf(uint32_t aging, size_t& popSize, bool popForce)
 {
-    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufPop(aging, data);
+    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPop(
+        aging, popSize, popForce, static_cast<MsprofCompactInfo*>(nullptr));
+}
+
+void TryBatchPopCompactBufIndexShift(void* popPtr, const size_t popSize)
+{
+    ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPopIndexShift(
+        popPtr, popSize, static_cast<MsprofCompactInfo*>(nullptr));
+}
+
+void* TryBatchPopAdditionalBuf(uint32_t aging, size_t& popSize, bool popForce)
+{
+    return ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPop(
+        aging, popSize, popForce, static_cast<MsprofAdditionalInfo*>(nullptr));
+}
+
+void TryBatchPopAdditionalBufIndexShift(void* popPtr, const size_t popSize)
+{
+    ProfAPI::ProfCannPlugin::instance()->ProfReportBufBatchPopIndexShift(
+        popPtr, popSize, static_cast<MsprofAdditionalInfo*>(nullptr));
 }
 
 /**

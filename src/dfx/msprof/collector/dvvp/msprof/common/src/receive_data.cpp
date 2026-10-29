@@ -29,9 +29,12 @@ using namespace Msprofiler::Parser;
 #ifndef MSPROF_LIB
 using namespace Dvvp::Collect::Report;
 #endif
-ProfApiBufPopCallback ReceiveData::apiTryPop_;
-ProfCompactBufPopCallback ReceiveData::compactTryPop_;
-ProfAdditionalBufPopCallback ReceiveData::additionalTryPop_;
+ProfApiBatchBufPopCallback ReceiveData::apiBatchTryPop_;
+ProfApiBatchBufIndexShiftCallback ReceiveData::apiBatchBufferIndexShift_;
+ProfCompactBatchBufPopCallback ReceiveData::compactBatchTryPop_;
+ProfCompactBatchBufIndexShiftCallback ReceiveData::compactBatchBufferIndexShift_;
+ProfAdditionalBatchBufPopCallback ReceiveData::additionalBatchTryPop_;
+ProfAdditionalBatchBufIndexShiftCallback ReceiveData::additionalBatchBufferIndexShift_;
 ProfReportBufEmptyCallback ReceiveData::reportBufEmpty_;
 ProfBatchAddBufPopCallback ReceiveData::batchAdditionalTryPop_;
 ProfBatchAddBufIndexShiftCallBack ReceiveData::batchAdditionalBufferIndexShift_;
@@ -90,37 +93,38 @@ void ReceiveData::DumpProfileData(
  */
 void ReceiveData::ApiRun(std::vector<SHARED_PTR_ALIA<ProfileFileChunk>>& fileChunks)
 {
-    // data binding with batchsize and ageFlag which need to be ordered
-    std::vector<MsprofApi> ageVec;
-    std::vector<MsprofApi> unageVec;
-    uint64_t batchSizeMax = 0;
-    uint32_t ageFlag = 1;
-    for (; batchSizeMax < MSVP_BATCH_MAX_LEN;) {
-        MsprofApi data;
-        bool isOK = ReceiveData::apiTryPop_(ageFlag, data);
-        if (!isOK) {
-            break;
+    if (ReceiveData::apiBatchTryPop_ == nullptr || ReceiveData::apiBatchBufferIndexShift_ == nullptr) {
+        return;
+    }
+
+    for (uint32_t ageFlag = 0; ageFlag <= 1; ageFlag++) {
+        size_t popSize = MSVP_BATCH_MAX_LEN;
+        void* popPtr = ReceiveData::apiBatchTryPop_(ageFlag, popSize, false);
+        if (popPtr == nullptr && popSize > 0 && (popSize % sizeof(MsprofApi)) == 0) {
+            popPtr = ReceiveData::apiBatchTryPop_(ageFlag, popSize, true);
         }
-        totalPopCount_++;
-        totalPopSize_ += sizeof(MsprofApi);
-        if (data.level == 0) {
-            MSPROF_EVENT("Receive api data whose level equal to zero.");
+        if (popPtr == nullptr || popSize == 0 || (popSize % sizeof(MsprofApi)) != 0) {
             continue;
         }
-        batchSizeMax += sizeof(MsprofApi);
-        if (ageFlag == static_cast<uint32_t>(1)) {
-            ageVec.push_back(data);
-        } else {
-            unageVec.push_back(data);
+
+        const size_t dataCount = popSize / sizeof(MsprofApi);
+        MsprofApi* datas = reinterpret_cast<MsprofApi*>(popPtr);
+        std::vector<MsprofApi> validDatas;
+        validDatas.reserve(dataCount);
+        for (size_t i = 0; i < dataCount; i++) {
+            if (datas[i].level == 0) {
+                MSPROF_EVENT("Receive api data whose level equal to zero.");
+                continue;
+            }
+            validDatas.push_back(datas[i]);
         }
-    }
 
-    if (ageVec.size() > 0) {
-        DumpProfileData<MsprofApi>(ageVec, fileChunks, 1);
-    }
-
-    if (unageVec.size() > 0) {
-        DumpProfileData<MsprofApi>(unageVec, fileChunks, 0);
+        totalPopCount_ += dataCount;
+        totalPopSize_ += popSize;
+        ReceiveData::apiBatchBufferIndexShift_(popPtr, popSize);
+        if (!validDatas.empty()) {
+            DumpProfileData<MsprofApi>(validDatas, fileChunks, ageFlag);
+        }
     }
 }
 
@@ -131,32 +135,37 @@ void ReceiveData::ApiRun(std::vector<SHARED_PTR_ALIA<ProfileFileChunk>>& fileChu
  */
 void ReceiveData::CompactRun(std::vector<SHARED_PTR_ALIA<ProfileFileChunk>>& fileChunks)
 {
-    // data binding with tag and ageFlag
+    if (ReceiveData::compactBatchTryPop_ == nullptr || ReceiveData::compactBatchBufferIndexShift_ == nullptr) {
+        return;
+    }
+
     std::unordered_map<std::string, std::vector<MsprofCompactInfo>> dataMap;
-    uint64_t batchSizeMax = 0;
-    uint32_t ageFlag = 1;
-    MsprofCompactInfo data;
-    for (; batchSizeMax < MSVP_BATCH_MAX_LEN;) {
-        bool isOK = ReceiveData::compactTryPop_(ageFlag, data);
-        if (!isOK) {
-            break;
+    for (uint32_t ageFlag = 0; ageFlag <= 1; ageFlag++) {
+        size_t popSize = MSVP_BATCH_MAX_LEN;
+        void* popPtr = ReceiveData::compactBatchTryPop_(ageFlag, popSize, false);
+        if (popPtr == nullptr && popSize > 0 && (popSize % sizeof(MsprofCompactInfo)) == 0) {
+            popPtr = ReceiveData::compactBatchTryPop_(ageFlag, popSize, true);
         }
-        totalPopCount_++;
-        totalPopSize_ += sizeof(MsprofCompactInfo);
-        batchSizeMax += sizeof(ProfileFileChunk);
-        std::string tagWizSuffix =
-            std::to_string(data.level) + "." + std::to_string(data.type) + "." + std::to_string(ageFlag);
-        // classify data by level and type
-        dataMap[tagWizSuffix].push_back(data);
+        if (popPtr == nullptr || popSize == 0 || (popSize % sizeof(MsprofCompactInfo)) != 0) {
+            continue;
+        }
+
+        const size_t dataCount = popSize / sizeof(MsprofCompactInfo);
+        MsprofCompactInfo* datas = reinterpret_cast<MsprofCompactInfo*>(popPtr);
+        for (size_t i = 0; i < dataCount; i++) {
+            std::string tagWizSuffix =
+                std::to_string(datas[i].level) + "." + std::to_string(datas[i].type) + "." + std::to_string(ageFlag);
+            dataMap[tagWizSuffix].push_back(datas[i]);
+        }
+        totalPopCount_ += dataCount;
+        totalPopSize_ += popSize;
+        ReceiveData::compactBatchBufferIndexShift_(popPtr, popSize);
     }
 
     for (auto iter = dataMap.begin(); iter != dataMap.end(); ++iter) {
-        if (iter->second.size() > 0) {
-            if (Utils::GetInfoSuffix(iter->first) == "1") {
-                DumpProfileData<MsprofCompactInfo>(iter->second, fileChunks, 1);
-            } else {
-                DumpProfileData<MsprofCompactInfo>(iter->second, fileChunks, 0);
-            }
+        if (!iter->second.empty()) {
+            DumpProfileData<MsprofCompactInfo>(
+                iter->second, fileChunks, Utils::GetInfoSuffix(iter->first) == "1" ? 1 : 0);
         }
     }
 }
@@ -168,32 +177,37 @@ void ReceiveData::CompactRun(std::vector<SHARED_PTR_ALIA<ProfileFileChunk>>& fil
  */
 void ReceiveData::AdditionalRun(std::vector<SHARED_PTR_ALIA<ProfileFileChunk>>& fileChunks)
 {
-    // data binding with tag and ageFlag
+    if (ReceiveData::additionalBatchTryPop_ == nullptr || ReceiveData::additionalBatchBufferIndexShift_ == nullptr) {
+        return;
+    }
+
     std::unordered_map<std::string, std::vector<MsprofAdditionalInfo>> dataMap;
-    uint64_t batchSizeMax = 0;
-    uint32_t ageFlag = 1;
-    MsprofAdditionalInfo data;
-    for (; batchSizeMax < MSVP_BATCH_MAX_LEN;) {
-        bool isOK = ReceiveData::additionalTryPop_(ageFlag, data);
-        if (!isOK) {
-            break;
+    for (uint32_t ageFlag = 0; ageFlag <= 1; ageFlag++) {
+        size_t popSize = MSVP_BATCH_MAX_LEN;
+        void* popPtr = ReceiveData::additionalBatchTryPop_(ageFlag, popSize, false);
+        if (popPtr == nullptr && popSize > 0 && (popSize % sizeof(MsprofAdditionalInfo)) == 0) {
+            popPtr = ReceiveData::additionalBatchTryPop_(ageFlag, popSize, true);
         }
-        totalPopCount_++;
-        totalPopSize_ += sizeof(MsprofAdditionalInfo);
-        batchSizeMax += sizeof(ProfileFileChunk);
-        std::string tagWizSuffix =
-            std::to_string(data.level) + "." + std::to_string(data.type) + "." + std::to_string(ageFlag);
-        // classify data by level and type
-        dataMap[tagWizSuffix].push_back(data);
+        if (popPtr == nullptr || popSize == 0 || (popSize % sizeof(MsprofAdditionalInfo)) != 0) {
+            continue;
+        }
+
+        const size_t dataCount = popSize / sizeof(MsprofAdditionalInfo);
+        MsprofAdditionalInfo* datas = reinterpret_cast<MsprofAdditionalInfo*>(popPtr);
+        for (size_t i = 0; i < dataCount; i++) {
+            std::string tagWizSuffix =
+                std::to_string(datas[i].level) + "." + std::to_string(datas[i].type) + "." + std::to_string(ageFlag);
+            dataMap[tagWizSuffix].push_back(datas[i]);
+        }
+        totalPopCount_ += dataCount;
+        totalPopSize_ += popSize;
+        ReceiveData::additionalBatchBufferIndexShift_(popPtr, popSize);
     }
 
     for (auto iter = dataMap.begin(); iter != dataMap.end(); ++iter) {
-        if (iter->second.size() > 0) {
-            if (Utils::GetInfoSuffix(iter->first) == "1") {
-                DumpProfileData<MsprofAdditionalInfo>(iter->second, fileChunks, 1);
-            } else {
-                DumpProfileData<MsprofAdditionalInfo>(iter->second, fileChunks, 0);
-            }
+        if (!iter->second.empty()) {
+            DumpProfileData<MsprofAdditionalInfo>(
+                iter->second, fileChunks, Utils::GetInfoSuffix(iter->first) == "1" ? 1 : 0);
         }
     }
 }

@@ -47,13 +47,7 @@ using namespace Analysis::Dvvp::Common::Platform;
 
 class MSPROF_CALLBACK_HANDLER_UTEST : public testing::Test {
 public:
-    void RegisterTryPop()
-    {
-        ProfImplSetApiBufPop(apiTryPop);
-        ProfImplSetCompactBufPop(compactTryPop);
-        ProfImplSetAdditionalBufPop(additionalTryPop);
-        ProfImplIfReportBufEmpty(ifReportBufEmpty);
-    }
+    void RegisterTryPop() { ProfImplIfReportBufEmpty(ifReportBufEmpty); }
 
 protected:
     virtual void SetUp()

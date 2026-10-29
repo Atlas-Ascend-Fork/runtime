@@ -398,6 +398,21 @@ TEST_F(PROF_API_PLUGIN_UTTEST, PROF_REPORT_COMPACTINFO)
         ProfAPI::ProfCannPlugin::instance()->ProfReportCompactInfo(0, &compact, sizeof(compact)));
 }
 
+TEST_F(PROF_API_PLUGIN_UTTEST, PROF_REGISTER_TYPE_KEEP_LEGACY_VALUES)
+{
+    EXPECT_EQ(0, static_cast<int32_t>(REPORT_API_POP));
+    EXPECT_EQ(1, static_cast<int32_t>(REPORT_COMPACCT_POP));
+    EXPECT_EQ(2, static_cast<int32_t>(REPORT_ADDITIONAL_POP));
+    EXPECT_EQ(3, static_cast<int32_t>(REPORT_BUF_EMPTY));
+    EXPECT_EQ(4, static_cast<int32_t>(REPORT_ADDITIONAL_PUSH));
+    EXPECT_EQ(5, static_cast<int32_t>(PROF_MARK_EX));
+    EXPECT_EQ(6, static_cast<int32_t>(REPORT_ADPROF_POP));
+    EXPECT_EQ(7, static_cast<int32_t>(REPORT_ADPROF_INDEX_SHIFT));
+    EXPECT_EQ(8, static_cast<int32_t>(REPORT_VARIABLE_ADDITIONAL_POP));
+    EXPECT_EQ(9, static_cast<int32_t>(REPORT_VARIABLE_ADDITIONAL_INDEX_SHIFT));
+    EXPECT_EQ(10, static_cast<int32_t>(REPORT_API_BATCH_POP));
+}
+
 TEST_F(PROF_API_PLUGIN_UTTEST, PROF_REPORT_ADDINFO)
 {
     MsprofAdditionalInfo additional;
@@ -413,12 +428,6 @@ TEST_F(PROF_API_PLUGIN_UTTEST, PROF_GET_SYS_FREERAM)
     EXPECT_NE(0, info.sysFreeRam);
 }
 
-static void ProfApiBufPopFuncStub(const ProfApiBufPopCallback func) {}
-
-static void ProfCompactBufPopFuncStub(const ProfCompactBufPopCallback func) {}
-
-static void ProfAdditionalBufPopFuncStub(const ProfAdditionalBufPopCallback func) {}
-
 static void ProfReportBufEmptyFuncStub(const ProfReportBufEmptyCallback func) {}
 
 static void ProfAdditionalBufPushFuncStub(const ProfAdditionalBufPushCallback func) {}
@@ -428,33 +437,14 @@ static void ProfMarkExFuncStub(const ProfMarkExCallback func) {}
 TEST_F(PROF_API_PLUGIN_UTTEST, PROF_REPORT_BUF_SIMULATION)
 {
     using namespace ProfAPI;
-    uint32_t aging = 1;
-    MsprofApi data1;
-    MsprofCompactInfo data2;
-    MsprofAdditionalInfo data3;
     ProfAPI::ProfCannPlugin::instance()->ProfInitReportBuf(5);
-    ProfCannPlugin::instance()->profApiBufPop_ = ProfApiBufPopFuncStub;
-    ProfCannPlugin::instance()->profCompactBufPop_ = ProfCompactBufPopFuncStub;
-    ProfCannPlugin::instance()->profAdditionalBufPop_ = ProfAdditionalBufPopFuncStub;
     ProfCannPlugin::instance()->profReportBufEmpty_ = ProfReportBufEmptyFuncStub;
     ProfCannPlugin::instance()->profAdditionalBufPush_ = ProfAdditionalBufPushFuncStub;
     ProfCannPlugin::instance()->profMarkEx_ = ProfMarkExFuncStub;
-    EXPECT_EQ(true, ProfAPI::IsReportBufEmpty());
-    ProfCannPlugin::instance()->ProfRegisterFunc(REPORT_API_POP, reinterpret_cast<VOID_PTR>(TryPopApiBuf));
-    ProfCannPlugin::instance()->ProfRegisterFunc(REPORT_COMPACCT_POP, reinterpret_cast<VOID_PTR>(TryPopCompactBuf));
-    ProfCannPlugin::instance()->ProfRegisterFunc(
-        REPORT_ADDITIONAL_POP, reinterpret_cast<VOID_PTR>(TryPopAdditionalBuf));
     ProfCannPlugin::instance()->ProfRegisterFunc(REPORT_BUF_EMPTY, reinterpret_cast<VOID_PTR>(IsReportBufEmpty));
     ProfCannPlugin::instance()->ProfRegisterFunc(
         REPORT_ADDITIONAL_PUSH, reinterpret_cast<VOID_PTR>(TryPushAdditionalBuf));
     ProfCannPlugin::instance()->ProfRegisterFunc(PROF_MARK_EX, reinterpret_cast<VOID_PTR>(TryMarkEx));
-    ProfCannPlugin::instance()->ProfReportApi(aging, &data1);
-    ProfCannPlugin::instance()->ProfReportCompactInfo(aging, &data2, sizeof(data2));
-    ProfCannPlugin::instance()->ProfReportAdditionalInfo(aging, &data3, sizeof(data3));
-    EXPECT_EQ(false, ProfAPI::IsReportBufEmpty());
-    EXPECT_EQ(true, ProfAPI::TryPopApiBuf(aging, data1));
-    EXPECT_EQ(true, ProfAPI::TryPopCompactBuf(aging, data2));
-    EXPECT_EQ(true, ProfAPI::TryPopAdditionalBuf(aging, data3));
     ProfAPI::ProfCannPlugin::instance()->ProfUnInitReportBuf();
 }
 

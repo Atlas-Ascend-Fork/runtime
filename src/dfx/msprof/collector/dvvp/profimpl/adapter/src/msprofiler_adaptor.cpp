@@ -273,19 +273,35 @@ extern "C" MSVP_PROF_API void ProfImplGetImplInfo(ProfImplInfo& info)
     return Analysis::Dvvp::ProfilerCommon::ProfGetImplInfo(info);
 }
 
-extern "C" MSVP_PROF_API void ProfImplSetApiBufPop(const ProfApiBufPopCallback func)
+extern "C" MSVP_PROF_API void ProfImplSetApiBatchBufPop(const ProfApiBatchBufPopCallback func)
 {
-    Msprof::Engine::ReceiveData::apiTryPop_ = func;
+    Msprof::Engine::ReceiveData::apiBatchTryPop_ = func;
 }
 
-extern "C" MSVP_PROF_API void ProfImplSetCompactBufPop(const ProfCompactBufPopCallback func)
+extern "C" MSVP_PROF_API void ProfImplSetApiBatchBufIndexShift(const ProfApiBatchBufIndexShiftCallback func)
 {
-    Msprof::Engine::ReceiveData::compactTryPop_ = func;
+    Msprof::Engine::ReceiveData::apiBatchBufferIndexShift_ = func;
 }
 
-extern "C" MSVP_PROF_API void ProfImplSetAdditionalBufPop(const ProfAdditionalBufPopCallback func)
+extern "C" MSVP_PROF_API void ProfImplSetCompactBatchBufPop(const ProfCompactBatchBufPopCallback func)
 {
-    Msprof::Engine::ReceiveData::additionalTryPop_ = func;
+    Msprof::Engine::ReceiveData::compactBatchTryPop_ = func;
+}
+
+extern "C" MSVP_PROF_API void ProfImplSetCompactBatchBufIndexShift(const ProfCompactBatchBufIndexShiftCallback func)
+{
+    Msprof::Engine::ReceiveData::compactBatchBufferIndexShift_ = func;
+}
+
+extern "C" MSVP_PROF_API void ProfImplSetAdditionalBatchBufPop(const ProfAdditionalBatchBufPopCallback func)
+{
+    Msprof::Engine::ReceiveData::additionalBatchTryPop_ = func;
+}
+
+extern "C" MSVP_PROF_API void ProfImplSetAdditionalBatchBufIndexShift(
+    const ProfAdditionalBatchBufIndexShiftCallback func)
+{
+    Msprof::Engine::ReceiveData::additionalBatchBufferIndexShift_ = func;
 }
 
 extern "C" MSVP_PROF_API void ProfImplIfReportBufEmpty(const ProfReportBufEmptyCallback func)

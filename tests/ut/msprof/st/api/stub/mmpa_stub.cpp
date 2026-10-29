@@ -42,10 +42,13 @@ extern "C" int32_t MsprofSetConfig(uint32_t configType, const char* config, size
 extern "C" int32_t MsprofRegisterCallback(uint32_t moduleId, ProfCommandHandle handle);
 extern "C" int32_t MsprofReportData(uint32_t moduleId, uint32_t type, VOID_PTR data, uint32_t len);
 extern "C" size_t ProfImplGetImplInfo(ProfImplInfo& info);
-extern "C" void ProfImplSetApiBufPop(const ProfApiBufPopCallback func);
-extern "C" void ProfImplSetCompactBufPop(const ProfCompactBufPopCallback func);
-extern "C" void ProfImplSetAdditionalBufPop(const ProfAdditionalBufPopCallback func);
 extern "C" void ProfImplIfReportBufEmpty(const ProfReportBufEmptyCallback func);
+extern "C" void ProfImplSetApiBatchBufPop(const ProfApiBatchBufPopCallback func);
+extern "C" void ProfImplSetApiBatchBufIndexShift(const ProfApiBatchBufIndexShiftCallback func);
+extern "C" void ProfImplSetCompactBatchBufPop(const ProfCompactBatchBufPopCallback func);
+extern "C" void ProfImplSetCompactBatchBufIndexShift(const ProfCompactBatchBufIndexShiftCallback func);
+extern "C" void ProfImplSetAdditionalBatchBufPop(const ProfAdditionalBatchBufPopCallback func);
+extern "C" void ProfImplSetAdditionalBatchBufIndexShift(const ProfAdditionalBatchBufIndexShiftCallback func);
 extern "C" int32_t ProfImplReportRegTypeInfo(uint16_t level, uint32_t type, const std::string& typeName);
 extern "C" uint64_t ProfImplReportGetHashId(const std::string& info);
 extern "C" void ProfImplSetAdditionalBufPush(const ProfAdditionalBufPushCallback func);
@@ -90,10 +93,13 @@ const std::map<std::string, void*> g_map = {
     {"MsprofRegisterCallback", (void*)MsprofRegisterCallback},
     {"MsprofReportData", (void*)MsprofReportData},
     {"ProfImplGetImplInfo", (void*)ProfImplGetImplInfo},
-    {"ProfImplSetApiBufPop", (void*)ProfImplSetApiBufPop},
-    {"ProfImplSetCompactBufPop", (void*)ProfImplSetCompactBufPop},
-    {"ProfImplSetAdditionalBufPop", (void*)ProfImplSetAdditionalBufPop},
     {"ProfImplIfReportBufEmpty", (void*)ProfImplIfReportBufEmpty},
+    {"ProfImplSetApiBatchBufPop", (void*)ProfImplSetApiBatchBufPop},
+    {"ProfImplSetApiBatchBufIndexShift", (void*)ProfImplSetApiBatchBufIndexShift},
+    {"ProfImplSetCompactBatchBufPop", (void*)ProfImplSetCompactBatchBufPop},
+    {"ProfImplSetCompactBatchBufIndexShift", (void*)ProfImplSetCompactBatchBufIndexShift},
+    {"ProfImplSetAdditionalBatchBufPop", (void*)ProfImplSetAdditionalBatchBufPop},
+    {"ProfImplSetAdditionalBatchBufIndexShift", (void*)ProfImplSetAdditionalBatchBufIndexShift},
     {"ProfImplSetBatchAddBufPop", (void*)ProfImplSetBatchAddBufPop},
     {"ProfImplSetBatchAddBufIndexShift", (void*)ProfImplSetBatchAddBufIndexShift},
     {"ProfImplSetVarAddBlockBufBatchPop", (void*)ProfImplSetVarAddBlockBufBatchPop},

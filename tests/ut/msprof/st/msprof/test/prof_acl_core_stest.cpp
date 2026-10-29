@@ -83,13 +83,7 @@ extern int ProfAclDrvGetDevNum();
 
 class MSPROF_ACL_CORE_STEST : public testing::Test {
 public:
-    void RegisterTryPop()
-    {
-        ProfImplSetApiBufPop(apiTryPop);
-        ProfImplSetCompactBufPop(compactTryPop);
-        ProfImplSetAdditionalBufPop(additionalTryPop);
-        ProfImplIfReportBufEmpty(ifReportBufEmpty);
-    }
+    void RegisterTryPop() { ProfImplIfReportBufEmpty(ifReportBufEmpty); }
 
 protected:
     virtual void SetUp() { MOCKER_CPP(&Msprofiler::Api::ProfAclMgr::IsInited).stubs().will(returnValue(true)); }

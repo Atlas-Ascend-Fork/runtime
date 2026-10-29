@@ -416,6 +416,34 @@ TEST_F(PROF_CANN_PLUGIN_UTEST, ReportApiInfo_Path)
     plugin->ProfUnInitReportBuf();
 }
 
+TEST_F(PROF_CANN_PLUGIN_UTEST, ReportApi_BatchPushWhenBufferIsFull)
+{
+    auto plugin = ProfCannPlugin::instance();
+    plugin->ProfInitReportBuf(MSPROF_CTRL_INIT_ACL_ENV);
+
+    MsprofApi oldData = {};
+    oldData.level = MSPROF_REPORT_NODE_LEVEL;
+    oldData.type = 1;
+    const size_t usedCapacity = plugin->apiBuffer_.agingCapacity_ - 1U;
+    for (size_t i = 0; i < usedCapacity; i++) {
+        EXPECT_EQ(MSPROF_ERROR_NONE, plugin->apiBuffer_.BatchPush(1U, &oldData, sizeof(MsprofApi)));
+    }
+
+    MsprofApi newData = oldData;
+    newData.type = 2;
+    EXPECT_EQ(MSPROF_ERROR_NONE, plugin->ProfReportApi(1U, &newData));
+
+    size_t popSize = sizeof(MsprofApi);
+    void* popPtr = plugin->apiBuffer_.BatchPop(1U, popSize, true);
+    ASSERT_NE(nullptr, popPtr);
+    ASSERT_EQ(sizeof(MsprofApi), popSize);
+    EXPECT_EQ(1U, reinterpret_cast<const MsprofApi*>(popPtr)->type);
+    plugin->apiBuffer_.BatchPopBufferIndexShift(popPtr, popSize);
+    EXPECT_EQ(usedCapacity - 1U, plugin->apiBuffer_.GetUsedSize());
+
+    plugin->ProfUnInitReportBuf();
+}
+
 TEST_F(PROF_CANN_PLUGIN_UTEST, AdprofFeature_And_RawData)
 {
     auto plugin = ProfCannPlugin::instance();
