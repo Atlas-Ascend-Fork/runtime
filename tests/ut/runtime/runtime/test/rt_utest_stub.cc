@@ -1530,7 +1530,7 @@ TEST_F(TinyStubTest, device_sq_cq_pool_tiny_stub)
     EXPECT_EQ(pool.AllocSqRegVirtualAddr(0U, sqCqInfo.sqRegVirtualAddr), RT_ERROR_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(pool.FreeSqCqToDrv(0U, 0U), RT_ERROR_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(pool.BatchAllocSqCq(1U), RT_ERROR_FEATURE_NOT_SUPPORT);
-    EXPECT_EQ(pool.AllocSqCqForAutoSplit(&sqCqInfo), RT_ERROR_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(pool.AllocSqCqForAutoSplit(&sqCqInfo, 0U), RT_ERROR_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(pool.AllocSqCq(1U, &sqCqInfo), RT_ERROR_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(pool.FreeSqCq(&sqCqInfo, 1U, FreePolicy::DEFAULT), RT_ERROR_FEATURE_NOT_SUPPORT);
     EXPECT_EQ(pool.GetSqCqPoolFreeResNum(), 0U);

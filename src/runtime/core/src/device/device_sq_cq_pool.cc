@@ -36,14 +36,14 @@ DeviceSqCqPool::~DeviceSqCqPool()
 rtError_t DeviceSqCqPool::Init(void) const { return RT_ERROR_NONE; }
 
 rtError_t DeviceSqCqPool::AllocSqCqFromDrv(
-    rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t drvFlag, const int32_t retryCount) const
+    rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t drvFlag, const int32_t retryCount, const uint32_t priority) const
 {
     rtStreamAllocInfo_t info = {};
     constexpr uint32_t streamId = UINT32_MAX;
     rtStreamInfoExMsg_t infoEx = {};
     (void)memset_s(&infoEx, sizeof(rtStreamInfoExMsg_t), 0, sizeof(rtStreamInfoExMsg_t));
     info.streamId = streamId;
-    info.priority = 0U;
+    info.priority = priority;
     info.satMode = static_cast<uint32_t>(
         (device_->GetSatMode() == RT_OVERFLOW_MODE_INFNAN) ? RT_OVERFLOW_MODE_INFNAN : RT_OVERFLOW_MODE_SATURATION);
     info.overflowEn = false; // capture stream use default flag
@@ -188,13 +188,13 @@ rtError_t DeviceSqCqPool::AllocSqCq(const uint32_t allcocNum, rtDeviceSqCqInfo_t
     return RT_ERROR_NONE;
 }
 
-rtError_t DeviceSqCqPool::AllocSqCqForAutoSplit(rtDeviceSqCqInfo_t* const sqCqInfo) const
+rtError_t DeviceSqCqPool::AllocSqCqForAutoSplit(rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t priority) const
 {
     RT_LOG(RT_LOG_DEBUG, "deviceId=%u, tsId=%u", device_->Id_(), device_->DevGetTsId());
     COND_RETURN_INFO(
         (sqCqInfo == nullptr), RT_ERROR_INVALID_VALUE, "sqCqInfo is nullptr, deviceId=%u.", device_->Id_());
     const uint32_t drvFlag = static_cast<uint32_t>(TSDRV_FLAG_NO_SQ_MEM);
-    rtError_t error = AllocSqCqFromDrv(sqCqInfo, drvFlag, PRE_ALLOC_SQ_CQ_RETRY_MAX_COUNT);
+    rtError_t error = AllocSqCqFromDrv(sqCqInfo, drvFlag, PRE_ALLOC_SQ_CQ_RETRY_MAX_COUNT, priority);
     COND_RETURN_INFO((error != RT_ERROR_NONE), error, "alloc sq cq, retCode=%#x.", static_cast<uint32_t>(error));
     error = AllocSqRegVirtualAddr(sqCqInfo->sqId, sqCqInfo->sqRegVirtualAddr);
     /* Failure rollback: Free the SQ/CQ just allocated from driver */

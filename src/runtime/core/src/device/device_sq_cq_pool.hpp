@@ -42,12 +42,12 @@ public:
     rtError_t Init(void) const;
     void PreAllocSqCq(void);
     rtError_t AllocSqCq(const uint32_t allcocNum, rtDeviceSqCqInfo_t* const sqCqList);
-    rtError_t AllocSqCqForAutoSplit(rtDeviceSqCqInfo_t* const sqCqInfo) const;
+    rtError_t AllocSqCqForAutoSplit(rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t priority) const;
     rtError_t FreeSqCq(const rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t freeNum, const FreePolicy policy);
 
     rtError_t AllocSqCqFromDrv(
         rtDeviceSqCqInfo_t* const sqCqInfo, const uint32_t drvFlag,
-        const int32_t retryCount = PRE_ALLOC_SQ_CQ_RETRY_MAX_COUNT) const;
+        const int32_t retryCount = PRE_ALLOC_SQ_CQ_RETRY_MAX_COUNT, const uint32_t priority = 0U) const;
     rtError_t BatchAllocSqCq(const uint32_t allcocNum, const int32_t retryCount = PRE_ALLOC_SQ_CQ_RETRY_MAX_COUNT);
     rtError_t FreeSqCqToDrv(const uint32_t sqId, const uint32_t cqId) const;
     rtError_t SetSqRegVirtualAddrToDevice(const uint32_t sqId, const uint64_t sqRegVirtualAddr) const;

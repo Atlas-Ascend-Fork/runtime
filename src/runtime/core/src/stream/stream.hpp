@@ -378,6 +378,7 @@ public:
     bool IsHostFuncCbReg();
 
     uint32_t GetPriority() const { return priority_; }
+    void SetPriority(const uint32_t priority) { priority_ = priority; }
     void PushPersistentTaskID(uint32_t taskID)
     {
         const std::lock_guard<std::mutex> stmLock(persistentTaskMutex_);

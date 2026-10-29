@@ -1074,7 +1074,7 @@ rtError_t Stream::AllocStreamIdForAutoSplit()
 rtError_t Stream::AllocSqCqForAutoSplitWithRetry()
 {
     rtDeviceSqCqInfo_t sqCqInfo = {};
-    rtError_t error = device_->GetDeviceSqCqManage()->AllocSqCqForAutoSplit(&sqCqInfo);
+    rtError_t error = device_->GetDeviceSqCqManage()->AllocSqCqForAutoSplit(&sqCqInfo, priority_);
     if (error == RT_ERROR_DRV_NO_RESOURCES) {
         RT_LOG(
             RT_LOG_DEBUG, "Auto-split SQ/CQ alloc no resources, retry recycling, master_stream_id=%d, cur_stream_id=%d",
@@ -1086,7 +1086,7 @@ rtError_t Stream::AllocSqCqForAutoSplitWithRetry()
 
         if ((sqcqPool != nullptr) && (sqcqPool->GetSqCqPoolFreeResNum() != 0U)) {
             if (sqcqPool->TryFreeSqCqToDrv() == RT_ERROR_NONE) {
-                error = device_->GetDeviceSqCqManage()->AllocSqCqForAutoSplit(&sqCqInfo);
+                error = device_->GetDeviceSqCqManage()->AllocSqCqForAutoSplit(&sqCqInfo, priority_);
             }
         }
     }

@@ -1966,7 +1966,11 @@ static rtError_t SetStreamPriorityInternal(Stream* const stm, const uint32_t str
 
     Stream* const targetStm = (stm == nullptr) ? curCtx->DefaultStream_() : stm;
     NULL_STREAM_PTR_RETURN_MSG(targetStm);
-    return targetStm->Device_()->Driver_()->SetStreamPriorityValue(targetStm, streamPriority);
+    const rtError_t error = targetStm->Device_()->Driver_()->SetStreamPriorityValue(targetStm, streamPriority);
+    if (error == RT_ERROR_NONE) {
+        targetStm->SetPriority(streamPriority);
+    }
+    return error;
 }
 
 static rtError_t GetStreamPriorityInternal(Stream* const stm, uint32_t* const streamPriority)

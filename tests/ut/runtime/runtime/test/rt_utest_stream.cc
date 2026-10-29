@@ -3543,6 +3543,49 @@ TEST_F(StreamTest, stream_get_attribute1)
     ((Runtime*)Runtime::Instance())->DeviceRelease(device);
 }
 
+TEST_F(StreamTest, stream_set_priority_updates_cached_priority_on_success)
+{
+    rtStream_t streamHandle = nullptr;
+    ASSERT_EQ(rtStreamCreate(&streamHandle, 0U), RT_ERROR_NONE);
+    Stream* const stream = rt_ut::UnwrapOrNull<Stream>(streamHandle);
+    ASSERT_NE(stream, nullptr);
+
+    Driver* const driver = stream->Device_()->Driver_();
+    MOCKER_CPP_VIRTUAL(driver, &Driver::SetStreamPriorityValue)
+        .expects(once())
+        .with(mockcpp::eq(stream), mockcpp::eq(5U))
+        .will(returnValue(RT_ERROR_NONE));
+
+    rtStreamAttrValue_t value = {};
+    value.streamPriority = 5U;
+    EXPECT_EQ(rtsStreamSetAttribute(streamHandle, RT_STREAM_ATTR_PRIORITY, &value), RT_ERROR_NONE);
+    EXPECT_EQ(stream->GetPriority(), 5U);
+
+    EXPECT_EQ(rtStreamDestroy(streamHandle), RT_ERROR_NONE);
+}
+
+TEST_F(StreamTest, stream_set_priority_keeps_cached_priority_on_failure)
+{
+    rtStream_t streamHandle = nullptr;
+    ASSERT_EQ(rtStreamCreate(&streamHandle, 0U), RT_ERROR_NONE);
+    Stream* const stream = rt_ut::UnwrapOrNull<Stream>(streamHandle);
+    ASSERT_NE(stream, nullptr);
+    stream->SetPriority(5U);
+
+    Driver* const driver = stream->Device_()->Driver_();
+    MOCKER_CPP_VIRTUAL(driver, &Driver::SetStreamPriorityValue)
+        .expects(once())
+        .with(mockcpp::eq(stream), mockcpp::eq(3U))
+        .will(returnValue(RT_ERROR_DRV_ERR));
+
+    rtStreamAttrValue_t value = {};
+    value.streamPriority = 3U;
+    EXPECT_NE(rtsStreamSetAttribute(streamHandle, RT_STREAM_ATTR_PRIORITY, &value), RT_ERROR_NONE);
+    EXPECT_EQ(stream->GetPriority(), 5U);
+
+    EXPECT_EQ(rtStreamDestroy(streamHandle), RT_ERROR_NONE);
+}
+
 TEST_F(StreamTest, stream_update_stream_sqcq)
 {
     rtStream_t stream;
@@ -3954,6 +3997,33 @@ TEST_F(StreamTest, AllocSqCqForAutoSplitWithRetryNoResource)
     MOCKER_CPP_VIRTUAL(driver, &Driver::NormalSqCqAllocate).stubs().will(returnValue(RT_ERROR_DRV_NO_RESOURCES));
     {
         Stream stream(device, 0U);
+        EXPECT_EQ(stream.AllocSqCqForAutoSplitWithRetry(), RT_ERROR_DRV_NO_RESOURCES);
+    }
+
+    delete device;
+}
+
+static rtError_t CheckAutoSplitSqCqPriority(
+    Driver* const, const uint32_t, const uint32_t, const uint32_t, uint32_t* const, uint32_t* const,
+    uint32_t* const info, const uint32_t len, uint32_t* const, const uint32_t, const int32_t, const uint32_t)
+{
+    EXPECT_NE(info, nullptr);
+    EXPECT_GE(len, sizeof(rtStreamAllocInfo_t));
+    if ((info != nullptr) && (len >= sizeof(rtStreamAllocInfo_t))) {
+        EXPECT_EQ(reinterpret_cast<const rtStreamAllocInfo_t*>(info)->priority, 5U);
+    }
+    return RT_ERROR_DRV_NO_RESOURCES;
+}
+
+TEST_F(StreamTest, AutoSplitSqCqUsesStreamPriority)
+{
+    RawDevice* device = new RawDevice(0);
+    ASSERT_EQ(device->Init(), RT_ERROR_NONE);
+    Driver* driver = device->Driver_();
+    MOCKER_CPP_VIRTUAL(driver, &Driver::NormalSqCqAllocate).stubs().will(invoke(CheckAutoSplitSqCqPriority));
+
+    {
+        Stream stream(device, 5U);
         EXPECT_EQ(stream.AllocSqCqForAutoSplitWithRetry(), RT_ERROR_DRV_NO_RESOURCES);
     }
 
