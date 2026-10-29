@@ -123,7 +123,9 @@ bool LogFileUtils::StartsWith(const std::string& s, const std::string& sub) { re
 
 bool LogFileUtils::EndsWith(const std::string& s, const std::string& sub)
 {
-    return s.rfind(sub) == (s.length() - sub.length());
+    // length guard first: when sub is exactly one byte longer than s the size_t subtraction
+    // below wraps to npos and equals rfind's npos, making any short filename "end with" sub
+    return (s.length() >= sub.length()) && (s.rfind(sub) == (s.length() - sub.length()));
 }
 
 /**

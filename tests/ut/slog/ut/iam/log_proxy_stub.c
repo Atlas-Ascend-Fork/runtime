@@ -91,3 +91,17 @@ int32_t LogBufInitHead(RingBufferCtrl* ringBufferCtrl, uint32_t size, uint32_t d
     }
     return g_logBufInitRet;
 }
+
+/* UT-only stubs: the coverage target does not link mmpa, the fd serialisation mutex in
+ * FlushIamLog/LogProxyIamResStatusCb is exercised as a plain no-op here */
+INT32 ToolMutexLock(ToolMutex* mutex)
+{
+    (void)mutex;
+    return 0;
+}
+
+INT32 ToolMutexUnLock(ToolMutex* mutex)
+{
+    (void)mutex;
+    return 0;
+}

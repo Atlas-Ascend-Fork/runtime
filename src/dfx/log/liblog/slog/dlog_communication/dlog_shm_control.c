@@ -30,7 +30,9 @@ STATIC LogStatus DlogReadMsgTypeFormShmem(int8_t* msgType)
         return LOG_FAILURE;
     }
 
-    ShmErr res = ShMemRead(shmId, tmpBuf, GLOBAL_ARR_LEN, CONFIG_PATH_LEN);
+    // binary read for the GloablArr struct: the string-semantics read would stop at the
+    // first NUL byte in resv and never surface the tail fields
+    ShmErr res = ShMemReadBin(shmId, tmpBuf, GLOBAL_ARR_LEN, CONFIG_PATH_LEN);
     if (res == SHM_ERROR) {
         SELF_LOG_ERROR("read from shmem failed, pid=%d, strerr=%s.", ToolGetPid(), strerror(ToolGetErrorCode()));
         XFREE(tmpBuf);

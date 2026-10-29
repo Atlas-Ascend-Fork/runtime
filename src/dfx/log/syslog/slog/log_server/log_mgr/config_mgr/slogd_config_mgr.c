@@ -134,7 +134,10 @@ STATIC uint32_t SlogdConfigMgrCalTotalFileSize(uint32_t fileSize, uint32_t fileN
     if (fileNum <= 0) {
         return 0U;
     }
-    return fileSize * ((uint32_t)fileNum - 1U);
+    // uint64 intermediate: the config ranges allow fileSize * fileNum above UINT32_MAX, a raw
+    // uint32 multiply wraps to an arbitrary quota and breaks the aging thresholds downstream
+    uint64_t total = (uint64_t)fileSize * ((uint64_t)fileNum - 1U);
+    return (total > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)total;
 }
 
 STATIC void SlogdConfigMgrGetSpaceList(void)
@@ -326,7 +329,9 @@ uint32_t SlogdConfigMgrGetBufSize(int32_t buffType)
     }
     uint32_t maxFileNum = g_configMgr.logConfig[buffType].maxFileNum;
     uint32_t maxFileSize = g_configMgr.logConfig[buffType].maxFileSize;
-    return NormalizeBuffSize(maxFileNum * maxFileSize);
+    // clamp the multiply in uint64 before normalising: same wrap concern as CalTotalFileSize
+    uint64_t raw = (uint64_t)maxFileNum * maxFileSize;
+    return NormalizeBuffSize((raw > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)raw);
 }
 
 #else

@@ -66,8 +66,8 @@ STATIC int32_t SysReportCheckContainer(const CommHandle* handle)
         return LOG_FAILURE;
     }
     if ((runEnv != RUN_ENV_PHYSICAL) && (runEnv != RUN_ENV_VIRTUAL)) {
-        SysReportReplyMsg(handle, CONTAINER_NO_SUPPORT_MESSAGE, sizeof(CONTAINER_NO_SUPPORT_MESSAGE) + 1);
-        SELF_LOG_WARN("prohibit container get log, runEnv=%d.", runEnv);
+        SysReportReplyMsg(handle, CONTAINER_NO_SUPPORT_MESSAGE, sizeof(CONTAINER_NO_SUPPORT_MESSAGE));
+        SELF_LOG_WARN("prohibit container report log, runEnv=%d.", runEnv);
         return LOG_INVALID_PARAM;
     }
     return LOG_SUCCESS;
@@ -126,7 +126,15 @@ int32_t SysReportProcess(const CommHandle* handle, const void* value, uint32_t l
     }
 
     const LogDataMsg* msg = (const LogDataMsg*)value;
-    const char* type = (const char*)msg->data;
+    // the peer-controlled payload carries no NUL guarantee: copy it bounded into a local
+    // buffer so the %s print below never scans past the packet
+    char typeBuf[64] = {0};
+    uint32_t typeLen = len - sizeof(LogDataMsg);
+    typeLen = (typeLen < (sizeof(typeBuf) - 1U)) ? typeLen : (uint32_t)(sizeof(typeBuf) - 1U);
+    if (typeLen > 0) {
+        (void)memcpy_s(typeBuf, sizeof(typeBuf), msg->data, typeLen);
+    }
+    const char* type = typeBuf;
     if (msg->status == MSG_STATUS_LONG_LINK) {
         ret = SysReportContinuousExport(handle);
     } else {

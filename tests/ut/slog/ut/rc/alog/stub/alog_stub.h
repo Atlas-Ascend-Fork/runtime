@@ -72,7 +72,7 @@ void ResetDrvRegCall(void);
 const DrvRegCallRecord* GetDrvRegCall(void);
 
 void SetShmem(uint8_t msgType);
-ShmErr ShMemRead_stub(int32_t shmId, char* value, size_t len, size_t offset);
+ShmErr ShMemReadBin_stub(int32_t shmId, char* value, size_t len, size_t offset);
 int32_t CreatSocket_stub(uint32_t devId);
 
 #ifdef __cplusplus

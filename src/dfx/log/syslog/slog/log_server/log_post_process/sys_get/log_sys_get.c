@@ -52,7 +52,7 @@ STATIC int32_t SysGetCheckContainer(const CommHandle* handle)
         return LOG_FAILURE;
     }
     if ((runEnv != RUN_ENV_PHYSICAL) && (runEnv != RUN_ENV_VIRTUAL)) {
-        SysGetReplyMsg(handle, CONTAINER_NO_SUPPORT_MESSAGE, sizeof(CONTAINER_NO_SUPPORT_MESSAGE) + 1);
+        SysGetReplyMsg(handle, CONTAINER_NO_SUPPORT_MESSAGE, sizeof(CONTAINER_NO_SUPPORT_MESSAGE));
         SELF_LOG_WARN("prohibit container get log, runEnv=%d.", runEnv);
         return LOG_INVALID_PARAM;
     }
@@ -115,7 +115,15 @@ int32_t SysGetProcess(const CommHandle* handle, const void* value, uint32_t len)
     }
 
     const LogDataMsg* msg = (const LogDataMsg*)value;
-    const char* type = (const char*)msg->data;
+    // the peer-controlled payload carries no NUL guarantee: copy it bounded into a local
+    // buffer so the string compare and the %s prints below never scan past the packet
+    char typeBuf[64] = {0};
+    uint32_t typeLen = len - sizeof(LogDataMsg);
+    typeLen = (typeLen < (sizeof(typeBuf) - 1U)) ? typeLen : (uint32_t)(sizeof(typeBuf) - 1U);
+    if (typeLen > 0) {
+        (void)memcpy_s(typeBuf, sizeof(typeBuf), msg->data, typeLen);
+    }
+    const char* type = typeBuf;
     if (strncmp(type, SINGLE_EXPORT_LOG, strlen(SINGLE_EXPORT_LOG)) == 0) {
         ret = SysGetSingleExport(handle);
     } else {

@@ -211,8 +211,11 @@ STATIC LogRt InitGernelCfgItem(const char* confName, unsigned int nameLen, char*
         "[input] config value length is invalid, length=%u, max_length=%d.", valueLen, CONF_VALUE_MAX_LEN);
 
     if (strcmp(confName, SLOG_MAX_SIZE_CFG_STR) == 0) {
-        const int convertValueToSize = 1024;
-        g_groupInfo.maxSize = GetConfVal(confValue, valueLen) * convertValueToSize;
+        const int32_t convertValueToSize = 1024;
+        // clamp in int64 before the KB-to-byte multiply: a raw int32 multiply overflows and
+        // can wrap back into the range the later MaxSize clamp accepts, silently defeating it
+        int64_t sizeInBytes = (int64_t)GetConfVal(confValue, valueLen) * convertValueToSize;
+        g_groupInfo.maxSize = (sizeInBytes > (int64_t)INT32_MAX) ? INT32_MAX : (int32_t)sizeInBytes;
     } else if (strcmp(confName, SLOG_BUF_SIZE_CFG_STR) == 0) {
         g_groupInfo.bufSize = GetConfVal(confValue, valueLen);
     } else if (strcmp(confName, SLOG_FILE_DIR_CFG_STR) == 0) {
@@ -364,7 +367,9 @@ InitGroupItem(const char* confName, unsigned int nameLen, char* confValue, unsig
         g_groupInfo.map[groupId].fileRatio = GetConfVal(confValue, valueLen);
     } else if (strcmp(confName, SLOG_FILE_SIZE_CFG_STR) == 0) {
         const int32_t convertValueToSize = 1024;
-        g_groupInfo.map[groupId].fileSize = GetConfVal(confValue, valueLen) * convertValueToSize;
+        // same int64 clamp as MaxSize: keep the multiply from wrapping in int32
+        int64_t sizeInBytes = (int64_t)GetConfVal(confValue, valueLen) * convertValueToSize;
+        g_groupInfo.map[groupId].fileSize = (sizeInBytes > (int64_t)INT32_MAX) ? INT32_MAX : (int32_t)sizeInBytes;
     } else if (strcmp(confName, SLOG_DEFAULT_GROUP_SYMBOL) == 0) {
         g_groupInfo.map[groupId].isDefGroup = GetDefaultGroupSymbol(confValue, CONF_VALUE_MAX_LEN + 1);
     } else {

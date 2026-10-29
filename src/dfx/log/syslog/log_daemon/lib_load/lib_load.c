@@ -210,6 +210,12 @@ STATIC int32_t LibLoadCheckInfoValid(const LibLoadInfo* loadInfo)
         SELF_LOG_ERROR("check field version failed, configure: %u, current: %u", LIB_LOAD_VERSION, loadInfo->version);
         return LOG_FAILURE;
     }
+    // name is a fixed 128-byte remote field with no NUL guarantee: require termination here
+    // so every downstream consumer (strcmp, %s print, path search) stays in bounds
+    if (memchr(loadInfo->name, '\0', LIB_MAX_LENGTH_OF_NAME) == NULL) {
+        SELF_LOG_ERROR("check field name failed, library name is not NUL terminated.");
+        return LOG_FAILURE;
+    }
     return LOG_SUCCESS;
 }
 

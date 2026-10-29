@@ -114,6 +114,9 @@ STATIC void SlogdCollectFirmwareBufferLog(char* logBuf, uint32_t bufSize, uint32
         SELF_LOG_ERROR("get device id failed, result=%d, device_number=%u.", ret, deviceNum);
         return;
     }
+    // the driver wrapper only rejects *devNum > idArraySize: a success with zero devices
+    // would make the size split below divide by zero
+    ONE_ACT_WARN_LOG(deviceNum == 0, return, "no device reported, skip firmware log collect.");
     uint32_t size = 0;
     GroupInfo* group = GetGroupListHead();
     const GeneralGroupInfo* info = LogConfGroupGetInfo();

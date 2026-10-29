@@ -159,6 +159,71 @@ ShmErr ShMemRead(int32_t shmId, char* value, size_t len, size_t offset)
 }
 
 /**
+ * @brief : write binary data to shared memory
+ * @param [in]shmId:share ID to identify shared memory
+ * @param [in]value:data to be written
+ * @param [in]len: length of data
+ * @param [in]offset: segment offset in the shared memory
+ * @return: SHM_SUCCEED/SHM_ERROR
+ */
+// string-semantics ShMemWrite stops at the first NUL byte: binary segments such as the
+// GloablArr magicTail would never reach the shared memory, use this raw variant for them
+ShmErr ShMemWriteBin(int32_t shmId, const char* value, uint32_t len, uint32_t offset)
+{
+    if ((shmId == -1) || (value == NULL) || (len == 0)) {
+        SYSLOG_WARN("[input]shmId or value is error, shmId = %d\n ", shmId);
+        return SHM_ERROR;
+    }
+    char* shmvalue = (char*)ToolShmAt(shmId, NULL, 0);
+    if ((intptr_t)shmvalue == -1) {
+        SYSLOG_WARN("WriteToShMem shmat failed ,strerr=%s.\n", strerror(ToolGetErrorCode()));
+        return SHM_ERROR;
+    }
+    if (shmvalue == NULL) {
+        return SHM_ERROR;
+    }
+    if (memcpy_s(shmvalue + offset, len, value, len) != EOK) {
+        (void)ToolShmDt(shmvalue);
+        return SHM_ERROR;
+    }
+    if (ToolShmDt(shmvalue) != (int)SHM_SUCCEED) {
+        SYSLOG_WARN("shmdt failed, strerr=%s.\n", strerror(ToolGetErrorCode()));
+        return SHM_ERROR;
+    }
+    return SHM_SUCCEED;
+}
+
+/**
+ * @brief : read binary data from shared memory
+ * @param [in]shmId:share ID to identify shared memory
+ * @param [out]value:buffer to store data
+ * @param [in]len: length to read
+ * @param [in]offset: segment offset in the shared memory
+ * @return: SHM_SUCCEED/SHM_ERROR
+ */
+ShmErr ShMemReadBin(int32_t shmId, char* value, size_t len, size_t offset)
+{
+    if ((value == NULL) || (len == 0)) {
+        return SHM_ERROR;
+    }
+    char* shmvalue = (char*)ToolShmAt(shmId, NULL, SHM_RDONLY);
+    if ((intptr_t)shmvalue == -1) {
+        return SHM_ERROR;
+    }
+    if (shmvalue == NULL) {
+        return SHM_ERROR;
+    }
+    if (memcpy_s(value, len, shmvalue + offset, len) != EOK) {
+        (void)ToolShmDt(shmvalue);
+        return SHM_ERROR;
+    }
+    if (ToolShmDt(shmvalue) != 0) {
+        return SHM_ERROR;
+    }
+    return SHM_SUCCEED;
+}
+
+/**
  * @brief : remove the shared memory
  * @return: SHM_SUCCEED/SHM_ERROR
  */

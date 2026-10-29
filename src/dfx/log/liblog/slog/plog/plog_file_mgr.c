@@ -506,9 +506,9 @@ LogStatus PlogWriteDeviceLog(char* msg, const PlogDeviceLogInfo* info)
     ONE_ACT_WARN_LOG(info == NULL, return LOG_FAILURE, "[input] info is null.");
     ONE_ACT_WARN_LOG(g_plogFileList == NULL, return LOG_FAILURE, "[input] plog file list is null.");
 
-    if ((info->deviceId > g_plogFileList->deviceNum) || (info->slogFlag == 1)) {
+    if ((info->deviceId >= g_plogFileList->deviceNum) || (info->slogFlag == 1)) {
         SELF_LOG_WARN(
-            "[input] wrong device_id=%u, device_number=%u or slogFlag=%d.", info->deviceId, info->deviceId,
+            "[input] wrong device_id=%u, device_number=%u or slogFlag=%d.", info->deviceId, g_plogFileList->deviceNum,
             info->slogFlag);
         return LOG_FAILURE;
     }

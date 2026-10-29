@@ -31,7 +31,7 @@ class RC_ALOG_FUNC_UTEST : public testing::Test {
 protected:
     virtual void SetUp()
     {
-        MOCKER(ShMemRead).stubs().will(invoke(ShMemRead_stub));
+        MOCKER(ShMemReadBin).stubs().will(invoke(ShMemReadBin_stub));
         MOCKER(CreatSocket).stubs().will(invoke(CreatSocket_stub));
         MOCKER(AlogTryUseSlog).stubs().will(returnValue(LOG_FAILURE));
 
@@ -272,7 +272,7 @@ TEST_F(GetSlogSocketPathTest, GetSlogSocketPath_alogWithDiffUserInvalidPath)
 TEST_F(RC_ALOG_FUNC_UTEST, TransferToSlog)
 {
     GlobalMockObject::reset();
-    MOCKER(ShMemRead).stubs().will(invoke(ShMemRead_stub));
+    MOCKER(ShMemReadBin).stubs().will(invoke(ShMemReadBin_stub));
     MOCKER(CreatSocket).stubs().will(invoke(CreatSocket_stub));
     MOCKER(dlopen).stubs().will(invoke(logDlopen));
     MOCKER(dlclose).stubs().will(invoke(logDlclose));
@@ -343,7 +343,7 @@ TEST_F(RC_ALOG_FUNC_UTEST, compatibility)
 TEST_F(RC_ALOG_FUNC_UTEST, DlogInitRegistersDriverLog)
 {
     GlobalMockObject::reset();
-    MOCKER(ShMemRead).stubs().will(invoke(ShMemRead_stub));
+    MOCKER(ShMemReadBin).stubs().will(invoke(ShMemReadBin_stub));
     MOCKER(CreatSocket).stubs().will(invoke(CreatSocket_stub));
     MOCKER(dlopen).stubs().will(invoke(logDlopen));
     MOCKER(dlclose).stubs().will(invoke(logDlclose));
@@ -385,7 +385,7 @@ TEST_F(RC_ALOG_FUNC_UTEST, DlogInitRegistersDriverLog)
 TEST_F(RC_ALOG_FUNC_UTEST, PerModuleLevelResyncAfterRegister)
 {
     GlobalMockObject::reset();
-    MOCKER(ShMemRead).stubs().will(invoke(ShMemRead_stub));
+    MOCKER(ShMemReadBin).stubs().will(invoke(ShMemReadBin_stub));
     MOCKER(CreatSocket).stubs().will(invoke(CreatSocket_stub));
     MOCKER(dlopen).stubs().will(invoke(logDlopen));
     MOCKER(dlclose).stubs().will(invoke(logDlclose));

@@ -345,6 +345,9 @@ int32_t TsCmdSetConfig(const struct MsnReq* req, uint16_t devId, char* resultBuf
         req->valueLen != sizeof(DfxCommon), return CONFIG_INVALID_PARAM, "valueLen:%u check failed, expect:%zu.",
         req->valueLen, sizeof(DfxCommon));
     ONE_ACT_ERR_LOG(resultBuf == NULL, return CONFIG_INVALID_PARAM, "resultBuf is NULL");
+    ONE_ACT_ERR_LOG(
+        req->subCmd >= INVALID_TYPE, return CONFIG_INVALID_PARAM, "subCmd:%u out of range, expect < %u.", req->subCmd,
+        (uint32_t)INVALID_TYPE);
 
     LogCmdInfo cmdInfo = {0};
     cmdInfo.key = CMD_MAP_TO_KEY[req->subCmd];

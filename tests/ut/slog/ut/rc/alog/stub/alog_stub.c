@@ -189,7 +189,9 @@ int32_t shmctl(int32_t shmid, int32_t cmd, struct shmid_ds* buf)
 static uint8_t g_msgType = MSGTYPE_TAG;
 void SetShmem(uint8_t msgType) { g_msgType = msgType; }
 
-ShmErr ShMemRead_stub(int32_t shmId, char* value, size_t len, size_t offset)
+// the GLOBAL segment is read through ShMemReadBin since the binary-semantics switch:
+// mock target renamed accordingly, ShMemRead itself has no caller left in this binary
+ShmErr ShMemReadBin_stub(int32_t shmId, char* value, size_t len, size_t offset)
 {
     if (offset == CONFIG_PATH_LEN) {
         if (g_msgType == MSGTYPE_STRUCT) {
@@ -210,6 +212,6 @@ ShmErr ShMemRead_stub(int32_t shmId, char* value, size_t len, size_t offset)
 
 int32_t CreatSocket_stub(uint32_t devId)
 {
-    int32_t fd = open(PATH_ROOT "/socket/rc_alog_socket", O_CREAT | O_WRONLY);
+    int32_t fd = open(PATH_ROOT "/socket/rc_alog_socket", O_CREAT | O_WRONLY, 0644);
     return fd;
 }

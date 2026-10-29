@@ -105,7 +105,9 @@ STATIC LogStatus SlogdShmWriteGlobalAttr(void)
         return LOG_FAILURE;
     }
 
-    res = ShMemWrite(shmId, globalStr, GLOBAL_ARR_LEN, CONFIG_PATH_LEN);
+    // GloablArr is a raw binary struct: the string-semantics write would stop at the first
+    // NUL byte in resv and never deliver magicTail to the shared memory
+    res = ShMemWriteBin(shmId, globalStr, GLOBAL_ARR_LEN, CONFIG_PATH_LEN);
     if (res == SHM_ERROR) {
         SELF_LOG_ERROR("Write level to shmem failed.");
         return LOG_FAILURE;

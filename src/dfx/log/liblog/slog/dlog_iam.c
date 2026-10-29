@@ -19,10 +19,14 @@ extern "C" {
 #define DLOG_IAM_RES_TIMEOUT (-1)
 
 STATIC int32_t g_logOutFd = INVALID;
+// serialises {load fd + write/ioctl} against {exchange fd + close}: the atomic swap alone
+// left a load-to-use window where the closer (or an fd-number reuse after its close) could
+// redirect the log buffer into an unrelated file
+STATIC ToolMutex g_logOutFdMutex = TOOL_MUTEX_INITIALIZER;
 STATIC enum IAMResourceStatus g_iamResStatus = IAM_RESOURCE_WAITING;
 STATIC IamRegisterServer g_iamRegLevelServer = NULL;
 
-bool DlogIamServiceIsValid(void) { return (g_logOutFd != INVALID); }
+bool DlogIamServiceIsValid(void) { return (__atomic_load_n(&g_logOutFd, __ATOMIC_ACQUIRE) != INVALID); }
 
 /**
  * @brief       : slog ioctl by iam
@@ -73,7 +77,11 @@ int32_t DlogIamIoctlGetLevel(struct IAMIoctlArg* arg)
     if (!DlogIamServiceIsValid()) {
         return SYS_ERROR;
     }
-    return SlogIamIoctl(g_logOutFd, IAM_CMD_GET_LEVEL, arg);
+    (void)ToolMutexLock(&g_logOutFdMutex);
+    int32_t iamFd = __atomic_load_n(&g_logOutFd, __ATOMIC_ACQUIRE);
+    int32_t ret = SlogIamIoctl(iamFd, IAM_CMD_GET_LEVEL, arg);
+    (void)ToolMutexUnLock(&g_logOutFdMutex);
+    return ret;
 }
 
 /**
@@ -81,7 +89,14 @@ int32_t DlogIamIoctlGetLevel(struct IAMIoctlArg* arg)
  * @param [in]   : arg      argument
  * @return       : == 0 success; != 0 failure
  */
-int32_t DlogIamIoctlFlushLog(struct IAMIoctlArg* arg) { return SlogIamIoctl(g_logOutFd, IAM_CMD_FLUSH_LOG, arg); }
+int32_t DlogIamIoctlFlushLog(struct IAMIoctlArg* arg)
+{
+    (void)ToolMutexLock(&g_logOutFdMutex);
+    int32_t iamFd = __atomic_load_n(&g_logOutFd, __ATOMIC_ACQUIRE);
+    int32_t ret = SlogIamIoctl(iamFd, IAM_CMD_FLUSH_LOG, arg);
+    (void)ToolMutexUnLock(&g_logOutFdMutex);
+    return ret;
+}
 
 /**
  * @brief           : write log buffer to iam
@@ -89,7 +104,14 @@ int32_t DlogIamIoctlFlushLog(struct IAMIoctlArg* arg) { return SlogIamIoctl(g_lo
  * @param [in]      : length      length of log buffer
  * @return          : >= 0 success; < 0 failure
  */
-int32_t DlogIamWrite(void* buffer, uint32_t length) { return (int32_t)write(g_logOutFd, buffer, length); }
+int32_t DlogIamWrite(void* buffer, uint32_t length)
+{
+    (void)ToolMutexLock(&g_logOutFdMutex);
+    int32_t iamFd = __atomic_load_n(&g_logOutFd, __ATOMIC_ACQUIRE);
+    int32_t ret = (int32_t)write(iamFd, buffer, length);
+    (void)ToolMutexUnLock(&g_logOutFdMutex);
+    return ret;
+}
 
 /**
  * @brief           : open iam service fd
@@ -160,8 +182,14 @@ STATIC void DlogIamResStatusCb(struct IAMVirtualResourceStatus* resList, const i
             }
         } else {
             SELF_LOG_INFO("fd is invalid, g_iamResStatus = %d, pid = %d.", (int32_t)g_iamResStatus, ToolGetPid());
-            (void)close(g_logOutFd);
-            g_logOutFd = INVALID;
+            // invalidate before close (atomic exchange): writer/flush threads must never
+            // observe a still-valid fd number that is already closed or reused
+            (void)ToolMutexLock(&g_logOutFdMutex);
+            int32_t staleFd = __atomic_exchange_n(&g_logOutFd, INVALID, __ATOMIC_ACQ_REL);
+            (void)ToolMutexUnLock(&g_logOutFdMutex);
+            if (staleFd != INVALID) {
+                (void)close(staleFd);
+            }
         }
     }
 }

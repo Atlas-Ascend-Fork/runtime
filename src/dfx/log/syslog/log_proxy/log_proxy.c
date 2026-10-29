@@ -12,6 +12,7 @@
 #include "high_mem.h"
 #include "string.h"
 #include "log_print.h"
+#include "log_system_api.h"
 #include "log_iam_pub.h"
 #include "iam.h"
 
@@ -19,6 +20,10 @@
 #define DLOG_IAM_RES_TIMEOUT (-1)
 STATIC RingBufferStat* g_logProxBuf;
 STATIC int32_t g_iamFd = INVALID;
+// serialises {load fd + write} against {exchange fd + close}: the atomic swap alone left a
+// load-to-write window where the closer (or an fd-number reuse after its close) could
+// redirect the buffer into an unrelated file
+STATIC ToolMutex g_iamFdMutex = TOOL_MUTEX_INITIALIZER;
 STATIC enum IAMResourceStatus g_iamResStatus = IAM_RESOURCE_WAITING;
 
 STATIC LogStatus LogProxyIamOpenServiceFd(int32_t* fd)
@@ -71,8 +76,14 @@ STATIC void LogProxyIamResStatusCb(struct IAMVirtualResourceStatus* resList, con
             }
         } else {
             SELF_LOG_INFO("fd is invalid, g_iamResStatus = %d, pid = %d.", (int32_t)g_iamResStatus, (int32_t)getpid());
-            (void)close(g_iamFd);
-            g_iamFd = INVALID;
+            // invalidate before close (atomic exchange): the main flush loop must never
+            // observe a still-valid fd number that is already closed or reused
+            (void)ToolMutexLock(&g_iamFdMutex);
+            int32_t staleFd = __atomic_exchange_n(&g_iamFd, INVALID, __ATOMIC_ACQ_REL);
+            (void)ToolMutexUnLock(&g_iamFdMutex);
+            if (staleFd != INVALID) {
+                (void)close(staleFd);
+            }
         }
     }
 }
@@ -97,9 +108,11 @@ STATIC LogStatus InitIam(void)
 
 STATIC void DeInitIam(void)
 {
-    if (g_iamFd >= 0) {
-        (void)close(g_iamFd);
-        g_iamFd = INVALID;
+    (void)ToolMutexLock(&g_iamFdMutex);
+    int32_t staleFd = __atomic_exchange_n(&g_iamFd, INVALID, __ATOMIC_ACQ_REL);
+    (void)ToolMutexUnLock(&g_iamFdMutex);
+    if (staleFd >= 0) {
+        (void)close(staleFd);
     }
     int32_t ret = IAMUnregAssignedResStatusChangeCb((char*)LOGOUT_IAM_SERVICE_PATH);
     if (ret == 0) {
@@ -122,12 +135,16 @@ STATIC void FlushIamLog(int32_t himemFd)
     int32_t retryTime = 0;
     const uint32_t sleepTime = 1; // time to sleep when slogd is not ready.
     do {
-        if (g_iamFd == INVALID) {
+        (void)ToolMutexLock(&g_iamFdMutex);
+        int32_t iamFd = __atomic_load_n(&g_iamFd, __ATOMIC_ACQUIRE);
+        if (iamFd == INVALID) {
+            (void)ToolMutexUnLock(&g_iamFdMutex);
             (void)sleep(sleepTime);
             retryTime++;
             continue;
         }
-        n = (int32_t)write(g_iamFd, g_logProxBuf->ringBufferCtrl, g_logProxBuf->logBufSize);
+        n = (int32_t)write(iamFd, g_logProxBuf->ringBufferCtrl, g_logProxBuf->logBufSize);
+        (void)ToolMutexUnLock(&g_iamFdMutex);
         retryTime++;
     } while ((n != (int32_t)(g_logProxBuf->logBufSize)) && (retryTime < IAM_RETRY_TIMES));
     int ret = memset_s(g_logProxBuf->ringBufferCtrl, sizeof(RingBufferCtrl), 0, sizeof(RingBufferCtrl));

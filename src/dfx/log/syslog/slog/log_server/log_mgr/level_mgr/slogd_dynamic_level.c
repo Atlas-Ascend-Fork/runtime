@@ -242,8 +242,20 @@ STATIC LogRt SetSlogCfgLevel(const char* cfgFile, const char* cfgName, int level
             *endCfgPtr = ' ';
             endCfgPtr++;
         }
-        // change cfgName val
-        *ptr = '0' + level;
+        // change cfgName val: an empty value area (line terminator right after '=') has no
+        // digit slot - overwriting there eats the terminator and concatenates the next line
+        if ((*ptr != '\r') && (*ptr != '\n') && (*ptr != '#') && (*ptr != '\0')) {
+            *ptr = '0' + level;
+        } else {
+            // report failure instead of returning success on an unmodified file: the
+            // in-memory level may already be updated, claiming persistence here makes
+            // the level silently revert to the old value after a slogd restart.
+            // break skips the write-back of the unmodified buffer AND keeps the error
+            // code: a plain assignment is overwritten by WriteToSlogCfg's result below
+            SELF_LOG_WARN("config item %s has empty value, level update is not persisted.", cfgName);
+            res = SET_LEVEL_ERR;
+            break;
+        }
 
         res = WriteToSlogCfg(cfgFile, fileBuf);
     } while (0);

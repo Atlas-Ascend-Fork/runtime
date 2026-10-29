@@ -112,6 +112,9 @@ int32_t SlogdGetModuleLevelByDevId(int32_t devId, int32_t moduleId, uint32_t typ
     if (!IsDevIdValid(devId)) {
         return MODULE_DEFAULT_LOG_LEVEL;
     }
+    if (!IsModuleIdValid(moduleId)) {
+        return MODULE_DEFAULT_LOG_LEVEL;
+    }
 
     if (g_moduleInfo[moduleId].multiFlag) {
         if (typeMask == RUN_LOG_MASK) {

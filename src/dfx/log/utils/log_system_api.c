@@ -803,8 +803,9 @@ INT32 ToolCondTimedWait(ToolCond* cond, ToolMutex* mutex, UINT32 milliSecond)
 
     absoluteTime.tv_sec = absoluteTime.tv_sec + ((LONG)milliSecond / SYS_SECOND_TO_MSEC);
     absoluteTime.tv_nsec = absoluteTime.tv_nsec + (((LONG)milliSecond % SYS_SECOND_TO_MSEC) * SYS_MSEC_TO_NSEC);
-    // 判断是否进位
-    if (absoluteTime.tv_nsec > SYS_SECOND_TO_NSEC) {
+    // 判断是否进位: >= is required, tv_nsec == 1e9 is an invalid timespec that makes
+    // pthread_cond_timedwait fail immediately with EINVAL
+    if (absoluteTime.tv_nsec >= SYS_SECOND_TO_NSEC) {
         ++absoluteTime.tv_sec;
         absoluteTime.tv_nsec = absoluteTime.tv_nsec % SYS_SECOND_TO_NSEC;
     }

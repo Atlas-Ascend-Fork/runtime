@@ -795,7 +795,9 @@ uint32_t LogCalTotalFileSize(uint32_t fileSize, int32_t fileNum)
     if (fileNum <= 0) {
         return 0U;
     }
-    return fileSize * ((uint32_t)fileNum - 1U);
+    // uint64 intermediate: same overflow concern as SlogdConfigMgrCalTotalFileSize
+    uint64_t total = (uint64_t)fileSize * ((uint64_t)(uint32_t)fileNum - 1U);
+    return (total > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)total;
 }
 
 uint32_t LogAgentWriteDeviceOsLog(int32_t logType, StSubLogFileList* subLogList, char* msg, unsigned int len)

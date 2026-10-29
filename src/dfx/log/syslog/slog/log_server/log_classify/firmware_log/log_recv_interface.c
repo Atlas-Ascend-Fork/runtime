@@ -61,7 +61,9 @@ LogRt LogRecvSafeRead(int32_t deviceId, LogMsgHead** recvBuf, uint32_t maxLen)
         }
     }
 
-    LogMsgHead* tmpNode = (LogMsgHead*)LogMalloc(bufLen);
+    // +1 for the NUL terminator written at data[ret] below: a full read (ret == bufLen -
+    // sizeof(LogMsgHead)) would otherwise write one byte past the allocation
+    LogMsgHead* tmpNode = (LogMsgHead*)LogMalloc(bufLen + 1U);
     if (tmpNode == NULL) {
         SELF_LOG_ERROR("malloc failed, strerr=%s.", strerror(ToolGetErrorCode()));
         return MALLOC_FAILED;

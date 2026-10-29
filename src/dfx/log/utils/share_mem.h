@@ -42,6 +42,9 @@ ShmErr ShMemCreat(int32_t* shmId, toolMode perm);
 ShmErr ShMemOpen(int32_t* shmId);
 ShmErr ShMemWrite(int32_t shmId, const char* value, uint32_t len, uint32_t offset);
 ShmErr ShMemRead(int32_t shmId, char* value, size_t len, size_t offset);
+// binary variants for segments that carry raw structs instead of NUL-terminated strings
+ShmErr ShMemWriteBin(int32_t shmId, const char* value, uint32_t len, uint32_t offset);
+ShmErr ShMemReadBin(int32_t shmId, char* value, size_t len, size_t offset);
 void ShMemRemove(void);
 
 #ifdef __cplusplus
