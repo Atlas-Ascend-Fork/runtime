@@ -629,8 +629,11 @@ rtError_t DeviceErrorProc::CheckValid(const DevRingBufferCtlInfo* const ctrlInfo
         return RT_ERROR_INVALID_VALUE;
     }
 
-    if ((ctrlInfo->head >= GetRingbufferElementNum()) || (ctrlInfo->tail >= GetRingbufferElementNum())) {
-        RT_LOG(RT_LOG_ERROR, "The head(%u) or tail(%u) of ringbuffer is invalid.", ctrlInfo->head, ctrlInfo->tail);
+    if ((ctrlInfo->head >= GetRingbufferElementNum()) || (ctrlInfo->tail >= GetRingbufferElementNum()) ||
+        (ctrlInfo->ringBufferLen != GetRingbufferElementNum())) {
+        RT_LOG(
+            RT_LOG_ERROR, "The head(%u), tail(%u) or ringBufferLen(%u) of ringbuffer is invalid.", ctrlInfo->head,
+            ctrlInfo->tail, ctrlInfo->ringBufferLen);
         PrintRingbufferErrorInfo(ctrlInfo);
         return RT_ERROR_INVALID_VALUE;
     }

@@ -86,11 +86,12 @@ void DeviceErrorProc::MapFusionTaskErrorCode(const TaskInfo* tsk, StarsOpExcepti
 void DeviceErrorProc::ProcessReportFastRingBuffer()
 {
     COND_RETURN_VOID(device_ == nullptr, "device_ can not be nullptr.");
+
+    const std::lock_guard<std::mutex> lk(fastRingbufferMutex_);
     if (fastRingBufferAddr_ == nullptr) {
         return; // not support fast ringbuffer
     }
 
-    const std::lock_guard<std::mutex> lk(fastRingbufferMutex_);
     DevRingBufferCtlInfo* ctrlInfo = RtPtrToPtr<DevRingBufferCtlInfo*>(fastRingBufferAddr_);
     COND_PROC((ctrlInfo->magic != RINGBUFFER_MAGIC), return); // no error return
     COND_PROC((ctrlInfo->head == ctrlInfo->tail), return);    // Empty Fast RingBuffer.no error return

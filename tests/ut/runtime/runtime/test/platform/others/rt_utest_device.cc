@@ -217,7 +217,7 @@ DevRingBufferCtlInfo ctrlInfo;
 DVresult cmodelDrvMemcpyStubForDevErrProc(
     DVdeviceptr dst, size_t destMax, DVdeviceptr src, size_t size, drvMemcpyKind_t kind)
 {
-    ctrlInfo.ringBufferLen = 1U;
+    ctrlInfo.ringBufferLen = RINGBUFFER_LEN;
     ctrlInfo.magic = RINGBUFFER_MAGIC;
     ctrlInfo.head = 0U;
     ctrlInfo.tail = 1U;
@@ -236,7 +236,7 @@ TEST_F(ChipDeviceTest, device_error_proc2)
     rtInstance->SetChipType(CHIP_DC);
     GlobalContainer::SetRtChipType(CHIP_DC);
 
-    rtError_t error = errorProc->ProcRingBufferTask(hostAddr.get(), false, 1);
+    rtError_t error = errorProc->ProcRingBufferTask(hostAddr.get(), false, 2);
     EXPECT_EQ(error, RT_ERROR_NONE);
 
     errorProc->deviceRingBufferAddr_ = hostAddr.get();
@@ -250,6 +250,26 @@ TEST_F(ChipDeviceTest, device_error_proc2)
     ((Runtime*)Runtime::Instance())->DeviceRelease(device);
     rtInstance->SetChipType(chipOld);
     GlobalContainer::SetRtChipType(chipOld);
+}
+
+TEST_F(ChipDeviceTest, device_error_proc_check_ringbuffer_len)
+{
+    Device* device = ((Runtime*)Runtime::Instance())->DeviceRetain(0, 0);
+    ASSERT_NE(device, nullptr);
+    {
+        DeviceErrorProc errorProc(device);
+        DevRingBufferCtlInfo ctlInfo = {};
+        ctlInfo.magic = RINGBUFFER_MAGIC;
+        ctlInfo.ringBufferLen = RINGBUFFER_LEN;
+
+        EXPECT_EQ(errorProc.CheckValid(&ctlInfo), RT_ERROR_NONE);
+        ctlInfo.ringBufferLen = RINGBUFFER_LEN - 1U;
+        EXPECT_EQ(errorProc.CheckValid(&ctlInfo), RT_ERROR_INVALID_VALUE);
+        ctlInfo.ringBufferLen = RINGBUFFER_LEN + 1U;
+        EXPECT_EQ(errorProc.CheckValid(&ctlInfo), RT_ERROR_INVALID_VALUE);
+    }
+
+    ((Runtime*)Runtime::Instance())->DeviceRelease(device);
 }
 
 TEST_F(ChipDeviceTest, device_error_report_ringbuffer_01)

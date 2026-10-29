@@ -56,15 +56,16 @@ uint32_t GetRingbufferElementNum() { return RINGBUFFER_LEN; }
 void DeviceErrorProc::ProcessReportFastRingBuffer()
 {
     COND_RETURN_VOID(device_ == nullptr, "device_ can not be nullptr.");
-    if (fastRingBufferAddr_ == nullptr) {
-        return; // not support fast ringbuffer
-    }
 
-    DevRingBufferCtlInfo* ctrlInfo = RtPtrToPtr<DevRingBufferCtlInfo*>(fastRingBufferAddr_);
-    COND_PROC((ctrlInfo->magic != RINGBUFFER_MAGIC), return); // no error return
     StarsOpExceptionInfo report;
     {
         const std::lock_guard<std::mutex> lk(fastRingbufferMutex_);
+        if (fastRingBufferAddr_ == nullptr) {
+            return; // not support fast ringbuffer
+        }
+        DevRingBufferCtlInfo* ctrlInfo = RtPtrToPtr<DevRingBufferCtlInfo*>(fastRingBufferAddr_);
+        COND_PROC((ctrlInfo->magic != RINGBUFFER_MAGIC), return); // no error return
+
         StarsOpExceptionInfo* starsReport = RtValueToPtr<StarsOpExceptionInfo*>(
             RtPtrToValue(fastRingBufferAddr_) + sizeof(DevRingBufferCtlInfo) + sizeof(RingBufferElementInfo));
         report = *starsReport;
