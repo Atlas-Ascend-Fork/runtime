@@ -76,7 +76,7 @@ public:
     int SlogdCmdGetIntRet(const char* path, const char* cmd)
     {
         char resultFile[200] = {0};
-        sprintf(resultFile, "%s/MDC_SLOGD_FLUSH_FUNC_UTEST_cmd_result.txt", path);
+        sprintf(resultFile, "%s/EP_SLOGD_FLUSH_FUNC_UTEST_cmd_result.txt", path);
 
         char cmdToFile[400] = {0};
         sprintf(cmdToFile, "%s > %s", cmd, resultFile);
