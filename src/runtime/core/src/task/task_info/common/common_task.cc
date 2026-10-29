@@ -111,18 +111,17 @@ rtError_t GetIsCmdListNotFreeValByDvppCfg(rtDvppCfg_t* cfg, bool& isCmdListNotFr
             case RT_DVPP_CMDLIST_NOT_FREE:
                 isCmdListNotFree = cfg->attrs[idx].value.isCmdListNotFree;
                 break;
-            default:
+            default: {
+                const char* const attrIdName = (cfg->attrs[idx].id == RT_DVPP_MAX) ? "RT_DVPP_MAX" : "UNKNOWN";
                 RT_LOG(
-                    RT_LOG_ERROR, "dvpp cfg attr id=%s(%d) is invalid, should be [1, %u)",
-                    (cfg->attrs[idx].id == RT_DVPP_MAX) ? "DVPP_MAX" : "UNKNOWN",
+                    RT_LOG_ERROR, "dvpp cfg attr id=%s(%d) is invalid, should be [1, %u)", attrIdName,
                     static_cast<int32_t>(cfg->attrs[idx].id), RT_DVPP_MAX);
                 RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
                     ErrorCode::EE1003, "Checking the DVPP configuration",
-                    RtFmtMsg(
-                        "%s(%d)", (cfg->attrs[idx].id == RT_DVPP_MAX) ? "RT_DVPP_MAX" : "UNKNOWN",
-                        static_cast<int32_t>(cfg->attrs[idx].id)),
+                    RtFmtMsg("%s(%d)", attrIdName, static_cast<int32_t>(cfg->attrs[idx].id)),
                     RtFmtMsg("cfg->attrs[%zu].id", idx), "RT_DVPP_CMDLIST_NOT_FREE(1)");
                 return RT_ERROR_INVALID_VALUE;
+            }
         }
     }
 

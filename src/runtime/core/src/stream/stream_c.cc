@@ -340,7 +340,7 @@ rtError_t StreamDebugUnRegister(Stream* const debugStream, Stream* const default
     return error;
 }
 
-static bool IsTaskSendUserErrorReported(Stream* const stm, const rtError_t error)
+static bool IsTaskSendUserErrorReported(const Stream* const stm, const rtError_t error)
 {
     // RT_ERROR_STREAM_INVALID also has a WARN-only path without RT_STREAM_CP_PROCESS_USE.
     return (error == RT_ERROR_INVALID_VALUE && !stm->IsSoftwareSqEnable() && stm->GetBindFlag() &&

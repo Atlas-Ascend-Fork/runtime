@@ -1530,7 +1530,7 @@ TEST_P(DavidDvppConfigTest, RejectsInvalidAttributeWithoutChangingFlag)
     ClearLastDlogRecordLine();
     EXPECT_EQ(GetIsCmdListNotFreeValByDvppCfg(&cfg, isCmdListNotFree), RT_ERROR_INVALID_VALUE);
     EXPECT_TRUE(isCmdListNotFree);
-    const std::string attrName = (GetParam() == RT_DVPP_MAX) ? "DVPP_MAX" : "UNKNOWN";
+    const std::string attrName = (GetParam() == RT_DVPP_MAX) ? "RT_DVPP_MAX" : "UNKNOWN";
     EXPECT_TRUE(DlogRecordContains(
         "dvpp cfg attr id=" + attrName + "(" + std::to_string(static_cast<int32_t>(GetParam())) + ") is invalid"));
 }

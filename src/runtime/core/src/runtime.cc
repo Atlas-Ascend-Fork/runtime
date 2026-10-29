@@ -1580,7 +1580,7 @@ static void GetCloudV2DcacheLockMixPath(std::string& binaryPath)
 rtError_t Runtime::GetDcacheLockMixOpPath(std::string& dcacheLockMixOpPath) const
 {
     DevProperties prop;
-    rtError_t ret = GET_DEV_PROPERTIES(chipType_, prop);
+    const rtError_t ret = GET_DEV_PROPERTIES(chipType_, prop);
     COND_RETURN_ERROR_MSG_INNER(
         ret != RT_ERROR_NONE, ret, "Get dev properties failed, chipType=%d, retCode=%#x.",
         static_cast<int32_t>(chipType_), static_cast<uint32_t>(ret));
