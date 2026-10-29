@@ -510,15 +510,17 @@ PyObject* WrapAclOpRegisterCompileFunc(PyObject* /* self */, PyObject* args)
 
     if (PyArg_ParseTuple(args, "sO", &opType, &func) != 0) {
         CHECK_NULL(PyCallable_Check(func), "argument 2 must be a callback function.");
-        Py_XINCREF(func);
     } else {
         ACL_APP_LOG(ACL_ERROR, "acl.op.register_compile_func args parse failed");
         return nullptr;
     }
 
-    Py_XDECREF(g_mapOpCompileFuncCallback[opType]);
-    g_mapOpCompileFuncCallback[opType] = func;
     aclError iRet = aclopRegisterCompileFunc(opType, AclOpCompileFuncCallback);
+    if (iRet == ACL_SUCCESS) {
+        Py_XINCREF(func);
+        Py_XDECREF(g_mapOpCompileFuncCallback[opType]);
+        g_mapOpCompileFuncCallback[opType] = func;
+    }
     return Py_BuildValue("i", iRet);
 }
 
