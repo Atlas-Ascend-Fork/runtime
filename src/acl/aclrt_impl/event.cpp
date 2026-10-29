@@ -44,6 +44,16 @@ aclError aclrtCreateEventImpl(aclrtEvent* event)
 
 aclError aclrtCreateEventWithFlagImpl(aclrtEvent* event, uint32_t flag)
 {
+    if (flag == ACL_EVENT_EXTERNAL) {
+        static std::once_flag deprecatedWarningFlag;
+        std::call_once(deprecatedWarningFlag, [] {
+            ACL_LOG_WARN("ACL_EVENT_EXTERNAL is deprecated since CANN 9.3.0,"
+                         " will be removed after 2027/12/30,"
+                         " use aclrtRecordEventWithFlag(ACL_EVENT_RECORD_EXTERNAL) or"
+                         " aclrtStreamWaitEventWithFlag(ACL_EVENT_WAIT_EXTERNAL) instead.");
+        });
+    }
+
     ACL_PROFILING_REG(acl::AclProfType::AclrtCreateEventWithFlag);
     ACL_ADD_APPLY_TOTAL_COUNT(acl::ACL_STATISTICS_CREATE_DESTROY_EVENT);
     ACL_LOG_INFO("start to execute aclrtCreateEventWithFlag.");

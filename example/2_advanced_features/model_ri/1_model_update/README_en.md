@@ -1,6 +1,7 @@
 # 1_model_update
 
 ## Description
+
 This sample demonstrates how to update tasks in a model instance after capturing it.
 
 ## Product Support
@@ -14,6 +15,7 @@ This sample has the following support status on the following products:
 | Atlas A2 training series products/Atlas A2 inference series products | Yes |
 
 ## Build and Run
+
 For environment installation details and running details, see [README](../../../README_en.md) in the example directory.
 
 
@@ -29,7 +31,9 @@ source ${git_clone_path}/example/set_sample_env.sh
 # Build and run
 bash run.sh
 ```
+
 ## CANN RUNTIME API
+
 Key features and interfaces in this sample:
 - Initialization
     - Call aclInit interface to initialize AscendCL configuration.
@@ -44,6 +48,11 @@ Key features and interfaces in this sample:
     - Call aclrtCreateStream interface to create Stream.
     - Call aclrtSynchronizeStream interface to block waiting for Stream task completion.
     - Call aclrtDestroyStreamForce interface to forcibly destroy Stream, discarding all tasks.
+- Event Management
+    - Call aclrtCreateEventExWithFlag interface with ACL_EVENT_SYNC to create a reusable synchronization Event.
+    - Call aclrtRecordEvent interface to record the Event in the update Stream.
+    - Call aclrtStreamWaitEventWithFlag interface with ACL_EVENT_WAIT_EXTERNAL to wait in the model for the external update task to complete.
+    - Call aclrtDestroyEvent interface to destroy the Event.
 - Model Management
     - Call aclmdlRICaptureBegin interface to start capture mode.
     - Call aclmdlRICaptureThreadExchangeMode interface to change model capture mode.

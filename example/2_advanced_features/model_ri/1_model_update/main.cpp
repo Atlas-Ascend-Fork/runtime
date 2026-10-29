@@ -84,16 +84,15 @@ int main()
     aclrtStream stream;
     aclrtEvent event;
     CHECK_ERROR(aclrtCreateStream(&stream));
-    // 通过event来同步，确保更新成功,该flag专门用于捕获场景下的任务更新
-    CHECK_ERROR(aclrtCreateEventWithFlag(&event, ACL_EVENT_EXTERNAL));
+    // 创建可复用的同步Event，用于捕获场景下的任务更新
+    CHECK_ERROR(aclrtCreateEventExWithFlag(&event, ACL_EVENT_SYNC));
 
     CHECK_ERROR(aclmdlRICaptureBegin(stream, ACL_MODEL_RI_CAPTURE_MODE_RELAXED));
     CHECK_ERROR(aclrtMemcpy(selfDevice, size, selfHostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE));
     CHECK_ERROR(aclrtMemcpy(otherDevice, size, otherHostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE));
     aclnnAdd(firstAddWorkspaceAddr, firstAddWorkspaceSize, firstAddExecutor, stream);
     // 因为后续的任务为可更新的，所以在该处阻塞stream等待event，在后续更新任务中结束时记录event，可以确保后续执行的任务是更新后的
-    CHECK_ERROR(aclrtStreamWaitEvent(stream, event));
-    CHECK_ERROR(aclrtResetEvent(event, stream));
+    CHECK_ERROR(aclrtStreamWaitEventWithFlag(stream, event, 0U, ACL_EVENT_WAIT_EXTERNAL));
     aclrtTaskGrp handle;
     // 将该处的任务设置为可更新的，后续可以通过句柄handle进行更新
     CHECK_ERROR(aclmdlRICaptureTaskGrpBegin(stream));
@@ -125,6 +124,7 @@ int main()
     CHECK_ERROR(aclmdlRIDestroy(modelRI));
     CHECK_ERROR(aclrtDestroyStream(stream));
     CHECK_ERROR(aclrtDestroyStream(updateStream));
+    CHECK_ERROR(aclrtDestroyEvent(event));
     CHECK_ERROR(aclDestroyTensor(self));
     CHECK_ERROR(aclDestroyTensor(other));
     CHECK_ERROR(aclDestroyTensor(out));

@@ -29,6 +29,11 @@ extern "C" {
 #define ACL_EVENT_CAPTURE_STREAM_PROGRESS 0x00000002U
 #define ACL_EVENT_TIME_LINE 0x00000008U
 #define ACL_EVENT_DEVICE_USE_ONLY 0x00000010U
+/**
+ * @deprecated ACL_EVENT_EXTERNAL is deprecated since CANN 9.3.0, will be removed after
+ *             2027/12/30. Use aclrtRecordEventWithFlag(ACL_EVENT_RECORD_EXTERNAL) or
+ *             aclrtStreamWaitEventWithFlag(ACL_EVENT_WAIT_EXTERNAL) instead.
+ */
 #define ACL_EVENT_EXTERNAL 0x00000020U
 #define ACL_EVENT_IPC 0x00000040U
 
@@ -1732,6 +1737,10 @@ ACL_FUNC_VISIBILITY aclError aclrtCreateEvent(aclrtEvent* event);
  *
  * @param event [OUT]   created event
  * @param flag [IN]     event flag
+ *
+ * The flag ACL_EVENT_EXTERNAL is deprecated since CANN 9.3.0, will be removed after 2027/12/30.
+ * Use aclrtRecordEventWithFlag(ACL_EVENT_RECORD_EXTERNAL) or
+ * aclrtStreamWaitEventWithFlag(ACL_EVENT_WAIT_EXTERNAL) instead.
  *
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure

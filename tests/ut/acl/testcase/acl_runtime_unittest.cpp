@@ -1728,6 +1728,22 @@ TEST_F(UTEST_ACL_Runtime, aclrtCreateEventWithFlagTest)
     ret = aclrtCreateEventWithFlag(&event, flag);
     EXPECT_EQ(ret, ACL_SUCCESS);
 
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtEventCreateWithFlag(_, ACL_EVENT_EXTERNAL))
+        .Times(2)
+        .WillRepeatedly(Return(RT_ERROR_NONE));
+    testing::internal::CaptureStdout();
+    ret = aclrtCreateEventWithFlag(&event, ACL_EVENT_EXTERNAL);
+    const aclError firstRet = ret;
+    ret = aclrtCreateEventWithFlag(&event, ACL_EVENT_EXTERNAL);
+    const std::string warnLog = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(firstRet, ACL_SUCCESS);
+    EXPECT_EQ(ret, ACL_SUCCESS);
+    size_t warnCount = 0;
+    for (size_t pos = warnLog.find("deprecated"); pos != std::string::npos; pos = warnLog.find("deprecated", pos + 1)) {
+        warnCount++;
+    }
+    EXPECT_EQ(warnCount, 1U);
+
     EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtEventCreateWithFlag(_, _))
         .WillOnce(Return((ACL_ERROR_RT_PARAM_INVALID)));
     ret = aclrtCreateEventWithFlag(&event, flag);

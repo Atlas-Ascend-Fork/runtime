@@ -1,6 +1,7 @@
 # 1_model_update
 
 ## 描述
+
 本样例展示了捕获一个模型实例后如何更新该实例中的任务。
 
 ## 产品支持情况
@@ -14,6 +15,7 @@
 | Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
 
 ## 编译运行
+
 环境安装详情以及运行详情请见example目录下的[README](../../../README.md)。
 
 
@@ -29,7 +31,9 @@ source ${git_clone_path}/example/set_sample_env.sh
 # 编译运行
 bash run.sh
 ```
+
 ## CANN RUNTIME API
+
 在该Sample中，涉及的关键功能点及其关键接口，如下所示：
 - 初始化
     - 调用aclInit接口初始化AscendCL配置。
@@ -44,6 +48,11 @@ bash run.sh
     - 调用aclrtCreateStream接口创建Stream。
     - 调用aclrtSynchronizeStream可以阻塞等待Stream上任务的完成。
     - 调用aclrtDestroyStreamForce接口强制销毁Stream，丢弃所有任务。
+- Event管理
+    - 调用aclrtCreateEventExWithFlag接口并设置ACL_EVENT_SYNC创建可复用的同步Event。
+    - 调用aclrtRecordEvent接口在更新Stream中记录Event。
+    - 调用aclrtStreamWaitEventWithFlag接口并设置ACL_EVENT_WAIT_EXTERNAL，在模型中等待外部更新任务完成。
+    - 调用aclrtDestroyEvent接口销毁Event。
 - model管理
     - 调用aclmdlRICaptureBegin接口开始捕获模式。
     - 调用aclmdlRICaptureThreadExchangeMode接口更换model的捕获模式。

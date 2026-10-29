@@ -14,12 +14,14 @@
 ### 2.1 使用场景
 
 - **场景一**：跨流同步
+
   ```cpp
   aclrtRecordEvent(event, stream1);  // 在 stream1 记录事件
   aclrtStreamWaitEvent(stream2, event);  // stream2 等待事件
   ```
 
 - **场景二**：查询事件状态
+
   ```cpp
   aclrtEventRecordedStatus status;
   aclrtQueryEventStatus(event, &status);  // 查询事件是否完成
@@ -29,6 +31,7 @@
   ```
 
 - **场景三**：阻塞等待事件（Host 端阻塞直到 Event 完成，适用于需要同步等待计算结果再继续处理的场景）
+
   ```cpp
   aclrtCreateEventExWithFlag(&event, ACL_EVENT_SYNC);  // 创建同步事件
   aclrtRecordEvent(event, stream);                      // 在 Stream 上 Record 事件
@@ -38,6 +41,7 @@
   ```
 
 - **场景四**：IPC 进程间同步
+
   ```cpp
   // 进程 A：创建 IPC Event，Record 并导出 handle
   aclrtCreateEventExWithFlag(&event, ACL_EVENT_IPC);
@@ -51,6 +55,7 @@
   ```
 
 - **场景五**：计算事件间隔时间（需要 startEvent 和 endEvent 两个 Event 分别标记起止时刻，计时前需同步等待两个 Event 完成）
+
   ```cpp
   aclrtCreateEventWithFlag(&startEvent, ACL_EVENT_TIME_LINE);  // 创建起始事件
   aclrtCreateEventWithFlag(&endEvent, ACL_EVENT_TIME_LINE);    // 创建结束事件
@@ -98,7 +103,7 @@ Event Flag 通过 `aclrtCreateEventWithFlag` 或 `aclrtCreateEventExWithFlag` �
 | `ACL_EVENT_CAPTURE_STREAM_PROGRESS` | 0x02 | 流捕获进度标记 |
 | `ACL_EVENT_TIME_LINE` | 0x08 | 时间线事件（用于计时） |
 | `ACL_EVENT_DEVICE_USE_ONLY` | 0x10 | 仅设备内部使用 |
-| `ACL_EVENT_EXTERNAL` | 0x20 | aclgraph external 标注使用 |
+| `ACL_EVENT_EXTERNAL` | 0x20 | CANN 9.3.0版本废弃，计划在2027年12月30日之后删除 |
 | `ACL_EVENT_IPC` | 0x40 | IPC 事件（进程间同步） |
 
 ### 2.4 Event 状态枚举

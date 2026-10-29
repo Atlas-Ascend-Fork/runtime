@@ -20,7 +20,7 @@
 
     - **对于“更新任务与其他任务的并发执行”的场景，使用流程如下图所示：**
 
-        若模型的运行实例中存在大量任务，为了提升性能，可使用external类型的Event实现更新任务与其他任务的并发执行，并且需再单独创建一个用于更新任务的Stream（下文称之为UpdateStream）。这里的external类型的Event，是指调用aclrtCreateEventWithFlag接口并设置flag为ACL\_EVENT\_EXTERNAL的Event，该类型的Event规格有限，且无法实现跨Stream的任务捕获，需要考虑合理复用。创建external类型的Event之后，在UpdateStream上下发更新任务，接着调用aclrtRecordEvent接口下发一个Event Record任务。然后，在主流中，在待更新的任务之前，调用aclrtStreamWaitEvent接口下发一个Event Wait任务，用于等待UpdateStream中的任务更新完成。最后，在主流中，调用aclrtStreamWaitEvent接口之后，再调用aclrtResetEvent接口重置external类型的Event。
+        若模型的运行实例中存在大量任务，为了提升性能，可使用可复用的同步Event实现更新任务与其他任务的并发执行，并且需再单独创建一个用于更新任务的Stream（下文称之为UpdateStream）。首先调用aclrtCreateEventExWithFlag接口并设置flag为ACL\_EVENT\_SYNC，创建可复用的同步Event。然后，在UpdateStream上下发更新任务，并调用aclrtRecordEvent接口下发一个Event Record任务。在主流的任务捕获阶段，在待更新任务之前调用aclrtStreamWaitEventWithFlag接口并设置flag为ACL\_EVENT\_WAIT\_EXTERNAL下发一个Event Wait任务，用于等待UpdateStream上的任务更新完成。使用aclrtCreateEventExWithFlag接口创建的Event可自然复用，无需调用aclrtResetEvent接口。
 
         ![](figures/ACL_Graph_task_update_3.png)
 
@@ -145,8 +145,8 @@
             aclrtCreateStream(&stream1);
             aclrtEvent event;
 
-            // 创建external类型的event
-            aclrtCreateEventWithFlag(&event, ACL_EVENT_EXTERNAL);
+            // 创建可复用的同步Event
+            aclrtCreateEventExWithFlag(&event, ACL_EVENT_SYNC);
 
             // ========开始捕获任务========
             aclmdlRICaptureBegin(stream1, ACL_MODEL_RI_CAPTURE_MODE_GLOBAL);
@@ -157,8 +157,7 @@
             // 执行aclnnAdd算子
             aclnnAdd(workspaceAddr, workspaceSize, executor, stream1);
             // 在主流stream1上，下发一个Event Wait任务，等待更新任务完成
-            aclrtStreamWaitEvent(stream1, event);
-            aclrtResetEvent(event, stream1);
+            aclrtStreamWaitEventWithFlag(stream1, event, 0U, ACL_EVENT_WAIT_EXTERNAL);
             aclrtTaskGrp handle;
             // 标记要更新的任务
             aclmdlRICaptureTaskGrpBegin(stream1);
