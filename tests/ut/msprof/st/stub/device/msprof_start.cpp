@@ -9,7 +9,9 @@
  */
 #include <fstream>
 #include <set>
+#include <unordered_map>
 #include "msprof_start.h"
+#include "device_drv_prof_stub.h"
 #include "acl/acl.h"
 #include "acl/acl_prof.h"
 #include "acl_stub.h"
@@ -51,9 +53,24 @@ void MsprofStart::UnInit()
     deviceCheckList_.clear();
     hostCheckList_.clear();
     bitCheckList_.clear();
+    ResetQosProfileQueryCountForTest();
+    qosStreamCountForTest_ = 0U;
+    qosQueriedMpamIdsByDeviceForTest_.clear();
+    lowPowerPeriodUsForTest_ = 0;
+    lowPowerEnabledForTest_ = false;
 }
 
 void MsprofStart::ClearSingleton() { ::ClearSingleton(); }
+
+void MsprofStart::UpdateDriverConfigForTest()
+{
+    qosStreamCountForTest_ = Cann::Dvvp::Test::GetQosStreamListCountForTest();
+    const std::map<uint32_t, std::vector<uint8_t>>& queriedMpamIdsByDevice =
+        Cann::Dvvp::Test::GetQosQueriedMpamIdsByDeviceForTest();
+    qosQueriedMpamIdsByDeviceForTest_ = queriedMpamIdsByDevice;
+    lowPowerEnabledForTest_ = Cann::Dvvp::Test::GetLowPowerEnabledForTest();
+    lowPowerPeriodUsForTest_ = Cann::Dvvp::Test::GetLowPowerPeriodUsForTest();
+}
 
 void MsprofStart::GetProfilingInput(map<string, string>& sv)
 {
@@ -225,9 +242,10 @@ int32_t MsprofStart::MsprofStartByAppMode(int subArgvCount, const char** subArgv
         }
         MSPROF_LOGI("MergeArv: %s", string(MergeArv[i]).c_str());
     }
-
     DivideMsprofInput(MergeArgvLenth, MergeArv);
-    return LltMain(MergeArgvLenth, MergeArv, envp);
+    const int32_t ret = LltMain(MergeArgvLenth, MergeArv, envp);
+    UpdateDriverConfigForTest();
+    return ret;
 }
 
 int32_t MsprofStart::MsprofStartByAppModeTwo(int subArgvCount, const char** subArgv)
@@ -253,7 +271,6 @@ int32_t MsprofStart::MsprofStartByAppModeTwo(int subArgvCount, const char** subA
         }
         MSPROF_LOGI("MergeArv: %s", string(MergeArv[i]).c_str());
     }
-
     DivideMsprofInput(MergeArgvLenth, MergeArv);
     return LltMain(MergeArgvLenth, MergeArv, envp);
 }
@@ -281,19 +298,33 @@ int32_t MsprofStart::MsprofStartBySysMode(int subArgvCount, const char** subArgv
         }
         MSPROF_LOGI("MergeArv: %s", string(MergeArv[i]).c_str());
     }
-
     DivideMsprofInput(MergeArgvLenth, MergeArv);
     if (LltMain(MergeArgvLenth, MergeArv, envp) == -1) {
+        UpdateDriverConfigForTest();
         return -1;
     }
     Cann::Dvvp::Test::DataCheck CheckInstance;
     uint32_t platformType = CheckInstance.GetPlatformType();
     auto iter = CLI_CHECK_OUTPUT.find(platformType);
-    if (iter == CLI_CHECK_OUTPUT.end() || CheckInstance.flushDataChecker(iter->second, "system") != 0) {
+    const int32_t checkRet =
+        iter == CLI_CHECK_OUTPUT.end() ? -1 : CheckInstance.flushDataChecker(iter->second, "system");
+    UpdateDriverConfigForTest();
+    if (checkRet != 0) {
         return -1;
     }
     return 0;
 }
+
+uint32_t MsprofStart::GetQosStreamCountForTest() const { return qosStreamCountForTest_; }
+
+const std::map<uint32_t, std::vector<uint8_t>>& MsprofStart::GetQosQueriedMpamIdsByDeviceForTest() const
+{
+    return qosQueriedMpamIdsByDeviceForTest_;
+}
+
+int32_t MsprofStart::GetLowPowerPeriodUsForTest() const { return lowPowerPeriodUsForTest_; }
+
+bool MsprofStart::GetLowPowerEnabledForTest() const { return lowPowerEnabledForTest_; }
 
 /*
  * @berif  : Run model lifecycle: load, mark, execute and unload

@@ -88,6 +88,7 @@ RcLiteV2PlatformStub::RcLiteV2PlatformStub()
         PLATFORM_TASK_BLOCK_ON,
         PLATFORM_AICORE_EVENT_FROM_ZERO,
         PLATFORM_SYS_DEVICE_LLC_EXT,
+        PLATFORM_STARS_F_DIE,
     };
 }
 

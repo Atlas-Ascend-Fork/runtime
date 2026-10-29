@@ -15,6 +15,7 @@
 #include <functional>
 #include <queue>
 #include <set>
+#include <vector>
 #include "data_struct_stub.h"
 
 struct RunnerOpInfo {
@@ -86,6 +87,9 @@ public:
     int32_t ReportStarsNanoData(std::queue<struct Buff>& channelData);
     int32_t ReportDefaultData(std::queue<struct Buff>& channelData);
     int32_t ReportBiuPerfData(std::queue<struct Buff>& channelData);
+    int32_t ReportLlcBandwidthData(std::queue<struct Buff>& channelData);
+    int32_t ReportStarsSocProfileData(std::queue<struct Buff>& channelData);
+    int32_t ReportFDieTaskData(std::queue<struct Buff>& channelData);
     // check result
     int32_t CheckSubscribeResult(std::set<RunnerOpInfo>& modelOpInfo, std::string resultFile = "result.txt");
     void SetModelId(uint32_t modelId);
@@ -94,6 +98,8 @@ public:
     uint32_t GetStreamId();
 
 private:
+    static int32_t PushU32Samples(
+        std::queue<struct Buff>& channelData, const std::vector<std::vector<uint32_t>>& samples);
     std::string socType_;
     std::string dataDir_;
     std::string GetCaseName(const char* testcase);

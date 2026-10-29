@@ -58,11 +58,16 @@ public:
     void GetBitSwitch(std::vector<uint64_t>& dataList, uint64_t& bitSwitch, std::vector<uint64_t>& blackDataList);
     void SetProfDir(std::string dir);
     std::string GetProfDir();
+    uint32_t GetQosStreamCountForTest() const;
+    const std::map<uint32_t, std::vector<uint8_t>>& GetQosQueriedMpamIdsByDeviceForTest() const;
+    int32_t GetLowPowerPeriodUsForTest() const;
+    bool GetLowPowerEnabledForTest() const;
     void SetMsprofConfig(StProfConfigType type);
     void SetSleepTime(int32_t sleepTime);
 
 private:
     MsprofStart() {}
+    void UpdateDriverConfigForTest();
     void SetCheckList(
         const std::vector<std::string>& srcDataList, const std::vector<std::string>& srcBlackDataList,
         std::vector<std::string>& dstDataList, std::vector<std::string>& dstBlackDataList);
@@ -78,6 +83,10 @@ private:
     std::vector<uint64_t> bitCheckList_;
     std::vector<uint64_t> bitBlackCheckList_;
     std::string profDir_;
+    uint32_t qosStreamCountForTest_{0U};
+    std::map<uint32_t, std::vector<uint8_t>> qosQueriedMpamIdsByDeviceForTest_;
+    int32_t lowPowerPeriodUsForTest_{0};
+    bool lowPowerEnabledForTest_{false};
 };
 
 } // namespace Test

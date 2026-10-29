@@ -9,6 +9,7 @@
  */
 
 #include "rc_lite_v2_device_simulator.h"
+#include "ai_drv_prof_api.h"
 #ifndef MSPROF_C
 #include "devprof_drv_aicpu.h"
 #endif
@@ -18,7 +19,8 @@ namespace Dvvp {
 namespace Test {
 int32_t RcLiteV2DeviceSimulator::ProfDrvGetChannels(ChannelList& channels)
 {
-    const std::vector<int> blackList = {2, 5, 7, 43, 45, 46, 48, 49, 51, 85, 150};
+    // 45 is used by ProfHwtsLogFDieJob on RC Lite V2 to collect F Die task data.
+    const std::vector<int> blackList = {2, 5, 7, 43, 46, 48, 49, 51, 85, 150};
     std::string channelStr = "";
     std::string pattern = ",";
 
@@ -106,6 +108,8 @@ int32_t RcLiteV2DeviceSimulator::ProfDrvStart(uint32_t channelId, const ProfStar
     profPara.user_data_len = para.user_data_size;
 
     std::queue<struct Buff> dataQueue;
+    const bool isFDieTaskConfig =
+        channelId == CHANNEL_HWTS_LOG && para.user_data_size == sizeof(analysis::dvvp::driver::StarsSocLogConfigT);
     switch (channelId) {
         case CHANNEL_TSFW:
             DataMgr().ReportTsKeypointData(dataQueue);
@@ -113,6 +117,19 @@ int32_t RcLiteV2DeviceSimulator::ProfDrvStart(uint32_t channelId, const ProfStar
             break;
         case CHANNEL_STARS_SOC_LOG_BUFFER:
             DataMgr().ReportOpStarsAcsqData(dataQueue);
+            break;
+        case CHANNEL_LLC:
+            DataMgr().ReportLlcBandwidthData(dataQueue);
+            break;
+        case CHANNEL_STARS_SOC_PROFILE_BUFFER:
+            DataMgr().ReportStarsSocProfileData(dataQueue);
+            break;
+        case CHANNEL_HWTS_LOG:
+            if (isFDieTaskConfig) {
+                DataMgr().ReportFDieTaskData(dataQueue);
+            } else {
+                DataMgr().ReportHwtsData(dataQueue);
+            }
             break;
         case CHANNEL_FFTS_PROFILE_BUFFER_TASK:
             DataMgr().ReportOpDavidPmuData(dataQueue);

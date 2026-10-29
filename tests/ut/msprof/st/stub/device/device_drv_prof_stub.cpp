@@ -10,8 +10,13 @@
 
 #include "device_drv_prof_stub.h"
 #include <cstring>
+#include <cstdio>
+#include <cstddef>
 #include <set>
+#include <map>
+#include <vector>
 #include "device_simulator_manager.h"
+#include "ai_drv_prof_api.h"
 
 int prof_drv_get_channels(unsigned int device_id, channel_list_t* channels)
 {
@@ -20,6 +25,7 @@ int prof_drv_get_channels(unsigned int device_id, channel_list_t* channels)
 
 int prof_drv_start(unsigned int device_id, unsigned int channel_id, struct prof_start_para* start_para)
 {
+    Cann::Dvvp::Test::RecordStarsSocProfileConfigForTest(channel_id, start_para->user_data, start_para->user_data_size);
     return SimulatorMgr().ProfDrvStart(device_id, channel_id, *start_para);
 }
 
@@ -63,6 +69,50 @@ drvError_t halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType
 }
 
 constexpr int32_t PROF_MODULE_TYPE_QOS = 9;
+namespace {
+uint32_t gQosStreamListCountForTest = 0U;
+std::map<uint32_t, std::vector<uint8_t>> gQosQueriedMpamIdsByDeviceForTest;
+int32_t gLowPowerPeriodUsForTest = 0;
+bool gLowPowerEnabledForTest = false;
+} // namespace
+
+namespace Cann {
+namespace Dvvp {
+namespace Test {
+void ResetQosProfileQueryCountForTest()
+{
+    gQosStreamListCountForTest = 0U;
+    gQosQueriedMpamIdsByDeviceForTest.clear();
+    gLowPowerPeriodUsForTest = 0;
+    gLowPowerEnabledForTest = false;
+}
+
+uint32_t GetQosStreamListCountForTest() { return gQosStreamListCountForTest; }
+
+const std::map<uint32_t, std::vector<uint8_t>>& GetQosQueriedMpamIdsByDeviceForTest()
+{
+    return gQosQueriedMpamIdsByDeviceForTest;
+}
+
+int32_t GetLowPowerPeriodUsForTest() { return gLowPowerPeriodUsForTest; }
+
+bool GetLowPowerEnabledForTest() { return gLowPowerEnabledForTest; }
+
+void RecordStarsSocProfileConfigForTest(uint32_t channelId, const void* userData, uint32_t userDataSize)
+{
+    if (channelId != CHANNEL_STARS_SOC_PROFILE_BUFFER || userData == nullptr ||
+        userDataSize != sizeof(analysis::dvvp::driver::StarsSocQosProfileConfigT)) {
+        return;
+    }
+    const auto* config = static_cast<const analysis::dvvp::driver::StarsSocQosProfileConfigT*>(userData);
+    gLowPowerEnabledForTest =
+        config->power.innerSwitch == analysis::dvvp::driver::TS_PROFILE_COMMAND_TYPE_PROFILING_ENABLE;
+    gLowPowerPeriodUsForTest = static_cast<int32_t>(config->power.period);
+}
+} // namespace Test
+} // namespace Dvvp
+} // namespace Cann
+
 struct QosProfileInfo {
     QosProfileInfo() : devId(0), streamNum(0), mode(0) {}
     uint32_t devId;
@@ -74,16 +124,29 @@ struct QosProfileInfo {
 
 drvError_t halGetDeviceInfoByBuff(uint32_t devId, int32_t moduleType, int32_t infoType, void* value, int32_t* len)
 {
-    if (moduleType = PROF_MODULE_TYPE_QOS) {
-        QosProfileInfo* info = (QosProfileInfo*)value;
+    if (moduleType == PROF_MODULE_TYPE_QOS) {
+        if (value == nullptr || len == nullptr || *len < static_cast<int32_t>(sizeof(QosProfileInfo))) {
+            return static_cast<drvError_t>(1);
+        }
+        QosProfileInfo* info = static_cast<QosProfileInfo*>(value);
+        const size_t streamNameSize = static_cast<size_t>(*len) - offsetof(QosProfileInfo, streamName);
         if (info->mode == 0) {
-            info->streamNum = 2;
-            info->mpamId[0] = 12;
-            info->mpamId[1] = 1;
+            // RC Lite V2 verifies that Runtime keeps only the first eight streams
+            // returned by the driver when the platform monitor limit is eight.
+            info->streamNum = 10;
+            gQosStreamListCountForTest = info->streamNum;
+            for (uint16_t i = 0; i < info->streamNum; i++) {
+                info->mpamId[i] = static_cast<uint8_t>(i + 1);
+            }
         } else if (info->mode == 1 && info->mpamId[0] == 12) {
-            strcpy(info->streamName, "st_mpamid_12");
-        } else if (info->mode == 1 && info->mpamId[0] == 1) {
-            return (drvError_t)1;
+            gQosQueriedMpamIdsByDeviceForTest[devId].push_back(info->mpamId[0]);
+            (void)snprintf(info->streamName, streamNameSize, "st_mpamid_%u", info->mpamId[0]);
+        } else if (info->mode == 1 && info->mpamId[0] != 0) {
+            gQosQueriedMpamIdsByDeviceForTest[devId].push_back(info->mpamId[0]);
+            int ret = snprintf(info->streamName, streamNameSize, "st_mpamid_%u", info->mpamId[0]);
+            if (ret < 0 || static_cast<size_t>(ret) >= sizeof(info->streamName)) {
+                return (drvError_t)1;
+            }
         } else if (info->mode == 2) {
             info->streamNum = 2;
             info->mpamId[0] = 12;

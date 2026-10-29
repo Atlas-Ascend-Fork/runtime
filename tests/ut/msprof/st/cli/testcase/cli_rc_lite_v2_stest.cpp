@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <climits>
 #include "gtest/gtest.h"
 #include "mockcpp/mockcpp.hpp"
 #include "device_simulator_manager.h"
@@ -24,8 +25,10 @@
 #include "hdc_api.h"
 #include "dev_mgr_api.h"
 #include "devprof_drv_aicpu.h"
+#include "data_check.h"
 
 using namespace analysis::dvvp::common::error;
+using namespace Analysis::Dvvp::Common::Platform;
 using namespace Cann::Dvvp::Test;
 
 static const char RC_LITE_V2_RM_RF[] = "rm -rf ./cliRcLiteV2stest_workspace";
@@ -65,6 +68,8 @@ protected:
     {
         MOCKER(dlopen).stubs().will(invoke(mmDlopen));
         MOCKER(dlsym).stubs().will(invoke(mmDlsym));
+        MOCKER(OsalDlopen).stubs().will(invoke(mmDlopen));
+        MOCKER(OsalDlsym).stubs().will(invoke(mmDlsym));
         MOCKER(dlclose).stubs().will(invoke(mmDlclose));
         MOCKER(dlerror).stubs().will(invoke(mmDlerror));
     }
@@ -95,6 +100,95 @@ TEST_F(CliRcLiteV2Stest, CliL2CacheTask)
     std::vector<std::string> dataList = {"ffts_profile.data"};
     MsprofMgr().SetDeviceCheckList(dataList);
     EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartByAppMode(sizeof(argv) / sizeof(char*), argv));
+}
+
+// RC Lite V2 inherits the LLC collection flow: --sys-hardware-mem opens
+// ProfLlcJob on channel 8 and writes data/llc.data.
+TEST_F(CliRcLiteV2Stest, CliSysHardwareMemLlcBandwidth)
+{
+    std::cout << "[RCLLC] Start --sys-hardware-mem flow: CLI -> ProfLlcJob -> channel 8 -> llc.data" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--sys-hardware-mem=on"};
+    const std::vector<std::string> dataList = {"llc.data"};
+    MsprofMgr().SetDeviceCheckList(dataList);
+    EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartBySysMode(static_cast<int32_t>(argv.size()), argv.data()));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_SYS_DEVICE_LLC));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_SYS_DEVICE_QOS));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_SYS_DEVICE_LOW_POWER));
+    std::cout << "[RCLLC] Finish: DataCheck passed and platform supports LLC/QoS/low-power" << std::endl;
+}
+
+// --sys-hardware-mem also opens accelerator bandwidth collection. Runtime asks
+// HAL for the driver stream list, keeps the first eight streams limited by the
+// RC Lite V2 monitor number, then sends them through StarsSocQosProfileConfigT.
+TEST_F(CliRcLiteV2Stest, CliAcceleratorBandwidthFirstEightStreams)
+{
+    std::cout << "[RCQoS] Start --sys-hardware-mem flow: HAL stream query -> min(8, 10) -> channel 52 -> "
+              << "stars_soc_profile.data" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--sys-hardware-mem=on"};
+    const std::vector<std::string> dataList = {"stars_soc_profile.data"};
+    MsprofMgr().SetDeviceCheckList(dataList);
+    EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartBySysMode(static_cast<int32_t>(argv.size()), argv.data()));
+    EXPECT_EQ(10U, MsprofMgr().GetQosStreamCountForTest());
+    const std::map<uint32_t, std::vector<uint8_t>>& queriedMpamIdsByDevice =
+        MsprofMgr().GetQosQueriedMpamIdsByDeviceForTest();
+    ASSERT_EQ(1U, queriedMpamIdsByDevice.size());
+    for (const auto& iter : queriedMpamIdsByDevice) {
+        const std::vector<uint8_t> expectedMpamIds = {1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
+        EXPECT_EQ(expectedMpamIds, iter.second) << "device " << iter.first;
+    }
+    std::cout << "[RCQoS] Finish: DataCheck passed, HAL returns 10 streams and Runtime keeps first 8" << std::endl;
+}
+
+// Low-power profiling is enabled by default and reuses channel 52. The explicit
+// 100Hz setting is converted by Runtime to a 10000us period before delivery.
+TEST_F(CliRcLiteV2Stest, CliLowPowerProfiling)
+{
+    std::cout << "[RCLowPower] Start --sys-lp flow: 100Hz -> 10000us -> channel 52 -> "
+              << "stars_soc_profile.data" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--sys-lp=on", "--sys-lp-freq=100"};
+    const std::vector<std::string> dataList = {"stars_soc_profile.data"};
+    MsprofMgr().SetDeviceCheckList(dataList);
+    EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartBySysMode(static_cast<int32_t>(argv.size()), argv.data()));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_SYS_DEVICE_LOW_POWER));
+    EXPECT_TRUE(MsprofMgr().GetLowPowerEnabledForTest());
+    EXPECT_EQ(10000, MsprofMgr().GetLowPowerPeriodUsForTest());
+    std::cout << "[RCLowPower] Finish: DataCheck passed and period is 10000us" << std::endl;
+}
+
+TEST_F(CliRcLiteV2Stest, CliLowPowerFreqOverFlow)
+{
+    std::cout << "[RCLowPowerOverflow] Start validation flow: 101Hz is rejected by current range [1,100]" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--sys-lp=on", "--sys-lp-freq=101"};
+    EXPECT_EQ(PROFILING_FAILED, MsprofMgr().MsprofStartBySysMode(static_cast<int32_t>(argv.size()), argv.data()));
+    std::cout << "[RCLowPowerOverflow] Finish: validation failed as expected" << std::endl;
+}
+
+// F Die task data reuses channel 45, but is registered by ProfHwtsLogFDieJob
+// and written to stars_f_soc.data instead of the normal HWTS file.
+TEST_F(CliRcLiteV2Stest, CliFDieTaskTime)
+{
+    std::cout << "[RCFDieTaskTime] Start --task-time flow: ProfHwtsLogFDieJob -> channel 45 -> "
+              << "stars_f_soc.data" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--task-time=on"};
+    const std::vector<std::string> dataList = {"stars_f_soc.data"};
+    MsprofMgr().SetDeviceCheckList(dataList);
+    EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartByAppMode(static_cast<int32_t>(argv.size()), argv.data()));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_STARS_F_DIE));
+    std::cout << "[RCFDieTaskTime] Finish: DataCheck passed and F-Die feature is enabled" << std::endl;
+}
+
+// task-block maps to dvpp_vpc_block in DrvStarsSocLogStart for channel 45 and
+// must collect the first/last block data of IO-STARS scheduled DVPP tasks.
+TEST_F(CliRcLiteV2Stest, CliFDieTaskBlock)
+{
+    std::cout << "[RCFDieTaskBlock] Start --task-block flow: ProfHwtsLogFDieJob -> channel 45 -> "
+              << "stars_f_soc.data" << std::endl;
+    std::vector<const char*> argv = {RC_LITE_V2_OUTPUT_DIR, "--task-block=on"};
+    const std::vector<std::string> dataList = {"stars_f_soc.data"};
+    MsprofMgr().SetDeviceCheckList(dataList);
+    EXPECT_EQ(PROFILING_SUCCESS, MsprofMgr().MsprofStartByAppMode(static_cast<int32_t>(argv.size()), argv.data()));
+    EXPECT_TRUE(Platform::instance()->CheckIfSupport(PLATFORM_STARS_F_DIE));
+    std::cout << "[RCFDieTaskBlock] Finish: DataCheck passed and F-Die feature is enabled" << std::endl;
 }
 
 TEST_F(CliRcLiteV2Stest, CliAivNotSupport)

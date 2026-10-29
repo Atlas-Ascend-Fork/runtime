@@ -326,6 +326,58 @@ int32_t DataManager::ReportBiuPerfData(std::queue<struct Buff>& channelData)
 }
 
 int32_t DataManager::ReportStarsNanoData(std::queue<struct Buff>& /* channelData */) { return 0; }
+
+int32_t DataManager::ReportLlcBandwidthData(std::queue<struct Buff>& channelData)
+{
+    // Channel 8 is the inherited LLC channel on RC Lite V2. A real driver returns
+    // bandwidth samples in the TagLlcProfileConfig format; here three uint32_t
+    // words make a sample recognisable by the ST case.
+    constexpr uint32_t llcReadSampleType = 1;
+    constexpr uint32_t llcWriteSampleType = 2;
+    const std::vector<std::vector<uint32_t>> llcSamples = {{llcReadSampleType, 10, 100}, {llcWriteSampleType, 10, 200}};
+    return PushU32Samples(channelData, llcSamples);
+}
+
+int32_t DataManager::ReportStarsSocProfileData(std::queue<struct Buff>& channelData)
+{
+    // Channel 52 carries accelerator bandwidth and low-power samples. The first
+    // word is a test-only sample type so the ST case can distinguish them.
+    constexpr uint32_t accBandwidthSampleType = 10;
+    constexpr uint32_t lowPowerSampleType = 20;
+    const std::vector<std::vector<uint32_t>> samples = {
+        {accBandwidthSampleType, 8, 100}, {lowPowerSampleType, 10000, 200}};
+    return PushU32Samples(channelData, samples);
+}
+
+int32_t DataManager::ReportFDieTaskData(std::queue<struct Buff>& channelData)
+{
+    // Channel 45 is bound to stars_f_soc.data by ProfHwtsLogFDieJob. These words
+    // represent task start/end and stream swap-in/swap-out events in the ST stub.
+    constexpr uint32_t fDieTaskStart = 30;
+    constexpr uint32_t fDieTaskEnd = 31;
+    const std::vector<std::vector<uint32_t>> samples = {{fDieTaskStart, 1, 100}, {fDieTaskEnd, 1, 200}};
+    return PushU32Samples(channelData, samples);
+}
+
+int32_t DataManager::PushU32Samples(
+    std::queue<struct Buff>& channelData, const std::vector<std::vector<uint32_t>>& samples)
+{
+    for (const auto& row : samples) {
+        struct Buff buffer;
+        buffer.len = row.size() * sizeof(uint32_t);
+        buffer.data = malloc(buffer.len);
+        if (buffer.data == nullptr) {
+            return -1;
+        }
+        if (memcpy_s(buffer.data, buffer.len, row.data(), buffer.len) != EOK) {
+            free(buffer.data);
+            return -1;
+        }
+        channelData.push(buffer);
+    }
+    return 0;
+}
+
 int32_t DataManager::ReportDefaultData(std::queue<struct Buff>& channelData)
 {
     struct Buff buffer;
