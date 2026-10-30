@@ -29,6 +29,7 @@
 #include "tprt.hpp"
 #include "inner_thread_local.hpp"
 #include "task_xpu_recycle.hpp"
+#include "rt_inner_xpu.h"
 #include "../../../common/rt_utest_xpu_helper.hpp"
 
 using namespace testing;

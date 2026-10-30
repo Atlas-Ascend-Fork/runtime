@@ -40,6 +40,7 @@
 #undef private
 #include "../../../common/rt_utest_xpu_helper.hpp"
 #include "xpu_stub.h"
+#include "rt_inner_xpu.h"
 #include "rt_unwrap.h"
 
 using namespace cce::runtime;

@@ -46,6 +46,7 @@
 #include "event_pool.hpp"
 #include "stub_task.hpp"
 #include "rt_inner_model.h"
+#include "rt_inner_xpu.h"
 #include "inner_kernel.h"
 #include "xpu_aicpu_c.hpp"
 #include "model.hpp"

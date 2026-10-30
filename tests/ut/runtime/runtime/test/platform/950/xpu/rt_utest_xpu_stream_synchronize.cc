@@ -28,6 +28,7 @@
 #include "xpu_kernel_task.h"
 #include "xpu_aicpu_c.hpp"
 #include "api_impl.hpp"
+#include "rt_inner_xpu.h"
 #include "../../../common/rt_utest_xpu_helper.hpp"
 using namespace testing;
 using namespace cce::runtime;

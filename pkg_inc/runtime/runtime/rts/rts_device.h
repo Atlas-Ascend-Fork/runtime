@@ -472,35 +472,6 @@ typedef int32_t (*rtsDeviceTaskAbortCallback)(
 RTS_API RT_DEPRECATED_MESSAGE(RT_RUNTIME_DEPRECATED_MESSAGE) rtError_t
     rtsSetDeviceTaskAbortCallback(const char_t* regName, rtsDeviceTaskAbortCallback callback, void* args);
 
-/**
- * @ingroup xpu dev
- * @brief get xpu device count
- * @param [in] devType Currently, only the DPU type is supported.
- * @param [out] count Currently count=1
- * @return RT_ERROR_NONE for ok
- */
-RTS_API RT_DEPRECATED_MESSAGE(RT_RUNTIME_DEPRECATED_MESSAGE) rtError_t
-    rtGetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount);
-
-/**
- * @ingroup xpu dev
- * @brief set xpu device
- * @param [in] devType Currently, only the DPU type is supported.
- * @param [in] devId Currently devId=0 is supported
- * @return RT_ERROR_NONE for ok
- */
-RTS_API RT_DEPRECATED_MESSAGE(RT_RUNTIME_DEPRECATED_MESSAGE) rtError_t
-    rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId);
-
-/**
- * @ingroup xpu dev
- * @brief reset xpu device
- * @param [in] devType Currently, only the DPU type is supported.
- * @param [in] devId Currently devId=0 is supported
- * @return RT_ERROR_NONE for ok
- */
-RTS_API RT_DEPRECATED_MESSAGE(RT_RUNTIME_DEPRECATED_MESSAGE) rtError_t
-    rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId);
 RT_RUNTIME_DEPRECATED_DECLS_END
 #if defined(__cplusplus)
 }

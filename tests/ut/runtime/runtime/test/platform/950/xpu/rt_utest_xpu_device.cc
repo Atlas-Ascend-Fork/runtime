@@ -20,6 +20,7 @@
 #undef protected
 #undef private
 #include "xpu_stub.h"
+#include "rt_inner_xpu.h"
 #include "../../../common/rt_utest_xpu_helper.hpp"
 
 #include <cstdio>

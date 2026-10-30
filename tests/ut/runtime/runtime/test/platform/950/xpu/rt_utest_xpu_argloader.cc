@@ -24,6 +24,7 @@
 #include "runtime.hpp"
 #include "api.hpp"
 #include "tprt.hpp"
+#include "rt_inner_xpu.h"
 #include "../../../common/rt_utest_xpu_helper.hpp"
 using namespace testing;
 using namespace cce::runtime;
