@@ -512,7 +512,7 @@ TEST_F(ParseSimtPrintfV2Test, WhenRingBufferOverflow_ExpectClampedToRemainLen)
     ConstructSimtBlock(hostData.data(), blockSize, testReadIdx, testWriteIdx);
 
     BlockInfo* blockInfo = RtPtrToPtr<BlockInfo*>(hostData.data());
-    const uint64_t testConsumedLen = testWriteIdx;
+    const uint64_t testConsumedLen = blockInfo->remainLen;
 
     (void)SetParseDfxInfoFunc(nullptr);
     (void)SetParseDfxInfoFunc(TestParseDfxInfoCallback);

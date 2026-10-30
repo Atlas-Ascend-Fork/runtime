@@ -12,6 +12,8 @@
 #define DFX_INFO_PARSER_H
 
 #include <atomic>
+#include <mutex>
+#include <unordered_map>
 
 #include "common/singleton.h"
 #include "rt_inner_dfx.h"
@@ -30,8 +32,13 @@ public:
 
 private:
     bool registered_;
+    std::mutex tlvCntMutex_;
+    std::unordered_map<uint64_t, uint64_t> tlvCntMap_;
     static std::atomic<bool> profCtrlRegistered_;
     static void RegisterProfCtrlCallbackOnce();
+    void AddTlvCnt(const rtDfxParseParam* param, uint64_t consumedTlvCnt);
+    uint64_t GetTlvCnt(const rtDfxParseParam* param, uint64_t packIdx);
+    void ClearTlvCntState();
 };
 
 } // namespace Adx

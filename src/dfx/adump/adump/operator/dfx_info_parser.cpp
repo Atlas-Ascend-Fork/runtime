@@ -18,6 +18,8 @@
 #include <iostream>
 #include <set>
 #include <atomic>
+#include <limits>
+#include <mutex>
 
 #include "log/hdc_log.h"
 #include "fp16_t.h"
@@ -1084,12 +1086,18 @@ bool PrepareDumpReadBuffer(
 }
 
 uint64_t ParseDumpReadBuffer(
-    const rtDfxParseParam* param, const uint8_t* dumpReadStartAddr, const uint64_t totalReadBufLen)
+    const rtDfxParseParam* param, const uint8_t* dumpReadStartAddr, const uint64_t totalReadBufLen,
+    const uint64_t packIdx, const uint64_t tlvCnt, uint64_t& consumedTlvCnt)
 {
     std::vector<size_t> shape;
     std::vector<MsprofAicTimeStampInfo> timeStampInfo;
     uint64_t dataLen = 0U;
+    uint64_t currentTlvCnt = tlvCnt;
     while (dataLen < totalReadBufLen) {
+        if ((param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_SIMT && packIdx == currentTlvCnt) ||
+            (param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_AICPU && currentTlvCnt >= packIdx)) {
+            break;
+        }
         const uint64_t remainingLen = totalReadBufLen - dataLen;
         if (remainingLen < sizeof(DumpInfoHead)) {
             break;
@@ -1107,6 +1115,8 @@ uint64_t ParseDumpReadBuffer(
             PrintDumpInfo(dumpHead, param->coreId, param->coreType, shape, timeStampInfo);
         }
         dataLen += step;
+        ++currentTlvCnt;
+        ++consumedTlvCnt;
     }
     ReportTimeStampInfo(timeStampInfo);
     return dataLen;
@@ -1180,6 +1190,40 @@ void DfxInfoParser::UnInit()
             registered_ = false;
         }
     }
+    ClearTlvCntState();
+}
+
+void DfxInfoParser::AddTlvCnt(const rtDfxParseParam* param, uint64_t consumedTlvCnt)
+{
+    if (consumedTlvCnt == 0U) {
+        return;
+    }
+    const uint64_t key = (static_cast<uint64_t>(param->deviceId) << 32U) | param->coreType;
+    std::lock_guard<std::mutex> lock(tlvCntMutex_);
+    tlvCntMap_[key] += consumedTlvCnt;
+}
+
+uint64_t DfxInfoParser::GetTlvCnt(const rtDfxParseParam* param, uint64_t packIdx)
+{
+    if (packIdx == std::numeric_limits<uint64_t>::max()) {
+        return 0U;
+    }
+    const uint64_t key = (static_cast<uint64_t>(param->deviceId) << 32U) | param->coreType;
+    std::lock_guard<std::mutex> lock(tlvCntMutex_);
+    auto iter = tlvCntMap_.find(key);
+    if (iter == tlvCntMap_.end()) {
+        return 0U;
+    }
+    if (packIdx < iter->second) {
+        iter->second = 0U;
+    }
+    return iter->second;
+}
+
+void DfxInfoParser::ClearTlvCntState()
+{
+    std::lock_guard<std::mutex> lock(tlvCntMutex_);
+    tlvCntMap_.clear();
 }
 
 void DfxInfoParser::ParseDfxInfo(const rtDfxParseParam* param, uint64_t* consumedLen)
@@ -1206,7 +1250,15 @@ void DfxInfoParser::ParseDfxInfo(const rtDfxParseParam* param, uint64_t* consume
     if (!PrepareDumpReadBuffer(param, dumpInfoVec, dumpReadStartAddr, totalReadBufLen)) {
         return;
     }
-    const uint64_t dataLen = ParseDumpReadBuffer(param, dumpReadStartAddr, totalReadBufLen);
+    const auto* blockAddr = static_cast<const uint8_t*>(param->data);
+    const auto* writeInfo =
+        reinterpret_cast<const BlockWriteInfo*>(blockAddr + param->datalen - sizeof(BlockWriteInfo));
+    const uint64_t packIdx = writeInfo->packIdx;
+    const uint64_t tlvCnt = GetTlvCnt(param, packIdx);
+    uint64_t consumedTlvCnt = 0U;
+    const uint64_t dataLen =
+        ParseDumpReadBuffer(param, dumpReadStartAddr, totalReadBufLen, packIdx, tlvCnt, consumedTlvCnt);
+    AddTlvCnt(param, consumedTlvCnt);
     if ((param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_SIMT) ||
         (param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_AICPU)) {
         *consumedLen = dataLen;
@@ -1214,7 +1266,7 @@ void DfxInfoParser::ParseDfxInfo(const rtDfxParseParam* param, uint64_t* consume
         *consumedLen = (param->writeIdx - param->readIdx);
     }
 
-    KernelDfxDumper::Instance().DumpKernelDfxInfoBlock(param, dumpReadStartAddr, totalReadBufLen);
+    KernelDfxDumper::Instance().DumpKernelDfxInfoBlock(param, dumpReadStartAddr, dataLen);
 }
 
 } // namespace Adx

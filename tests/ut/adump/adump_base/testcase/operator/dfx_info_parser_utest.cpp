@@ -89,6 +89,8 @@ protected:
             blockInfo = reinterpret_cast<BlockInfo*>(blockAddr);
             blockInfo->remainLen = dataAreaSize;
             blockInfo->magic = 0xAE86U;
+            auto* writeInfo = reinterpret_cast<BlockWriteInfo*>(blockAddr + totalSize - sizeof(BlockWriteInfo));
+            writeInfo->packIdx = std::numeric_limits<uint64_t>::max();
             dumpStartAddr = blockAddr + sizeof(BlockInfo) + sizeof(BlockReadInfo);
         }
     };
@@ -385,6 +387,53 @@ TEST_F(DfxInfoParserUtest, Test_ParseDfxInfo_Normal_Aicpu)
     rtDfxParseParam param = MakeParam(block.blockAddr, block.data.size(), 0U, tlvLen, 3U, 0U);
     DfxInfoParser::Instance().ParseDfxInfo(&param, &consumedLen);
     EXPECT_EQ(consumedLen, tlvLen);
+}
+
+TEST_F(DfxInfoParserUtest, Test_ParseDfxInfo_AicpuPackIdxStopsUncommittedTlv)
+{
+    BlockBuffer block(256);
+    const uint32_t firstLen = BuildAicpuTlv(block.dumpStartAddr, "aicpu committed");
+    (void)BuildAicpuTlv(block.dumpStartAddr + firstLen, "aicpu uncommitted");
+    auto* writeInfo = reinterpret_cast<BlockWriteInfo*>(block.blockAddr + block.data.size() - sizeof(BlockWriteInfo));
+    writeInfo->packIdx = 1U;
+
+    uint64_t consumedLen = 0U;
+    rtDfxParseParam param = MakeParam(block.blockAddr, block.data.size(), 0U, firstLen * 2U, 3U, 0U);
+    DfxInfoParser::Instance().ParseDfxInfo(&param, &consumedLen);
+    EXPECT_EQ(consumedLen, firstLen);
+}
+
+TEST_F(DfxInfoParserUtest, Test_ParseDfxInfo_AicpuPackIdxAccumulatesAcrossRounds)
+{
+    BlockBuffer block(256);
+    const uint32_t firstLen = BuildAicpuTlv(block.dumpStartAddr, "first round");
+    const uint32_t secondLen = BuildAicpuTlv(block.dumpStartAddr + firstLen, "second round");
+    auto* writeInfo = reinterpret_cast<BlockWriteInfo*>(block.blockAddr + block.data.size() - sizeof(BlockWriteInfo));
+
+    uint64_t consumedLen = 0U;
+    rtDfxParseParam param = MakeParam(block.blockAddr, block.data.size(), 0U, firstLen, 3U, 0U);
+    writeInfo->packIdx = 1U;
+    DfxInfoParser::Instance().ParseDfxInfo(&param, &consumedLen);
+    EXPECT_EQ(consumedLen, firstLen);
+
+    param = MakeParam(block.blockAddr, block.data.size(), firstLen, firstLen + secondLen, 3U, 0U);
+    writeInfo->packIdx = 2U;
+    DfxInfoParser::Instance().ParseDfxInfo(&param, &consumedLen);
+    EXPECT_EQ(consumedLen, secondLen);
+}
+
+TEST_F(DfxInfoParserUtest, Test_ParseDfxInfo_SimtPackIdxStopsUncommittedTlv)
+{
+    BlockBuffer block(256);
+    const uint32_t firstLen = BuildPrintfTlv(block.dumpStartAddr, "simt committed", true);
+    (void)BuildPrintfTlv(block.dumpStartAddr + firstLen, "simt uncommitted", true);
+    auto* writeInfo = reinterpret_cast<BlockWriteInfo*>(block.blockAddr + block.data.size() - sizeof(BlockWriteInfo));
+    writeInfo->packIdx = 1U;
+
+    uint64_t consumedLen = 0U;
+    rtDfxParseParam param = MakeParam(block.blockAddr, block.data.size(), 0U, firstLen * 2U, 2U, 0U);
+    DfxInfoParser::Instance().ParseDfxInfo(&param, &consumedLen);
+    EXPECT_EQ(consumedLen, firstLen);
 }
 
 TEST_F(DfxInfoParserUtest, Test_ParseDfxInfo_AicpuTruncatedTlvAfterCompleteTlv)
