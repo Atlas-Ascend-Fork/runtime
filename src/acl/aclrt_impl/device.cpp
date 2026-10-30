@@ -36,7 +36,7 @@ int32_t GetAllUtilizations(const int32_t deviceId, const rtTypeUtil_t utilType, 
         return DEVICE_UTILIZATION_NOT_SUPPORT;
     }
     if (rtErr != RT_ERROR_NONE) {
-        ACL_LOG_CALL_ERROR(
+        ACL_LOG_ERROR(
             "rtGetAllUtilizations failed, utilType=%s(%d), runtime result=%d.", utilTypeName,
             static_cast<int32_t>(utilType), static_cast<int32_t>(rtErr));
         return DEVICE_UTILIZATION_NOT_SUPPORT;
@@ -192,7 +192,7 @@ aclError aclrtSetTsDeviceImpl(aclrtTsId tsId)
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
             std::vector<const char*>(
-                {funcName.c_str(), acl::GetTsIdDesc(tsId), "tsId", "ACL_TS_ID_AICORE or ACL_TS_ID_AIVECTOR"}));
+                {funcName.c_str(), acl::GetTsIdDesc(tsId), "tsId", "ACL_TS_ID_AICORE(0) or ACL_TS_ID_AIVECTOR(1)"}));
         return ACL_ERROR_INVALID_PARAM;
     }
     ACL_REQUIRES_RTS_OK(rtSetTSDevice(static_cast<uint32_t>(tsId)));

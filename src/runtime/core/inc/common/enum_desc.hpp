@@ -19,6 +19,7 @@
 #include "runtime/rt_ras.h"
 #include "runtime/rt_inner_mem.h"
 #include "runtime/rt_external_mem.h"
+#include "runtime/rt_external_device.h"
 #include "runtime/rt_external_stream.h"
 #include "runtime/rt_external_stars.h"
 #include "runtime/rts/rts_kernel.h"
@@ -29,6 +30,26 @@
 
 namespace cce {
 namespace runtime {
+
+static inline std::string RtFeatureTypeToString(const rtFeatureType_t type)
+{
+    switch (type) {
+        case FEATURE_TYPE_MEMCPY:
+            return "FEATURE_TYPE_MEMCPY(0)";
+        case FEATURE_TYPE_MEMORY:
+            return "FEATURE_TYPE_MEMORY(1)";
+        case FEATURE_TYPE_UPDATE_SQE:
+            return "FEATURE_TYPE_UPDATE_SQE(2)";
+        case FEATURE_TYPE_PERSISTENT_STREAM_UNLIMITED_DEPTH:
+            return "FEATURE_TYPE_PERSISTENT_STREAM_UNLIMITED_DEPTH(3)";
+        case FEATURE_TYPE_AICPU_OVERFLOW_DUMP:
+            return "FEATURE_TYPE_AICPU_OVERFLOW_DUMP(4)";
+        case FEATURE_TYPE_RSV:
+            return "FEATURE_TYPE_RSV(5)";
+        default:
+            return RtFmtMsg("UNKNOWN(%d)", static_cast<int32_t>(type));
+    }
+}
 
 static inline std::string EventOperationFlagToString(const uint32_t flag, const bool isRecord)
 {

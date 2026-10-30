@@ -200,3 +200,80 @@ TEST_F(ApiDeviceTopologyRouteTest, ReturnsInternalErrorWhenApiDeviceTopologyMiss
     int32_t count = 0;
     EXPECT_EQ(rtGetDeviceCount(&count), ACL_ERROR_RT_INTERNAL_ERROR);
 }
+
+TEST_F(ApiDeviceTopologyRouteTest, PairDevicesInfoUnsupportedDoesNotInvokeFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    int64_t value = -1;
+
+    EXPECT_EQ(rtGetPairDevicesInfo(0U, 1U, 0, &value), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}
+
+TEST_F(ApiDeviceTopologyRouteTest, PairDevicesInfoOtherErrorStillInvokesFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_ERR;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(once()).with(eq(RT_ERROR_DRV_ERR), mockcpp::any());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr)
+        .expects(once())
+        .with(eq(RT_ERROR_DRV_ERR))
+        .will(returnValue(ACL_ERROR_RT_DRV_INTERNAL_ERROR));
+    int64_t value = -1;
+
+    EXPECT_EQ(rtGetPairDevicesInfo(0U, 1U, 0, &value), ACL_ERROR_RT_DRV_INTERNAL_ERROR);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}
+
+TEST_F(ApiDeviceTopologyRouteTest, PairDevicesInfoMaskUnsupportedDoesNotInvokeFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    uint64_t mask = UINT64_MAX;
+
+    EXPECT_EQ(rtsGetPairDevicesInfo(0U, 1U, 0, &mask), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(mask, UINT64_MAX);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}
+
+TEST_F(ApiDeviceTopologyRouteTest, PairDevicesInfoMaskOtherErrorStillInvokesFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_ERR;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(once()).with(eq(RT_ERROR_DRV_ERR), mockcpp::any());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr)
+        .expects(once())
+        .with(eq(RT_ERROR_DRV_ERR))
+        .will(returnValue(ACL_ERROR_RT_DRV_INTERNAL_ERROR));
+    uint64_t mask = UINT64_MAX;
+
+    EXPECT_EQ(rtsGetPairDevicesInfo(0U, 1U, 0, &mask), ACL_ERROR_RT_DRV_INTERNAL_ERROR);
+    EXPECT_EQ(mask, UINT64_MAX);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}
+
+TEST_F(ApiDeviceTopologyRouteTest, PairPhyDevicesInfoUnsupportedDoesNotInvokeFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    int64_t value = -1;
+
+    EXPECT_EQ(rtGetPairPhyDevicesInfo(0U, 1U, 0, &value), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}
+
+TEST_F(ApiDeviceTopologyRouteTest, PairPhyDevicesInfoOtherErrorStillInvokesFallback)
+{
+    apiDeviceTopology_.ret_ = RT_ERROR_DRV_ERR;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(once()).with(eq(RT_ERROR_DRV_ERR), mockcpp::any());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr)
+        .expects(once())
+        .with(eq(RT_ERROR_DRV_ERR))
+        .will(returnValue(ACL_ERROR_RT_DRV_INTERNAL_ERROR));
+    int64_t value = -1;
+
+    EXPECT_EQ(rtGetPairPhyDevicesInfo(0U, 1U, 0, &value), ACL_ERROR_RT_DRV_INTERNAL_ERROR);
+    EXPECT_EQ(apiDeviceTopology_.callCount_, 1U);
+}

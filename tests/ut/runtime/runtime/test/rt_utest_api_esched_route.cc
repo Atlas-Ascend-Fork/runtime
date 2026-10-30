@@ -295,3 +295,112 @@ TEST_F(ApiEschedRouteTest, ReturnsInternalErrorWhenApiEschedMissing)
     runtime_->apiEsched_ = nullptr;
     EXPECT_EQ(rtEschedAttachDevice(0), ACL_ERROR_RT_INTERNAL_ERROR);
 }
+
+TEST_F(ApiEschedRouteTest, AttachDeviceUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.attachDeviceRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+
+    EXPECT_EQ(rtEschedAttachDevice(0), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.attachDeviceCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, DettachDeviceUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.dettachDeviceRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+
+    EXPECT_EQ(rtEschedDettachDevice(0), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.dettachDeviceCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, WaitEventFeatureUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.waitEventRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    rtEschedEventSummary_t evt = {};
+
+    EXPECT_EQ(rtEschedWaitEvent(0, 0U, 0U, 0, &evt), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.waitEventCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, WaitEventDriverUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.waitEventRet_ = RT_ERROR_DRV_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    rtEschedEventSummary_t evt = {};
+
+    EXPECT_EQ(rtEschedWaitEvent(0, 0U, 0U, 0, &evt), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.waitEventCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, CreateGrpUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.createGrpRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+
+    EXPECT_EQ(rtEschedCreateGrp(0, 0U, RT_GRP_TYPE_BIND_DP_CPU), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.createGrpCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, SubmitEventUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.submitEventRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    rtEschedEventSummary_t evt = {};
+
+    EXPECT_EQ(rtEschedSubmitEvent(0, &evt), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.submitEventCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, SubscribeEventUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.subscribeEventRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+
+    EXPECT_EQ(rtEschedSubscribeEvent(0, 0U, 0U, 0U), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.subscribeEventCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, AckEventUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.ackEventRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+
+    EXPECT_EQ(rtEschedAckEvent(0, RT_EVENT_TEST, 0U, nullptr, 0U), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.ackEventCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, QueryInfoUnsupportedDoesNotInvokeFallback)
+{
+    apiEsched_.queryInfoRet_ = RT_ERROR_FEATURE_NOT_SUPPORT;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(never());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr).expects(never());
+    rtEschedInputInfo input = {};
+    rtEschedOutputInfo output = {};
+
+    EXPECT_EQ(rtEschedQueryInfo(0U, RT_QUERY_TYPE_LOCAL_GRP_ID, &input, &output), ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    EXPECT_EQ(apiEsched_.queryInfoCount_, 1U);
+}
+
+TEST_F(ApiEschedRouteTest, WaitEventOtherErrorStillInvokesFallback)
+{
+    apiEsched_.waitEventRet_ = RT_ERROR_DRV_ERR;
+    MOCKER(ErrorMessageUtils::FuncErrorReason).expects(once()).with(eq(RT_ERROR_DRV_ERR), mockcpp::any());
+    MOCKER(GetRtExtErrCodeAndSetGlobalErr)
+        .expects(once())
+        .with(eq(RT_ERROR_DRV_ERR))
+        .will(returnValue(ACL_ERROR_RT_DRV_INTERNAL_ERROR));
+
+    rtEschedEventSummary_t evt = {};
+    EXPECT_EQ(rtEschedWaitEvent(0, 0U, 0U, 0, &evt), ACL_ERROR_RT_DRV_INTERNAL_ERROR);
+    EXPECT_EQ(apiEsched_.waitEventCount_, 1U);
+}

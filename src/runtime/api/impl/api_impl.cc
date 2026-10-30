@@ -3277,8 +3277,10 @@ rtError_t ApiImpl::DeviceSetTsId(const uint32_t tsId)
     COND_RETURN_ERROR(ret != RT_ERROR_NONE, ret, "GetDrvSentinelMode failed");
     const bool sentinelMode = Runtime::Instance()->GetSentinelMode();
     if (sentinelMode) {
-        COND_RETURN_ERROR(
-            tsId == RT_TSC_ID, RT_ERROR_INVALID_VALUE, "tsid=0 is not supported in sentinelMode or single-f mode");
+        COND_RETURN_AND_MSG_OUTER(
+            tsId == RT_TSC_ID, RT_ERROR_INVALID_VALUE, ErrorCode::EE1016,
+            "Setting the task scheduler used by the current thread",
+            "Switching to TSC (tsId=0) is not supported in sentinel or single-f mode; use TSV (tsId=1)");
     }
 
     if ((InnerThreadLocalContainer::GetCurCtx() == nullptr) && (InnerThreadLocalContainer::GetCurRef() != nullptr)) {
@@ -3311,7 +3313,7 @@ rtError_t ApiImpl::NewContext(const uint32_t deviceId, const uint32_t tsId, Cont
     Runtime* const rt = Runtime::Instance();
 
     Device* const dev = rt->DeviceRetain(deviceId, tsId);
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(dev, RT_ERROR_DEVICE_NULL, "Creating a context in the current thread");
+    NULL_PTR_RETURN(dev, RT_ERROR_DEVICE_NULL);
 
     Context* curCtx = new (std::nothrow) Context(dev, false);
     COND_RETURN_AND_MSG_OUTER((curCtx == nullptr), RT_ERROR_CONTEXT_NEW, ErrorCode::EE1013, sizeof(Context), "new");
@@ -3343,11 +3345,11 @@ rtError_t ApiImpl::ContextCreate(Context** const inCtx, const int32_t devId)
     tsId = InnerThreadLocalContainer::GetTsId();
 
     error = NewContext(static_cast<uint32_t>(devId), tsId, inCtx);
-    ERROR_RETURN_MSG_INNER(error, "new context failed, drv devId=%d, retCode=%#x", devId, static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "new context failed, drv devId=%d, retCode=%#x", devId, static_cast<uint32_t>(error));
 
     ContextManage::InsertContext(*inCtx);
     error = ContextSetCurrent(*inCtx);
-    ERROR_RETURN_MSG_INNER(error, "Failed to set current context, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Failed to set current context, retCode=%#x", static_cast<uint32_t>(error));
     return RT_ERROR_NONE;
 }
 
@@ -3356,19 +3358,20 @@ rtError_t ApiImpl::ContextDestroy(Context* const inCtx)
     rtError_t validError = RT_ERROR_CONTEXT_NULL;
     if (!ContextManage::CheckContextIsValid(inCtx, ContextAccessMode::USER, &validError)) {
         COND_RETURN_AND_MSG_OUTER(
-            !ContextManage::AcquireInactiveContextForDestroy(inCtx, &validError), validError, ErrorCode::EE1017,
-            "Context destruction", "context", "The context handle is a null pointer or has already been destroyed");
+            !ContextManage::AcquireInactiveContextForDestroy(inCtx, &validError), validError, ErrorCode::EE1011,
+            "Context destruction", RtFmtMsg("%p", static_cast<void*>(inCtx)), "context",
+            "The context handle is a null pointer or has already been destroyed");
         return DestroyInactiveContext(inCtx);
     }
     COND_RETURN_AND_MSG_OUTER(
-        inCtx->IsPrimary(), RT_ERROR_CONTEXT_NULL, ErrorCode::EE1017, "Context destruction", "context",
-        "Primary context cannot be destroyed explicitly");
+        inCtx->IsPrimary(), RT_ERROR_CONTEXT_NULL, ErrorCode::EE1011, "Context destruction",
+        RtFmtMsg("%p", static_cast<void*>(inCtx)), "context", "Primary context cannot be destroyed explicitly");
     COND_RETURN_AND_MSG_OUTER(
-        inCtx->GetContextIsNeedDelStatus(), RT_ERROR_CONTEXT_DEL, ErrorCode::EE1017, "Context destruction", "context",
-        "Context is being destroyed");
+        inCtx->GetContextIsNeedDelStatus(), RT_ERROR_CONTEXT_DEL, ErrorCode::EE1011, "Context destruction",
+        RtFmtMsg("%p", static_cast<void*>(inCtx)), "context", "Context is being destroyed");
     COND_RETURN_AND_MSG_OUTER(
-        !inCtx->TearDownIsCanExecute(), RT_ERROR_CONTEXT_DEL, ErrorCode::EE1017, "Context destruction", "context",
-        "Context is being destroyed");
+        !inCtx->TearDownIsCanExecute(), RT_ERROR_CONTEXT_DEL, ErrorCode::EE1011, "Context destruction",
+        RtFmtMsg("%p", static_cast<void*>(inCtx)), "context", "Context is being destroyed");
     {
         Context* const previousCtx = InnerThreadLocalContainer::GetCurCtx();
         const bool previousInternalAccess = InnerThreadLocalContainer::IsInternalContextAccess();
@@ -3406,8 +3409,9 @@ rtError_t ApiImpl::ContextSetCurrent(Context* const inCtx)
 
     rtError_t validError = RT_ERROR_CONTEXT_NULL;
     COND_RETURN_AND_MSG_OUTER(
-        !ContextManage::CheckContextIsValid(inCtx, ContextAccessMode::USER, &validError), validError, ErrorCode::EE1017,
-        "Setting the current context of the thread", "context", "The context has already been destroyed");
+        !ContextManage::CheckContextIsValid(inCtx, ContextAccessMode::USER, &validError), validError, ErrorCode::EE1011,
+        "Setting the current context of the thread", RtFmtMsg("%p", static_cast<void*>(inCtx)), "context",
+        "The context has already been destroyed");
     InnerThreadLocalContainer::SetCurCtx(inCtx);
     InnerThreadLocalContainer::SetCurRef(nullptr); // must be null for context switch
     return RT_ERROR_NONE;
@@ -4813,6 +4817,10 @@ rtError_t ApiImpl::GetRtCapability(const rtFeatureType_t featureType, const int3
         }
         return RT_ERROR_NONE;
     }
+    RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+        ErrorCode::EE1012, "Querying device features and capabilities",
+        RtFmtMsg("(%s, %d)", RtFeatureTypeToString(featureType).c_str(), featureInfo), "(featureType, featureInfo)",
+        "The specified featureType and featureInfo combination is not supported by this interface");
     return RT_ERROR_INVALID_VALUE;
 }
 

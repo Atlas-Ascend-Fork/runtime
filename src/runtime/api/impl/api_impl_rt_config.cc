@@ -52,7 +52,7 @@ static rtError_t UpdatePlatformRes(
     const std::string socInfoKey = "SoCInfo";
     std::map<std::string, std::string> res;
     if (!platformInfos.GetPlatformResWithLock(socInfoKey, res)) {
-        RT_LOG(RT_LOG_ERROR, "get platform result failed");
+        RT_LOG_INNER_MSG(RT_LOG_ERROR, "get platform result failed");
         return RT_ERROR_INVALID_VALUE;
     }
 
@@ -79,8 +79,8 @@ static rtError_t SetDeviceResLimitByFe(const uint32_t devId, const rtDevResLimit
     const std::string socVersion = rt->GetSocVersion();
     uint32_t platformRet = fe::PlatformInfoManager::GeInstance().InitRuntimePlatformInfos(socVersion);
     if (platformRet != 0U) {
-        RT_LOG(
-            RT_LOG_ERROR, "InitRuntime PlatformInfos failed, drv devId=%u, socVersion=%s, platformRet=%u", devId,
+        RT_LOG_INNER_MSG(
+            RT_LOG_ERROR, "InitRuntime PlatformInfos failed, devId=%u, socVersion=%s, platformRet=%u", devId,
             socVersion.c_str(), platformRet);
         return RT_ERROR_INVALID_VALUE;
     }
@@ -224,7 +224,7 @@ rtError_t ApiImplRtConfig::SetDeviceResLimit(const uint32_t devId, const rtDevRe
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %u to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(static_cast<int32_t>(drvDevId));
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%u, retCode=%#x", drvDevId,
         static_cast<uint32_t>(error));
 
@@ -255,7 +255,7 @@ rtError_t ApiImplRtConfig::ResetDeviceResLimit(const uint32_t devId)
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %u to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(static_cast<int32_t>(drvDevId));
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%u, retCode=%#x", drvDevId,
         static_cast<uint32_t>(error));
 
@@ -284,7 +284,7 @@ rtError_t ApiImplRtConfig::GetDeviceResLimit(
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %u to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(static_cast<int32_t>(drvDevId));
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%u, retCode=%#x", drvDevId,
         static_cast<uint32_t>(error));
 

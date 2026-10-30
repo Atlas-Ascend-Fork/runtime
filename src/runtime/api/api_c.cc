@@ -3435,7 +3435,8 @@ RTS_API rtError_t rtGetAllUtilizations(const int32_t devId, const rtTypeUtil_t k
     Api* const apiInstance = Api::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->GetAllUtilizations(devId, kind, util);
-    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+    COND_RETURN_WITH_NOLOG(
+        error == RT_ERROR_FEATURE_NOT_SUPPORT || error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -3666,6 +3667,7 @@ rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t* srvId)
     TIMESTAMP_BEGIN(rtGetServerIDBySDID);
     const rtError_t error = apiInstance->GetServerIDBySDID(sdid, srvId);
     TIMESTAMP_END(rtGetServerIDBySDID);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }

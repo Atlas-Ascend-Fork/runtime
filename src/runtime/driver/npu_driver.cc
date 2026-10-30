@@ -547,6 +547,10 @@ rtError_t NpuDriver::GetPhyDevInfo(
         RT_LOG(
             RT_LOG_WARNING, "[drv api] halGetPhyDeviceInfo failed: phyId=%u, drvRetCode=%d!", phyId,
             static_cast<int32_t>(drvRet));
+        COND_RETURN_WITH_NOLOG(drvRet == DRV_ERROR_NOT_SUPPORT, RT_GET_DRV_ERRCODE(drvRet));
+        DRV_ERROR_PROCESS(
+            drvRet, "halGetPhyDeviceInfo failed, phyId=%u, moduleType=%d, infoType=%d, drvRetCode=%d.", phyId,
+            moduleType, infoType, static_cast<int32_t>(drvRet));
         return RT_GET_DRV_ERRCODE(drvRet);
     }
     return RT_ERROR_NONE;
@@ -1026,6 +1030,7 @@ rtError_t NpuDriver::EnableP2P(const uint32_t devIdDes, const uint32_t phyIdSrc,
     if (!IS_SUPPORT_CHIP_FEATURE(type, RtOptionalFeatureType::RT_FEATURE_DEVICE_P2P)) {
         UNUSED(devIdDes);
         UNUSED(phyIdSrc);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(ErrorCode::EE1005, "enabling peer-to-peer (P2P) access between devices");
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     } else {
         const drvError_t drvRet = halDeviceEnableP2P(devIdDes, phyIdSrc, flag);
@@ -1085,6 +1090,7 @@ rtError_t NpuDriver::DisableP2P(const uint32_t devIdDes, const uint32_t phyIdSrc
     if (!IS_SUPPORT_CHIP_FEATURE(type, RtOptionalFeatureType::RT_FEATURE_DEVICE_P2P)) {
         UNUSED(devIdDes);
         UNUSED(phyIdSrc);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(ErrorCode::EE1005, "disabling peer-to-peer (P2P) access between devices");
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     } else {
         constexpr uint32_t flag = 0U;
@@ -1119,6 +1125,8 @@ rtError_t NpuDriver::GetP2PStatus(const uint32_t devIdDes, const uint32_t phyIdS
     if (!IS_SUPPORT_CHIP_FEATURE(type, RtOptionalFeatureType::RT_FEATURE_DEVICE_P2P)) {
         UNUSED(devIdDes);
         UNUSED(phyIdSrc);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1005, "getting the peer-to-peer (P2P) access status between devices");
         return RT_ERROR_FEATURE_NOT_SUPPORT;
     } else {
         const drvError_t drvRet = drvGetP2PStatus(devIdDes, phyIdSrc, status);

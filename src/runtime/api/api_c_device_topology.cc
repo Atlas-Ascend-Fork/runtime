@@ -177,6 +177,7 @@ rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t info
     ApiDeviceTopology* const apiDeviceTopologyInstance = ApiDeviceTopology::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiDeviceTopologyInstance);
     const rtError_t error = apiDeviceTopologyInstance->GetPairDevicesInfo(devId, otherDevId, infoType, val);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -189,6 +190,7 @@ rtError_t rtsGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t inf
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiDeviceTopologyInstance);
     int64_t halVal = 0;
     const rtError_t error = apiDeviceTopologyInstance->GetPairDevicesInfo(devId, otherDevId, infoType, &halVal);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     *val = 1U << static_cast<uint64_t>(halVal);
     return ACL_RT_SUCCESS;
@@ -200,6 +202,7 @@ rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t i
     ApiDeviceTopology* const apiDeviceTopologyInstance = ApiDeviceTopology::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiDeviceTopologyInstance);
     const rtError_t error = apiDeviceTopologyInstance->GetPairPhyDevicesInfo(devId, otherDevId, infoType, val);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }

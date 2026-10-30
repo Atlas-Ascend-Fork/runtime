@@ -980,13 +980,13 @@ aclError aclrtDeviceCanAccessPeerImpl(int32_t* canAccessPeer, int32_t deviceId, 
 
     if (deviceId == peerDeviceId) {
         ACL_LOG_ERROR("deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
-        const std::string deviceIdVal = std::to_string(deviceId);
+        const std::string peerDeviceIdVal = std::to_string(peerDeviceId);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
             "deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({funcName.c_str(), deviceIdVal.c_str(), "deviceId", errMsg.c_str()}));
+            std::vector<const char*>({funcName.c_str(), peerDeviceIdVal.c_str(), "peerDeviceId", errMsg.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -1009,13 +1009,13 @@ aclError aclrtDeviceEnablePeerAccessImpl(int32_t peerDeviceId, uint32_t flags)
 
     if (deviceId == peerDeviceId) {
         ACL_LOG_ERROR("deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
-        const std::string deviceIdVal = std::to_string(deviceId);
+        const std::string peerDeviceIdVal = std::to_string(peerDeviceId);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
             "deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({funcName.c_str(), deviceIdVal.c_str(), "deviceId", errMsg.c_str()}));
+            std::vector<const char*>({funcName.c_str(), peerDeviceIdVal.c_str(), "peerDeviceId", errMsg.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -1037,13 +1037,13 @@ aclError aclrtDeviceDisablePeerAccessImpl(int32_t peerDeviceId)
 
     if (deviceId == peerDeviceId) {
         ACL_LOG_ERROR("deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
-        const std::string deviceIdVal = std::to_string(deviceId);
+        const std::string peerDeviceIdVal = std::to_string(peerDeviceId);
         std::string errMsg = acl::AclErrorLogManager::FormatStr(
             "deviceId %d cannot be equal to peerDeviceId %d", deviceId, peerDeviceId);
         std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(__func__);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({funcName.c_str(), deviceIdVal.c_str(), "deviceId", errMsg.c_str()}));
+            std::vector<const char*>({funcName.c_str(), peerDeviceIdVal.c_str(), "peerDeviceId", errMsg.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
 

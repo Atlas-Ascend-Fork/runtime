@@ -612,6 +612,7 @@ rtError_t RawDevice::Init()
 {
     rtError_t error = InitRawDriver();
     ObjAllocatorInitFailureInfo moduleAllocatorFailureInfo;
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, RT_ERROR_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_MSG_INNER(
         error, "Failed to init RawDriver, device_id=%u, retCode=%#x.", deviceId_, static_cast<uint32_t>(error));
 

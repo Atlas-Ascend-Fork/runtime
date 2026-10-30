@@ -198,6 +198,7 @@ rtError_t ApiImplDeviceTopology::DeviceCanAccessPeer(
         if (!IS_SUPPORT_CHIP_FEATURE(chipType, RtOptionalFeatureType::RT_FEATURE_DEVICE_P2P)) {
             UNUSED(realDeviceId);
             UNUSED(peerDevice);
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(ErrorCode::EE1005, "peer-to-peer (P2P) access between devices");
             error = RT_ERROR_FEATURE_NOT_SUPPORT;
             break;
         }
@@ -207,6 +208,9 @@ rtError_t ApiImplDeviceTopology::DeviceCanAccessPeer(
             RT_LOG(
                 RT_LOG_ERROR, "This feature is not supported in offline mode, drv devId=%u, peer=%u", realDeviceId,
                 peerDevice);
+            RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                ErrorCode::EE1016, "Checking whether data exchange is supported between devices",
+                "This feature is not supported in offline mode");
             error = RT_ERROR_FEATURE_NOT_SUPPORT;
             break;
         }
@@ -334,7 +338,7 @@ rtError_t ApiImplDeviceTopology::GetDeviceIndexByPhyId(const uint32_t phyId, uin
         }
         error = Runtime::Instance()->driverFactory_.GetDriver(NPU_DRIVER)->GetDeviceIndexByPhyId(phyId, &realDeviceId);
         if (unlikely(error != RT_ERROR_NONE)) {
-            RT_LOG_INNER_MSG(
+            RT_LOG(
                 RT_LOG_ERROR, "GetDeviceIndexByPhyId failed, phyId = %u, retCode=%#x.", phyId,
                 static_cast<uint32_t>(error));
             break;
@@ -377,9 +381,9 @@ rtError_t ApiImplDeviceTopology::GetLogicDevIdByUserDevId(const int32_t userDevI
 
     rt->CallApiEnd(error);
 
-    COND_RETURN_ERROR_MSG_INNER(error != RT_ERROR_NONE, error, "Get logicDevId failed.");
+    COND_RETURN_ERROR(error != RT_ERROR_NONE, error, "Get logicDevId failed.");
     error = rt->CheckDeviceIdIsValid(realDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "logicDevId is invalid, devId=%d, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
     *logicDevId = realDeviceId;
@@ -396,7 +400,7 @@ rtError_t ApiImplDeviceTopology::GetUserDevIdByLogicDevId(const int32_t logicDev
 
     Runtime* const rt = Runtime::Instance();
     rtError_t error = rt->CheckDeviceIdIsValid(logicDevId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "logicDevId is invalid, devId=%d, retCode=%#x", logicDevId,
         static_cast<uint32_t>(error));
 
@@ -429,7 +433,7 @@ rtError_t ApiImplDeviceTopology::GetDeviceUuid(const int32_t devId, rtUuid_t* co
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %d to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(drvDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drvDeviceId is invalid, drvDeviceId=%d, ErrorCode=%#x", drvDeviceId,
         static_cast<uint32_t>(error));
     RT_LOG(RT_LOG_DEBUG, "Get device uuid, drv devId=%d.", drvDeviceId);
@@ -570,7 +574,7 @@ rtError_t ApiImplDeviceTopology::GetDevicePCIBusId(const int32_t devId, char* co
     COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "Failed to convert the user device ID %d to driver device ID.", devId);
     error = Runtime::Instance()->CheckDeviceIdIsValid(drvDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drvDeviceId is invalid, drvDeviceId=%d, ErrorCode=%#x", drvDeviceId,
         static_cast<uint32_t>(error));
 

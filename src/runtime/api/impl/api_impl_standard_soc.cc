@@ -766,8 +766,12 @@ rtError_t ApiImpl::GetDevErrMsg(const rtGetMsgCallback callback)
     COND_PROC((dev->IsStarsPlatform()), callback("", 0U); RT_LOG(RT_LOG_DEBUG, "Do not need to send task.");
               return RT_ERROR_NONE);
     const bool isSupport = IsDevSupportGetDevMsg(dev);
-    COND_RETURN_ERROR_MSG_INNER(
-        !isSupport, RT_ERROR_FEATURE_NOT_SUPPORT, "Device does not support get device msg, deviceId=%u.", dev->Id_());
+    COND_PROC_RETURN_AND_MSG_OUTER(
+        !isSupport, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1015,
+        RT_LOG(
+            RT_LOG_ERROR, "Device does not support get device msg, deviceId=%u, tschVersion=%u.", dev->Id_(),
+            dev->GetTschVersion()),
+        "Obtaining device error messages", "The TS version does not support this feature.");
 
     DeviceErrMsgHandler getDevErrHandler(dev, callback);
     error = getDevErrHandler.Init();
@@ -787,9 +791,12 @@ rtError_t ApiImpl::GetDevRunningStreamSnapshotMsg(const rtGetMsgCallback callbac
     const std::function<rtError_t(Device* const dev)> getDevHangMsgForDev = [callback,
                                                                              this](Device* const dev) -> rtError_t {
         const bool isSupport = IsDevSupportGetDevMsg(dev);
-        COND_RETURN_ERROR_MSG_INNER(
-            !isSupport, RT_ERROR_FEATURE_NOT_SUPPORT, "Device does not support get device msg, deviceId=%u.",
-            dev->Id_());
+        COND_PROC_RETURN_AND_MSG_OUTER(
+            !isSupport, RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1015,
+            RT_LOG(
+                RT_LOG_ERROR, "Device does not support get device msg, deviceId=%u, tschVersion=%u.", dev->Id_(),
+                dev->GetTschVersion()),
+            "Obtaining device running stream snapshots", "The TS version does not support this feature.");
 
         DeviceStreamSnapshotHandler devStreamSnapshotHandler(dev, callback);
         rtError_t error = devStreamSnapshotHandler.Init();
@@ -832,10 +839,11 @@ rtError_t ApiImpl::GetDevMsg(const rtGetDevMsgType_t getMsgType, rtGetMsgCallbac
 {
     RT_LOG(RT_LOG_DEBUG, "GetDeviceMsg, getMsgType=%d", static_cast<int32_t>(getMsgType));
     const auto chipType = Runtime::Instance()->GetChipType();
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_PROC_RETURN_AND_MSG_OUTER(
         !IS_SUPPORT_CHIP_FEATURE(chipType, RtOptionalFeatureType::RT_FEATURE_DFX_TS_GET_DEVICE_MSG),
-        RT_ERROR_FEATURE_NOT_SUPPORT, "chipType=%d does not support get device msg feature.",
-        static_cast<int32_t>(chipType));
+        RT_ERROR_FEATURE_NOT_SUPPORT, ErrorCode::EE1005,
+        RT_LOG(RT_LOG_ERROR, "chipType=%d does not support get device msg feature.", static_cast<int32_t>(chipType)),
+        "obtaining device messages");
     rtRunMode runMode = RT_RUN_MODE_OFFLINE;
     (void)GetRunMode(&runMode);
     if (runMode == RT_RUN_MODE_OFFLINE) {

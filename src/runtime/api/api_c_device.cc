@@ -203,6 +203,7 @@ rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoTyp
     Api* const apiInstance = Api::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->GetPhyDeviceInfo(phyId, moduleType, infoType, val);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -448,6 +449,7 @@ rtError_t rtGetDeviceStatus(const int32_t devId, rtDevStatus_t* const status)
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
 
     const rtError_t error = apiInstance->GetDeviceStatus(devId, status);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -460,6 +462,7 @@ rtError_t rtHdcServerCreate(const int32_t devId, const rtHdcServiceType_t type, 
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
 
     const rtError_t error = apiInstance->HdcServerCreate(devId, type, server);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -696,7 +699,7 @@ rtError_t rtSetDeviceWithFlags(int32_t deviceId, uint64_t flags)
         NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstanceNoTSD);
         error = apiInstanceNoTSD->SetDevice(deviceId);
     } else {
-        RT_LOG_OUTER_MSG_INVALID_PARAM(flags, "RT_DEVICE_FLAG_DEFAULT or RT_DEVICE_FLAG_NOT_START_CPU_SCHED");
+        RT_LOG_OUTER_MSG_INVALID_PARAM(flags, "RT_DEVICE_FLAG_DEFAULT(0) or RT_DEVICE_FLAG_NOT_START_CPU_SCHED(1)");
         error = RT_ERROR_INVALID_VALUE;
     }
     ERROR_RETURN_WITH_EXT_ERRCODE(error);

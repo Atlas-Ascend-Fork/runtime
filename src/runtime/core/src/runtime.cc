@@ -2775,7 +2775,7 @@ rtError_t Runtime::LookupAddrAndPrefCnt(
 
 RefObject<Context*>* Runtime::PrimaryContextRetain(const uint32_t devId)
 {
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         devId >= RT_MAX_DEV_NUM, nullptr,
         "Primary context retain failed because value %u for parameter devId is invalid, valid range is [0, %u).", devId,
         RT_MAX_DEV_NUM);

@@ -39,9 +39,9 @@ rtError_t SendAndRecvDebugTask(
 
 rtError_t DebugSetDumpMode(const uint64_t mode, Device* const device)
 {
-    COND_RETURN_ERROR(
-        !device->CheckFeatureSupport(TS_FEATURE_COREDUMP), RT_ERROR_DRV_NOT_SUPPORT,
-        "Current device does not support core dump!");
+    COND_RETURN_AND_MSG_OUTER(
+        !device->CheckFeatureSupport(TS_FEATURE_COREDUMP), RT_ERROR_DRV_NOT_SUPPORT, ErrorCode::EE1016,
+        "Setting core dump mode", "Current device does not support core dump");
     Driver* const devDrv = device->Driver_();
     COND_RETURN_ERROR((devDrv == nullptr), RT_ERROR_DRV_NULL, "devDrv is null!");
     RT_LOG(RT_LOG_INFO, "Start to create debug dump sqcq.");
@@ -63,9 +63,12 @@ rtError_t DebugSetDumpMode(const uint64_t mode, Device* const device)
     rtDebugReportInfo_t reportInfo = {};
     ret = SendAndRecvDebugTask(&sendInfo, &reportInfo, device);
     ERROR_RETURN(ret, "SendAndRecvDebugTask fail, retCode=%#x.", ret);
-    COND_RETURN_ERROR(
-        (reportInfo.returnVal != 0U), RT_ERROR_INVALID_VALUE, "SendAndRecvDebugTask get report val %u invalid!.",
-        reportInfo.returnVal);
+    COND_RETURN_ERROR_MSG_INNER(
+        reportInfo.returnVal != 0U, RT_ERROR_INVALID_VALUE,
+        "Failed to set core dump mode on device (device_id=%u): "
+        "the device returned a nonzero debug response (returnVal=%u).",
+        device->Id_(), reportInfo.returnVal);
+
     device->SetCoredumpEnable();
     RT_LOG(RT_LOG_INFO, "Set dump mode success.");
     return RT_ERROR_NONE;
@@ -73,9 +76,10 @@ rtError_t DebugSetDumpMode(const uint64_t mode, Device* const device)
 
 rtError_t DebugGetStalledCore(rtDbgCoreInfo_t* const coreInfo, const Device* const device)
 {
-    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        coreInfo, RT_ERROR_INVALID_VALUE, "Obtaining the physical ID of the stalled AI Core in the current process");
-    COND_RETURN_ERROR((!device->IsCoredumpEnable()), RT_ERROR_INVALID_VALUE, "Coredump mode is disabled!");
+    NULL_PTR_RETURN(coreInfo, RT_ERROR_INVALID_VALUE);
+    COND_RETURN_AND_MSG_OUTER(
+        !device->IsCoredumpEnable(), RT_ERROR_INVALID_VALUE, ErrorCode::EE1018,
+        "Obtaining the physical ID of the stalled AI Core in the current process", "Core dump mode is disabled");
     RT_LOG(RT_LOG_INFO, "Start to get core info.");
     RtDebugSendInfo sendInfo = {};
     sendInfo.reqId = GET_STALLED_AICINFO_BY_PID;
@@ -84,9 +88,12 @@ rtError_t DebugGetStalledCore(rtDbgCoreInfo_t* const coreInfo, const Device* con
     rtDebugReportInfo_t reportInfo = {};
     const auto ret = SendAndRecvDebugTask(&sendInfo, &reportInfo, device);
     ERROR_RETURN(ret, "SendAndRecvDebugTask fail, retCode=%#x.", ret);
-    COND_RETURN_ERROR(
-        (reportInfo.returnVal != 0U), RT_ERROR_INVALID_VALUE, "Get core info get report val %u invalid!.",
-        reportInfo.returnVal);
+    COND_RETURN_ERROR_MSG_INNER(
+        reportInfo.returnVal != 0U, RT_ERROR_INVALID_VALUE,
+        "Failed to query stalled AI Cores on device (device_id=%u): "
+        "the device returned a nonzero debug response (returnVal=%u).",
+        device->Id_(), reportInfo.returnVal);
+
     rtDbgCoreInfo_t* tmp = RtPtrToPtr<rtDbgCoreInfo_t*, uint8_t*>(reportInfo.data);
     *coreInfo = *tmp;
     RT_LOG(

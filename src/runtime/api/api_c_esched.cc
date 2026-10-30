@@ -36,6 +36,7 @@ rtError_t rtEschedAttachDevice(int32_t devId)
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedAttachDevice(devId);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -46,6 +47,7 @@ rtError_t rtEschedDettachDevice(int32_t devId)
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedDettachDevice(devId);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -58,6 +60,8 @@ rtError_t rtEschedWaitEvent(
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedWaitEvent(devId, grpId, threadId, timeout, evt);
     COND_RETURN_WITH_NOLOG(error == RT_ERROR_REPORT_TIMEOUT, ACL_ERROR_RT_REPORT_TIMEOUT);
+    COND_RETURN_WITH_NOLOG(
+        error == RT_ERROR_FEATURE_NOT_SUPPORT || error == RT_ERROR_DRV_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -68,6 +72,7 @@ rtError_t rtEschedCreateGrp(int32_t devId, uint32_t grpId, rtGroupType_t type)
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedCreateGrp(devId, grpId, type);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -78,6 +83,7 @@ rtError_t rtEschedSubmitEvent(int32_t devId, rtEschedEventSummary_t* evt)
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedSubmitEvent(devId, evt);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -88,6 +94,7 @@ rtError_t rtEschedSubscribeEvent(int32_t devId, uint32_t grpId, uint32_t threadI
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedSubscribeEvent(devId, grpId, threadId, eventBitmap);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -98,6 +105,7 @@ rtError_t rtEschedAckEvent(int32_t devId, rtEventIdType_t evtId, uint32_t subEvt
     ApiEsched* const apiEschedInstance = ApiEsched::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiEschedInstance);
     const rtError_t error = apiEschedInstance->EschedAckEvent(devId, evtId, subEvtId, msg, len);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -120,6 +128,7 @@ RTS_API rtError_t rtEschedQueryInfo(
     }
 
     const rtError_t ret = apiEschedInstance->EschedQueryInfo(devId, type, inPut, outPut);
+    COND_RETURN_WITH_NOLOG(ret == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(ret);
     return ACL_RT_SUCCESS;
 }

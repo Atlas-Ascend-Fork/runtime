@@ -4570,7 +4570,7 @@ rtError_t ApiErrorDecorator::GetDeviceCapability(
         error != RT_ERROR_NONE, RT_ERROR_DEVICE_ID, "Failed to convert the user device ID %d to driver device ID.",
         deviceId);
     error = CheckDeviceIdIsValid(realDeviceId);
-    COND_RETURN_ERROR_MSG_INNER(
+    COND_RETURN_ERROR(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%d, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
 

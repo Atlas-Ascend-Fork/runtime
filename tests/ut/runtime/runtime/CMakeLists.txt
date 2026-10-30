@@ -1290,6 +1290,7 @@ add_executable(runtime_utest_api
     test/rt_utest_api_event_route.cc
     test/rt_utest_api_vmm_route.cc
     test/rt_utest_api_esched_route.cc
+    test/rt_utest_api_errmsg_boundary.cc
     test/rt_utest_api_snapshot_route.cc
     test/rt_utest_api_rt_config.cc
     test/rt_utest_api_kernel_func.cc

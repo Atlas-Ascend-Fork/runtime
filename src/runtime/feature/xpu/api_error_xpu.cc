@@ -50,9 +50,10 @@ rtError_t ApiErrorDecorator::ResetXpuDevice(const rtXpuDevType devType, const ui
 
 rtError_t ApiErrorDecorator::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
 {
-    COND_RETURN_ERROR_MSG_INNER(
-        devType != RT_DEV_TYPE_DPU, RT_ERROR_INVALID_VALUE, "devType=UNKNOWN(%d) is invalid, retCode=%#x", devType,
-        static_cast<uint32_t>(RT_ERROR_INVALID_VALUE));
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        devType != RT_DEV_TYPE_DPU, RT_ERROR_INVALID_VALUE, "Getting the extended device count",
+        RtFmtMsg("%s(%d)", (devType == RT_DEV_TYPE_REV) ? "RT_DEV_TYPE_REV" : "UNKNOWN", static_cast<int32_t>(devType)),
+        "devType", "RT_DEV_TYPE_DPU(0)");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(devCount, RT_ERROR_INVALID_VALUE, "Getting the extended device count");
     return impl_->GetXpuDevCount(devType, devCount);
 }
@@ -60,9 +61,10 @@ rtError_t ApiErrorDecorator::GetXpuDevCount(const rtXpuDevType devType, uint32_t
 rtError_t ApiErrorDecorator::XpuSetTaskFailCallback(
     const rtXpuDevType devType, const char_t* moduleName, void* callback)
 {
-    COND_RETURN_ERROR_MSG_INNER(
-        devType != RT_DEV_TYPE_DPU, RT_ERROR_INVALID_VALUE, "devType=UNKNOWN(%d) is invalid, retCode=%#x", devType,
-        static_cast<uint32_t>(RT_ERROR_INVALID_VALUE));
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        devType != RT_DEV_TYPE_DPU, RT_ERROR_INVALID_VALUE, "Setting the callback function for XPU task exceptions",
+        RtFmtMsg("%s(%d)", (devType == RT_DEV_TYPE_REV) ? "RT_DEV_TYPE_REV" : "UNKNOWN", static_cast<int32_t>(devType)),
+        "devType", "RT_DEV_TYPE_DPU(0)");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
         moduleName, RT_ERROR_INVALID_VALUE, "Setting the callback function for XPU task exceptions");
     return impl_->XpuSetTaskFailCallback(devType, moduleName, callback);
