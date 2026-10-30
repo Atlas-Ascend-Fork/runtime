@@ -362,11 +362,11 @@ TEST_F(ArgManageUbTest, ub_arg_loader_init_exception)
     // malloc_ub_buffer_exception
     H2DCopyMgr* argAllocator =
         new (std::nothrow) H2DCopyMgr(device_, 4096, 1024, 2000000U, BufferAllocator::LINEAR, COPY_POLICY_UB);
-    EXPECT_EQ(argAllocator->devAllocator_->allocFuncState_, false);
+    EXPECT_FALSE(argAllocator->devAllocator_->allocFuncState_.Value());
     delete argAllocator;
     argAllocator =
         new (std::nothrow) H2DCopyMgr(device_, 4096, 1024, 2000000U, BufferAllocator::LINEAR, COPY_POLICY_UB);
-    EXPECT_EQ(argAllocator->devAllocator_->allocFuncState_, false);
+    EXPECT_FALSE(argAllocator->devAllocator_->allocFuncState_.Value());
     delete argAllocator;
     // free_ub_buffer_exception
     argAllocator =

@@ -10,8 +10,10 @@
 #ifndef CCE_RUNTIME_BUFFER_ALLOCATOR_HPP
 #define CCE_RUNTIME_BUFFER_ALLOCATOR_HPP
 
+#include <algorithm>
 #include <cmath>
 #include <mutex>
+#include <shared_mutex>
 #include "bitmap.hpp"
 #include "securec.h"
 
@@ -29,7 +31,8 @@ public:
     explicit BufferAllocator(
         const uint32_t size, const uint32_t initCnt = 256, const uint32_t maxCnt = 0x10000,
         const Strategy stg = EXPONENTIAL, const AllocFuncPtr allocFunctionPtr = DefaultAlloc,
-        const FreeFuncPtr freeFunctionPtr = DefaultFree, void* const allocParam = nullptr);
+        const FreeFuncPtr freeFunctionPtr = DefaultFree, void* const allocParam = nullptr,
+        const bool enablePoolRelease = false);
     ~BufferAllocator() override;
     static bool openHugeBuff_;
     int32_t AllocId(const bool isLogError = true);
@@ -41,17 +44,7 @@ public:
 
     void* GetItemById(const int32_t id, const bool isLogError = true) const;
     int32_t GetIdByItem(const void* const item) const;
-    void FreeById(int32_t id)
-    {
-        if (id < BUFF_SLIP_NUMBER) {
-            bitmap_.FreeId(id);
-            return;
-        }
-
-        if (hugeBitmap_ != nullptr) {
-            hugeBitmap_->FreeId(id - BUFF_SLIP_NUMBER);
-        }
-    }
+    void FreeById(int32_t id);
     void FreeByItem(const void* item) { FreeById(GetIdByItem(item)); }
 
     static void OpenHugeBuff(void) { openHugeBuff_ = true; }
@@ -59,6 +52,14 @@ public:
     rtError_t MemsetBuffers(Device* device, uint32_t value);
 
 private:
+    enum class PoolState : uint8_t { UNEXPANDED, INITIALIZING, INITIALIZED, RELEASED };
+
+    struct PoolMeta {
+        PoolMeta() : availableItemCount(0U), state(PoolState::UNEXPANDED) {}
+        Atomic<uint32_t> availableItemCount;
+        Atomic<PoolState> state;
+    };
+
     static void* DefaultAlloc(size_t size, void* para)
     {
         UNUSED(para);
@@ -94,8 +95,20 @@ private:
         const uint32_t rate = (LINEAR == allocStrategy_) ? idx : ((idx > 0U) ? (1U << (idx - 1U)) : 0U);
         return rate * initCount_;
     }
+    uint32_t GetPoolCount(uint32_t poolIdx) const
+    {
+        const uint32_t baseId = AccumulatePoolCount(poolIdx);
+        const uint32_t endId = std::min(AccumulatePoolCount(poolIdx + 1U), maxCount_);
+        return endId - baseId;
+    }
 
     int32_t AllocBitMap(uint32_t curCount);
+    void FreeBitmapId(int32_t id);
+    bool PrepareAllocatedId(int32_t id, bool isLogError);
+    bool InitializePool(uint32_t poolIdx, PoolState failureState, bool isLogError);
+    void RollbackAllocatedId(int32_t id, uint32_t poolIdx);
+    int32_t FinishAllocatedId(int32_t id, bool isLogError, bool& canRetry);
+    int32_t AllocIdWithoutRetryInner(bool isLogError, bool& canRetry);
     bool BitmapIsOccupied(const int32_t id) const
     {
         if (id < BUFF_SLIP_NUMBER) {
@@ -120,7 +133,10 @@ private:
     uint32_t volatile currentCount_;
     const AllocFuncPtr allocFunc_;
     const FreeFuncPtr freeFunc_;
-    std::atomic<bool> allocFuncState_;
+    const bool enablePoolRelease_;
+    PoolMeta* poolMeta_{nullptr};
+    mutable std::shared_mutex poolMutex_;
+    Atomic<bool> allocFuncState_;
     std::mutex hugeBitmapMutex_;
     Bitmap* hugeBitmap_{nullptr};
 };

@@ -8,6 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <exception>
+#include <future>
+#include <memory>
+#include <mutex>
+#include <thread>
+
 #include "driver/ascend_hal.h"
 #include "event.hpp"
 #include "gtest/gtest.h"
@@ -26,6 +35,221 @@ using namespace testing;
 using namespace cce::runtime;
 
 DVresult drvMemGetAttribute_9(DVdeviceptr vptr, struct DVattribute* attr);
+
+namespace {
+constexpr auto BUFFER_ALLOCATOR_WAIT_TIMEOUT = std::chrono::seconds(1);
+constexpr auto BUFFER_ALLOCATOR_CALLBACK_TIMEOUT = std::chrono::seconds(2);
+constexpr auto BUFFER_ALLOCATOR_BLOCKED_CHECK_TIMEOUT = std::chrono::milliseconds(100);
+
+struct BufferAllocatorReleaseContext {
+    std::atomic<uint32_t> allocCount{0U};
+    std::atomic<uint32_t> freeCount{0U};
+    std::atomic<bool> failAlloc{false};
+};
+
+struct BlockingBufferAllocatorContext : BufferAllocatorReleaseContext {
+    std::mutex mutex;
+    std::condition_variable cv;
+    uint32_t blockCall{0U};
+    bool entered{false};
+    bool resume{false};
+    std::atomic<bool> waitTimedOut{false};
+};
+
+struct BufferAllocatorHolder {
+    std::shared_ptr<BlockingBufferAllocatorContext> context;
+    std::shared_ptr<BufferAllocator> allocator;
+};
+
+struct BufferAllocatorWorkerState {
+    std::atomic<bool> entered{false};
+    std::atomic<bool> completed{false};
+};
+
+void ArmBlockingBufferAllocator(BlockingBufferAllocatorContext& context, const uint32_t blockCall)
+{
+    std::lock_guard<std::mutex> lock(context.mutex);
+    context.blockCall = blockCall;
+    context.entered = false;
+    context.resume = false;
+    context.waitTimedOut.store(false);
+}
+
+void ResumeBlockingBufferAllocator(BlockingBufferAllocatorContext& context)
+{
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.resume = true;
+    }
+    context.cv.notify_all();
+}
+
+bool WaitForBlockingBufferAllocator(BlockingBufferAllocatorContext& context)
+{
+    std::unique_lock<std::mutex> lock(context.mutex);
+    const bool entered =
+        context.cv.wait_for(lock, BUFFER_ALLOCATOR_WAIT_TIMEOUT, [&context] { return context.entered; });
+    if (!entered) {
+        context.resume = true;
+        lock.unlock();
+        context.cv.notify_all();
+    }
+    return entered;
+}
+
+template <typename Predicate>
+bool WaitForBufferAllocatorCondition(Predicate&& predicate)
+{
+    const auto deadline = std::chrono::steady_clock::now() + BUFFER_ALLOCATOR_WAIT_TIMEOUT;
+    while (!predicate()) {
+        if (std::chrono::steady_clock::now() >= deadline) {
+            return false;
+        }
+        std::this_thread::yield();
+    }
+    return true;
+}
+
+struct BufferAllocatorWorker {
+    BufferAllocatorWorker(
+        std::thread&& workerThread, std::future<int32_t>&& workerFuture,
+        std::shared_ptr<BufferAllocatorWorkerState> workerState)
+        : thread(std::move(workerThread)), future(std::move(workerFuture)), state(std::move(workerState))
+    {}
+
+    ~BufferAllocatorWorker()
+    {
+        if (thread.joinable()) {
+            thread.detach();
+        }
+    }
+
+    BufferAllocatorWorker(const BufferAllocatorWorker&) = delete;
+    BufferAllocatorWorker& operator=(const BufferAllocatorWorker&) = delete;
+
+    BufferAllocatorWorker(BufferAllocatorWorker&& other) noexcept
+        : thread(std::move(other.thread)), future(std::move(other.future)), state(std::move(other.state))
+    {}
+
+    BufferAllocatorWorker& operator=(BufferAllocatorWorker&& other) noexcept
+    {
+        if (this != &other) {
+            if (thread.joinable()) {
+                thread.detach();
+            }
+            thread = std::move(other.thread);
+            future = std::move(other.future);
+            state = std::move(other.state);
+        }
+        return *this;
+    }
+
+    std::thread thread;
+    std::future<int32_t> future;
+    std::shared_ptr<BufferAllocatorWorkerState> state;
+};
+
+BufferAllocatorWorker StartBufferAllocatorWorker(const std::shared_ptr<BufferAllocatorHolder>& holder)
+{
+    std::promise<int32_t> promise;
+    auto future = promise.get_future();
+    auto state = std::make_shared<BufferAllocatorWorkerState>();
+    std::thread thread([holder, promise = std::move(promise), state]() mutable {
+        state->entered.store(true);
+        try {
+            const int32_t id = holder->allocator->AllocId();
+            state->completed.store(true);
+            promise.set_value(id);
+        } catch (...) {
+            state->completed.store(true);
+            try {
+                promise.set_exception(std::current_exception());
+            } catch (...) {
+            }
+        }
+    });
+    return BufferAllocatorWorker(std::move(thread), std::move(future), std::move(state));
+}
+
+BufferAllocatorWorker StartBufferAllocatorFreeWorker(
+    const std::shared_ptr<BufferAllocatorHolder>& holder, const int32_t id)
+{
+    std::promise<int32_t> promise;
+    auto future = promise.get_future();
+    auto state = std::make_shared<BufferAllocatorWorkerState>();
+    std::thread thread([holder, id, promise = std::move(promise), state]() mutable {
+        state->entered.store(true);
+        try {
+            holder->allocator->FreeById(id);
+            state->completed.store(true);
+            promise.set_value(id);
+        } catch (...) {
+            state->completed.store(true);
+            try {
+                promise.set_exception(std::current_exception());
+            } catch (...) {
+            }
+        }
+    });
+    return BufferAllocatorWorker(std::move(thread), std::move(future), std::move(state));
+}
+
+bool FinishBufferAllocatorWorker(
+    BufferAllocatorWorker& worker, BlockingBufferAllocatorContext& context, int32_t& result)
+{
+    if (worker.future.wait_for(BUFFER_ALLOCATOR_WAIT_TIMEOUT) != std::future_status::ready) {
+        ResumeBlockingBufferAllocator(context);
+        if (worker.future.wait_for(BUFFER_ALLOCATOR_WAIT_TIMEOUT) != std::future_status::ready) {
+            worker.thread.detach();
+            return false;
+        }
+    }
+    try {
+        worker.thread.join();
+        result = worker.future.get();
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
+void* BufferAllocatorReleaseAlloc(const size_t size, void* const para)
+{
+    auto* const context = static_cast<BufferAllocatorReleaseContext*>(para);
+    context->allocCount.fetch_add(1U);
+    return context->failAlloc.load() ? nullptr : malloc(size);
+}
+
+void* BlockingBufferAllocatorAlloc(const size_t size, void* const para)
+{
+    auto* const context = static_cast<BlockingBufferAllocatorContext*>(para);
+    const uint32_t call = context->allocCount.fetch_add(1U) + 1U;
+    if (call == context->blockCall) {
+        bool timedOut = false;
+        std::unique_lock<std::mutex> lock(context->mutex);
+        context->entered = true;
+        context->cv.notify_all();
+        timedOut =
+            !context->cv.wait_for(lock, BUFFER_ALLOCATOR_CALLBACK_TIMEOUT, [context] { return context->resume; });
+        if (timedOut) {
+            context->resume = true;
+            context->waitTimedOut.store(true);
+        }
+        lock.unlock();
+        if (timedOut) {
+            context->cv.notify_all();
+        }
+    }
+    return context->failAlloc.load() ? nullptr : malloc(size);
+}
+
+void BufferAllocatorReleaseFree(void* const addr, void* const para)
+{
+    auto* const context = static_cast<BufferAllocatorReleaseContext*>(para);
+    context->freeCount.fetch_add(1U);
+    free(addr);
+}
+} // namespace
 
 class NpuDriverTest : public testing::Test {
 protected:
@@ -1180,6 +1404,309 @@ TEST_F(NpuDriverTest, buffer_allocator_test)
     }
     EXPECT_EQ(alloc.bitmap_.freeBitmap_[0], 0);
     EXPECT_EQ(alloc.bitmap_.freeBitmap_[1], 0);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_release_disabled_preserves_pool)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 2U, 4U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context);
+
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    const int32_t id2 = alloc.AllocId();
+    const int32_t id3 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    ASSERT_GE(id2, 0);
+    ASSERT_GE(id3, 0);
+
+    alloc.FreeById(id2);
+    alloc.FreeById(id3);
+    EXPECT_EQ(context.freeCount.load(), 0U);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_releases_and_recreates_nonzero_pool)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 2U, 4U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context, true);
+
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    const int32_t id2 = alloc.AllocId();
+    const int32_t id3 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    ASSERT_GE(id2, 0);
+    ASSERT_GE(id3, 0);
+    EXPECT_EQ(context.allocCount.load(), 2U);
+
+    alloc.FreeById(id2);
+    EXPECT_EQ(context.freeCount.load(), 0U);
+    alloc.FreeById(id3);
+    EXPECT_EQ(context.freeCount.load(), 1U);
+
+    const int32_t reusedId = alloc.AllocId();
+    EXPECT_GE(reusedId, 2);
+    EXPECT_NE(alloc.GetItemById(reusedId), nullptr);
+    EXPECT_EQ(context.allocCount.load(), 3U);
+
+    alloc.FreeById(reusedId);
+    alloc.FreeById(id0);
+    alloc.FreeById(id1);
+    EXPECT_EQ(context.freeCount.load(), 2U); // pool_[0] 未释放。
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_get_id_skips_released_pool)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 1U, 2U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context, true);
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    void* const releasedAddress = alloc.GetItemById(id1);
+    ASSERT_NE(releasedAddress, nullptr);
+
+    alloc.FreeById(id1);
+    EXPECT_EQ(alloc.GetIdByItem(releasedAddress), -1);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_free_by_item_skips_released_middle_pool)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 1U, 3U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context, true);
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    const int32_t id2 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    ASSERT_GE(id2, 0);
+    void* const item2 = alloc.GetItemById(id2);
+    ASSERT_NE(item2, nullptr);
+
+    alloc.FreeById(id1);
+    alloc.FreeByItem(item2);
+    EXPECT_EQ(context.freeCount.load(), 2U);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_first_expansion_failure_does_not_retry)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 2U, 4U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context, true);
+
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    EXPECT_EQ(context.allocCount.load(), 1U);
+
+    context.failAlloc.store(true);
+    EXPECT_EQ(alloc.AllocId(), -1);
+    EXPECT_EQ(context.allocCount.load(), 2U);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_expansion_initializes_pool_once)
+{
+    auto holder = std::make_shared<BufferAllocatorHolder>();
+    holder->context = std::make_shared<BlockingBufferAllocatorContext>();
+    ArmBlockingBufferAllocator(*holder->context, 2U);
+    holder->allocator = std::make_shared<BufferAllocator>(
+        sizeof(uint32_t), 2U, 4U, BufferAllocator::LINEAR, BlockingBufferAllocatorAlloc, BufferAllocatorReleaseFree,
+        holder->context.get(), true);
+    ASSERT_GE(holder->allocator->AllocId(), 0);
+    ASSERT_GE(holder->allocator->AllocId(), 0);
+
+    auto first = StartBufferAllocatorWorker(holder);
+    if (!WaitForBlockingBufferAllocator(*holder->context)) {
+        int32_t firstId = -1;
+        EXPECT_TRUE(FinishBufferAllocatorWorker(first, *holder->context, firstId));
+        ADD_FAILURE() << "Timed out waiting for the expansion allocation callback.";
+        return;
+    }
+    auto second = StartBufferAllocatorWorker(holder);
+
+    const bool concurrentWindowObserved = WaitForBufferAllocatorCondition([&holder] {
+        return (holder->allocator->poolMeta_[1U].state.Value() == BufferAllocator::PoolState::INITIALIZING) &&
+               (holder->allocator->poolMeta_[1U].availableItemCount.Value() == 1U) &&
+               (holder->context->allocCount.load() == 2U);
+    });
+    const std::future_status secondStatusBeforeResume = second.future.wait_for(BUFFER_ALLOCATOR_BLOCKED_CHECK_TIMEOUT);
+    EXPECT_TRUE(concurrentWindowObserved);
+    EXPECT_EQ(secondStatusBeforeResume, std::future_status::timeout);
+    EXPECT_FALSE(second.state->completed.load());
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
+    ResumeBlockingBufferAllocator(*holder->context);
+
+    int32_t firstId = -1;
+    int32_t secondId = -1;
+    const bool firstReady = FinishBufferAllocatorWorker(first, *holder->context, firstId);
+    const bool secondReady = FinishBufferAllocatorWorker(second, *holder->context, secondId);
+
+    EXPECT_TRUE(firstReady);
+    EXPECT_TRUE(secondReady);
+    if (firstReady && secondReady) {
+        EXPECT_GE(firstId, 2);
+        EXPECT_GE(secondId, 2);
+        EXPECT_NE(firstId, secondId);
+    }
+    EXPECT_EQ(holder->context->allocCount.load(), 2U);
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_recreate_failure_rolls_back_id)
+{
+    BufferAllocatorReleaseContext context;
+    BufferAllocator alloc(
+        sizeof(uint32_t), 1U, 2U, BufferAllocator::LINEAR, BufferAllocatorReleaseAlloc, BufferAllocatorReleaseFree,
+        &context, true);
+
+    const int32_t id0 = alloc.AllocId();
+    const int32_t id1 = alloc.AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    alloc.FreeById(id1);
+
+    context.failAlloc.store(true);
+    const uint32_t beforeFailure = context.allocCount.load();
+    EXPECT_EQ(alloc.AllocId(), -1);
+    const uint32_t failedAllocCount = context.allocCount.load();
+    EXPECT_EQ(failedAllocCount, beforeFailure + 1U);
+    EXPECT_EQ(alloc.poolMeta_[1U].state.Value(), BufferAllocator::PoolState::RELEASED);
+    EXPECT_EQ(alloc.poolMeta_[1U].availableItemCount.Value(), 1U);
+    EXPECT_FALSE(alloc.BitmapIsOccupied(id1));
+
+    context.failAlloc.store(false);
+    EXPECT_EQ(alloc.AllocId(), id1);
+    EXPECT_EQ(context.allocCount.load(), failedAllocCount + 1U);
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_release_waits_for_recreation)
+{
+    auto holder = std::make_shared<BufferAllocatorHolder>();
+    holder->context = std::make_shared<BlockingBufferAllocatorContext>();
+    holder->allocator = std::make_shared<BufferAllocator>(
+        sizeof(uint32_t), 1U, 3U, BufferAllocator::LINEAR, BlockingBufferAllocatorAlloc, BufferAllocatorReleaseFree,
+        holder->context.get(), true);
+    const int32_t id0 = holder->allocator->AllocId();
+    const int32_t id1 = holder->allocator->AllocId();
+    const int32_t id2 = holder->allocator->AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    ASSERT_GE(id2, 0);
+    holder->allocator->FreeById(id1);
+
+    ArmBlockingBufferAllocator(*holder->context, holder->context->allocCount.load() + 1U);
+    auto recreate = StartBufferAllocatorWorker(holder);
+    if (!WaitForBlockingBufferAllocator(*holder->context)) {
+        int32_t recreatedId = -1;
+        EXPECT_TRUE(FinishBufferAllocatorWorker(recreate, *holder->context, recreatedId));
+        ADD_FAILURE() << "Timed out waiting for the recreation allocation callback.";
+        return;
+    }
+
+    const uint32_t freeCountBeforeRelease = holder->context->freeCount.load();
+    auto writer = StartBufferAllocatorFreeWorker(holder, id2);
+    const bool writerReachedPreLock = WaitForBufferAllocatorCondition([&holder, &writer] {
+        return writer.state->entered.load() && (holder->allocator->poolMeta_[2U].availableItemCount.Value() == 1U);
+    });
+    const std::future_status writerStatusBeforeResume = writer.future.wait_for(BUFFER_ALLOCATOR_BLOCKED_CHECK_TIMEOUT);
+    EXPECT_TRUE(writerReachedPreLock);
+    EXPECT_EQ(writerStatusBeforeResume, std::future_status::timeout);
+    EXPECT_FALSE(writer.state->completed.load());
+    EXPECT_EQ(holder->context->freeCount.load(), freeCountBeforeRelease);
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
+    ResumeBlockingBufferAllocator(*holder->context);
+
+    int32_t recreatedId = -1;
+    int32_t writerId = -1;
+    const bool recreateReady = FinishBufferAllocatorWorker(recreate, *holder->context, recreatedId);
+    const bool writerReady = FinishBufferAllocatorWorker(writer, *holder->context, writerId);
+
+    EXPECT_TRUE(recreateReady);
+    EXPECT_TRUE(writerReady);
+    if (!recreateReady || !writerReady) {
+        return;
+    }
+    EXPECT_EQ(recreatedId, id1);
+    EXPECT_EQ(writerId, id2);
+    EXPECT_TRUE(writer.state->completed.load());
+    EXPECT_EQ(holder->allocator->poolMeta_[2U].state.Value(), BufferAllocator::PoolState::RELEASED);
+    EXPECT_EQ(holder->context->freeCount.load(), freeCountBeforeRelease + 1U);
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
+}
+
+TEST_F(NpuDriverTest, buffer_allocator_concurrent_allocations_recreate_released_pool_once)
+{
+    auto holder = std::make_shared<BufferAllocatorHolder>();
+    holder->context = std::make_shared<BlockingBufferAllocatorContext>();
+    holder->allocator = std::make_shared<BufferAllocator>(
+        sizeof(uint32_t), 2U, 4U, BufferAllocator::LINEAR, BlockingBufferAllocatorAlloc, BufferAllocatorReleaseFree,
+        holder->context.get(), true);
+    const int32_t id0 = holder->allocator->AllocId();
+    const int32_t id1 = holder->allocator->AllocId();
+    const int32_t id2 = holder->allocator->AllocId();
+    const int32_t id3 = holder->allocator->AllocId();
+    ASSERT_GE(id0, 0);
+    ASSERT_GE(id1, 0);
+    ASSERT_GE(id2, 0);
+    ASSERT_GE(id3, 0);
+    holder->allocator->FreeById(id2);
+    holder->allocator->FreeById(id3);
+    ASSERT_EQ(holder->allocator->poolMeta_[1U].state.Value(), BufferAllocator::PoolState::RELEASED);
+
+    const uint32_t allocCountBeforeRecreation = holder->context->allocCount.load();
+    ArmBlockingBufferAllocator(*holder->context, allocCountBeforeRecreation + 1U);
+    auto first = StartBufferAllocatorWorker(holder);
+    if (!WaitForBlockingBufferAllocator(*holder->context)) {
+        int32_t firstId = -1;
+        EXPECT_TRUE(FinishBufferAllocatorWorker(first, *holder->context, firstId));
+        ADD_FAILURE() << "Timed out waiting for the recreation allocation callback.";
+        return;
+    }
+    auto second = StartBufferAllocatorWorker(holder);
+
+    const bool concurrentRecreationObserved = WaitForBufferAllocatorCondition([&holder, &second] {
+        return second.state->entered.load() &&
+               (holder->allocator->poolMeta_[1U].state.Value() == BufferAllocator::PoolState::INITIALIZING) &&
+               (holder->allocator->poolMeta_[1U].availableItemCount.Value() == 0U);
+    });
+    const std::future_status secondStatusBeforeResume = second.future.wait_for(BUFFER_ALLOCATOR_BLOCKED_CHECK_TIMEOUT);
+    EXPECT_TRUE(concurrentRecreationObserved);
+    EXPECT_EQ(secondStatusBeforeResume, std::future_status::timeout);
+    EXPECT_FALSE(second.state->completed.load());
+    EXPECT_EQ(holder->context->allocCount.load(), allocCountBeforeRecreation + 1U);
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
+    ResumeBlockingBufferAllocator(*holder->context);
+
+    int32_t firstId = -1;
+    int32_t secondId = -1;
+    const bool firstReady = FinishBufferAllocatorWorker(first, *holder->context, firstId);
+    const bool secondReady = FinishBufferAllocatorWorker(second, *holder->context, secondId);
+
+    EXPECT_TRUE(firstReady);
+    EXPECT_TRUE(secondReady);
+    if (!firstReady || !secondReady) {
+        return;
+    }
+    EXPECT_GE(firstId, 2);
+    EXPECT_LT(firstId, 4);
+    EXPECT_GE(secondId, 2);
+    EXPECT_LT(secondId, 4);
+    EXPECT_NE(firstId, secondId);
+    EXPECT_NE(holder->allocator->GetItemById(firstId), nullptr);
+    EXPECT_NE(holder->allocator->GetItemById(secondId), nullptr);
+    EXPECT_EQ(holder->context->allocCount.load(), allocCountBeforeRecreation + 1U);
+    EXPECT_FALSE(holder->context->waitTimedOut.load());
 }
 
 TEST_F(NpuDriverTest, buffer_allocator_test1)
