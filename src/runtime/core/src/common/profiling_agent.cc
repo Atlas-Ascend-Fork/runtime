@@ -184,6 +184,7 @@ rtError_t ProfilingAgent::RegisterProfTypeInfo() const
         {TS_TASK_TYPE_IPCINT_NOTICE, "IPC_INT_NOTICE"},
         {TS_TASK_TYPE_MODEL_LOAD, "reserve"}, // reserve but not support task type
         {TS_TASK_TYPE_FLIP, "FLIP_TASK"},
+        {TS_TASK_TYPE_UPDATE_ADDRESS, "UPDATE_ADDRESS"},
         {TS_TASK_TYPE_MODEL_TASK_UPDATE, "MODEL_TASK_UPDATE"},
         {TS_TASK_TYPE_AICPU_INFO_LOAD, "AICPU_LOADINFO"},
         {TS_TASK_TYPE_NOP, "NOP"},
