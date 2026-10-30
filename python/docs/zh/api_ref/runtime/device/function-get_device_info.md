@@ -36,7 +36,7 @@
 - **python函数**
 
     ```python
-    value, ret = acl.rt.get_device_info(device_Id, attr)
+    value, ret = acl.rt.get_device_info(device_id, attr)
     ```
 
 ## 参数说明

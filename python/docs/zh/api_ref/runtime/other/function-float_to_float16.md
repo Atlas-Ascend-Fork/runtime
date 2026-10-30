@@ -49,4 +49,4 @@
 
 | 返回值 | 说明 |
 | --- | --- |
-| output | int，错误码，返回0表示成功，返回[其它值](../datatypes/aclError.md)表示失败。 |
+| output | [aclFloat16](../datatypes/aclFloat16.md)类型的数据。 |

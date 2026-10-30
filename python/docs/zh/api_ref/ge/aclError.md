@@ -207,7 +207,7 @@
 | 返回码 | 含义 | 可能原因及解决方法 |
 | --- | --- | --- |
 | ACL_ERROR_GE_PARAM_INVALID = 145000 | 参数校验失败。 | 请检查接口的入参值是否正确。 |
-| ACL_ERROR_GE_EXEC_NOT_INIT = 14500 | 未初始化。 | 请检查是否已调用`acl.init`接口进行初始化，请确保已调用`acl.init`接口，且在其它接口之前调用。<br> 请检查是否已调用对应功能的初始化接口，例如初始化Dump的`acl.mdl.init_dump`接口、初始化Profiling的`acl.prof.init`接口。 |
+| ACL_ERROR_GE_EXEC_NOT_INIT = 145001 | 未初始化。 | 请检查是否已调用`acl.init`接口进行初始化，请确保已调用`acl.init`接口，且在其它接口之前调用。<br> 请检查是否已调用对应功能的初始化接口，例如初始化Dump的`acl.mdl.init_dump`接口、初始化Profiling的`acl.prof.init`接口。 |
 | ACL_ERROR_GE_EXEC_MODEL_PATH_INVALID = 145002 | 无效的模型路径。 | 请检查模型路径是否正确。 |
 | ACL_ERROR_GE_EXEC_MODEL_ID_INVALID = 145003 | 无效的模型ID。 | 请检查模型ID是否正确、模型是否正确加载。 |
 | ACL_ERROR_GE_EXEC_MODEL_DATA_SIZE_INVALID = 145006 | 无效的模型大小。 | 无效的模型大小。 |

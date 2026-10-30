@@ -131,7 +131,7 @@
 | ACL_ERROR_RT_REPEATED_INIT = 207015 | 队列重复初始化。 | 建议初始化一次队列即可，不要重复初始化。 |
 | ACL_ERROR_RT_DEVIDE_OOM = 207018 | Device侧内存耗尽。 | 排查Device上的内存使用情况，并根据Device上的内存规格合理规划内存的使用。 |
 | ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP = 207019 | 当前驱动版本不支持更新该算子。 | 请检查驱动版本。<br>您可以单击[Link](https://www.hiascend.com/hardware/firmware-drivers/commercial)，在“固件与驱动”页面下载Ascend HDK 25.0.RC1或更高版本的驱动安装包，并参考相应版本的文档进行安装、升级。 |
-| ACL_ERROR_RT_INTERNEL_ERROR = 207020 | Driver执行超时。 | 您可以获取日志后单击[Link](https://www.hiascend.com/support)联系技术支持。 |
+| ACL_ERROR_RT_TIMEOUT = 207020 | Driver执行超时。 | 您可以获取日志后单击[Link](https://www.hiascend.com/support)联系技术支持。 |
 | ACL_ERROR_RT_INTERNEL_ERROR = 507000 | Host上的runtime模块内部错误。 | 您可以获取日志后单击[Link](https://www.hiascend.com/support)联系技术支持。 |
 | ACL_ERROR_RT_TS_ERROR = 507001 | Device上的task scheduler模块内部错误。 | 您可以获取日志后单击[Link](https://www.hiascend.com/support)联系技术支持。 |
 | ACL_ERROR_RT_STREAM_TASK_FULL = 507002 | stream上的task数量满。 | 您可以获取日志后单击[Link](https://www.hiascend.com/support)联系技术支持。 |
@@ -214,7 +214,7 @@
 | 返回码 | 含义 | 可能原因及解决方法 |
 | --- | --- | --- |
 | ACL_ERROR_GE_PARAM_INVALID = 145000 | 参数校验失败。 | 请检查接口的入参值是否正确。 |
-| ACL_ERROR_GE_EXEC_NOT_INIT = 14500 | 未初始化。 | - 请检查是否已调用[acl.init](../init/function-init.md)接口进行初始化，请确保已调用[acl.init](../init/function-init.md)接口，且在其它接口之前调用。<br>- 请检查是否已调用对应功能的初始化接口，例如初始化Dump的[acl.mdl.init_dump](../dump/function-init_dump.md)接口、初始化Profiling的[acl.prof.init](../Profiling/function-init-Profiling.md)接口。 |
+| ACL_ERROR_GE_EXEC_NOT_INIT = 145001 | 未初始化。 | - 请检查是否已调用[acl.init](../init/function-init.md)接口进行初始化，请确保已调用[acl.init](../init/function-init.md)接口，且在其它接口之前调用。<br>- 请检查是否已调用对应功能的初始化接口，例如初始化Dump的[acl.mdl.init_dump](../dump/function-init_dump.md)接口、初始化Profiling的[acl.prof.init](../Profiling/function-init-Profiling.md)接口。 |
 | ACL_ERROR_GE_EXEC_MODEL_PATH_INVALID = 145002 | 无效的模型路径。 | 请检查模型路径是否正确。 |
 | ACL_ERROR_GE_EXEC_MODEL_ID_INVALID = 145003 | 无效的模型ID。 | 请检查模型ID是否正确、模型是否正确加载。 |
 | ACL_ERROR_GE_EXEC_MODEL_DATA_SIZE_INVALID = 145006 | 无效的模型大小。 | 无效的模型大小。 |

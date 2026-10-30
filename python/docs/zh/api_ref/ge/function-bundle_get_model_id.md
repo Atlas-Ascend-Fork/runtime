@@ -32,7 +32,7 @@
 - **C函数原型**
 
     ```c
-    aclError aclmdlBundleGetModelId(uint32_t bundleId size_t index, uint32_t *modelId)
+    aclError aclmdlBundleGetModelId(uint32_t bundleId, size_t index, uint32_t *modelId)
     ```
 
 - **python函数**

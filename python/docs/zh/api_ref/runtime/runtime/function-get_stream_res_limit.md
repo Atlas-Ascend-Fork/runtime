@@ -25,7 +25,7 @@
 
 获取指定Stream的Device资源限制。
 
-若没有调用[acl.rt.set\_stream\_res\_limit](function-set_stream_res_limit.md)接口设置Device资源限制，则调用本接口获取到的Device资源限制优先级为：当前进程的Device资源限制（调用[acl.rt.set\_stream\_res\_limit](function-set_stream_res_limit.md)接口设置） \>  AI处理器硬件默认的资源限制。
+若没有调用[acl.rt.set\_stream\_res\_limit](function-set_stream_res_limit.md)接口设置Device资源限制，则调用本接口获取到的Device资源限制优先级为：当前进程的Device资源限制（调用[acl.rt.set\_device\_res\_limit](function-set_device_res_limit.md)接口设置） \>  AI处理器硬件默认的资源限制。
 
 ## 函数原型
 
