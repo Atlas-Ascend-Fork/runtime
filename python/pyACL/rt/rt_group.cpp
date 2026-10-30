@@ -26,7 +26,7 @@ PyObject* WrapAclRtGetGroupCount(PyObject* /* self */, PyObject* args)
 {
     uint32_t count = 0;
 
-    CHECK_NULL(PyArg_ParseTuple(args, "I", &count), "acl.rt.get_group_count args parse failed");
+    CHECK_NULL(PyArg_ParseTuple(args, ""), "acl.rt.get_group_count args parse failed");
 
     aclError ret = aclrtGetGroupCount(&count);
     return Py_BuildValue("Ii", count, ret);
