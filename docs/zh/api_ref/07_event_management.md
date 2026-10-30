@@ -108,6 +108,9 @@ aclError aclrtCreateEvent(aclrtEvent *event)
   <!-- npu="910" id17 -->
   - 对于Atlas训练系列产品，单个Device支持的Event最大数为65535。
   <!-- end id17 -->
+  <!-- npu="5162A" id40 -->
+  - 对于Hisilicon5162A，单个Device支持的Event最大数为768。
+  <!-- end id40 -->
   <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id23 -->
 
 <br>
@@ -183,6 +186,10 @@ aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
   <!-- end id24 -->
 
 <!-- end id22 -->
+
+<!-- npu="5162A" id44 -->
+- 对于Hisilicon5162A，flag不支持ACL\_EVENT\_EXTERNAL与ACL\_EVENT\_DEVICE\_USE\_ONLY。
+<!-- end id44 -->
 <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id26 -->
 
 - 若flag参数值**不包含**ACL\_EVENT\_SYNC宏，则不支持在以下API中使用本接口创建的Event：[aclrtResetEvent](#aclrtResetEvent)、[aclrtStreamWaitEvent](#aclrtStreamWaitEvent)。若flag参数值**包含**ACL\_EVENT\_SYNC宏或者flag设置为ACL\_EVENT\_EXTERNAL时，则创建出来的Event数量受限。
@@ -213,6 +220,9 @@ aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
   <!-- npu="910" id32 -->
   - 对于Atlas训练系列产品，单个Device支持的Event最大数为65535。
   <!-- end id32 -->
+  <!-- npu="5162A" id41 -->
+  - 对于Hisilicon5162A，单个Device支持的Event最大数为768。
+  <!-- end id41 -->
 
 <br>
 <br>
@@ -273,6 +283,10 @@ aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
 
 - 采用本API创建的Event，不支持在以下接口中使用：[aclrtResetEvent](#aclrtResetEvent)、[aclrtQueryEvent](#aclrtQueryEvent_deprecated)、[aclrtQueryEventWaitStatus](#aclrtQueryEventWaitStatus)，否则返回报错。
 
+<!-- npu="5162A" id46 -->
+- 对于Hisilicon5162A，flag不支持ACL\_EVENT\_IPC。
+<!-- end id46 -->
+
 - 若flag参数值**不包含**ACL\_EVENT\_SYNC宏，则不支持在[aclrtStreamWaitEvent](#aclrtStreamWaitEvent)接口中使用本接口创建的Event。若flag参数值**包含**ACL\_EVENT\_SYNC宏，并不会实际申请Event资源，只有在调用[aclrtRecordEvent](#aclrtRecordEvent)接口时，才会进行资源申请，因此在调用[aclrtRecordEvent](#aclrtRecordEvent)时，可能会出现线程阻塞，等待Event资源的释放。
 
 - 不同型号的硬件支持的Event数量不同。
@@ -302,6 +316,9 @@ aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
   <!-- npu="910" id39 -->
   - 对于Atlas训练系列产品，单个Device支持的Event最大数为65535。
   <!-- end id39 -->
+  <!-- npu="5162A" id42 -->
+  - 对于Hisilicon5162A，单个Device支持的Event最大数为768。
+  <!-- end id42 -->
   <!-- @ref: runtime/res/docs/zh/api_ref/07_event_management_res.md#id25 -->
 
 <br>
@@ -1082,6 +1099,12 @@ aclError aclrtStreamWaitEventWithTimeout(aclrtStream stream, aclrtEvent event, i
 ### 返回值说明
 
 返回0表示成功，返回其他值表示失败，请参见[aclError](25-01_aclError.md#aclError)。
+
+<!-- npu="5162A" id43 -->
+### 约束说明
+
+对于Hisilicon5162A，当timeout为0时表示永不超时；当timeout大于0时，超时时间固定为2.15s，不随timeout参数值变化。
+<!-- end id43 -->
 
 <br>
 <br>
