@@ -651,6 +651,89 @@ static void SetCommonTaskParams(rtTaskParams* const params)
     params->opInfoSize = 0U;
 }
 
+static rtError_t GetMemcpyAsyncTaskParams(const MemcpyAsyncTaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    COND_RETURN_ERROR(
+        taskInfo->copyKind > RT_MEMCPY_DEVICE_TO_DEVICE, RT_ERROR_INVALID_VALUE, "Unsupported memcpy kind=%u.",
+        taskInfo->copyKind);
+    params->type = RT_TASK_MEMCPY;
+    params->memcpyTaskParams.dst = taskInfo->destPtr;
+    params->memcpyTaskParams.src = taskInfo->src;
+    params->memcpyTaskParams.count = taskInfo->size;
+    params->memcpyTaskParams.kind = static_cast<rtMemcpyKind>(taskInfo->copyKind);
+    return RT_ERROR_NONE;
+}
+
+static rtError_t GetMemcpy2DTaskParams(const MemcpyAsyncTaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    COND_RETURN_ERROR(
+        taskInfo->copyKind > RT_MEMCPY_DEVICE_TO_DEVICE, RT_ERROR_INVALID_VALUE, "Unsupported memcpy2D kind=%u.",
+        taskInfo->copyKind);
+    params->type = RT_TASK_MEMCPY_2D;
+    params->memcpy2DTaskParams.dst = taskInfo->destPtr;
+    params->memcpy2DTaskParams.src = taskInfo->src;
+    params->memcpy2DTaskParams.dpitch = taskInfo->dstPitch;
+    params->memcpy2DTaskParams.spitch = taskInfo->srcPitch;
+    params->memcpy2DTaskParams.width = taskInfo->width;
+    params->memcpy2DTaskParams.height = taskInfo->height;
+    params->memcpy2DTaskParams.kind = static_cast<rtMemcpyKind>(taskInfo->copyKind);
+    return RT_ERROR_NONE;
+}
+
+static rtError_t GetMemcpyBatchTaskParams(const MemcpyAsyncTaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const MemcpyBatchTaskParamsInfo* const batchParams = taskInfo->batchParams;
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        batchParams, RT_ERROR_INVALID_VALUE, "Obtaining the Memcpy Batch task parameters");
+    params->type = RT_TASK_MEMCPY_BATCH;
+    params->memcpyBatchTaskParams.dsts = batchParams->dsts;
+    params->memcpyBatchTaskParams.destMaxs = batchParams->destMaxs;
+    params->memcpyBatchTaskParams.srcs = batchParams->srcs;
+    params->memcpyBatchTaskParams.sizes = batchParams->sizes;
+    params->memcpyBatchTaskParams.numBatches = batchParams->numBatches;
+    params->memcpyBatchTaskParams.attrs = batchParams->attrs;
+    params->memcpyBatchTaskParams.attrsIndexes = batchParams->attrsIndexes;
+    params->memcpyBatchTaskParams.numAttrs = batchParams->numAttrs;
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetMemcpyTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    SetCommonTaskParams(params);
+    const MemcpyAsyncTaskInfo* const memcpyTaskInfo = &(taskInfo->u.memcpyAsyncTaskInfo);
+    rtError_t error = RT_ERROR_NONE;
+    switch (static_cast<rtAsyncCpyMethod>(memcpyTaskInfo->copyMethod)) {
+        case rtAsyncCpyMethod::RT_ASYNC_CPY:
+            error = GetMemcpyAsyncTaskParams(memcpyTaskInfo, params);
+            break;
+        case rtAsyncCpyMethod::RT_ASYNC_CPY_2D:
+            error = GetMemcpy2DTaskParams(memcpyTaskInfo, params);
+            break;
+        case rtAsyncCpyMethod::RT_ASYNC_CPY_BATCH:
+            error = GetMemcpyBatchTaskParams(memcpyTaskInfo, params);
+            break;
+        default:
+            error = RT_ERROR_INVALID_VALUE;
+            break;
+    }
+    return error;
+}
+
+rtError_t GetMemsetTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const MemsetAsyncTaskInfo* const memsetTaskInfo = &(taskInfo->u.memsetAsyncTaskInfo);
+    COND_RETURN_ERROR(
+        (memsetTaskInfo->elementSize != 1U) && (memsetTaskInfo->elementSize != sizeof(uint32_t)),
+        RT_ERROR_INVALID_VALUE, "Unsupported memset element size=%u.", memsetTaskInfo->elementSize);
+    params->type = RT_TASK_MEMSET;
+    SetCommonTaskParams(params);
+    params->memsetTaskParams.devPtr = memsetTaskInfo->targetPtr;
+    params->memsetTaskParams.value = memsetTaskInfo->originalValue;
+    params->memsetTaskParams.count = memsetTaskInfo->fillCount / memsetTaskInfo->elementSize;
+    params->memsetTaskParams.elementSize = memsetTaskInfo->elementSize;
+    return RT_ERROR_NONE;
+}
+
 rtError_t GetCaptureRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
 {
     params->type = RT_TASK_EVENT_RECORD;
@@ -771,10 +854,12 @@ static rtError_t CheckUpdatingTaskParams(TaskInfo* const taskInfo, rtTaskParams*
     rtTaskType taskType;
     rtError_t error = ConvertTaskType(taskInfo, &taskType);
     ERROR_RETURN(error, "get task type failed, retCode=%#x.", error);
-    // RT_TASK_DEFAULT表示外部不识别的类型，报错并打印RTS内部具体的Task类型
+    const bool isSupportedTaskType = (taskType == RT_TASK_KERNEL) || (taskType == RT_TASK_EVENT_RECORD) ||
+                                     (taskType == RT_TASK_EVENT_WAIT) || (taskType == RT_TASK_EVENT_RESET) ||
+                                     (taskType == RT_TASK_VALUE_WRITE) || (taskType == RT_TASK_VALUE_WAIT);
     COND_RETURN_AND_MSG_RESERVED_PARAM_WITH_FUNC_DESC(
-        taskType == RT_TASK_DEFAULT, RT_ERROR_INVALID_VALUE, "task",
-        "The current task type is RT_TASK_DEFAULT(0). Only task types other than RT_TASK_DEFAULT(0) support "
+        !isSupportedTaskType, RT_ERROR_INVALID_VALUE, "task",
+        "Only the existing kernel, event, value write and value wait task types support "
         "updating task parameters to TASK_VALUE_WRITE(5) or TASK_VALUE_WAIT(6)",
         "Updating value write or value wait task parameters");
 

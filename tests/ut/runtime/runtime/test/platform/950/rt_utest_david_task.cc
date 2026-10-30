@@ -43,6 +43,7 @@
 #include "context.hpp"
 #include "stream_david.hpp"
 #include "stars_david.hpp"
+#include "stream_jetty_handler.h"
 #include "task_david.hpp"
 #include "notify.hpp"
 #include "device_error_proc.hpp"
@@ -3024,7 +3025,7 @@ static rtError_t stubCreateAsyncDmaWqeBatchSuccess(
     output->jettyId = 12;
     output->wqeLen = 64;
     output->pi = 1;
-    output->fixedCnt = 1000;
+    output->fixedCnt = input.count;
     return RT_ERROR_NONE;
 }
 
@@ -3107,8 +3108,10 @@ TEST_F(TaskTestDavid, memcpy_async_batch_ub_dma_test)
     MOCKER_CPP_VIRTUAL(stm->Device_(), &Device::IsSupportFeature).stubs().will(returnValue(true));
     MOCKER_CPP_VIRTUAL(driver, &Driver::CreateAsyncDmaWqeBatch).stubs().will(invoke(stubCreateAsyncDmaWqeBatchSuccess));
     AsyncDmaBatchInfo batchInfo3 = {dsts, srcs, sizes, count, 0, 0};
+    task.u.memcpyAsyncTaskInfo.ubDma.fixedSize = 123U;
     error = MemcpyAsyncBatchTaskInit(&task, batchInfo3);
     EXPECT_EQ(error, RT_ERROR_NONE);
+    EXPECT_EQ(task.u.memcpyAsyncTaskInfo.ubDma.fixedSize, 0U);
     EXPECT_EQ(task.u.memcpyAsyncTaskInfo.ubDma.jettyId, 12u);
     EXPECT_EQ(task.u.memcpyAsyncTaskInfo.ubDma.functionId, 10u);
 
@@ -3128,6 +3131,97 @@ TEST_F(TaskTestDavid, memcpy_async_batch_ub_dma_test)
     rtStreamDestroy(stream);
     rtInstance->SetConnectUbFlag(false);
     GlobalMockObject::verify();
+}
+
+static rtError_t ConvertPartialBatchTask(
+    const TaskInfo*, JettyType, AsyncWqeInputPara* input, AsyncWqeOutputPara* output)
+{
+    output->fixedCnt = (input->batch.count == 3U) ? 1U : input->batch.count;
+    output->fixedSize = (input->batch.count == 3U) ? 20U : 0U;
+    return RT_ERROR_NONE;
+}
+
+TEST_F(TaskTestDavid, memcpy_async_batch_params_per_task)
+{
+    Runtime* const runtime = static_cast<Runtime*>(Runtime::Instance());
+    runtime->SetConnectUbFlag(true);
+    MOCKER(MemcpyAsyncTaskCommonInit).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER_CPP(&Stream::IsSoftwareSqEnable).stubs().will(returnValue(true));
+    MOCKER(StreamJettyHandler::HandleUbDmaTask).stubs().will(invoke(ConvertPartialBatchTask));
+    void* dsts[] = {
+        reinterpret_cast<void*>(0x1000U), reinterpret_cast<void*>(0x2000U), reinterpret_cast<void*>(0x3000U)};
+    void* srcs[] = {
+        reinterpret_cast<void*>(0x4000U), reinterpret_cast<void*>(0x5000U), reinterpret_cast<void*>(0x6000U)};
+    size_t destMaxs[] = {100U, 200U, 300U};
+    size_t sizes[] = {50U, 150U, 250U};
+    rtMemcpyBatchAttr attrs[2] = {};
+    attrs[0].srcLoc.id = 3U;
+    attrs[1].srcLoc.id = 5U;
+    size_t attrsIndexes[] = {0U, 2U};
+    const MemcpyBatchTaskParamsInput input = {dsts, destMaxs, srcs, sizes, 3U, attrs, attrsIndexes, 2U};
+    void* localDsts[] = {dsts[0], dsts[1], dsts[2]};
+    void* localSrcs[] = {srcs[0], srcs[1], srcs[2]};
+    uint64_t localSizes[] = {sizes[0], sizes[1], sizes[2]};
+    TaskInfo first = {};
+    InitByStream(&first, stream_);
+    first.type = TS_TASK_TYPE_MEMCPY;
+    first.u.memcpyAsyncTaskInfo.copyType = RT_MEMCPY_DIR_H2D;
+    AsyncDmaBatchInfo firstBatch = {localDsts, localSrcs, localSizes, 3U, 0U, 0U};
+    ASSERT_EQ(MemcpyAsyncBatchTaskInit(&first, firstBatch, &input), RT_ERROR_NONE);
+    auto* saved = first.u.memcpyAsyncTaskInfo.batchParams;
+    ASSERT_NE(saved, nullptr);
+    EXPECT_EQ(saved->numBatches, 2U);
+    EXPECT_EQ(saved->sizes[0], 50U);
+    EXPECT_EQ(saved->sizes[1], 20U);
+    EXPECT_EQ(saved->numAttrs, 1U);
+    EXPECT_EQ(saved->attrsIndexes[0], 0U);
+    EXPECT_EQ(saved->attrs[0].srcLoc.id, 3U);
+    TaskUnInitProc(&first);
+
+    TaskInfo second = {};
+    InitByStream(&second, stream_);
+    second.type = TS_TASK_TYPE_MEMCPY;
+    second.u.memcpyAsyncTaskInfo.copyType = RT_MEMCPY_DIR_H2D;
+    AsyncDmaBatchInfo secondBatch = {localDsts, localSrcs, localSizes, 2U, 1U, 20U};
+    ASSERT_EQ(MemcpyAsyncBatchTaskInit(&second, secondBatch, &input), RT_ERROR_NONE);
+    saved = second.u.memcpyAsyncTaskInfo.batchParams;
+    ASSERT_NE(saved, nullptr);
+    localDsts[0] = nullptr;
+    localSrcs[0] = nullptr;
+    destMaxs[1] = 0U;
+    localSizes[0] = 0U;
+    attrs[1].srcLoc.id = 99U;
+    attrsIndexes[1] = 99U;
+    EXPECT_EQ(saved->numBatches, 2U);
+    EXPECT_EQ(saved->srcs[0], reinterpret_cast<void*>(0x5014U));
+    EXPECT_EQ(saved->dsts[0], reinterpret_cast<void*>(0x2014U));
+    EXPECT_EQ(saved->sizes[0], 130U);
+    EXPECT_EQ(saved->sizes[1], 250U);
+    EXPECT_EQ(saved->destMaxs[0], 180U);
+    EXPECT_EQ(saved->numAttrs, 2U);
+    EXPECT_EQ(saved->attrsIndexes[0], 0U);
+    EXPECT_EQ(saved->attrsIndexes[1], 1U);
+    EXPECT_EQ(saved->attrs[1].srcLoc.id, 5U);
+    TaskUnInitProc(&second);
+    EXPECT_EQ(second.u.memcpyAsyncTaskInfo.batchParams, nullptr);
+    runtime->SetConnectUbFlag(false);
+}
+
+TEST_F(TaskTestDavid, memcpy_async_batch_params_copy_failure)
+{
+    TaskInfo task = {};
+    InitByStream(&task, stream_);
+    task.type = TS_TASK_TYPE_MEMCPY;
+    void* dsts[] = {reinterpret_cast<void*>(0x1000U)};
+    void* srcs[] = {reinterpret_cast<void*>(0x2000U)};
+    size_t sizes[] = {64U};
+    const MemcpyBatchTaskParamsInput params = {dsts, sizes, srcs, sizes, 1U, nullptr, nullptr, 0U};
+    AsyncDmaBatchInfo batchInfo = {dsts, srcs, sizes, 1U, 0U, 0U};
+    MOCKER(MemcpyAsyncTaskCommonInit).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(memcpy_s).stubs().will(returnValue(ERANGE));
+    EXPECT_EQ(MemcpyAsyncBatchTaskInit(&task, batchInfo, &params), RT_ERROR_SEC_HANDLE);
+    EXPECT_EQ(task.u.memcpyAsyncTaskInfo.batchParams, nullptr);
+    TaskUnInitProc(&task);
 }
 
 TEST_F(TaskTestDavid, ConstructMemWaitValueInstr2ExWithDynamicProf_basic)
@@ -3311,6 +3405,26 @@ TEST_F(DavidCondHandleTest, CondHandleWhileE2E)
     rtModel_t parentModelResult;
     ret = rtStreamEndCapture(stream, &parentModelResult);
     EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    const rtModel_t originalSubModel = subModels[0];
+    subModels[0] = reinterpret_cast<rtModel_t>(0x1000U);
+    auto* const captured = static_cast<CaptureModel*>(rt_ut::UnwrapOrNull<Model>(parentModelResult));
+    ASSERT_NE(captured, nullptr);
+    const auto& condTasks = captured->GetCondHandleTaskMap();
+    ASSERT_EQ(condTasks.size(), 1U);
+    const auto& location = condTasks.begin()->first;
+    const TaskInfo* const condTask = GetTaskInfo(
+        captured->Context_()->Device_(), static_cast<uint32_t>(std::get<0>(location)), std::get<1>(location));
+    ASSERT_NE(condTask, nullptr);
+    rtTaskParams queriedParams = {};
+    ret = GetCondTaskParams(condTask, &queriedParams);
+    ASSERT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(queriedParams.type, RT_TASK_COND);
+    EXPECT_EQ(queriedParams.condTaskParams.handle, condHandle);
+    EXPECT_EQ(queriedParams.condTaskParams.type, RT_COND_TASK_TYPE_WHILE);
+    EXPECT_EQ(queriedParams.condTaskParams.size, 1U);
+    ASSERT_NE(queriedParams.condTaskParams.modelRIArray, subModels);
+    EXPECT_EQ(queriedParams.condTaskParams.modelRIArray[0], originalSubModel);
 
     ret = rtModelDestroy(parentModelResult);
     EXPECT_EQ(ret, RT_ERROR_NONE);

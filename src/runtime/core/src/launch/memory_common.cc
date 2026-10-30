@@ -210,8 +210,7 @@ rtError_t MemSetAsync(
 
         const DevProperties& props = stm->Device_()->GetDevProperties();
         if (IsSupportMemsetTask(attributes.location.id, stm->Device_()->Id_(), props)) {
-            const uint32_t expandedFillVal = ExpandByteToU32(fillVal);
-            return DevMemSetAsyncByMemset(stm, ptr, destMax, expandedFillVal, fillCount);
+            return DevMemSetAsyncByMemset(stm, ptr, destMax, fillVal, fillCount);
         } else {
             return DevMemSetAsyncByMemcpy(stm, ptr, destMax, fillVal, fillCount);
         }

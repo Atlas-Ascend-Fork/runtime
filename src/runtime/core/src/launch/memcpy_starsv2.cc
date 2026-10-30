@@ -147,7 +147,8 @@ rtError_t Memcpy2DAsync(
 }
 
 rtError_t MemcopyBatchAsync(
-    AsyncDmaBatchInfo& batchInfo, uint64_t* const realCnt, uint64_t* const realSize, Stream* const stm)
+    AsyncDmaBatchInfo& batchInfo, uint64_t* const realCnt, uint64_t* const realSize, Stream* const stm,
+    const MemcpyBatchTaskParamsInput* const params)
 {
     rtError_t error = CheckTaskCanSend(stm);
     ERROR_RETURN_MSG_INNER(
@@ -170,7 +171,7 @@ rtError_t MemcopyBatchAsync(
     pos = taskAsyncBatch->id;
     dstStm = taskAsyncBatch->stream;
     ScopeGuard tskErrRecycle(errRecycle);
-    error = MemcpyAsyncBatchTaskInit(taskAsyncBatch, batchInfo);
+    error = MemcpyAsyncBatchTaskInit(taskAsyncBatch, batchInfo, params);
     taskAsyncBatch->u.memcpyAsyncTaskInfo.copyMethod = static_cast<uint8_t>(rtAsyncCpyMethod::RT_ASYNC_CPY_BATCH);
     ERROR_RETURN_MSG_INNER(
         error, "Init taskAsyncBatch task failed, stream_id=%d, retCode=%#x.", stm->Id_(), static_cast<uint32_t>(error));
@@ -310,7 +311,8 @@ rtError_t MemcopyAsync(
 }
 
 static rtError_t SendMemsetAsyncTask(
-    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
+    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount,
+    const uint32_t elementSize)
 {
     Stream* dstStm = stm;
     TaskInfo* memsetTask = nullptr;
@@ -333,7 +335,7 @@ static rtError_t SendMemsetAsyncTask(
     pos = memsetTask->id;
     dstStm = memsetTask->stream;
     ScopeGuard tskErrRecycle(errRecycle);
-    MemsetAsyncTaskInit(memsetTask, ptr, destMax, fillVal, fillCount);
+    MemsetAsyncTaskInit(memsetTask, ptr, destMax, fillVal, fillCount, elementSize);
 
     error = DavidSendTask(memsetTask, dstStm);
     ERROR_RETURN_MSG_INNER(
@@ -350,7 +352,8 @@ static rtError_t SendMemsetAsyncTask(
 }
 
 rtError_t DevMemSetAsyncByMemset(
-    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
+    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount,
+    const uint32_t elementSize)
 {
     // SQE 的 lengthMove 为 32bit 字段（单次上限 4GB-1），取能放入 u32 的最大 2 的幂（2GB）：
     // 保证分块后各块起始地址继承首地址的对齐（如 4 字节对齐），且整块长度为 4 的倍数，
@@ -360,7 +363,7 @@ rtError_t DevMemSetAsyncByMemset(
     do {
         const uint64_t chunkSize = std::min(fillCount - doneSize, MEMSET_SQE_MAX_LEN);
         const rtError_t error = SendMemsetAsyncTask(
-            stm, RtPtrToPtr<char_t*, void*>(ptr) + doneSize, destMax - doneSize, fillVal, chunkSize);
+            stm, RtPtrToPtr<char_t*, void*>(ptr) + doneSize, destMax - doneSize, fillVal, chunkSize, elementSize);
         ERROR_RETURN_MSG_INNER(
             error, "Memset chunk submit failed, stream_id=%d, offset=%" PRIu64 ", size=%" PRIu64 ", retCode=%#x.",
             stm->Id_(), doneSize, chunkSize, static_cast<uint32_t>(error));

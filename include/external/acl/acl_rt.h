@@ -333,6 +333,12 @@ typedef struct aclrtMemLocation {
     aclrtMemLocationType type;
 } aclrtMemLocation;
 
+typedef struct {
+    aclrtMemLocation dstLoc;
+    aclrtMemLocation srcLoc;
+    uint8_t rsv[16];
+} aclrtMemcpyBatchAttr;
+
 typedef struct aclrtPtrAttributes {
     aclrtMemLocation location;
     uint32_t pageSize;
@@ -412,6 +418,26 @@ typedef void* aclrtArgsHandle;
 typedef void* aclrtParamHandle;
 
 typedef void* aclmdlRI;
+
+typedef void* aclmdlRICondHandle;
+
+typedef enum {
+    ACL_MODEL_RI_COND_HANDLE_ASSIGN_DEFAULT = 1,
+} aclmdlRICondHandleFlag;
+
+typedef enum {
+    ACL_MODEL_RI_COND_TYPE_IF = 0,
+    ACL_MODEL_RI_COND_TYPE_WHILE = 1,
+    ACL_MODEL_RI_COND_TYPE_SWITCH = 2,
+} aclmdlRICondTaskType;
+
+typedef struct tagAclmdlRICondTaskParams {
+    aclmdlRICondHandle handle; // condition handle
+    aclmdlRICondTaskType type; // condition type
+    uint32_t size; // means the size of modelRIArray, 1 or 2 for if condition, 1 for while condition, greater than 0 for
+                   // switch condition
+    aclmdlRI* modelRIArray; // sub acl graph, output parameter.
+} aclmdlRICondTaskParams;
 
 typedef enum {
     ACL_MDL_ATTR_SCH_MODE_INT32 = 0,
@@ -611,6 +637,14 @@ typedef enum aclmdlRITaskType {
     ACL_MODEL_RI_TASK_EVENT_RESET,
     ACL_MODEL_RI_TASK_VALUE_WRITE,
     ACL_MODEL_RI_TASK_VALUE_WAIT,
+    ACL_MODEL_RI_TASK_MEMCPY,
+    ACL_MODEL_RI_TASK_MEMCPY_2D,
+    ACL_MODEL_RI_TASK_MEMSET,
+    ACL_MODEL_RI_TASK_MEMCPY_BATCH,
+    ACL_MODEL_RI_TASK_HOST,
+    ACL_MODEL_RI_TASK_COND,
+    ACL_MODEL_RI_TASK_NOTIFY_RECORD,
+    ACL_MODEL_RI_TASK_NOTIFY_WAIT,
 } aclmdlRITaskType;
 
 typedef struct aclmdlRIKernelTaskParams {
@@ -652,6 +686,55 @@ typedef struct aclmdlRIValueWaitTaskParams {
     uint32_t flag;
 } aclmdlRIValueWaitTaskParams;
 
+typedef struct aclmdlRIMemcpyTaskParams {
+    void* dst;
+    void* src;
+    size_t count;
+    aclrtMemcpyKind kind;
+} aclmdlRIMemcpyTaskParams;
+
+typedef struct aclmdlRIMemsetTaskParams {
+    void* devPtr;
+    int32_t value;
+    size_t count;
+    uint32_t elementSize; // only support 1 or 4
+} aclmdlRIMemsetTaskParams;
+
+typedef struct aclmdlRIMemcpy2DTaskParams {
+    void* dst;
+    void* src;
+    size_t dpitch;
+    size_t spitch;
+    size_t width;
+    size_t height;
+    aclrtMemcpyKind kind;
+} aclmdlRIMemcpy2DTaskParams;
+
+typedef struct aclmdlRIMemcpyBatchTaskParams {
+    void** dsts;
+    size_t* destMaxs;
+    void** srcs;
+    size_t* sizes;
+    size_t numBatches;
+    aclrtMemcpyBatchAttr* attrs;
+    size_t* attrsIndexes;
+    size_t numAttrs;
+} aclmdlRIMemcpyBatchTaskParams;
+
+typedef struct aclmdlRIHostTaskParams {
+    aclrtHostFunc fn;
+    void* userData;
+} aclmdlRIHostTaskParams;
+
+typedef struct aclmdlRINotifyRecordTaskParams {
+    aclrtNotify notify;
+} aclmdlRINotifyRecordTaskParams;
+
+typedef struct aclmdlRINotifyWaitTaskParams {
+    aclrtNotify notify;
+    uint32_t timeout;
+} aclmdlRINotifyWaitTaskParams;
+
 typedef struct aclmdlRITaskParams {
     aclmdlRITaskType type;
     uint32_t rsv0[3];
@@ -668,6 +751,14 @@ typedef struct aclmdlRITaskParams {
         struct aclmdlRIEventResetTaskParams eventResetTaskParams;
         struct aclmdlRIValueWriteTaskParams valueWriteTaskParams;
         struct aclmdlRIValueWaitTaskParams valueWaitTaskParams;
+        struct aclmdlRIMemcpyTaskParams memcpyTaskParams;
+        struct aclmdlRIMemcpy2DTaskParams memcpy2DTaskParams;
+        struct aclmdlRIMemsetTaskParams memsetTaskParams;
+        struct aclmdlRIMemcpyBatchTaskParams memcpyBatchTaskParams;
+        struct aclmdlRIHostTaskParams hostTaskParams;
+        struct tagAclmdlRICondTaskParams condTaskParams;
+        struct aclmdlRINotifyRecordTaskParams notifyRecordTaskParams;
+        struct aclmdlRINotifyWaitTaskParams notifyWaitTaskParams;
     };
 } aclmdlRITaskParams;
 
@@ -768,12 +859,6 @@ typedef struct {
 #define ACL_RT_DEVS_TOPOLOGY_SYS 0x10ULL
 #define ACL_RT_DEVS_TOPOLOGY_SIO 0x20ULL
 #define ACL_RT_DEVS_TOPOLOGY_HCCS_SW 0x40ULL
-
-typedef struct {
-    aclrtMemLocation dstLoc;
-    aclrtMemLocation srcLoc;
-    uint8_t rsv[16];
-} aclrtMemcpyBatchAttr;
 
 typedef struct {
     uint32_t addrOffset;
@@ -1080,26 +1165,6 @@ typedef enum aclrtAtomicOperation {
     ACL_RT_ATOMIC_OPERATION_SIMD_SCALAR_CAS = 43,
     ACL_RT_ATOMIC_OPERATION_SIMD_SCALAR_EXCH = 44,
 } aclrtAtomicOperation;
-
-typedef void* aclmdlRICondHandle;
-
-typedef enum {
-    ACL_MODEL_RI_COND_HANDLE_ASSIGN_DEFAULT = 1,
-} aclmdlRICondHandleFlag;
-
-typedef enum {
-    ACL_MODEL_RI_COND_TYPE_IF = 0,
-    ACL_MODEL_RI_COND_TYPE_WHILE = 1,
-    ACL_MODEL_RI_COND_TYPE_SWITCH = 2,
-} aclmdlRICondTaskType;
-
-typedef struct tagAclmdlRICondTaskParams {
-    aclmdlRICondHandle handle; // condition handle
-    aclmdlRICondTaskType type; // condition type
-    uint32_t size; // means the size of modelRIArray, 1 or 2 for if condition, 1 for while condition, greater than 0 for
-                   // switch condition
-    aclmdlRI* modelRIArray; // sub acl graph, output parameter.
-} aclmdlRICondTaskParams;
 
 /**
  * @ingroup AscendCL

@@ -1309,6 +1309,30 @@ TEST_F(UTEST_ACL_compatibility_enum_check, aclmdlRITaskType)
 
     value = (aclmdlRITaskType)6;
     EXPECT_EQ(value, ACL_MODEL_RI_TASK_VALUE_WAIT);
+
+    value = (aclmdlRITaskType)7;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_MEMCPY);
+
+    value = (aclmdlRITaskType)8;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_MEMCPY_2D);
+
+    value = (aclmdlRITaskType)9;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_MEMSET);
+
+    value = (aclmdlRITaskType)10;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_MEMCPY_BATCH);
+
+    value = (aclmdlRITaskType)11;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_HOST);
+
+    value = (aclmdlRITaskType)12;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_COND);
+
+    value = (aclmdlRITaskType)13;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_NOTIFY_RECORD);
+
+    value = (aclmdlRITaskType)14;
+    EXPECT_EQ(value, ACL_MODEL_RI_TASK_NOTIFY_WAIT);
 }
 
 TEST_F(UTEST_ACL_compatibility_enum_check, aclrtMemLinkType)

@@ -26,6 +26,7 @@
 #include "ipc_event.hpp"
 #include "logic_sq.hpp"
 #include "logic_sq_manage.hpp"
+#include "memset_common.h"
 
 #include <cstdint>
 
@@ -316,7 +317,160 @@ rtError_t ConvertAsyncDmaBatch(TaskInfo* const taskInfo, AsyncDmaBatchInfo& batc
     return RT_ERROR_NONE;
 }
 
-rtError_t MemcpyAsyncBatchTaskInit(TaskInfo* const taskInfo, AsyncDmaBatchInfo& batchInfo)
+static void ReleaseMemcpyBatchTaskParams(MemcpyBatchTaskParamsInfo* const params)
+{
+    if (params == nullptr) {
+        return;
+    }
+    DELETE_A(params->dsts);
+    DELETE_A(params->destMaxs);
+    DELETE_A(params->srcs);
+    DELETE_A(params->sizes);
+    DELETE_A(params->attrs);
+    DELETE_A(params->attrsIndexes);
+    delete params;
+}
+
+static rtError_t AllocMemcpyBatchTaskParamArrays(MemcpyBatchTaskParamsInfo* const params)
+{
+    const size_t count = params->numBatches;
+    const size_t numAttrs = params->numAttrs;
+    typedef void* MemcpyDataPtr;
+    // 四个数组按相同下标共同描述一条子拷贝，长度均为当前 task 的 count。
+    params->dsts = new (std::nothrow) MemcpyDataPtr[count];
+    params->destMaxs = new (std::nothrow) size_t[count];
+    params->srcs = new (std::nothrow) MemcpyDataPtr[count];
+    params->sizes = new (std::nothrow) size_t[count];
+    if ((params->dsts == nullptr) || (params->destMaxs == nullptr) || (params->srcs == nullptr) ||
+        (params->sizes == nullptr)) {
+        RT_LOG(RT_LOG_ERROR, "Failed to allocate memcpy batch task parameter arrays, count=%zu.", count);
+        return RT_ERROR_MEMORY_ALLOCATION;
+    }
+    if (numAttrs != 0U) {
+        // 每组属性与一个生效起点对应，两个数组的长度均为 numAttrs。
+        params->attrs = new (std::nothrow) rtMemcpyBatchAttr[numAttrs];
+        params->attrsIndexes = new (std::nothrow) size_t[numAttrs];
+        if ((params->attrs == nullptr) || (params->attrsIndexes == nullptr)) {
+            RT_LOG(RT_LOG_ERROR, "Failed to allocate memcpy batch task attribute arrays, numAttrs=%zu.", numAttrs);
+            return RT_ERROR_MEMORY_ALLOCATION;
+        }
+    }
+    return RT_ERROR_NONE;
+}
+
+static rtError_t CopyMemcpyBatchTaskParams(
+    const AsyncDmaBatchInfo& batchInfo, const MemcpyBatchTaskParamsInput* const input, const size_t firstIndex,
+    const size_t firstAttr, const uint64_t completed, const uint64_t partialSize,
+    MemcpyBatchTaskParamsInfo* const params)
+{
+    const size_t count = params->numBatches;
+    const size_t numAttrs = params->numAttrs;
+    // 工作数组已经指向本轮起点，直接保存前 count 个目的地址；只复制地址值，不复制业务数据。
+    errno_t ret = memcpy_s(params->dsts, count * sizeof(void*), batchInfo.dsts, count * sizeof(void*));
+    if (ret != EOK) {
+        return RT_ERROR_SEC_HANDLE;
+    }
+    // 源地址也从本轮工作数组读取，保证与目的地址逐项对应，并保留前序转换产生的地址偏移。
+    ret = memcpy_s(params->srcs, count * sizeof(void*), batchInfo.srcs, count * sizeof(void*));
+    if (ret != EOK) {
+        return RT_ERROR_SEC_HANDLE;
+    }
+    // 例：某条子拷贝原目的地址为 D，容量 512 字节、长度 300 字节，前序 task 承担其中 80 字节。
+    // 本轮目的地址为 D+80，offset=80，返回的 destMaxs=512-80=432。
+    // 本 task 若承担剩余全部字节，sizes=220；若只承担其中 100 字节，则 sizes=partialSize=100。
+    for (size_t i = 0U; i < count; ++i) {
+        // 如果一个子拷贝被分成两个task中去做的话，需要计算偏移,在本次拷贝中行把上一次任务已拷贝的去掉
+        const uint64_t offset = RtPtrToValue(batchInfo.dsts[i]) - RtPtrToValue(input->dsts[firstIndex + i]);
+        // 偏移不能超过原始容量，避免后续无符号减法得到错误的剩余容量。
+        COND_RETURN_ERROR(
+            offset > input->destMaxs[firstIndex + i], RT_ERROR_INVALID_VALUE,
+            "Memcpy batch task destination offset exceeds its capacity.");
+        // destMaxs 是从当前目的地址开始的可用容量，地址推进多少，原始容量就要扣减多少
+        params->destMaxs[i] = input->destMaxs[firstIndex + i] - static_cast<size_t>(offset);
+        // 如果改子拷贝是分成多个任务去拷贝，那就按照实际拷贝大小，记录实际拷贝的大小
+        params->sizes[i] = ((partialSize != 0U) && (i == completed)) ? static_cast<size_t>(partialSize) :
+                                                                       static_cast<size_t>(batchInfo.sizes[i]);
+    }
+    if (numAttrs != 0U) {
+        ret = memcpy_s(
+            params->attrs, numAttrs * sizeof(rtMemcpyBatchAttr), input->attrs + firstAttr,
+            numAttrs * sizeof(rtMemcpyBatchAttr));
+        if (ret != EOK) {
+            return RT_ERROR_SEC_HANDLE;
+        }
+        // 把原始参数属性下标更新本为本次task中实际的下标
+        // 第一组属性在当前 task 起点已经生效，其原始起点可能更早，统一将返回的生效起点设为 0。
+        params->attrsIndexes[0] = 0U;
+        // 后续属性的原始起点均在本 task 范围内，减去 firstIndex 即可换算为 task 内的下标。
+        // 例如 task 从原始下标 4 开始，后续属性从原始下标 6 生效，则返回下标 6 - 4 = 2。
+        for (size_t i = 1U; i < numAttrs; ++i) {
+            params->attrsIndexes[i] = input->attrsIndexes[firstAttr + i] - firstIndex;
+        }
+    }
+    return RT_ERROR_NONE;
+}
+
+static rtError_t SaveMemcpyBatchTaskParams(
+    MemcpyAsyncTaskInfo* const taskInfo, const AsyncDmaBatchInfo& batchInfo,
+    const MemcpyBatchTaskParamsInput* const input)
+{
+    // input用户传入的原始参数；batchInfo 是本轮的工作数组，已按前序任务的转换结果推进地址和长度
+    // taskInfo 提供当前 task 的转换范围，用于保存当前 task 的查询参数
+    if (input == nullptr) {
+        return RT_ERROR_NONE;
+    }
+    // 已转换时取驱动返回的完整子拷贝条数
+    const uint64_t completed = taskInfo->dmaKernelConvertFlag ? taskInfo->ubDma.fixedCnt : batchInfo.count;
+    // 驱动可能还转换了下一条子拷贝的一部分
+    const uint64_t partialSize = taskInfo->dmaKernelConvertFlag ? taskInfo->ubDma.fixedSize : 0U;
+    COND_RETURN_ERROR(
+        (batchInfo.count > input->numBatches) || (completed > batchInfo.count) ||
+            ((partialSize != 0U) && ((completed == batchInfo.count) || (partialSize > batchInfo.sizes[completed]))),
+        RT_ERROR_INVALID_VALUE, "Invalid memcpy batch task range.");
+    // 部分转换的子拷贝也要在查询数组中占一项，因此在完整条数之外额外计一条。
+    const size_t count = static_cast<size_t>(completed + ((partialSize != 0U) ? 1U : 0U));
+    if (count == 0U) {
+        return RT_ERROR_NONE;
+    }
+    // batchInfo.count 表示进入本轮时剩余的子拷贝条数，总条数减去剩余条数即本轮首条子拷贝的原始下标
+    const size_t firstIndex = input->numBatches - static_cast<size_t>(batchInfo.count);
+    // firstAttr 是原始属性数组的下标
+    size_t firstAttr = 0U;
+    // 无属性时保留 0，后续无需申请和复制属性数组。
+    size_t numAttrs = 0U;
+    // 根据task承担哪些子拷贝，确定本次拷贝task中使用哪些属性，属性数量与子拷贝条数不同，一组属性可以供多条子拷贝共用
+    if (input->numAttrs != 0U) {
+        // 例：10 条子拷贝，attrs={A,B,C}，attrsIndexes={0,3,6}。
+        // 下标 0~2 使用 A，3~5 使用 B，6~9 使用 C；task 包含 4~7 时，只需保留 B、C。
+        // 下一组属性若已在本轮起点前或起点处生效，就继续向后查找，定位本轮首条拷贝使用的属性
+        while ((firstAttr + 1U < input->numAttrs) && (input->attrsIndexes[firstAttr + 1U] <= firstIndex)) {
+            ++firstAttr;
+        }
+        size_t endAttr = firstAttr + 1U;
+        while ((endAttr < input->numAttrs) && (input->attrsIndexes[endAttr] < firstIndex + count)) {
+            ++endAttr;
+        }
+        numAttrs = endAttr - firstAttr;
+    }
+    // 原始数组和工作数组不会由当前 task 持有，需要单独申请查询副本；{} 将成员指针初始化为空。
+    MemcpyBatchTaskParamsInfo* const params = new (std::nothrow) MemcpyBatchTaskParamsInfo{};
+    COND_RETURN_AND_MSG_OUTER(
+        params == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, sizeof(MemcpyBatchTaskParamsInfo), "new");
+    ScopeGuard paramsGuard([params]() { ReleaseMemcpyBatchTaskParams(params); });
+    params->numBatches = count;
+    params->numAttrs = numAttrs;
+    rtError_t error = AllocMemcpyBatchTaskParamArrays(params);
+    COND_RETURN_WITH_NOLOG(error != RT_ERROR_NONE, error);
+    error = CopyMemcpyBatchTaskParams(batchInfo, input, firstIndex, firstAttr, completed, partialSize, params);
+    COND_RETURN_WITH_NOLOG(error != RT_ERROR_NONE, error);
+    // 全部保存成功后交给 task 持有，Get 返回这些数组，任务回收时统一释放。
+    taskInfo->batchParams = params;
+    paramsGuard.ReleaseGuard();
+    return RT_ERROR_NONE;
+}
+
+rtError_t MemcpyAsyncBatchTaskInit(
+    TaskInfo* const taskInfo, AsyncDmaBatchInfo& batchInfo, const MemcpyBatchTaskParamsInput* const params)
 {
     rtError_t error = MemcpyAsyncTaskCommonInit(taskInfo);
     ERROR_RETURN_MSG_INNER(error, "MemcpyAsyncTaskCommonInit V3 failed, retCode=%#x.", error);
@@ -324,6 +478,8 @@ rtError_t MemcpyAsyncBatchTaskInit(TaskInfo* const taskInfo, AsyncDmaBatchInfo& 
     MemcpyAsyncTaskInfo* memcpyAsyncTaskInfo = &(taskInfo->u.memcpyAsyncTaskInfo);
 
     if (IsDavidUbDma(memcpyAsyncTaskInfo->copyType)) {
+        // fixedSize清零，避免保存参数时误判存在部分子拷贝
+        memcpyAsyncTaskInfo->ubDma.fixedSize = 0U;
         error = ConvertAsyncDmaBatch(taskInfo, batchInfo);
         ERROR_RETURN_MSG_INNER(error, "ConvertAsyncDmaBatch failed, retCode=%#x.", error);
         memcpyAsyncTaskInfo->dmaKernelConvertFlag = true;
@@ -331,6 +487,8 @@ rtError_t MemcpyAsyncBatchTaskInit(TaskInfo* const taskInfo, AsyncDmaBatchInfo& 
         // 除DavidUbDma之外的其他情况不处理
     }
 
+    error = SaveMemcpyBatchTaskParams(memcpyAsyncTaskInfo, batchInfo, params);
+    ERROR_RETURN_MSG_INNER(error, "Save memcpy batch task params failed, retCode=%#x.", error);
     return RT_ERROR_NONE;
 }
 
@@ -431,6 +589,8 @@ void StarsV2MemcpyAsyncTaskUnInit(TaskInfo* const taskInfo)
         delete memcpyAsyncTaskInfo->guardMemVec;
         memcpyAsyncTaskInfo->guardMemVec = nullptr;
     }
+    ReleaseMemcpyBatchTaskParams(memcpyAsyncTaskInfo->batchParams);
+    memcpyAsyncTaskInfo->batchParams = nullptr;
 
     COND_RETURN_VOID(driver == nullptr, "driver_ pointer NULL.");
     if (memcpyAsyncTaskInfo->dmaKernelConvertFlag) {
@@ -548,7 +708,8 @@ void ConstructDavidSqeForMemsetAsyncTask(TaskInfo* const taskInfo, void* const s
 }
 
 void MemsetAsyncTaskInit(
-    TaskInfo* const taskInfo, void* const ptr, const uint64_t destMax, const uint32_t val, const uint64_t cnt)
+    TaskInfo* const taskInfo, void* const ptr, const uint64_t destMax, const uint32_t val, const uint64_t cnt,
+    const uint32_t elementSize)
 {
     TaskCommonInfoInit(taskInfo);
 
@@ -558,8 +719,10 @@ void MemsetAsyncTaskInit(
     MemsetAsyncTaskInfo* memsetAsyncTaskInfo = &(taskInfo->u.memsetAsyncTaskInfo);
     memsetAsyncTaskInfo->targetPtr = ptr;
     memsetAsyncTaskInfo->targetSize = destMax;
-    memsetAsyncTaskInfo->fillValue = val;
+    memsetAsyncTaskInfo->fillValue = (elementSize == 1U) ? ExpandByteToU32(val) : val;
+    memsetAsyncTaskInfo->originalValue = static_cast<int32_t>(val);
     memsetAsyncTaskInfo->fillCount = cnt;
+    memsetAsyncTaskInfo->elementSize = elementSize;
 }
 #endif
 

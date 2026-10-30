@@ -12,6 +12,7 @@
 
 #include "driver.hpp"
 #include "stars.hpp"
+#include "rt_inner_task.h"
 #include "task_info.hpp"
 #include "hwts.hpp"
 
@@ -44,6 +45,7 @@ void ToCmdBodyForSetStreamModeTask(TaskInfo* taskInfo, rtCommand_t* const comman
 rtError_t CallbackLaunchTaskInit(
     TaskInfo* taskInfo, const rtCallback_t callBackFunction, void* const functionData, const bool isBlockFlag,
     const int32_t evtId);
+rtError_t GetHostTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
 void ToCmdBodyForCallbackLaunchTask(TaskInfo* taskInfo, rtCommand_t* const command);
 void FlipTaskInit(
     TaskInfo* taskInfo, const uint16_t flipNum, const uint16_t streamId = 0U, const uint16_t subType = 0U);

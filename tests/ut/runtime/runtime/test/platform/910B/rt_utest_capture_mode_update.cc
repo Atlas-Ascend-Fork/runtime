@@ -85,6 +85,64 @@ public:
     uint32_t binary_[32];
 };
 
+TEST_F(CloudV2CaptureModelUpdateTest, rtModelTaskGetParamsActualMemcpyParams)
+{
+    rtContext_t context = nullptr;
+    ASSERT_EQ(rtCtxCreate(&context, 0, 0), RT_ERROR_NONE);
+    rtStream_t stream = nullptr;
+    ASSERT_EQ(rtStreamCreate(&stream, 0), RT_ERROR_NONE);
+    void* src = nullptr;
+    void* dst = nullptr;
+    ASSERT_EQ(rtMalloc(&src, 128U, RT_MEMORY_HBM, DEFAULT_MODULEID), RT_ERROR_NONE);
+    ASSERT_EQ(rtMalloc(&dst, 128U, RT_MEMORY_HBM, DEFAULT_MODULEID), RT_ERROR_NONE);
+    ASSERT_EQ(rtStreamBeginCapture(stream, RT_STREAM_CAPTURE_MODE_GLOBAL), RT_ERROR_NONE);
+    ASSERT_EQ(rtMemcpyAsync(dst, 128U, src, 64U, RT_MEMCPY_DEFAULT, stream), RT_ERROR_NONE);
+    ASSERT_EQ(rtMemcpy2dAsync(dst, 32U, src, 64U, 16U, 2U, RT_MEMCPY_DEVICE_TO_DEVICE, stream), RT_ERROR_NONE);
+    rtModel_t model = nullptr;
+    ASSERT_EQ(rtStreamEndCapture(stream, &model), RT_ERROR_NONE);
+    uint32_t numStreams = 1U;
+    rtStream_t streams[1] = {};
+    ASSERT_EQ(rtModelGetStreams(model, streams, &numStreams), RT_ERROR_NONE);
+    uint32_t numTasks = 0U;
+    ASSERT_EQ(rtStreamGetTasks(streams[0], nullptr, &numTasks), RT_ERROR_NONE);
+    std::vector<rtTask_t> tasks(numTasks);
+    ASSERT_EQ(rtStreamGetTasks(streams[0], tasks.data(), &numTasks), RT_ERROR_NONE);
+    bool found = false;
+    uint32_t copy2DCount = 0U;
+    for (const rtTask_t task : tasks) {
+        if (static_cast<TaskInfo*>(task)->type != TS_TASK_TYPE_MEMCPY) {
+            continue;
+        }
+        rtTaskParams queried = {};
+        ASSERT_EQ(rtModelTaskGetParams(task, &queried), RT_ERROR_NONE);
+        if (queried.type == RT_TASK_MEMCPY_2D) {
+            EXPECT_EQ(queried.memcpy2DTaskParams.src, static_cast<char*>(src) + copy2DCount * 64U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.dst, static_cast<char*>(dst) + copy2DCount * 32U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.spitch, 64U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.dpitch, 32U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.width, 16U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.height, 2U);
+            EXPECT_EQ(queried.memcpy2DTaskParams.kind, RT_MEMCPY_KIND_DEVICE_TO_DEVICE);
+            ++copy2DCount;
+            continue;
+        }
+        EXPECT_EQ(queried.type, RT_TASK_MEMCPY);
+        EXPECT_EQ(queried.memcpyTaskParams.src, src);
+        EXPECT_EQ(queried.memcpyTaskParams.dst, dst);
+        EXPECT_EQ(queried.memcpyTaskParams.count, 64U);
+        EXPECT_EQ(queried.memcpyTaskParams.kind, RT_MEMCPY_KIND_DEVICE_TO_DEVICE);
+        EXPECT_NE(static_cast<TaskInfo*>(task)->u.memcpyAsyncTaskInfo.copyKind, RT_MEMCPY_DEFAULT);
+        found = true;
+    }
+    EXPECT_TRUE(found);
+    EXPECT_EQ(copy2DCount, 2U);
+    EXPECT_EQ(rtModelDestroy(model), RT_ERROR_NONE);
+    EXPECT_EQ(rtStreamDestroy(stream), RT_ERROR_NONE);
+    EXPECT_EQ(rtFree(src), RT_ERROR_NONE);
+    EXPECT_EQ(rtFree(dst), RT_ERROR_NONE);
+    EXPECT_EQ(rtCtxDestroy(context), RT_ERROR_NONE);
+}
+
 TEST_F(CloudV2CaptureModelUpdateTest, rtModelTaskGetParams_Success)
 {
     rtContext_t ctx;

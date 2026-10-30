@@ -361,6 +361,36 @@ TEST_F(UTEST_ACL_Modelri, TestaclmdlRITaskGetParams)
     EXPECT_EQ(ret, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
 }
 
+TEST_F(UTEST_ACL_Modelri, TestaclmdlRITaskGetParamsNewTaskPayload)
+{
+    aclmdlRITask task = reinterpret_cast<aclmdlRITask>(0x01);
+    aclmdlRITaskParams params = {};
+    void* const dst = reinterpret_cast<void*>(0x1000U);
+    void* const src = reinterpret_cast<void*>(0x2000U);
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), rtModelTaskGetParams(task, _))
+        .WillOnce(Invoke([dst, src](rtTask_t, rtTaskParams* const runtimeParams) {
+            runtimeParams->type = RT_TASK_MEMCPY_2D;
+            runtimeParams->memcpy2DTaskParams.dst = dst;
+            runtimeParams->memcpy2DTaskParams.src = src;
+            runtimeParams->memcpy2DTaskParams.dpitch = 128U;
+            runtimeParams->memcpy2DTaskParams.spitch = 256U;
+            runtimeParams->memcpy2DTaskParams.width = 32U;
+            runtimeParams->memcpy2DTaskParams.height = 4U;
+            runtimeParams->memcpy2DTaskParams.kind = RT_MEMCPY_KIND_HOST_TO_DEVICE;
+            return RT_ERROR_NONE;
+        }));
+
+    EXPECT_EQ(aclmdlRITaskGetParams(task, &params), ACL_SUCCESS);
+    EXPECT_EQ(params.type, ACL_MODEL_RI_TASK_MEMCPY_2D);
+    EXPECT_EQ(params.memcpy2DTaskParams.dst, dst);
+    EXPECT_EQ(params.memcpy2DTaskParams.src, src);
+    EXPECT_EQ(params.memcpy2DTaskParams.dpitch, 128U);
+    EXPECT_EQ(params.memcpy2DTaskParams.spitch, 256U);
+    EXPECT_EQ(params.memcpy2DTaskParams.width, 32U);
+    EXPECT_EQ(params.memcpy2DTaskParams.height, 4U);
+    EXPECT_EQ(params.memcpy2DTaskParams.kind, ACL_MEMCPY_HOST_TO_DEVICE);
+}
+
 TEST_F(UTEST_ACL_Modelri, TestaclmdlRITaskSetParams)
 {
     aclmdlRITask task = (aclmdlRITask)0x01;

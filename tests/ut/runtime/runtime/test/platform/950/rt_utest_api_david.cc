@@ -69,6 +69,7 @@
 #include "model_c.hpp"
 #include "event_c.hpp"
 #include "cond_c.hpp"
+#include "cond_handle.hpp"
 #include "capture_adapt.hpp"
 #include "rt_unwrap.h"
 #include "common_task.h"
@@ -6870,15 +6871,18 @@ struct MemsetChunkRecord {
     void* targetPtr;
     uint64_t targetSize;
     uint64_t fillCount;
+    rtMemsetTaskParams params;
 };
 std::vector<MemsetChunkRecord> g_memsetChunkRecords;
 uint32_t g_memsetSendFailAt = 0U;
 
 rtError_t DavidSendTaskMemsetCapture(TaskInfo* taskInfo, Stream* const stm)
 {
+    rtTaskParams queried = {};
+    EXPECT_EQ(GetMemsetTaskParams(taskInfo, &queried), RT_ERROR_NONE);
     g_memsetChunkRecords.push_back(
         {taskInfo->u.memsetAsyncTaskInfo.targetPtr, taskInfo->u.memsetAsyncTaskInfo.targetSize,
-         taskInfo->u.memsetAsyncTaskInfo.fillCount});
+         taskInfo->u.memsetAsyncTaskInfo.fillCount, queried.memsetTaskParams});
     if ((g_memsetSendFailAt != 0U) && (g_memsetChunkRecords.size() == g_memsetSendFailAt)) {
         return RT_ERROR_DRV_ERR;
     }
@@ -6912,6 +6916,21 @@ TEST_F(ApiDavidTest, DevMemSetAsyncByMemset_ChunkSplit)
     EXPECT_EQ(error, RT_ERROR_NONE);
     ASSERT_EQ(g_memsetChunkRecords.size(), 1U);
     EXPECT_EQ(g_memsetChunkRecords[0].fillCount, 0U);
+
+    for (const uint32_t elementSize : {1U, 4U}) {
+        g_memsetChunkRecords.clear();
+        error = DevMemSetAsyncByMemset(
+            stream_, basePtr, MEMSET_CHUNK_MAX_LEN + 4U, 0x1234565AU, MEMSET_CHUNK_MAX_LEN + 4U, elementSize);
+        ASSERT_EQ(error, RT_ERROR_NONE);
+        ASSERT_EQ(g_memsetChunkRecords.size(), 2U);
+        EXPECT_EQ(g_memsetChunkRecords[0].params.count, MEMSET_CHUNK_MAX_LEN / elementSize);
+        EXPECT_EQ(g_memsetChunkRecords[1].params.count, 4U / elementSize);
+        for (const auto& chunk : g_memsetChunkRecords) {
+            EXPECT_EQ(chunk.params.devPtr, chunk.targetPtr);
+            EXPECT_EQ(chunk.params.value, 0x1234565A);
+            EXPECT_EQ(chunk.params.elementSize, elementSize);
+        }
+    }
 
     g_memsetChunkRecords.clear();
     g_memsetSendFailAt = 2U;
@@ -11756,6 +11775,248 @@ TEST_F(ApiDavidTest, TestTaskGetParamsStarsV2Case)
 
     error = rtEventDestroy(event);
     EXPECT_EQ(error, RT_ERROR_NONE);
+}
+
+namespace {
+struct RiQueryTaskType {
+    tsTaskType_t type;
+    rtAsyncCpyMethod copyMethod;
+};
+
+constexpr RiQueryTaskType kRiQueryTaskTypes[] = {
+    {TS_TASK_TYPE_MEMCPY, rtAsyncCpyMethod::RT_ASYNC_CPY},
+    {TS_TASK_TYPE_MEMCPY, rtAsyncCpyMethod::RT_ASYNC_CPY_2D},
+    {TS_TASK_TYPE_MEMSET, rtAsyncCpyMethod::RT_ASYNC_CPY},
+    {TS_TASK_TYPE_MEMCPY, rtAsyncCpyMethod::RT_ASYNC_CPY_BATCH},
+    {TS_TASK_TYPE_HOSTFUNC_CALLBACK, rtAsyncCpyMethod::RT_ASYNC_CPY},
+    {TS_TASK_TYPE_CAPTURE_CONDITION, rtAsyncCpyMethod::RT_ASYNC_CPY},
+    {TS_TASK_TYPE_NOTIFY_RECORD, rtAsyncCpyMethod::RT_ASYNC_CPY},
+    {TS_TASK_TYPE_NOTIFY_WAIT, rtAsyncCpyMethod::RT_ASYNC_CPY}};
+} // namespace
+
+class ApiDavidTaskGetParamsTest : public ApiDavidTest {
+protected:
+    void SetUp() override
+    {
+        ApiDavidTest::SetUp();
+        ASSERT_NE(stream_, nullptr);
+        ASSERT_EQ(stream_->Context_()->ModelCreate(&model_, RT_MODEL_CAPTURE_MODEL), RT_ERROR_NONE);
+        stream_->SetModel(model_);
+        MOCKER(CheckCaptureModelSupportSoftwareSq).stubs().will(returnValue(RT_ERROR_NONE));
+    }
+
+    void TearDown() override
+    {
+        if (model_ != nullptr) {
+            stream_->SetModel(nullptr);
+            EXPECT_EQ(stream_->Context_()->ModelDestroy(model_), RT_ERROR_NONE);
+        }
+        ApiDavidTest::TearDown();
+    }
+
+    TaskInfo MakeTask(const tsTaskType_t type, const char_t* const name = "NOTIFY_RECORD")
+    {
+        TaskInfo task{};
+        task.stream = stream_;
+        task.taskOwner = static_cast<uint8_t>(TaskOwner::RT_TASK_USER);
+        task.type = type;
+        task.typeName = name;
+        return task;
+    }
+
+    rtError_t GetParams(TaskInfo& task, rtTaskParams& params) { return apiImpl_.TaskGetParams(&task, &params); }
+
+    Model* model_ = nullptr;
+    ApiImplDavid apiImpl_;
+};
+
+TEST_F(ApiDavidTaskGetParamsTest, TestTaskGetParamsNewTaskTypes)
+{
+    rtTaskParams params = {};
+    TaskInfo task = MakeTask(TS_TASK_TYPE_MEMCPY);
+    task.u.memcpyAsyncTaskInfo.copyMethod = static_cast<uint8_t>(rtAsyncCpyMethod::RT_ASYNC_CPY);
+    task.u.memcpyAsyncTaskInfo.destPtr = reinterpret_cast<void*>(0x1000U);
+    task.u.memcpyAsyncTaskInfo.src = reinterpret_cast<void*>(0x2040U);
+    task.u.memcpyAsyncTaskInfo.srcPtr = reinterpret_cast<void*>(0x2000U);
+    task.u.memcpyAsyncTaskInfo.originalDes = reinterpret_cast<void*>(0x3000U);
+    task.u.memcpyAsyncTaskInfo.size = 8U;
+    task.u.memcpyAsyncTaskInfo.copySize = 64U;
+    task.u.memcpyAsyncTaskInfo.copyKind = RT_MEMCPY_DEVICE_TO_HOST;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_MEMCPY);
+    EXPECT_EQ(params.memcpyTaskParams.dst, reinterpret_cast<void*>(0x1000U));
+    EXPECT_EQ(params.memcpyTaskParams.src, reinterpret_cast<void*>(0x2040U));
+    EXPECT_EQ(params.memcpyTaskParams.count, 8U);
+    EXPECT_EQ(params.memcpyTaskParams.kind, RT_MEMCPY_KIND_DEVICE_TO_HOST);
+
+    task = MakeTask(TS_TASK_TYPE_MEMCPY);
+    task.u.memcpyAsyncTaskInfo.copyMethod = static_cast<uint8_t>(rtAsyncCpyMethod::RT_ASYNC_CPY_2D);
+    task.u.memcpyAsyncTaskInfo.destPtr = reinterpret_cast<void*>(0x3000U);
+    task.u.memcpyAsyncTaskInfo.src = reinterpret_cast<void*>(0x4000U);
+    task.u.memcpyAsyncTaskInfo.dstPitch = 128U;
+    task.u.memcpyAsyncTaskInfo.srcPitch = 256U;
+    task.u.memcpyAsyncTaskInfo.width = 32U;
+    task.u.memcpyAsyncTaskInfo.height = 4U;
+    task.u.memcpyAsyncTaskInfo.fixedSize = 32U;
+    task.u.memcpyAsyncTaskInfo.copyType = RT_MEMCPY_DIR_D2D_SDMA;
+    task.u.memcpyAsyncTaskInfo.copyKind = RT_MEMCPY_DEVICE_TO_DEVICE;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_MEMCPY_2D);
+    EXPECT_EQ(params.memcpy2DTaskParams.dst, reinterpret_cast<void*>(0x3000U));
+    EXPECT_EQ(params.memcpy2DTaskParams.src, reinterpret_cast<void*>(0x4000U));
+    EXPECT_EQ(params.memcpy2DTaskParams.dpitch, 128U);
+    EXPECT_EQ(params.memcpy2DTaskParams.spitch, 256U);
+    EXPECT_EQ(params.memcpy2DTaskParams.width, 32U);
+    EXPECT_EQ(params.memcpy2DTaskParams.height, 4U);
+    EXPECT_EQ(params.memcpy2DTaskParams.kind, RT_MEMCPY_KIND_DEVICE_TO_DEVICE);
+
+    void* batchDsts[2] = {reinterpret_cast<void*>(0x5000U), reinterpret_cast<void*>(0x6000U)};
+    size_t batchDestMaxs[2] = {100U, 200U};
+    void* batchSrcs[2] = {reinterpret_cast<void*>(0x7000U), reinterpret_cast<void*>(0x8000U)};
+    size_t batchSizes[2] = {50U, 150U};
+    rtMemcpyBatchAttr batchAttrs[1] = {};
+    size_t batchAttrsIndexes[1] = {0U};
+    MemcpyBatchTaskParamsInfo batchParams = {batchDsts, batchDestMaxs, batchSrcs,         batchSizes,
+                                             2U,        batchAttrs,    batchAttrsIndexes, 1U};
+    task = MakeTask(TS_TASK_TYPE_MEMCPY);
+    task.u.memcpyAsyncTaskInfo.copyMethod = static_cast<uint8_t>(rtAsyncCpyMethod::RT_ASYNC_CPY_BATCH);
+    task.u.memcpyAsyncTaskInfo.batchParams = &batchParams;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_MEMCPY_BATCH);
+    EXPECT_EQ(params.memcpyBatchTaskParams.dsts, batchDsts);
+    EXPECT_EQ(params.memcpyBatchTaskParams.destMaxs, batchDestMaxs);
+    EXPECT_EQ(params.memcpyBatchTaskParams.srcs, batchSrcs);
+    EXPECT_EQ(params.memcpyBatchTaskParams.sizes, batchSizes);
+    EXPECT_EQ(params.memcpyBatchTaskParams.numBatches, 2U);
+    EXPECT_EQ(params.memcpyBatchTaskParams.attrs, batchAttrs);
+    EXPECT_EQ(params.memcpyBatchTaskParams.attrsIndexes, batchAttrsIndexes);
+    EXPECT_EQ(params.memcpyBatchTaskParams.numAttrs, 1U);
+
+    task = MakeTask(TS_TASK_TYPE_MEMSET);
+    task.u.memsetAsyncTaskInfo.targetPtr = reinterpret_cast<void*>(0x9000U);
+    task.u.memsetAsyncTaskInfo.fillValue = 0x5A5A5A5AU;
+    task.u.memsetAsyncTaskInfo.originalValue = 0x1234565A;
+    task.u.memsetAsyncTaskInfo.fillCount = 64U;
+    task.u.memsetAsyncTaskInfo.elementSize = 1U;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_MEMSET);
+    EXPECT_EQ(params.memsetTaskParams.devPtr, reinterpret_cast<void*>(0x9000U));
+    EXPECT_EQ(params.memsetTaskParams.value, 0x1234565A);
+    EXPECT_EQ(params.memsetTaskParams.count, 64U);
+    EXPECT_EQ(params.memsetTaskParams.elementSize, 1U);
+
+    rtCallback_t callback = [](void*) {};
+    void* const userData = reinterpret_cast<void*>(0xA000U);
+    task = MakeTask(TS_TASK_TYPE_HOSTFUNC_CALLBACK);
+    task.u.callbackLaunchTask.callBackFunc = callback;
+    task.u.callbackLaunchTask.fnData = userData;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_HOST);
+    EXPECT_EQ(params.hostTaskParams.fn, callback);
+    EXPECT_EQ(params.hostTaskParams.userData, userData);
+
+    CondHandle condHandle(model_, 0U, static_cast<rtCondHandleFlag_t>(0));
+    InitEmbeddedInnerHandle(&condHandle);
+    condHandle.SetCondType(RT_COND_TASK_TYPE_IF);
+    condHandle.SetCondSize(2U);
+    rtModel_t subModels[2] = {reinterpret_cast<rtModel_t>(0xB000U), reinterpret_cast<rtModel_t>(0xC000U)};
+    task = MakeTask(TS_TASK_TYPE_CAPTURE_CONDITION);
+    task.u.captureConditionTask.condHandle = &condHandle;
+    task.u.captureConditionTask.modelRIArray = subModels;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_COND);
+    EXPECT_EQ(params.condTaskParams.handle, condHandle.GetInnerHandle());
+    EXPECT_NE(params.condTaskParams.handle, reinterpret_cast<rtCondHandle_t>(&condHandle));
+    EXPECT_EQ(rt_ut::UnwrapOrNull<CondHandle>(params.condTaskParams.handle), &condHandle);
+    EXPECT_EQ(params.condTaskParams.type, RT_COND_TASK_TYPE_IF);
+    EXPECT_EQ(params.condTaskParams.size, 2U);
+    EXPECT_EQ(params.condTaskParams.modelRIArray, subModels);
+    ResetEmbeddedInnerHandle(&condHandle);
+
+    Notify notify(0U, 0U);
+    InitEmbeddedInnerHandle(&notify);
+    task = MakeTask(TS_TASK_TYPE_NOTIFY_RECORD);
+    task.u.notifyrecordTask.uPtr.notify = &notify;
+    task.u.notifyrecordTask.isCountNotify = false;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_NOTIFY_RECORD);
+    EXPECT_EQ(params.notifyRecordTaskParams.notify, notify.GetInnerHandle());
+    EXPECT_NE(params.notifyRecordTaskParams.notify, reinterpret_cast<rtNotify_t>(&notify));
+    EXPECT_EQ(rt_ut::UnwrapOrNull<Notify>(params.notifyRecordTaskParams.notify), &notify);
+
+    task = MakeTask(TS_TASK_TYPE_NOTIFY_WAIT);
+    task.u.notifywaitTask.u.notify = &notify;
+    task.u.notifywaitTask.timeout = 500U;
+    task.u.notifywaitTask.isCountNotify = false;
+    ASSERT_EQ(GetParams(task, params), RT_ERROR_NONE);
+    EXPECT_EQ(params.type, RT_TASK_NOTIFY_WAIT);
+    EXPECT_EQ(params.notifyWaitTaskParams.notify, notify.GetInnerHandle());
+    EXPECT_NE(params.notifyWaitTaskParams.notify, reinterpret_cast<rtNotify_t>(&notify));
+    EXPECT_EQ(rt_ut::UnwrapOrNull<Notify>(params.notifyWaitTaskParams.notify), &notify);
+    EXPECT_EQ(params.notifyWaitTaskParams.timeout, 500U);
+
+    ResetEmbeddedInnerHandle(&notify);
+}
+
+TEST_F(ApiDavidTest, TestTaskGetParamsOriginalMemsetValue)
+{
+    TaskInfo task = {};
+    task.stream = stream_;
+    void* const dst = reinterpret_cast<void*>(0x1000U);
+    for (const uint32_t elementSize : {1U, 4U}) {
+        MemsetAsyncTaskInit(&task, dst, 128U, 0x1234565AU, 64U, elementSize);
+        const uint32_t expectedFill = (elementSize == 1U) ? 0x5A5A5A5AU : 0x1234565AU;
+        EXPECT_EQ(task.u.memsetAsyncTaskInfo.fillValue, expectedFill);
+        rtTaskParams queried = {};
+        ASSERT_EQ(GetMemsetTaskParams(&task, &queried), RT_ERROR_NONE);
+        EXPECT_EQ(queried.memsetTaskParams.value, 0x1234565A);
+        EXPECT_EQ(queried.memsetTaskParams.count, (elementSize == 1U) ? 64U : 16U);
+        EXPECT_EQ(queried.memsetTaskParams.elementSize, elementSize);
+        rtDavidSqe_t sqe = {};
+        TaskSqeInfo sqeInfo = {};
+        ConstructDavidSqeForMemsetAsyncTask(&task, &sqe, sqeInfo);
+        EXPECT_EQ(sqe.memcpyAsyncSqe.u.strideMode0.dstAddrLow, expectedFill);
+    }
+}
+
+TEST_F(ApiDavidTaskGetParamsTest, TestTaskGetParamsUpdateContract)
+{
+    auto* const captureModel = static_cast<CaptureModel*>(model_);
+    const auto modelStatus = captureModel->GetCaptureModelStatus();
+    TaskUpdateInfo updateInfo{};
+    rtTaskParams params{};
+    params.type = RT_TASK_VALUE_WRITE;
+    params.valueWriteTaskParams.devAddr = reinterpret_cast<void*>(0x123400U);
+    params.valueWriteTaskParams.value = 123U;
+    for (const auto& taskType : kRiQueryTaskTypes) {
+        TaskInfo task = MakeTask(taskType.type);
+        task.updateInfo = &updateInfo;
+        if (task.type == TS_TASK_TYPE_MEMCPY) {
+            task.u.memcpyAsyncTaskInfo.copyMethod = static_cast<uint8_t>(taskType.copyMethod);
+        }
+        EXPECT_EQ(CacheWriteValueTaskParams(&task, &params), RT_ERROR_INVALID_VALUE);
+        params.type = RT_TASK_VALUE_WAIT;
+        EXPECT_EQ(CacheWaitValueTaskParams(&task, &params), RT_ERROR_INVALID_VALUE);
+        params.type = RT_TASK_VALUE_WRITE;
+        EXPECT_EQ(updateInfo.latestParams.isValid, 0U);
+        captureModel->SetCaptureModelStatus(RtCaptureModelStatus::READY);
+        EXPECT_EQ(apiImpl_.ModelTaskDisable(&task), RT_ERROR_INVALID_VALUE);
+        EXPECT_EQ(task.updateFlag, static_cast<uint8_t>(TaskUpdateFlag::RT_TASK_KEEP));
+        EXPECT_TRUE(captureModel->GetGraphUpdateInfo().updateTask.empty());
+        EXPECT_EQ(captureModel->GetCaptureModelStatus(), RtCaptureModelStatus::FAULT);
+        captureModel->ClearGraphUpdateTask();
+        captureModel->SetCaptureModelStatus(modelStatus);
+    }
+    TaskInfo task = MakeTask(TS_TASK_TYPE_HOSTFUNC_CALLBACK);
+    task.updateInfo = &updateInfo;
+    updateInfo.latestParams.isValid = 1U;
+    updateInfo.latestParams.type = RT_TASK_VALUE_WRITE;
+    updateInfo.latestParams.u.valueWriteUpdateParams = params.valueWriteTaskParams;
+    rtTaskParams queried{};
+    ASSERT_EQ(GetParams(task, queried), RT_ERROR_NONE);
+    EXPECT_EQ(queried.type, RT_TASK_VALUE_WRITE);
+    EXPECT_EQ(queried.valueWriteTaskParams.devAddr, params.valueWriteTaskParams.devAddr);
+    EXPECT_EQ(queried.valueWriteTaskParams.value, params.valueWriteTaskParams.value);
 }
 
 TEST_F(ApiDavidTest, TestGetDavidEventTaskParamsStarsV2)

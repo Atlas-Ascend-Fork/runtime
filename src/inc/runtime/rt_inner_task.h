@@ -12,6 +12,8 @@
 #define CCE_RUNTIME_RT_INNER_TASK_H
 
 #include "base.h"
+#include "mem_base.h"
+#include "rt_inner_model.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -31,6 +33,14 @@ typedef enum {
     RT_TASK_EVENT_RESET,
     RT_TASK_VALUE_WRITE,
     RT_TASK_VALUE_WAIT,
+    RT_TASK_MEMCPY,
+    RT_TASK_MEMCPY_2D,
+    RT_TASK_MEMSET,
+    RT_TASK_MEMCPY_BATCH,
+    RT_TASK_HOST,
+    RT_TASK_COND,
+    RT_TASK_NOTIFY_RECORD,
+    RT_TASK_NOTIFY_WAIT,
 } rtTaskType;
 
 typedef struct rtKernelTaskParams {
@@ -72,6 +82,55 @@ typedef struct rtValueWaitTaskParams {
     uint32_t flag;
 } rtValueWaitTaskParams;
 
+typedef struct rtMemcpyTaskParams {
+    void* dst;
+    void* src;
+    size_t count;
+    rtMemcpyKind kind;
+} rtMemcpyTaskParams;
+
+typedef struct rtMemsetTaskParams {
+    void* devPtr;
+    int32_t value;
+    size_t count;
+    uint32_t elementSize;
+} rtMemsetTaskParams;
+
+typedef struct rtMemcpy2DTaskParams {
+    void* dst;
+    void* src;
+    size_t dpitch;
+    size_t spitch;
+    size_t width;
+    size_t height;
+    rtMemcpyKind kind;
+} rtMemcpy2DTaskParams;
+
+typedef struct rtMemcpyBatchTaskParams {
+    void** dsts;
+    size_t* destMaxs;
+    void** srcs;
+    size_t* sizes;
+    size_t numBatches;
+    rtMemcpyBatchAttr* attrs;
+    size_t* attrsIndexes;
+    size_t numAttrs;
+} rtMemcpyBatchTaskParams;
+
+typedef struct rtHostTaskParams {
+    rtCallback_t fn;
+    void* userData;
+} rtHostTaskParams;
+
+typedef struct rtNotifyRecordTaskParams {
+    rtNotify_t notify;
+} rtNotifyRecordTaskParams;
+
+typedef struct rtNotifyWaitTaskParams {
+    rtNotify_t notify;
+    uint32_t timeout;
+} rtNotifyWaitTaskParams;
+
 typedef struct rtTaskParams {
     rtTaskType type;
     uint32_t rsv0[3];
@@ -88,6 +147,14 @@ typedef struct rtTaskParams {
         struct rtEventResetTaskParams eventResetTaskParams;
         struct rtValueWriteTaskParams valueWriteTaskParams;
         struct rtValueWaitTaskParams valueWaitTaskParams;
+        struct rtMemcpyTaskParams memcpyTaskParams;
+        struct rtMemcpy2DTaskParams memcpy2DTaskParams;
+        struct rtMemsetTaskParams memsetTaskParams;
+        struct rtMemcpyBatchTaskParams memcpyBatchTaskParams;
+        struct rtHostTaskParams hostTaskParams;
+        struct rtCondTaskParams condTaskParams;
+        struct rtNotifyRecordTaskParams notifyRecordTaskParams;
+        struct rtNotifyWaitTaskParams notifyWaitTaskParams;
     };
 } rtTaskParams;
 

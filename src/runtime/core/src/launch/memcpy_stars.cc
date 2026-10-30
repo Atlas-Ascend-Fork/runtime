@@ -201,13 +201,15 @@ rtError_t BatchSendH2DAsyncTask(
 }
 
 rtError_t DevMemSetAsyncByMemset(
-    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount)
+    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount,
+    const uint32_t elementSize)
 {
     UNUSED(stm);
     UNUSED(ptr);
     UNUSED(destMax);
     UNUSED(fillVal);
     UNUSED(fillCount);
+    UNUSED(elementSize);
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 

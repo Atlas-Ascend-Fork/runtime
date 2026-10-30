@@ -21,6 +21,8 @@ rtError_t GetPtrAttributes(const void* const ptr, rtPtrAttributes_t* const attri
 rtError_t CheckMemCpyAttr(
     const void* const dst, const void* const src, const rtMemcpyBatchAttr& memAttr, rtPtrAttributes_t& dstAttr,
     rtPtrAttributes_t& srcAttr);
+struct MemcpyBatchTaskParamsInput;
+
 rtError_t MemcopyAsyncPtr(
     void* const memcpyAddrInfo, const uint64_t destMax, const uint64_t count, Stream* stm,
     const std::shared_ptr<void>& guardMem, const rtTaskCfgInfo_t* const cfgInfo, const bool isMemcpyDesc);
@@ -29,7 +31,8 @@ rtError_t Memcpy2DAsync(
     const uint64_t height, const rtMemcpyKind_t kind, uint64_t* const realSize, Stream* const stm,
     const uint64_t fixedSize);
 rtError_t MemcopyBatchAsync(
-    AsyncDmaBatchInfo& batchInfo, uint64_t* const realCnt, uint64_t* const realSize, Stream* const stm);
+    AsyncDmaBatchInfo& batchInfo, uint64_t* const realCnt, uint64_t* const realSize, Stream* const stm,
+    const MemcpyBatchTaskParamsInput* params = nullptr);
 rtError_t MemcopyAsync(
     void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
     Stream* const stm, uint64_t* const realSize, const std::shared_ptr<void>& guardMem = nullptr,

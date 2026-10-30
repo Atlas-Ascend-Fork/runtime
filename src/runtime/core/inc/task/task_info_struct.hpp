@@ -566,6 +566,7 @@ struct SqeUpdateTaskInfo {
 struct CaptureConditionTaskInfo {
     // === 全局属性 ===
     CondHandle* condHandle; // 条件操作 Handle（type/size/devAddr 均可从中获取）
+    rtModel_t* modelRIArray;
 
     // === SQE[0] CondFirst：条件判断 FunctionCall ===
     void* funcCallSvmMem;     // FunctionCall 指令设备内存地址（已对齐）

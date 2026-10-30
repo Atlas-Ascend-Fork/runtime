@@ -19,6 +19,17 @@ namespace runtime {
 struct TaskSqeInfo;
 struct TaskUpdateParams;
 
+struct MemcpyBatchTaskParamsInput {
+    void** dsts;
+    const size_t* destMaxs;
+    void** srcs;
+    const size_t* sizes;
+    size_t numBatches;
+    const rtMemcpyBatchAttr* attrs;
+    const size_t* attrsIndexes;
+    size_t numAttrs;
+};
+
 constexpr uint32_t MEM_WAIT_WRITE_VALUE_ADDRESS_LEN = 64U;
 
 static inline const char_t* AsyncCpyMethodToString(const uint8_t copyMethod)
@@ -47,7 +58,8 @@ rtError_t MemcpyAsyncTaskInitV3(
 bool NeedUpdateMemcpyTaskInfoForSnapshot(const TaskInfo* const taskInfo);
 rtError_t UpdateMemcpyTaskInfoForSnapshot(TaskInfo* const taskInfo);
 
-rtError_t MemcpyAsyncBatchTaskInit(TaskInfo* const taskInfo, AsyncDmaBatchInfo& batchInfo);
+rtError_t MemcpyAsyncBatchTaskInit(
+    TaskInfo* const taskInfo, AsyncDmaBatchInfo& batchInfo, const MemcpyBatchTaskParamsInput* params = nullptr);
 rtError_t MemcpyAsyncD2HTaskInit(
     TaskInfo* const taskInfo, const void* srcAddr, const uint64_t cpySize, uint32_t sqId, uint32_t pos);
 rtError_t ConvertAsyncDma(TaskInfo* const taskInfo);
@@ -87,6 +99,8 @@ rtError_t CaptureWaitExternalTaskInit(TaskInfo* taskInfo, Event* event, const vo
 void MemWaitTaskUnInit(TaskInfo* taskInfo);
 rtError_t GetWaitValueTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 rtError_t UpdateWaitValueTaskParams(TaskInfo* const taskInfo, const TaskUpdateParams* const params);
+rtError_t GetMemcpyTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t GetMemsetTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
 
 // common
 rtError_t GetCaptureRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);

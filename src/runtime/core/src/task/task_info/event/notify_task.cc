@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstring>
 #include "stream.hpp"
 #include "runtime.hpp"
 #include "context.hpp"
@@ -105,6 +106,21 @@ rtError_t NotifyRecordTaskInit(
         notifyRecord->uPtr.notify = static_cast<Notify*>(notify);
         notifyRecord->uInfo.singleBitNtfyInfo = *singleInfo;
     }
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetNotifyRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const NotifyRecordTaskInfo* const notifyRecord = &(taskInfo->u.notifyrecordTask);
+    COND_RETURN_ERROR(
+        notifyRecord->isCountNotify || (taskInfo->typeName == nullptr) ||
+            (strcmp(taskInfo->typeName, "NOTIFY_RECORD") != 0),
+        RT_ERROR_INVALID_VALUE, "Only single-bit notify record tasks support getting parameters.");
+    Notify* const notify = notifyRecord->uPtr.notify;
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        notify, RT_ERROR_INVALID_VALUE, "Obtaining the Notify Record task parameters");
+    params->type = RT_TASK_NOTIFY_RECORD;
+    params->notifyRecordTaskParams.notify = static_cast<rtNotify_t>(notify->GetInnerHandle());
     return RT_ERROR_NONE;
 }
 
@@ -329,6 +345,21 @@ rtError_t NotifyWaitTaskInit(
     } else {
         notifyWaitTask->u.notify = static_cast<Notify*>(inNotify);
     }
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetNotifyWaitTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const NotifyWaitTaskInfo* const notifyWait = &(taskInfo->u.notifywaitTask);
+    COND_RETURN_ERROR(
+        notifyWait->isCountNotify, RT_ERROR_INVALID_VALUE,
+        "Count notify wait tasks do not support getting single-bit notify parameters.");
+    Notify* const notify = notifyWait->u.notify;
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        notify, RT_ERROR_INVALID_VALUE, "Obtaining the Notify Wait task parameters");
+    params->type = RT_TASK_NOTIFY_WAIT;
+    params->notifyWaitTaskParams.notify = static_cast<rtNotify_t>(notify->GetInnerHandle());
+    params->notifyWaitTaskParams.timeout = notifyWait->timeout;
     return RT_ERROR_NONE;
 }
 

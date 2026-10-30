@@ -17,6 +17,9 @@
 #include "runtime_handle_guard.h"
 #include "maintenance_task.h"
 #include "memory_task.h"
+#include "stream_task.h"
+#include "notify_task.h"
+#include "aclgraph_cond_task.h"
 #include "base.hpp"
 #include "stream.hpp"
 #include "stream_sqcq_manage.hpp"
@@ -1206,6 +1209,24 @@ static rtError_t GetTaskParamsWithoutUpdate(const TaskInfo* const taskInfo, rtTa
         }
         case TS_TASK_TYPE_MEM_WAIT_VALUE:
             error = GetWaitValueTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_MEMCPY:
+            error = GetMemcpyTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_MEMSET:
+            error = GetMemsetTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_HOSTFUNC_CALLBACK:
+            error = GetHostTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_CAPTURE_CONDITION:
+            error = GetCondTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_NOTIFY_RECORD:
+            error = GetNotifyRecordTaskParams(taskInfo, params);
+            break;
+        case TS_TASK_TYPE_NOTIFY_WAIT:
+            error = GetNotifyWaitTaskParams(taskInfo, params);
             break;
         default:
             RT_LOG_OUTER_MSG_IMPL(

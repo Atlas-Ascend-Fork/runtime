@@ -68,6 +68,25 @@ void ComputeRatio(uint16_t ratio[2], uint32_t mixType, uint32_t taskRatio)
     }
 }
 
+static rtTaskType ConvertMemcpyTaskType(const uint8_t copyMethod)
+{
+    rtTaskType taskType = RT_TASK_DEFAULT;
+    switch (static_cast<rtAsyncCpyMethod>(copyMethod)) {
+        case rtAsyncCpyMethod::RT_ASYNC_CPY:
+            taskType = RT_TASK_MEMCPY;
+            break;
+        case rtAsyncCpyMethod::RT_ASYNC_CPY_2D:
+            taskType = RT_TASK_MEMCPY_2D;
+            break;
+        case rtAsyncCpyMethod::RT_ASYNC_CPY_BATCH:
+            taskType = RT_TASK_MEMCPY_BATCH;
+            break;
+        default:
+            break;
+    }
+    return taskType;
+}
+
 rtError_t ConvertTaskType(const TaskInfo* const task, rtTaskType* type)
 {
     COND_RETURN_ERROR(
@@ -111,6 +130,29 @@ rtError_t ConvertTaskType(const TaskInfo* const task, rtTaskType* type)
             break;
         case TS_TASK_TYPE_MEM_WRITE_VALUE:
             taskType = strcmp(task->typeName, "EVENT_RESET") != 0 ? RT_TASK_VALUE_WRITE : RT_TASK_EVENT_RESET;
+            break;
+        case TS_TASK_TYPE_MEMCPY:
+            taskType = ConvertMemcpyTaskType(task->u.memcpyAsyncTaskInfo.copyMethod);
+            break;
+        case TS_TASK_TYPE_MEMSET:
+            taskType = RT_TASK_MEMSET;
+            break;
+        case TS_TASK_TYPE_HOSTFUNC_CALLBACK:
+            taskType = RT_TASK_HOST;
+            break;
+        case TS_TASK_TYPE_CAPTURE_CONDITION:
+            taskType = RT_TASK_COND;
+            break;
+        case TS_TASK_TYPE_NOTIFY_RECORD:
+            if ((!task->u.notifyrecordTask.isCountNotify) && (task->typeName != nullptr) &&
+                (strcmp(task->typeName, "NOTIFY_RECORD") == 0)) {
+                taskType = RT_TASK_NOTIFY_RECORD;
+            }
+            break;
+        case TS_TASK_TYPE_NOTIFY_WAIT:
+            if (!task->u.notifywaitTask.isCountNotify) {
+                taskType = RT_TASK_NOTIFY_WAIT;
+            }
             break;
         default:
             break;

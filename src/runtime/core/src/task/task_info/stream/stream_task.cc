@@ -275,6 +275,14 @@ rtError_t CallbackLaunchTaskInit(
     return RT_ERROR_NONE;
 }
 
+rtError_t GetHostTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    params->type = RT_TASK_HOST;
+    params->hostTaskParams.fn = taskInfo->u.callbackLaunchTask.callBackFunc;
+    params->hostTaskParams.userData = taskInfo->u.callbackLaunchTask.fnData;
+    return RT_ERROR_NONE;
+}
+
 void ToCmdBodyForCallbackLaunchTask(TaskInfo* taskInfo, rtCommand_t* const command)
 {
     command->u.hostFuncCBTask.hostFuncCBPtr = RtPtrToValue<rtCallback_t>(taskInfo->u.callbackLaunchTask.callBackFunc);

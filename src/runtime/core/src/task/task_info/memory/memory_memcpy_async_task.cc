@@ -343,6 +343,7 @@ rtError_t MemcpyAsyncTaskCommonInit(TaskInfo* const taskInfo)
     memcpyAsyncTaskInfo->dmaAddr.fixed_size = 0U;
     memcpyAsyncTaskInfo->dmaAddr.virt_id = 0U;
     memcpyAsyncTaskInfo->memcpyAddrInfo = nullptr;
+    memcpyAsyncTaskInfo->batchParams = nullptr;
     if (memcpyAsyncTaskInfo->guardMemVec == nullptr) {
         memcpyAsyncTaskInfo->guardMemVec = new (std::nothrow) std::vector<std::shared_ptr<void>>();
         COND_RETURN_AND_MSG_OUTER(

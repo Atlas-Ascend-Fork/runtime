@@ -10,7 +10,14 @@ struct 类型数据。
 - [aclmdlRIEventRecordTaskParams](#aclmdlRIEventRecordTaskParams)
 - [aclmdlRIEventResetTaskParams](#aclmdlRIEventResetTaskParams)
 - [aclmdlRIEventWaitTaskParams](#aclmdlRIEventWaitTaskParams)
+- [aclmdlRIHostTaskParams](#aclmdlRIHostTaskParams)
 - [aclmdlRIKernelTaskParams](#aclmdlRIKernelTaskParams)
+- [aclmdlRIMemcpy2DTaskParams](#aclmdlRIMemcpy2DTaskParams)
+- [aclmdlRIMemcpyBatchTaskParams](#aclmdlRIMemcpyBatchTaskParams)
+- [aclmdlRIMemcpyTaskParams](#aclmdlRIMemcpyTaskParams)
+- [aclmdlRIMemsetTaskParams](#aclmdlRIMemsetTaskParams)
+- [aclmdlRINotifyRecordTaskParams](#aclmdlRINotifyRecordTaskParams)
+- [aclmdlRINotifyWaitTaskParams](#aclmdlRINotifyWaitTaskParams)
 - [aclmdlRITaskParams](#aclmdlRITaskParams)
 - [aclmdlRIValueWaitTaskParams](#aclmdlRIValueWaitTaskParams)
 - [aclmdlRIValueWriteTaskParams](#aclmdlRIValueWriteTaskParams)
@@ -220,6 +227,24 @@ typedef struct aclmdlRIEventWaitTaskParams {
 
 <br>
 
+<a id="aclmdlRIHostTaskParams"></a>
+
+## aclmdlRIHostTaskParams
+
+```c
+typedef struct aclmdlRIHostTaskParams {
+    aclrtHostFunc fn;
+    void* userData;
+} aclmdlRIHostTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| fn | 指定要增加的回调函数。<br>回调函数的函数原型为：<br>typedef void (*aclrtHostFunc)(void*args) |
+| userData | 待传递给回调函数的用户数据。 |
+
+<br>
+
 <a id="aclmdlRIKernelTaskParams"></a>
 
 ## aclmdlRIKernelTaskParams
@@ -248,6 +273,148 @@ typedef struct aclmdlRIKernelTaskParams {
 
 <br>
 
+<a id="aclmdlRIMemcpy2DTaskParams"></a>
+
+## aclmdlRIMemcpy2DTaskParams
+
+```c
+typedef struct aclmdlRIMemcpy2DTaskParams {
+    void* dst;
+    void* src;
+    size_t dpitch;
+    size_t spitch;
+    size_t width;
+    size_t height;
+    aclrtMemcpyKind kind;
+} aclmdlRIMemcpy2DTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| dst | 目的内存地址指针。 |
+| src | 源内存地址指针。 |
+| dpitch | 目的内存中相邻两行数据的地址距离。 |
+| spitch | 源内存中相邻两行数据的地址距离。 |
+| width | 待复制的数据宽度，单位Byte。取值说明请参见[aclrtMemcpy2dAsync](11-03_memory_copy_and_set.md#aclrtMemcpy2dAsync)中的width说明。 |
+| height | 待复制的数据高度，即待复制的数据行数。取值说明请参见[aclrtMemcpy2dAsync](11-03_memory_copy_and_set.md#aclrtMemcpy2dAsync)中的height说明。 |
+| kind | 内存复制的类型。类型定义请参见[aclrtMemcpyKind](25-02_Enumerations.md#aclrtMemcpyKind)。 |
+
+返回当前任务中保存的二维内存复制参数。一次二维内存复制由多个任务执行时，width和height仍返回创建当前任务时传入的值。
+
+<br>
+
+<a id="aclmdlRIMemcpyBatchTaskParams"></a>
+
+## aclmdlRIMemcpyBatchTaskParams
+
+```c
+typedef struct aclmdlRIMemcpyBatchTaskParams {
+    void** dsts;
+    size_t* destMaxs;
+    void** srcs;
+    size_t* sizes;
+    size_t numBatches;
+    aclrtMemcpyBatchAttr* attrs;
+    size_t* attrsIndexes;
+    size_t numAttrs;
+} aclmdlRIMemcpyBatchTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| dsts | 目的内存地址数组。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| destMaxs | 内存复制最大长度数组，用于存放当前任务中各目的内存地址的剩余内存长度，单位Byte。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| srcs | 源内存地址数组。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| sizes | 内存复制长度数组，用于存放当前任务中各子拷贝的内存大小，单位Byte。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| numBatches | dsts、destMaxs、srcs和sizes数组的长度。 |
+| attrs | 内存复制属性数组。类型定义请参见[aclrtMemcpyBatchAttr](#aclrtMemcpyBatchAttr)。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| attrsIndexes | 内存复制属性索引数组，用于指定attrs数组中每个条目适用的复制范围。attrs[k]中指定的属性将应用于从attrsIndexes[k]到attrsIndexes[k+1] - 1的复制操作，同时attrs[numAttrs-1]将应用于从attrsIndexes[numAttrs-1]到numBatches - 1的复制操作。attrsIndexes的首个条目为0。<br>该数组由Runtime负责管理，调用者不得修改或释放。该数组在任务销毁前始终有效。 |
+| numAttrs | attrs和attrsIndexes数组的长度。 |
+
+返回当前任务中各子拷贝的参数。批量内存复制中的一个子拷贝由多个任务执行时，srcs、dsts和sizes返回当前任务对应的源内存地址、目的内存地址和内存复制长度。
+
+<br>
+
+<a id="aclmdlRIMemcpyTaskParams"></a>
+
+## aclmdlRIMemcpyTaskParams
+
+```c
+typedef struct aclmdlRIMemcpyTaskParams {
+    void* dst;
+    void* src;
+    size_t count;
+    aclrtMemcpyKind kind;
+} aclmdlRIMemcpyTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| dst | 目的内存地址指针。 |
+| src | 源内存地址指针。 |
+| count | 内存复制的长度，单位Byte。 |
+| kind | 内存复制的类型。类型定义请参见[aclrtMemcpyKind](25-02_Enumerations.md#aclrtMemcpyKind)。 |
+
+返回当前任务中保存的内存复制参数。一次内存复制由多个任务执行时，返回当前任务对应的源内存地址、目的内存地址和内存复制长度。
+
+<br>
+
+<a id="aclmdlRIMemsetTaskParams"></a>
+
+## aclmdlRIMemsetTaskParams
+
+```c
+typedef struct aclmdlRIMemsetTaskParams {
+    void* devPtr;
+    int32_t value;
+    size_t count;
+    uint32_t elementSize;
+} aclmdlRIMemsetTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| devPtr | 内存起始地址的指针。 |
+| value | 设置的值。返回调用内存初始化接口时传入的值。 |
+| count | 需要设置为指定值的元素个数。elementSize为1时，表示内存长度，单位Byte；elementSize为4时，表示所填充的32位无符号整数值的数量。 |
+| elementSize | 每个元素的大小，单位Byte。取值为1或4。 |
+
+<br>
+
+<a id="aclmdlRINotifyRecordTaskParams"></a>
+
+## aclmdlRINotifyRecordTaskParams
+
+```c
+typedef struct aclmdlRINotifyRecordTaskParams {
+    aclrtNotify notify;
+} aclmdlRINotifyRecordTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| notify | 指定Notify。类型定义请参见[aclrtNotify](25-05_Typedefs.md#aclrtNotify)。 |
+
+<br>
+
+<a id="aclmdlRINotifyWaitTaskParams"></a>
+
+## aclmdlRINotifyWaitTaskParams
+
+```c
+typedef struct aclmdlRINotifyWaitTaskParams {
+    aclrtNotify notify;
+    uint32_t timeout;
+} aclmdlRINotifyWaitTaskParams;
+```
+
+| 成员名称 | 描述 |
+| --- | --- |
+| notify | 需等待的Notify。类型定义请参见[aclrtNotify](25-05_Typedefs.md#aclrtNotify)。 |
+| timeout | 等待的超时时间。<br>取值说明如下：<br>  - 0：表示永久等待；<br>  - >0：配置具体的超时时间，单位是毫秒。 |
+
+<br>
+
 <a id="aclmdlRITaskParams"></a>
 
 ## aclmdlRITaskParams
@@ -265,10 +432,18 @@ typedef struct aclmdlRITaskParams {
         uint8_t rsv2[128];
         struct aclmdlRIKernelTaskParams kernelTaskParams;
         struct aclmdlRIEventRecordTaskParams eventRecordTaskParams;
-    struct aclmdlRIEventWaitTaskParams eventWaitTaskParams;
-    struct aclmdlRIEventResetTaskParams eventResetTaskParams;
-    struct aclmdlRIValueWriteTaskParams valueWriteTaskParams;
-    struct aclmdlRIValueWaitTaskParams valueWaitTaskParams;
+        struct aclmdlRIEventWaitTaskParams eventWaitTaskParams;
+        struct aclmdlRIEventResetTaskParams eventResetTaskParams;
+        struct aclmdlRIValueWriteTaskParams valueWriteTaskParams;
+        struct aclmdlRIValueWaitTaskParams valueWaitTaskParams;
+        struct aclmdlRIMemcpyTaskParams memcpyTaskParams;
+        struct aclmdlRIMemcpy2DTaskParams memcpy2DTaskParams;
+        struct aclmdlRIMemsetTaskParams memsetTaskParams;
+        struct aclmdlRIMemcpyBatchTaskParams memcpyBatchTaskParams;
+        struct aclmdlRIHostTaskParams hostTaskParams;
+        struct tagAclmdlRICondTaskParams condTaskParams;
+        struct aclmdlRINotifyRecordTaskParams notifyRecordTaskParams;
+        struct aclmdlRINotifyWaitTaskParams notifyWaitTaskParams;
     };
 } aclmdlRITaskParams;
 ```
@@ -287,6 +462,14 @@ typedef struct aclmdlRITaskParams {
 | eventResetTaskParams | Event Reset任务（通常对应aclrtResetEvent接口下发的任务）的参数。类型定义请参见[aclmdlRIEventResetTaskParams](#aclmdlRIEventResetTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
 | valueWriteTaskParams | Value Write任务（通常对应aclrtValueWrite接口下发的任务）的参数。类型定义请参见[aclmdlRIValueWriteTaskParams](#aclmdlRIValueWriteTaskParams)。 |
 | valueWaitTaskParams | Value Wait任务（通常对应aclrtValueWait接口下发的任务）的参数。类型定义请参见[aclmdlRIValueWaitTaskParams](#aclmdlRIValueWaitTaskParams)。 |
+| memcpyTaskParams | 内存复制任务（通常对应aclrtMemcpyAsync接口下发的任务）的参数。类型定义请参见[aclmdlRIMemcpyTaskParams](#aclmdlRIMemcpyTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| memcpy2DTaskParams | 二维内存复制任务（通常对应aclrtMemcpy2dAsync接口下发的任务）的参数。类型定义请参见[aclmdlRIMemcpy2DTaskParams](#aclmdlRIMemcpy2DTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| memsetTaskParams | 内存初始化任务（通常对应aclrtMemsetAsync接口下发的任务）的参数。类型定义请参见[aclmdlRIMemsetTaskParams](#aclmdlRIMemsetTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| memcpyBatchTaskParams | 批量内存复制任务（通常对应aclrtMemcpyBatchAsyncV2接口下发的任务）的参数。类型定义请参见[aclmdlRIMemcpyBatchTaskParams](#aclmdlRIMemcpyBatchTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| hostTaskParams | Host回调任务（对应aclrtLaunchHostFunc接口下发的任务）的参数。类型定义请参见[aclmdlRIHostTaskParams](#aclmdlRIHostTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| condTaskParams | 条件任务（通常对应aclmdlRIAddCondTask接口下发的任务）的参数。类型定义请参见[aclmdlRICondTaskParams](#aclmdlRICondTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| notifyRecordTaskParams | Notify Record任务（通常对应aclrtRecordNotify接口下发的任务）的参数。类型定义请参见[aclmdlRINotifyRecordTaskParams](#aclmdlRINotifyRecordTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
+| notifyWaitTaskParams | Notify Wait任务（通常对应aclrtWaitAndResetNotify接口下发的任务）的参数。类型定义请参见[aclmdlRINotifyWaitTaskParams](#aclmdlRINotifyWaitTaskParams)。<br>该参数作为查询接口的输出，设置接口无需关注。 |
 
 <br>
 

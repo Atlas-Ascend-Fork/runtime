@@ -871,6 +871,14 @@ TEST_F(UTEST_ACL_compatibility_cast_check, aclmdlRITaskType)
     EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_EVENT_RESET, (uint64_t)RT_TASK_EVENT_RESET);
     EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_VALUE_WRITE, (uint64_t)RT_TASK_VALUE_WRITE);
     EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_VALUE_WAIT, (uint64_t)RT_TASK_VALUE_WAIT);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_MEMCPY, (uint64_t)RT_TASK_MEMCPY);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_MEMCPY_2D, (uint64_t)RT_TASK_MEMCPY_2D);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_MEMSET, (uint64_t)RT_TASK_MEMSET);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_MEMCPY_BATCH, (uint64_t)RT_TASK_MEMCPY_BATCH);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_HOST, (uint64_t)RT_TASK_HOST);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_COND, (uint64_t)RT_TASK_COND);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_NOTIFY_RECORD, (uint64_t)RT_TASK_NOTIFY_RECORD);
+    EXPECT_EQ((uint64_t)ACL_MODEL_RI_TASK_NOTIFY_WAIT, (uint64_t)RT_TASK_NOTIFY_WAIT);
 
     EXPECT_EQ(sizeof(aclmdlRITaskType), sizeof(rtTaskType));
 }
@@ -890,8 +898,22 @@ TEST_F(UTEST_ACL_compatibility_cast_check, aclmdlRITaskParams)
     rt_offset = OFFSET_OF_MEMBER(rtTaskParams, opInfoSize);
     EXPECT_EQ(acl_offset, rt_offset);
 
+    acl_offset = OFFSET_OF_MEMBER(aclmdlRITaskParams, memcpyBatchTaskParams);
+    rt_offset = OFFSET_OF_MEMBER(rtTaskParams, memcpyBatchTaskParams);
+    EXPECT_EQ(acl_offset, rt_offset);
+
+    EXPECT_EQ(sizeof(aclmdlRIMemcpyTaskParams), sizeof(rtMemcpyTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRIMemcpy2DTaskParams), sizeof(rtMemcpy2DTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRIMemsetTaskParams), sizeof(rtMemsetTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRIMemcpyBatchTaskParams), sizeof(rtMemcpyBatchTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRIHostTaskParams), sizeof(rtHostTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRICondTaskParams), sizeof(rtCondTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRINotifyRecordTaskParams), sizeof(rtNotifyRecordTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRINotifyWaitTaskParams), sizeof(rtNotifyWaitTaskParams));
+
     // check total size
     EXPECT_EQ(sizeof(aclmdlRITaskParams), sizeof(rtTaskParams));
+    EXPECT_EQ(sizeof(aclmdlRITaskParams), 200U);
 }
 
 TEST_F(UTEST_ACL_compatibility_cast_check, aclrtAtomicOperationCapability)

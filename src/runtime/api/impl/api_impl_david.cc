@@ -933,10 +933,11 @@ rtError_t ApiImplDavid::BatchMemcpyAsync(
     std::vector<void*> localDsts(dsts, dsts + count);
     std::vector<void*> localSrcs(srcs, srcs + count);
     std::vector<uint64_t> localSizes(sizes, sizes + count);
+    const MemcpyBatchTaskParamsInput taskParams = {dsts, destMaxs, srcs, sizes, count, attrs, attrsIdxs, numAttrs};
     while (remainCnt > 0UL) {
         AsyncDmaBatchInfo batchInfo = {localDsts.data(), localSrcs.data(), localSizes.data(),
                                        remainCnt,        fixedCnt,         fixedSize};
-        error = MemcopyBatchAsync(batchInfo, &realCnt, &realSize, curStm);
+        error = MemcopyBatchAsync(batchInfo, &realCnt, &realSize, curStm, &taskParams);
         COND_RETURN_WITH_NOLOG((error != RT_ERROR_NONE), error);
         COND_RETURN_ERROR(
             realCnt > remainCnt, RT_ERROR_DRV_ERR,

@@ -619,7 +619,8 @@ void ConstructDavidSqeForMemWriteValueTask(TaskInfo* const taskInfo, void* const
 void StarsV2IpcEventWaitTaskUnInit(TaskInfo* taskInfo);
 void StarsV2IpcEventRecordTaskUnInit(TaskInfo* taskInfo);
 void MemsetAsyncTaskInit(
-    TaskInfo* const taskInfo, void* const ptr, const uint64_t destMax, const uint32_t val, const uint64_t cnt);
+    TaskInfo* const taskInfo, void* const ptr, const uint64_t destMax, const uint32_t val, const uint64_t cnt,
+    const uint32_t elementSize = 1U);
 rtError_t ConvertAsyncDmaForTaskUpdate(TaskInfo* const taskInfo, TaskInfo* const updateTaskInfo);
 uint32_t GetSendSqeNumForAsyncDmaTask(const TaskInfo* const taskInfo);
 void ConstructFirstDavidSqeForMemWaitValueTask(TaskInfo* taskInfo, rtDavidSqe_t* const davidSqe);

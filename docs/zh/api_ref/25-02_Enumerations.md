@@ -398,6 +398,14 @@ typedef enum aclmdlRITaskType {
     ACL_MODEL_RI_TASK_EVENT_RESET,  // Event Reset任务，通常对应aclrtResetEvent接口下发的任务
     ACL_MODEL_RI_TASK_VALUE_WRITE,  // Value Write任务，通常对应aclrtValueWrite接口下发的任务
     ACL_MODEL_RI_TASK_VALUE_WAIT,   // Value Wait任务，通常对应aclrtValueWait接口下发的任务
+    ACL_MODEL_RI_TASK_MEMCPY,       // 内存复制任务，通常对应aclrtMemcpyAsync接口下发的任务
+    ACL_MODEL_RI_TASK_MEMCPY_2D,    // 二维内存复制任务，通常对应aclrtMemcpy2dAsync接口下发的任务
+    ACL_MODEL_RI_TASK_MEMSET,       // 内存初始化任务，通常对应aclrtMemsetAsync接口下发的任务
+    ACL_MODEL_RI_TASK_MEMCPY_BATCH, // 批量内存复制任务，通常对应aclrtMemcpyBatchAsyncV2接口下发的任务
+    ACL_MODEL_RI_TASK_HOST,         // Host回调任务，对应aclrtLaunchHostFunc接口下发的任务
+    ACL_MODEL_RI_TASK_COND,         // 条件任务，通常对应aclmdlRIAddCondTask接口下发的任务
+    ACL_MODEL_RI_TASK_NOTIFY_RECORD, // Notify Record任务，通常对应aclrtRecordNotify接口下发的任务
+    ACL_MODEL_RI_TASK_NOTIFY_WAIT,  // Notify Wait任务，通常对应aclrtWaitAndResetNotify接口下发的任务
 } aclmdlRITaskType;
 ```
 

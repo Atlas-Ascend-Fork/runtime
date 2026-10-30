@@ -523,6 +523,22 @@ std::string TaskTypeToString(const rtTaskType type)
             return "TASK_VALUE_WRITE(5)";
         case RT_TASK_VALUE_WAIT:
             return "TASK_VALUE_WAIT(6)";
+        case RT_TASK_MEMCPY:
+            return "TASK_MEMCPY(7)";
+        case RT_TASK_MEMCPY_2D:
+            return "TASK_MEMCPY_2D(8)";
+        case RT_TASK_MEMSET:
+            return "TASK_MEMSET(9)";
+        case RT_TASK_MEMCPY_BATCH:
+            return "TASK_MEMCPY_BATCH(10)";
+        case RT_TASK_HOST:
+            return "TASK_HOST(11)";
+        case RT_TASK_COND:
+            return "TASK_COND(12)";
+        case RT_TASK_NOTIFY_RECORD:
+            return "TASK_NOTIFY_RECORD(13)";
+        case RT_TASK_NOTIFY_WAIT:
+            return "TASK_NOTIFY_WAIT(14)";
         default:
             return RtFmtMsg("UNKNOWN(%d)", static_cast<int32_t>(type));
     }

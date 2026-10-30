@@ -6974,13 +6974,14 @@ rtError_t ApiImpl::ModelTaskDisable(rtTask_t task)
     error = ConvertTaskType(taskInfo, &taskType);
     ERROR_PROC_RETURN_MSG_INNER(error, captureModel->SetCaptureModelStatus(RtCaptureModelStatus::FAULT);
                                 , "get task type failed, retCode=%#x.", error);
-    COND_PROC(
-        ((taskType == RT_TASK_DEFAULT) || (taskInfo->type == TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL)),
-        captureModel->SetCaptureModelStatus(RtCaptureModelStatus::FAULT));
+    const bool isSupportedTaskType = (taskType == RT_TASK_KERNEL) || (taskType == RT_TASK_EVENT_RECORD) ||
+                                     (taskType == RT_TASK_EVENT_WAIT) || (taskType == RT_TASK_EVENT_RESET) ||
+                                     (taskType == RT_TASK_VALUE_WRITE) || (taskType == RT_TASK_VALUE_WAIT);
+    const bool cannotDisable = !isSupportedTaskType || (taskInfo->type == TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL);
+    COND_PROC(cannotDisable, captureModel->SetCaptureModelStatus(RtCaptureModelStatus::FAULT));
     COND_RETURN_AND_MSG_OUTER(
-        ((taskType == RT_TASK_DEFAULT) || (taskInfo->type == TS_TASK_TYPE_CAPTURE_RECORD_EXTERNAL)),
-        RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Setting the status of a specified task to disabled", "taskType",
-        RtFmtMsg("Current task type cannot be reset"));
+        cannotDisable, RT_ERROR_INVALID_VALUE, ErrorCode::EE1017, "Setting the status of a specified task to disabled",
+        "taskType", RtFmtMsg("Current task type cannot be reset"));
 
     captureModel->InsertGraphUpdateTask(taskInfo);
     captureModel->ClearShapeInfo(taskInfo->stream->Id_(), GetTaskId(taskInfo));

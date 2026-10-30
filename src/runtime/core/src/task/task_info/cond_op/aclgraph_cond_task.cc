@@ -222,6 +222,7 @@ rtError_t CaptureConditionTaskInit(TaskInfo* taskInfo, CondHandle* condHandle)
     taskInfo->type = TS_TASK_TYPE_CAPTURE_CONDITION;
     CaptureConditionTaskInfo* condTaskInfo = &(taskInfo->u.captureConditionTask);
     condTaskInfo->condHandle = condHandle;
+    condTaskInfo->modelRIArray = nullptr;
     taskInfo->sqeNum =
         (condHandle->GetCondType() == RT_COND_TASK_TYPE_WHILE) ? COND_TASK_WHILE_SQE_NUM : COND_TASK_IF_SWITCH_SQE_NUM;
 
@@ -241,7 +242,39 @@ rtError_t CaptureConditionTaskInit(TaskInfo* taskInfo, CondHandle* condHandle)
         ERROR_RETURN(ret, "alloc jumpBack func call mem failed, retCode=%#x.", ret);
     }
 
-    return AllocCondTaskFuncCallMem(taskInfo);
+    rtError_t error = AllocCondTaskFuncCallMem(taskInfo);
+    ERROR_RETURN(error, "alloc condition task func call mem failed, retCode=%#x.", error);
+
+    const std::vector<Model*>& subModels = condHandle->GetSubCaptureModels();
+    rtModel_t* modelRIArray = new (std::nothrow) rtModel_t[subModels.size()];
+    COND_RETURN_AND_MSG_OUTER(
+        modelRIArray == nullptr, RT_ERROR_MEMORY_ALLOCATION, ErrorCode::EE1013, subModels.size() * sizeof(rtModel_t),
+        "new");
+    for (size_t i = 0U; i < subModels.size(); ++i) {
+        if (subModels[i] == nullptr) {
+            DELETE_A(modelRIArray);
+            return RT_ERROR_MODEL_NULL;
+        }
+        modelRIArray[i] = static_cast<rtModel_t>(subModels[i]->GetInnerHandle());
+    }
+    condTaskInfo->modelRIArray = modelRIArray;
+    return RT_ERROR_NONE;
+}
+
+rtError_t GetCondTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params)
+{
+    const CaptureConditionTaskInfo* const condTaskInfo = &(taskInfo->u.captureConditionTask);
+    CondHandle* const condHandle = condTaskInfo->condHandle;
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        condHandle, RT_ERROR_INVALID_VALUE, "Obtaining the Condition task parameters");
+    NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
+        condTaskInfo->modelRIArray, RT_ERROR_INVALID_VALUE, "Obtaining the Condition task parameters");
+    params->type = RT_TASK_COND;
+    params->condTaskParams.handle = static_cast<rtCondHandle_t>(condHandle->GetInnerHandle());
+    params->condTaskParams.type = condHandle->GetCondType();
+    params->condTaskParams.size = condHandle->GetCondSize();
+    params->condTaskParams.modelRIArray = condTaskInfo->modelRIArray;
+    return RT_ERROR_NONE;
 }
 
 void CaptureConditionTaskUnInit(TaskInfo* const taskInfo)
@@ -249,6 +282,7 @@ void CaptureConditionTaskUnInit(TaskInfo* const taskInfo)
     (void)FreeFuncCallMemForCaptureCondTask(taskInfo);
 
     CaptureConditionTaskInfo* condTaskInfo = &(taskInfo->u.captureConditionTask);
+    DELETE_A(condTaskInfo->modelRIArray);
     if (condTaskInfo->jumpBackBaseFuncCallSvmMem != nullptr) {
         const auto dev = taskInfo->stream->Device_();
         (void)dev->Driver_()->DevMemFree(condTaskInfo->jumpBackBaseFuncCallSvmMem, dev->Id_());

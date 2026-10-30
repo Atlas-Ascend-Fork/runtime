@@ -252,6 +252,17 @@ struct UbDma {
     uint64_t fixedCnt;
 };
 
+struct MemcpyBatchTaskParamsInfo {
+    void** dsts;
+    size_t* destMaxs;
+    void** srcs;
+    size_t* sizes;
+    size_t numBatches;
+    rtMemcpyBatchAttr* attrs;
+    size_t* attrsIndexes;
+    size_t numAttrs;
+};
+
 struct MemcpyAsyncTaskInfo {
     struct DMA_ADDR dmaAddr;
     void* src;
@@ -263,6 +274,7 @@ struct MemcpyAsyncTaskInfo {
     void* releaseArgHandle; // old argHandle will be release after update
     void* updateArgHandle;
     std::vector<std::shared_ptr<void>>* guardMemVec;
+    MemcpyBatchTaskParamsInfo* batchParams;
     uint64_t size;     // SQE 实际搬运长度 / fixed_size
     uint64_t copySize; // 原始传给 MemConvertAddr 的 len
     uint64_t dstPitch;
@@ -296,6 +308,8 @@ struct MemsetAsyncTaskInfo {
     void* targetPtr;
     uint64_t targetSize;
     uint32_t fillValue;
+    uint32_t elementSize;
+    int32_t originalValue;
     uint64_t fillCount;
 };
 
