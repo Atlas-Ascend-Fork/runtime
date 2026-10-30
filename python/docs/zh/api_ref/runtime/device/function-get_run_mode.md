@@ -41,14 +41,13 @@
 
 ## 参数说明
 
-| 参数名 | 说明 |
-| --- | --- |
-| run_mode | int，表示运行模式。类型定义请参见[aclrtRunMode](../datatypes/aclrtRunMode.md)。 |
+无
 
 ## 返回值说明
 
 | 返回值 | 说明 |
 | --- | --- |
+| run_mode | int，表示运行模式。类型定义请参见[aclrtRunMode](../datatypes/aclrtRunMode.md)。 |
 | ret | int，错误码，返回0表示成功，返回[其它值](../datatypes/aclError.md)表示失败。 |
 
 ## 资源参考

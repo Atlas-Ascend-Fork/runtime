@@ -41,14 +41,13 @@
 
 ## 参数说明
 
-| 参数名 | 说明 |
-| --- | --- |
-| device_id | Device ID的指针。 |
+无
 
 ## 返回值说明
 
 | 返回值 | 说明 |
 | --- | --- |
+| device_id | Device ID的指针。 |
 | ret | int，错误码，返回0表示成功，返回[其它值](../datatypes/aclError.md)表示失败。 |
 
 ## 约束说明

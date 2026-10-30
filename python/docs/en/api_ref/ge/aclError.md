@@ -1,0 +1,244 @@
+# aclError
+
+The rules for defining return codes are as follows:
+
+- Rule 1: Abnormal development environment or incorrect code logic that can be optimized is defined as **1*XXXXX***.
+- Rule 2: Resource (stream, memory, or others) insufficiency and APIs or arguments mismatch with the hardware, which can be resolved by the proper use of resources during programming, are defined as **2*XXXXX***.
+- Rule 3: Abnormal services (full or empty queue, etc.) are defined as **3XXXXX**.
+- Rule 4: Abnormal internal hardware and software errors (internal software errors, device execution failure, or others) that cannot be resolved by the user and need to be reported to technical support are defined as **5XXXXX**. After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.
+- Rule 5: Unrecognized errors are currently mapped to **500000**. After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.
+
+**Table 1** Return codes
+
+| Return Code| Definition| Possible Cause and Solution|
+| --- | --- | --- |
+| ACL_SUCCESS = 0 | Execution succeeds.| - |
+| ACL_ERROR_NONE = 0 | Execution succeeds.| - |
+| ACL_ERROR_INVALID_PARAM = 100000 | Argument verification failure| Check whether the input parameter value of the API is correct.|
+| ACL_ERROR_UNINITIALIZE = 100001 | Not initialized.| Check that `acl.init` has been called for initialization before any other API call.<br> Check that the initialization API of the corresponding function is called, for example, `acl.mdl.init_dump` for initializing the dump, and `acl.prof.init` for initializing profiling.|
+| ACL_ERROR_REPEAT_INITIALIZE = 100002 | Repeated initialization or loading| Check whether the interface is repeatedly called for initialization or model loading.|
+| ACL_ERROR_INVALID_FILE = 100003 | Invalid file.| Check that the file exists and is accessible.|
+| ACL_ERROR_WRITE_FILE = 100004 | Failed to write the file.| Check whether the file path exists and whether you have the write permission on the file.|
+| ACL_ERROR_INVALID_FILE_SIZE = 100005 | Invalid file size| Check whether the file size meets the interface requirements.|
+| ACL_ERROR_PARSE_FILE = 100006 | File parsing failed| Check that the file content is valid.|
+| ACL_ERROR_FILE_MISSING_ATTR = 100007 | Missing file parameter| Check that the file content is complete.|
+| ACL_ERROR_FILE_ATTR_INVALID = 100008 | Invalid file parameter| Check that the parameters in the file are correct.|
+| ACL_ERROR_INVALID_DUMP_CONFIG = 100009 | Invalid dump configuration| Check the dump configuration. For details, see [Accuracy Debugging Tool](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0001.html).|
+| ACL_ERROR_INVALID_PROFILING_CONFIG = 100010 | Invalid profiling configuration| Check the profiling configuration.|
+| ACL_ERROR_INVALID_MODEL_ID = 100011 | Invalid model ID.| Check that the model ID is correct and the model is correctly loaded.|
+| ACL_ERROR_DESERIALIZE_MODEL = 100012 | Model deserialization failed| The model may not be compatible with the current version. Build the model again.|
+| ACL_ERROR_PARSE_MODEL = 100013 | Model parsing failed| The model may not be compatible with the current version. Build the model again.|
+| ACL_ERROR_READ_MODEL_FAILURE = 100014 | Model reading failed| Check whether the model file exists and is accessible.|
+| ACL_ERROR_MODEL_SIZE_INVALID = 100015 | Invalid model size.| The model file is invalid. Build the model again.|
+| ACL_ERROR_MODEL_MISSING_ATTR = 100016 | Missing model parameter.| The model may not be compatible with the current version. Build the model again.|
+| ACL_ERROR_MODEL_INPUT_NOT_MATCH = 100017 | Model input mismatch| Check whether the model input is correct.|
+| ACL_ERROR_MODEL_OUTPUT_NOT_MATCH = 100018 | Model output mismatch| Check whether the model output is correct.|
+| ACL_ERROR_MODEL_NOT_DYNAMIC = 100019 | Not dynamic model| Check whether the current model supports dynamic scenarios. If not, build the model again.|
+| ACL_ERROR_OP_TYPE_NOT_MATCH = 100020 | Operator type mismatch| Check whether the operator type is correct.|
+| ACL_ERROR_OP_INPUT_NOT_MATCH = 100021 | Single-operator input mismatch.| Check whether the operator input is correct.|
+| ACL_ERROR_OP_OUTPUT_NOT_MATCH = 100022 | Single-operator output mismatch.| Check whether the operator output is correct.|
+| ACL_ERROR_OP_ATTR_NOT_MATCH = 100023 | Operator attribute mismatch| Check whether the operator attribute is correct.|
+| ACL_ERROR_OP_NOT_FOUND = 100024 | Operator not found| Check whether the operator type is supported.|
+| ACL_ERROR_OP_LOAD_FAILED = 100025 | Operator loading failure| The model may not be compatible with the current version. Build a single-operator model again.|
+| ACL_ERROR_UNSUPPORTED_DATA_TYPE = 100026 | Unsupported data type.| Check that the data type exists or is supported.|
+| ACL_ERROR_FORMAT_NOT_MATCH = 100027 | Format mismatch.| Check whether the format is correct.|
+| ACL_ERROR_BIN_SELECTOR_NOT_REGISTERED = 100028 | Operator selector unregistered for operator compilation in binary mode| Check whether `acl.op.register_compile_func` is called to register an operator selector.|
+| ACL_ERROR_KERNEL_NOT_FOUND = 100029 | Operator kernel unregistered for operator compilation| Check whether `acl.op.create_kernel` is called to register an operator kernel.|
+| ACL_ERROR_BIN_SELECTOR_ALREADY_REGISTERED = 100030 | Operator repeatedly registered for operator compilation in binary mode| Check whether `acl.op.register_compile_func` is repeatedly called to register an operator selector.|
+| ACL_ERROR_KERNEL_ALREADY_REGISTERED = 100031 | Operator kernel repeatedly registered for operator compilation| Check whether `acl.op.create_kernel` is repeatedly called to register an operator kernel.|
+| ACL_ERROR_INVALID_QUEUE_ID = 100032 | Invalid queue ID.| Check whether the queue ID is correct.|
+| ACL_ERROR_REPEAT_SUBSCRIBE = 100033 | Repeated subscription| Check whether `acl.rt.subscribe_report` is repeatedly called in the same stream.|
+| ACL_ERROR_STREAM_NOT_SUBSCRIBE = 100034 <br> This return code will be deprecated in later versions. Use the `ACL_ERROR_RT_STREAM_NO_CB_REG` return code.| Stream unsubscribed| Check whether `acl.rt.subscribe_report` has been called.|
+| ACL_ERROR_THREAD_NOT_SUBSCRIBE = 100035 <br> This return code will be deprecated in later versions. Use the `ACL_ERROR_RT_THREAD_SUBSCRIBE` return code.| Thread unsubscribed| Check whether `acl.rt.subscribe_report` has been called.|
+| ACL_ERROR_WAIT_CALLBACK_TIMEOUT = 100036 <br> This return code will be deprecated in later versions. Use the `ACL_ERROR_RT_REPORT_TIMEOUT` return code.| Callback timeout| Check whether `acl.rt.launch_callback` has been called to deliver a callback task.<br> Check whether the timeout period in `acl.rt.process_report` is proper.<br> Check whether the callback task has been processed. If so, but `acl.rt.process_report` is still called, the code logic needs to be optimized.|
+| ACL_ERROR_REPEAT_FINALIZE = 100037 | Repeated deinitialization| Check whether `acl.finalize` is repeatedly called for deinitialization.|
+| ACL_ERROR_NOT_STATIC_AIPP = 100038 <br> This return code will be deprecated in later versions. Use the `ACL_ERROR_GE_AIPP_NOT_EXIST` return code.| AIPP configuration not found| Pass the correct `index` to the `acl.mdl.get_first_aipp_info` call.|
+| ACL_ERROR_COMPILING_STUB_MODE = 100039 | Incorrect dynamic library path configured before app execution| Check the configuration of the dynamic library path and ensure that the dynamic library in running mode is used.|
+| ACL_ERROR_PROF_ALREADY_RUN = 100042 | Duplicate profile data collection task| Check the code logic. The pyacl API Profiling configuration method is exclusive with other profiling configuration methods. For details, see [Performance Tuning Tool](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/devaids/Profiling/atlasprofiling_16_0001.html).<br> Check whether the profiling configuration is repeatedly delivered to the same device. Adjust the code logic based on the API calling requirements and sequence in [Profiling Data Collection APIs](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/runtimeapi/aclpythondevg_01_0847.html).|
+| ACL_ERROR_PROF_NOT_RUN = 100043 | Profiling not initialized by calling `acl.prof.init`| See [Profiling Data Collection APIs](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/runtimeapi/aclpythondevg_01_0847.html).|
+| ACL_ERROR_DUMP_ALREADY_RUN = 100044 | Duplicate dump task| Check whether `acl.init` has been called before calling `acl.mdl.init_dump`, `acl.mdl.set_dump`, or `acl.mdl.finalize_dump` to configure dump information. If yes, adjust the code logic and call only one of them.|
+| ACL_ERROR_DUMP_NOT_RUN = 100045 | Dump not initialized by calling `acl.mdl.init_dump`| Check the API call sequence for obtaining dump data. For details, see `acl.mdl.init_dump`.|
+| ACL_ERROR_PROF_REPEAT_SUBSCRIBE = 148046 | Repeated model subscription| See [Profiling Data Collection APIs](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/runtimeapi/aclpythondevg_01_0847.html).|
+| ACL_ERROR_PROF_API_CONFLICT = 148047 | Profiling API call conflict| Do not mix the two sets of profiling APIs. Between the `acl.prof.init` and `acl.prof.finalize` calls, calls to `acl.prof.model_subscribe`, `acl.prof.get_op_*`, and `acl.prof.model_unsubscribe` are not allowed. Between the `acl.prof.model_subscribe` and `acl.prof.model_unsubscribe` calls, calls to `acl.prof.init`, `acl.prof.start`, `acl.prof.stop`, and `acl.prof.finalize` are not allowed.|
+| ACL_ERROR_INVALID_MAX_OPQUEUE_NUM_CONFIG = 148048 | Invalid operator cache aging configuration| Check the operator cache aging configuration. For details, see the configuration description and example in `acl.init`.|
+| ACL_ERROR_INVALID_OPP_PATH = 148049 | Invalid `ASCEND_OPP_PATH` environment variable| Check whether the `ASCEND_OPP_PATH` environment variable is set and whether the OPP installation path is included.|
+| ACL_ERROR_OP_UNSUPPORTED_DYNAMIC = 148050 | Dynamic shape unsupported| Check whether the shape of the operator in the single-operator model file is set to dynamic. If so, change it to a static shape.<br> Check whether the shape in `aclTensorDesc` is set to dynamic for operator compilation. If so, re-create an `aclTensorDesc` based on a static shape.|
+| ACL_ERROR_RELATIVE_RESOURCE_NOT_CLEARED = 148051 | Related resources unreleased| This error code is returned if the channel is not destroyed but the channel description has not been destroyed. Check that the associated channel is destroyed.|
+| ACL_ERROR_UNSUPPORTED_JPEG = 148052 | The input image format is not supported by JPEG decoder (JPEGD) (such as arithmetic encoding or progressive encoding).| JPEGD supports only Huffman coding and does not support arithmetic encoding, progressive JPEG format, or JPEG 2000 format. The color space of the input image must be YUV with YUV components in the ratio of 4:4:4, 4:2:2, 4:2:0, 4:0:0, or 4:4:0.|
+| ACL_ERROR_BAD_ALLOC = 200000 | Failed to allocate memory.| Check the available memory in the hardware environment.|
+| ACL_ERROR_API_NOT_SUPPORT = 200001 | API not supported.| Check whether the called API is supported.|
+| ACL_ERROR_INVALID_DEVICE = 200002 <br> This return code will be deprecated in later versions. Use the `ACL_ERROR_RT_INVALID_DEVICEID` return code.| Invalid device| Check that the device exists.|
+| ACL_ERROR_MEMORY_ADDRESS_UNALIGNED = 200003 | Memory address not aligned| Check that the memory address meets the interface requirements.|
+| ACL_ERROR_RESOURCE_NOT_MATCH = 200004 | Resource mismatch| Check that resources such as the stream and context are correctly passed to the API call.|
+| ACL_ERROR_INVALID_RESOURCE_HANDLE = 200005 | Invalid resource handle.| Check whether the input resources such as streams and contexts have been destroyed or occupied when the interface is called.|
+| ACL_ERROR_FEATURE_UNSUPPORTED = 200006 | Unsupported feature.| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_PROF_MODULES_UNSUPPORTED = 200007 | Unsupported profiling configuration| Check the profiling configuration by referring to [Profiling Data Collection APIs](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/runtimeapi/aclpythondevg_01_0847.html).|
+| ACL_ERROR_STORAGE_OVER_LIMIT = 300000 | Storage capacity reached.| Check the available memory in the hardware environment.|
+| ACL_ERROR_INTERNAL_ERROR = 500000 | Unknown internal error.| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_FAILURE = 500001 | Internal Ascend error| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_GE_FAILURE = 500002 | Internal GE error| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_RT_FAILURE = 500003 | Internal Runtime error| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_DRV_FAILURE = 500004 | Internal Driver error| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+| ACL_ERROR_PROFILING_FAILURE = 500005 | Profiling related error| After obtaining the logs, click <a href="https://www.hiascend.com/support" target="_blank" rel="noopener noreferrer">here</a> to contact technical support.|
+
+**Table 2** Runtime return codes
+
+| Return Code| Definition| Possible Cause and Solution|
+| --- | --- | --- |
+| ACL_RT_SUCCESS = 0 | Execution succeeds.| - |
+| ACL_ERROR_RT_PARAM_INVALID = 107000 | Argument verification failure| Check the passed arguments.|
+| ACL_ERROR_RT_INVALID_DEVICEID = 107001 | Invalid device ID.| Check whether the device ID is valid.|
+| ACL_ERROR_RT_CONTEXT_NULL = 107002 | Empty context| Check whether `acl.rt.set_context` or `acl.rt.set_device` is called.|
+| ACL_ERROR_RT_STREAM_CONTEXT = 107003 | Stream and context mismatch. The stream is not in the current context.| Check whether the context of the stream is consistent with the current context.|
+| ACL_ERROR_RT_MODEL_CONTEXT = 107004 | Model and context mismatch. The model is not in the current context.| Check whether the loaded model is consistent with the current context.|
+| ACL_ERROR_RT_STREAM_MODEL = 107005 | Stream and model mismatch. The stream is not bound to the current model.| Check whether the stream has been bound to the model.|
+| ACL_ERROR_RT_EVENT_TIMESTAMP_INVALID = 107006 | Invalid event timestamp| Check whether the event is created.|
+| ACL_ERROR_RT_EVENT_TIMESTAMP_REVERSAL = 107007 | Event timestamp reverted| Check whether the event is created.|
+| ACL_ERROR_RT_ADDR_UNALIGNED = 107008 | Memory address not aligned| Check whether the allocated memory address is aligned. For details about the constraints on the memory allocation APIs, see [Memory Management](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/runtimeapi/aclpythondevg_01_0109.html).|
+| ACL_ERROR_RT_FILE_OPEN = 107009 | Failure to open the file| Check whether the file exists.|
+| ACL_ERROR_RT_FILE_WRITE = 107010 | Failed to write the file.| Check whether the file exists or whether you have the write permission on the file.|
+| ACL_ERROR_RT_STREAM_SUBSCRIBE = 107011 | Stream unsubscribed or subscribed repeatedly| Check whether the current stream is subscribed or subscribed repeatedly.|
+| ACL_ERROR_RT_THREAD_SUBSCRIBE = 107012 | Thread unsubscribed or subscribed repeatedly| Check whether the thread needs to be subscribed or has already been subscribed.|
+| ACL_ERROR_RT_GROUP_NOT_SET = 107013 | Group not set| - |
+| ACL_ERROR_RT_GROUP_NOT_CREATE = 107014 | Group not created| Check whether the group ID set by this API is within the supported range. The value range of the group ID is [0, (Number of groups – 1)].|
+| ACL_ERROR_RT_STREAM_NO_CB_REG = 107015 | Stream of the callback not registered with the thread| Check whether the stream has been registered with the thread and whether `acl.rt.subscribe_report` is called.|
+| ACL_ERROR_RT_INVALID_MEMORY_TYPE = 107016 | Invalid memory type| Check whether the memory type is valid.|
+| ACL_ERROR_RT_INVALID_HANDLE = 107017 | Invalid resource handle.| Check the inputs and arguments.|
+| ACL_ERROR_RT_INVALID_MALLOC_TYPE = 107018 | Invalid memory type| Check the arguments and the corresponding memory type.|
+| ACL_ERROR_RT_WAIT_TIMEOUT = 107019 | Task timeout.| Re-call the task API.|
+| ACL_ERROR_RT_TASK_TIMEOUT = 107020 | Task timeout.| Check whether the service orchestration is proper or whether the timeout interval is set properly.|
+| ACL_ERROR_RT_SYSPARAMOPT_NOT_SET = 107021 | Obtaining the system parameter values in the current context failed.| The system parameter values in the current context are not set.|
+| ACL_ERROR_RT_DEVICE_TASK_ABORT = 107022 | The task discarding operation on the device conflicts with other operations.| This error code is returned because the operation of stopping tasks on the device by calling `acl.rt.device_task_abort` conflicts with other API operations. Check the code logic and perform other operations only after `acl.rt.device_task_abort` is executed.|
+| ACL_ERROR_RT_STREAM_ABORT = 107023 | Tasks in a stream are being cleared.| Tasks in the specified stream are being cleared. The system does not wait for the tasks in the stream to be executed.|
+| ACL_ERROR_RT_FEATURE_NOT_SUPPORT = 207000 | Unsupported feature.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_MEMORY_ALLOCATION = 207001 | Memory allocation failed.| Check the available memory in the hardware environment.|
+| ACL_ERROR_RT_MEMORY_FREE = 207002 | Memory deallocation failed| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_OVER_FLOW = 207003 | AI Core operator overflow or underflow| Check whether AI Core operator calculation overflows occur.|
+| ACL_ERROR_RT_NO_DEVICE = 207004 | Unavailable device| Check that the device is running properly.|
+| ACL_ERROR_RT_RESOURCE_ALLOC_FAIL = 207005 | Memory allocation failed.| Check the available memory in the hardware environment.|
+| ACL_ERROR_RT_NO_PERMISSION = 207006 | You are not authorized to perform the operation.| Check the user permission.|
+| ACL_ERROR_RT_NO_EVENT_RESOURCE = 207007 | Insufficient event resources| Check the event count by referring to the description in `acl.rt.create_event`.|
+| ACL_ERROR_RT_NO_STREAM_RESOURCE = 207008 | Insufficient stream resources| Check the stream count by referring to the description in `acl.rt.create_stream`.|
+| ACL_ERROR_RT_NO_NOTIFY_RESOURCE = 207009 | Insufficient internal Notify resources| Reduce the number of concurrent tasks or unload some of the models for data preprocessing or model inference.|
+| ACL_ERROR_RT_NO_MODEL_RESOURCE = 207010 | Insufficient model resources.| Unload some of the models.|
+| ACL_ERROR_RT_NO_CDQ_RESOURCE = 207011 | Insufficient Runtime resources| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_OVER_LIMIT = 207012 | Number of queues exceeding the upper limit| Destroy unnecessary queues before creating a queue.|
+| ACL_ERROR_RT_QUEUE_EMPTY = 207013 | Empty queue| It is not allowed to obtain data from an empty queue. Feed data to the queue first.|
+| ACL_ERROR_RT_QUEUE_FULL = 207014 | The queue is full.| It is not allowed to feed data to a full queue. Obtain data from the queue first.|
+| ACL_ERROR_RT_REPEATED_INIT = 207015 | Repeated queue initialization| Initialize the queue only once.|
+| ACL_ERROR_RT_DEVIDE_OOM = 207018 | Memory on the device is used up.| Check the memory usage on the device and properly plan the memory usage based on the memory specifications on the device.|
+| static const int32_t ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP = 207019 | The current driver version does not support updating this operator.| Query the driver version.<br>You can click [here](https://www.hiascend.com/hardware/firmware-drivers/commercial) to download the driver installation package of Ascend HDK 25.0.RC1 or later on the **Firmware and Drivers** page and install or upgrade the driver by referring to the document of the corresponding version.|
+| ACL_ERROR_RT_INTERNAL_ERROR = 507000 | Runtime error on the host (internal error)| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_TS_ERROR = 507001 | Task Scheduler error on the device (internal error)| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_STREAM_TASK_FULL = 507002 | Stream tasks full| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_STREAM_TASK_EMPTY = 507003 | Empty stream| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_STREAM_NOT_COMPLETE = 507004 | Stream tasks not completed| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_END_OF_SEQUENCE = 507005 | AI CPU tasks complete| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_EVENT_NOT_COMPLETE = 507006 | Events not complete| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_CONTEXT_RELEASE_ERROR = 507007 | Failure to destroy the context| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_SOC_VERSION = 507008 | Failure to obtain SoC version| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_TASK_TYPE_NOT_SUPPORT = 507009 | Task type not supported| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_LOST_HEARTBEAT = 507010 | Task Scheduler heartbeat lost| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_MODEL_EXECUTE = 507011 | Model execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_REPORT_TIMEOUT = 507012 | Failure to obtain message from Task Scheduler| Check whether the timeout interval of the API is too short. If so, increase the timeout interval. If there is still a timeout error after increasing the timeout interval, then check the logs.<br>After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_SYS_DMA = 507013 | System Direct Memory Access (DMA) hardware execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_TIMEOUT = 507014 | AI Core execution timeout| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_EXCEPTION = 507015 | AI Core execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_TRAP_EXCEPTION = 507016 | AI Core trap execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_TIMEOUT = 507017 | AI CPU execution timeout| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_EXCEPTION = 507018 | AI CPU execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_DATADUMP_RSP_ERR = 507019 | No dumping response from AI CPU to Task Scheduler| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_MODEL_RSP_ERR = 507020 | No model execution response from AI CPU to Task Scheduler| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_PROFILING_ERROR = 507021 | Profiling error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_IPC_ERROR = 507022 | The inter-process communication (IPC) is abnormal.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_MODEL_ABORT_NORMAL = 507023 | Model exited| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_KERNEL_UNREGISTERING = 507024 | Deregistering the operator| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_RINGBUFFER_NOT_INIT = 507025 | Ring buffer not initialized| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_RINGBUFFER_NO_DATA = 507026 | No data in the ring buffer| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_KERNEL_LOOKUP = 507027 | Runtime kernel unregistered| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_KERNEL_DUPLICATE = 507028 | Runtime kernel registered repeatedly| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DEBUG_REGISTER_FAIL = 507029 | Failure to register debug| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DEBUG_UNREGISTER_FAIL = 507030 | Failure to unregister debugging| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_LABEL_CONTEXT = 507031 | Label and context mismatch. The label is not in the current context.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_PROGRAM_USE_OUT = 507032 | Registered program number limit reached| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DEV_SETUP_ERROR = 507033 | Failure to start the device| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_VECTOR_CORE_TIMEOUT = 507034 | Vector Core timeout| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_VECTOR_CORE_EXCEPTION = 507035 | Vector Core execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_VECTOR_CORE_TRAP_EXCEPTION = 507036 | Vector Core trap execution error.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_CDQ_BATCH_ABNORMAL = 507037 | Failure to allocate Runtime resources| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DIE_MODE_CHANGE_ERROR = 507038 | Die mode change failed| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DIE_SET_ERROR = 507039 | Die specifying failed in single-die mode| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_INVALID_DIEID = 507040 | Die ID specifying failed| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DIE_MODE_NOT_SET = 507041 | Die mode not set| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_TRAP_READ_OVERFLOW = 507042 | AI Core trap read overflow| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICORE_TRAP_WRITE_OVERFLOW = 507043 | AI Core trap write overflow| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_VECTOR_CORE_TRAP_READ_OVERFLOW = 507044 | Vector Core trap read overflow| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_VECTOR_CORE_TRAP_WRITE_OVERFLOW = 507045 | Vector Core trap write overflow| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_STREAM_SYNC_TIMEOUT = 507046 | In the specified timeout wait event, all tasks in the specified stream are not completed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_EVENT_SYNC_TIMEOUT = 507047 | During the specified event synchronization, the execution of the event is not completed within the specified time.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_FFTS_PLUS_TIMEOUT = 507048 | Internal task execution timed out.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_FFTS_PLUS_EXCEPTION = 507049 | An exception in internal task execution occurs.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_FFTS_PLUS_TRAP_EXCEPTION = 507050 | The trap of an internal task is abnormal.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_SEND_MSG = 507051 | Messages fail to be sent during data enqueuing.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_COPY_DATA = 507052 | Failed to copy the memory during data enqueuing.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_DEVICE_MEM_ERROR = 507053 | Virtual addresses where UCE (error that cannot be directly handled by the system hardware) occurs| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_HBM_MULTI_BIT_ECC_ERROR = 507054 | On-chip memory bit ECC fault.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_SUSPECT_DEVICE_MEM_ERROR = 507055 | In the multi-process and multi-device scenario, a memory UCE may occur.| The peer device memory accessed by the current device is faulty. Check the error information of the peer device process.|
+| ACL_ERROR_RT_LINK_ERROR = 507056 | In the multi-device scenario, the communication link between two devices is disconnected.| Retry. If the error persists, check the communication link between the two devices.|
+| ACL_ERROR_RT_SUSPECT_REMOTE_ERROR = 507057 | In the multi-process and multi-device scenario, the peer device memory may be faulty, or out-of-bounds memory access occurs in the current device.| Check the error information of the peer device process or the memory access of the current device.|
+| ACL_ERROR_RT_DRV_INTERNAL_ERROR = 507899 | Internal Driver error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_INTERNAL_ERROR = 507900 | Internal error with AI CPU| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_SOCKET_CLOSE = 507901 | Disconnection of the internal host device communication (HDC) session| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_AICPU_INFO_LOAD_RSP_ERR = 507902 | Fail to schedule the AI CPU.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_STREAM_CAPTURE_INVALIDATED = 507903 | The model capture is abnormal.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_RT_COMM_OP_RETRY_FAIL = 507904 | Communication operator re-execution failure| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_LOCK_TIMEOUT = 507905 | Calling `aclrtSnapShotProcessLock` timed out.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_LOCK_FAILED = 507906 | Process lock failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_UNLOCK_FAILED = 507907 | Process unlock failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_BACKUP_FAILED = 507908 | Snapshot process backup failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_RESTORE_FAILED = 507909 | Snapshot process restoration failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_HOST_MEMORY_ALREADY_REGISTERED = 507910 | The host memory has been registered.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_HOST_MEMORY_NOT_REGISTERED = 507911 | The host memory to be deregistered has not been registered.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_CALLBACK_FAILED = 507912 | Callback function execution in a snapshot phase failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_SNAPSHOT_REGISTER_CALLBACK_FAILED = 507913 | Callback function registration failed.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+
+**Table 3** GE return codes
+
+| Return Code| Definition| Possible Cause and Solution|
+| --- | --- | --- |
+| ACL_ERROR_GE_PARAM_INVALID = 145000 | Argument verification failure| Check whether the input parameter value of the API is correct.|
+| ACL_ERROR_GE_EXEC_NOT_INIT = 145001 | Not initialized.| Check that `acl.init` has been called for initialization before any other API call.<br> Check that the initialization API of the corresponding function is called, for example, `acl.mdl.init_dump` for initializing the dump, and `acl.prof.init` for initializing profiling.|
+| ACL_ERROR_GE_EXEC_MODEL_PATH_INVALID = 145002 | Invalid model path| Check whether the model path is correct.|
+| ACL_ERROR_GE_EXEC_MODEL_ID_INVALID = 145003 | Invalid model ID.| Check that the model ID is correct and the model is correctly loaded.|
+| ACL_ERROR_GE_EXEC_MODEL_DATA_SIZE_INVALID = 145006 | Invalid model size.| Invalid model size.|
+| ACL_ERROR_GE_EXEC_MODEL_ADDR_INVALID = 145007 | Invalid model memory address| Check whether the model address is valid.|
+| ACL_ERROR_GE_EXEC_MODEL_QUEUE_ID_INVALID = 145008 | Invalid queue ID.| Invalid queue ID.|
+| ACL_ERROR_GE_EXEC_LOAD_MODEL_REPEATED = 145009 | Repeated initialization or loading| Check whether the interface is repeatedly called for initialization or model loading.|
+| ACL_ERROR_GE_DYNAMIC_INPUT_ADDR_INVALID = 145011 | Invalid address of the dynamic-shape input| Check the address of the dynamic-shape input.|
+| ACL_ERROR_GE_DYNAMIC_INPUT_LENGTH_INVALID = 145012 | Invalid length of the dynamic-shape input| Check the length of the dynamic-shape input.|
+| ACL_ERROR_GE_DYNAMIC_BATCH_SIZE_INVALID = 145013 | Invalid dynamic batch size profiles| Check the dynamic batch size profiles.|
+| ACL_ERROR_GE_AIPP_BATCH_EMPTY = 145014 | Invalid AIPP batch size| Check whether the AIPP batch size is correct.|
+| ACL_ERROR_GE_AIPP_NOT_EXIST = 145015 | AIPP configuration not found| Check whether AIPP is configured.|
+| ACL_ERROR_GE_AIPP_MODE_INVALID = 145016 | Invalid AIPP mode| Check whether the AIPP mode configured during model conversion is correct.|
+| ACL_ERROR_GE_OP_TASK_TYPE_INVALID = 145017 | Invalid task type| Check whether the operator type is correct.|
+| ACL_ERROR_GE_OP_KERNEL_TYPE_INVALID = 145018 | Invalid operator type| Check whether the operator type is correct.|
+| ACL_ERROR_GE_PLGMGR_PATH_INVALID = 145019 | invalid .so file. For example, the directory level of the .so file is too deep, or the .so file is not found.| Check whether the environment variable `LD_LIBRARY_PATH` configured before running the app is correct. For details, see the operation guide for compilation and running.|
+| ACL_ERROR_GE_FORMAT_INVALID = 145020 | Invalid format| Check the tensor format.|
+| ACL_ERROR_GE_SHAPE_INVALID = 145021 | Invalid shape| Check the tensor shape.|
+| ACL_ERROR_GE_DATATYPE_INVALID = 145022 | Invalid data type.| Check the tensor data type.|
+| ACL_ERROR_GE_MEMORY_ALLOCATION = 245000 | Failed to allocate memory.| Check the available memory in the hardware environment.|
+| ACL_ERROR_GE_MEMORY_OPERATE_FAILED = 245001 | Memory initialization or memory copy failure| Check the memory address and whether the memory on the hardware environment is sufficient.|
+| ACL_ERROR_GE_DEVICE_MEMORY_ALLOCATION_FAILED = 245002 | Device memory allocation failed| The device memory has been used up. Free some device memory and try again.|
+| ACL_ERROR_GE_USER_RAISE_EXCEPTION = 345103 | The user-defined function throws an exception.| You can identify the input data that fails to be executed based on `UserData` set in `DataFlowInfo` and rectify the fault based on the error information.|
+| ACL_ERROR_GE_DATA_NOT_ALIGNED = 345104 | Data is not aligned.| If a user-defined function has multiple outputs, check whether any output is missing in your code. If an output is missing, data alignment may be abnormal.|
+| ACL_ERROR_GE_INTERNAL_ERROR = 545000 | Unknown internal error.| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_LOAD_MODEL = 545001 | Failure to load the model| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_EXEC_LOAD_MODEL_PARTITION_FAILED = 545002 | Failure to load the model| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_EXEC_LOAD_WEIGHT_PARTITION_FAILED = 545003 | Failure to load the model weight| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_EXEC_LOAD_TASK_PARTITION_FAILED = 545004 | Failure to load the model tasks| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_EXEC_LOAD_KERNEL_PARTITION_FAILED = 545005 | Failure to load the model operators| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_EXEC_RELEASE_MODEL_DATA = 545006 | Failure to free the model space| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_COMMAND_HANDLE = 545007 | Command execution error| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_GET_TENSOR_INFO = 545008 | Failure to obtain tensor data| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_UNLOAD_MODEL = 545009 | Failure to unload the model| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|
+| ACL_ERROR_GE_MODEL_EXECUTE_TIMEOUT = 545601 | Model execution timeout| After obtaining the logs, click [here](https://www.hiascend.com/support) to contact technical support.|

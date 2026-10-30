@@ -284,7 +284,6 @@ Atlas A2系列产品
 Atlas 200I/500 A2推理产品
 <!-- end id14 -->
 
-Atlas推理系列产品
 <!-- npu="310p" id15 -->
 Atlas推理系列产品
 <!-- end id15 -->

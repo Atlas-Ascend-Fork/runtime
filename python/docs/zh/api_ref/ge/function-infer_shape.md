@@ -74,5 +74,5 @@
     acl.set_tensor_desc_name(input_tensor_desc[0], "x");
     acl.set_tensor_desc_name(input_tensor_desc[1], "y0");
     acl.set_tensor_desc_name(input_tensor_desc[2], "y1");
-    acl.set_tensor_desc_name(input_tensor_desc[0], "z");
+    acl.set_tensor_desc_name(output_tensor_desc[0], "z");
     ```
