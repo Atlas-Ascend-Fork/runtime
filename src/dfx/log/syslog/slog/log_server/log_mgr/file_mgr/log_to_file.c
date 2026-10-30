@@ -174,8 +174,10 @@ static void LogAgentRemoveDir(StSubLogFileList* logList, uint32_t size)
             continue;
         }
 
-        (void)memset_s(dir, sizeof(LogDirList), 0, sizeof(LogDirList));
+        // account before zeroing: after the memset dir->dirSize is 0 and the subtraction
+        // becomes a no-op, leaving dirTotalSize permanently inflated
         logList->dirTotalSize -= dir->dirSize;
+        (void)memset_s(dir, sizeof(LogDirList), 0, sizeof(LogDirList));
         continue;
     }
 }

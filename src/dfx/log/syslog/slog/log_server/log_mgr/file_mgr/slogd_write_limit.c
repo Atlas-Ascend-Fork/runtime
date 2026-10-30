@@ -33,7 +33,11 @@ STATIC LogStatus WriteFileLimitGetSpec(int32_t type, uint32_t totalSize, uint32_
         *currSpec = typeSpec;
         return LOG_SUCCESS;
     }
-    *currSpec = curr * typeSpec / total;
+    // uint64 intermediate: DEBUG's typeSpec (7735345U) is the largest share, a debug quota
+    // above ~55MB (556 x 100KB units) wraps curr * typeSpec in 32 bits and throttles the
+    // highest-volume type to a random tiny quota - the same wrap exists for RUN at ~127MB
+    // and is fixed here as well
+    *currSpec = (uint32_t)(((uint64_t)curr * typeSpec) / total);
     return LOG_SUCCESS;
 }
 

@@ -367,6 +367,9 @@ void DlogEventInner(int32_t moduleId, const char* fmt, ...)
  */
 void DlogWithKVInner(int32_t moduleId, int32_t level, const KeyValue* pstKVArray, int32_t kvNum, const char* fmt, ...)
 {
+    // same routing latch as every other public entry: without it a process that delegated
+    // its write path misroutes KV logs into the local socket/shm path
+    AlogTransferOnEntry();
     ONE_ACT_ERR_LOG(pstKVArray == nullptr, return, "[input] key-value array is null.");
     ONE_ACT_ERR_LOG(kvNum <= 0, return, "[input] key-value number is invalid, key_value_number=%d.", kvNum);
     if ((moduleId < 0) || (fmt == nullptr)) {
@@ -812,6 +815,7 @@ void DlogInnerForC(int32_t moduleId, int32_t level, const char* fmt, ...)
 void DlogWithKVInnerForC(
     int32_t moduleId, int32_t level, const KeyValue* pstKVArray, int32_t kvNum, const char* fmt, ...)
 {
+    AlogTransferOnEntry();
     ONE_ACT_ERR_LOG(pstKVArray == nullptr, return, "[input] key-value array is null.");
     ONE_ACT_ERR_LOG(kvNum <= 0, return, "[input] key-value number=%d is invalid.", kvNum);
     if ((moduleId < 0) || (fmt == nullptr)) {

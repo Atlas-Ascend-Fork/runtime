@@ -165,6 +165,20 @@ STATIC void SlogdConfigMgrGetSpaceList(void)
     uint32_t securityTotalMaxFileSize = SlogdConfigMgrCalTotalFileSize(SECURITY_FILE_SIZE, SECURITY_FILE_NUM);
     uint32_t securityMaxFileSize = SECURITY_FILE_SIZE;
 
+    uint32_t debugDevOsTotalMaxFileSize = SlogdConfigMgrCalTotalFileSize(
+        g_configMgr.logConfig[DEBUG_SYS_LOG_TYPE].maxFileSize, g_configMgr.logConfig[DEBUG_SYS_LOG_TYPE].maxFileNum);
+    uint32_t debugDevOsFileSize = g_configMgr.logConfig[DEBUG_SYS_LOG_TYPE].maxFileSize;
+
+    uint32_t debugDevAppTotalMaxFileSize = SlogdConfigMgrCalTotalFileSize(
+        g_configMgr.logConfig[DEBUG_APP_LOG_TYPE].maxFileSize, g_configMgr.logConfig[DEBUG_APP_LOG_TYPE].maxFileNum);
+    uint32_t debugDevAppMaxFileSize = g_configMgr.logConfig[DEBUG_APP_LOG_TYPE].maxFileSize;
+
+    // DEBUG_LOG is index 0 of a zero-initialised array: leaving it unassigned makes the
+    // consumer treat 0 as "no quota" and the debug write limit is never applied - even
+    // though debug is the highest-volume type the limit was designed for
+    g_configMgr.spaceRecordList[DEBUG_LOG] =
+        debugDevOsTotalMaxFileSize + debugDevOsFileSize + debugDevAppTotalMaxFileSize + debugDevAppMaxFileSize;
+
     g_configMgr.spaceRecordList[SECURITY_LOG] = securityTotalMaxFileSize + securityMaxFileSize;
 
     g_configMgr.spaceRecordList[RUN_LOG] = eventTotalMaxFileSize + eventMaxFileSize + runDevOsTotalMaxFileSize +

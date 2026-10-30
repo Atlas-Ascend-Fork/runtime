@@ -255,7 +255,10 @@ static int32_t InitStackCoreDir(void)
             strerror(ToolGetErrorCode()));
 
         ret = strncpy_s(g_stackcorePath[stackcorePathNum], MAX_FILEPATH_LEN, srcDirName, strlen(srcDirName));
-        ONE_ACT_ERR_LOG(ret == -1, continue, "strncpy_s failed, strerr=%s", strerror(ToolGetErrorCode()));
+        // strncpy_s returns errno_t (0 = EOK, positive error), never -1: the old check was
+        // always false and truncation slipped through with the path counter still advanced
+        ONE_ACT_ERR_LOG(
+            ret != EOK, continue, "strncpy_s failed, result=%d, strerr=%s", ret, strerror(ToolGetErrorCode()));
         stackcorePathNum++;
     }
     ToolScandirFree(namelist, totalNum);

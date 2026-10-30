@@ -135,7 +135,10 @@ static int32_t DeviceAppLogDirSort(const struct dirent** a, const struct dirent*
 
 static void DeviceAppMonitorSendExistFile(const char* type)
 {
-    char dstFileName[MAX_FILENAME_LEN] = {0}; // slog/dev-os-xx/(run | debug)/device-app-xxx
+    // MAX_FULLPATH_LEN to match srcFileName below and DeviceAppFileSyncProc: the
+    // "slog/<master>/<type>/<dir>" target name overflows the 64-byte buffer for any
+    // device-app directory name longer than ~42 chars and the sync is silently skipped
+    char dstFileName[MAX_FULLPATH_LEN] = {0}; // slog/dev-os-xx/(run | debug)/device-app-xxx
     (void)memset_s(g_scanPath, MAX_FULLPATH_LEN, 0, MAX_FULLPATH_LEN);
     int32_t ret = 0;
     ret = sprintf_s(g_scanPath, MAX_FULLPATH_LEN, "%s/%s", LogGetRootPath(), type);
@@ -152,7 +155,7 @@ static void DeviceAppMonitorSendExistFile(const char* type)
     char srcFileName[MAX_FULLPATH_LEN] = {0}; // /var/log/npu/slog/(debug | run)/device-app-xxx
     for (int32_t i = 0; i < totalNum; i++) {
         ret = sprintf_s(
-            dstFileName, MAX_FILENAME_LEN, "slog/%s/%s/%s", FileMonitorGetMasterIdStr(), type, namelist[i]->d_name);
+            dstFileName, MAX_FULLPATH_LEN, "slog/%s/%s/%s", FileMonitorGetMasterIdStr(), type, namelist[i]->d_name);
         ONE_ACT_ERR_LOG(ret == -1, continue, "sprintf_s for %s failed.", type);
         (void)memset_s(srcFileName, MAX_FULLPATH_LEN, 0, MAX_FULLPATH_LEN);
         ret = sprintf_s(srcFileName, MAX_FULLPATH_LEN, "%s/%s", g_scanPath, namelist[i]->d_name);

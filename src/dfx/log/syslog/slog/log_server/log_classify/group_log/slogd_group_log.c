@@ -133,8 +133,10 @@ STATIC LogStatus GroupResourceInit(GroupInfo* group, char* groupLogPath, uint32_
     ONE_ACT_ERR_LOG(ret != LOG_SUCCESS, return LOG_FAILURE, "init buf for group failed.");
     StSubLogFileList* list = &(group->fileList);
     int32_t err = InitGroupLogList(list, group, groupLogPath, len);
+    // roll back only this group's buffer: attr == NULL would destroy every group's buffer
+    // of GROUP_LOG_TYPE, taking down all previously loaded groups
     TWO_ACT_WARN_LOG(
-        err != OK, (SlogdBufferExit(GROUP_LOG_TYPE, NULL)), return LOG_FAILURE,
+        err != OK, (SlogdBufferExit(GROUP_LOG_TYPE, (void*)group)), return LOG_FAILURE,
         "Malloc data for node failed, strerr=%s", strerror(ToolGetErrorCode()));
     return LOG_SUCCESS;
 }
@@ -262,6 +264,7 @@ STATIC LogStatus LoadGroupInfo(void)
         strerror(ToolGetErrorCode()));
     GroupInfo group;
     const int32_t baseBytes = 1024;
+    uint32_t failedGroups = 0;
     for (int32_t i = 0; i < GROUP_MAP_SIZE; ++i) {
         if (groupInfo->isInit == 1) {
             err = memset_s(&group, sizeof(GroupInfo), 0, sizeof(GroupInfo));
@@ -280,9 +283,16 @@ STATIC LogStatus LoadGroupInfo(void)
             NO_ACT_ERR_LOG(
                 ret != LOG_SUCCESS, "Add now group failed. Group Id is %d, Group Name is %s", group.groupId,
                 group.groupName);
+            if (ret != LOG_SUCCESS) {
+                failedGroups++;
+            }
         }
         groupInfo++;
     }
+    // best effort by design: a failed group only loses its own log channel, returning
+    // failure here would abort the whole slogd init - but surface the aggregate count so
+    // the partial loss is visible instead of hiding in per-group error lines
+    NO_ACT_WARN_LOG(failedGroups != 0, "%u group(s) failed to load, their logs are dropped.", failedGroups);
 
     return LOG_SUCCESS;
 }

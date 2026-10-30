@@ -176,31 +176,41 @@ STATIC void SysmonitorFdProcessTopResult(FILE* fp, char* result, int32_t size)
     int32_t numTop[MONITOR_FD_TOP_NUM] = {0};
     char pidCurrent[MONITOR_FD_PID_LENGTH] = {0};
     int32_t numCurrent = 0;
+    // lsof -F pf emits one "p<PID>" line per process followed by one "f<FD>" line per open
+    // descriptor: the default columnar output is space separated (no tabs), which the old
+    // tab splitter could never tokenize - parse the field output and count 'f' lines per pid
     while (fgets(result, size, fp) != NULL) {
-        char* ptr = NULL;
-        char* pid = strtok_s(result, "\t", &ptr);
-        if (pid == NULL) {
-            MONITOR_LOGE("strtok_s fd used times failed");
+        if (result[0] == 'f') {
+            numCurrent++;
+            continue;
+        }
+        if (result[0] != 'p') {
+            continue;
+        }
+        char* nl = strchr(result, '\n');
+        if (nl != NULL) {
+            *nl = '\0';
+        }
+        char* pid = result + 1;
+        if (pid[0] == '\0') {
+            continue;
+        }
+        if (strncmp(pid, pidCurrent, MONITOR_FD_PID_LENGTH) == 0) {
+            continue;
+        }
+        int32_t min = SysmonitorFdGetMinIndexOfArray(numTop, MONITOR_FD_TOP_NUM);
+        if (numCurrent > numTop[min]) {
+            numTop[min] = numCurrent;
+            errno_t err = strncpy_s(pidTop[min], MONITOR_FD_PID_LENGTH, pidCurrent, strlen(pidCurrent));
+            ONE_ACT_ERR_LOG(err != EOK, return, "strncpy_s pid failed, strerr=%s", strerror(ToolGetErrorCode()));
+        }
+        // set the result of this round as the current operation
+        errno_t err = strncpy_s(pidCurrent, MONITOR_FD_PID_LENGTH, pid, strlen(pid));
+        if (err != EOK) {
+            MONITOR_LOGE("strncpy_s current pid failed, strerr=%s", strerror(ToolGetErrorCode()));
             return;
         }
-
-        if (strncmp(pid, pidCurrent, MONITOR_FD_PID_LENGTH) == 0) {
-            numCurrent++;
-        } else {
-            int32_t min = SysmonitorFdGetMinIndexOfArray(numTop, MONITOR_FD_TOP_NUM);
-            if (numCurrent > numTop[min]) {
-                numTop[min] = numCurrent;
-                errno_t err = strncpy_s(pidTop[min], MONITOR_FD_PID_LENGTH, pidCurrent, strlen(pidCurrent));
-                ONE_ACT_ERR_LOG(err != EOK, return, "strncpy_s pid failed, strerr=%s", strerror(ToolGetErrorCode()));
-            }
-            // set the result of this round as the current operation
-            errno_t err = strncpy_s(pidCurrent, MONITOR_FD_PID_LENGTH, pid, strlen(pid));
-            if (err != EOK) {
-                MONITOR_LOGE("strncpy_s current pid failed, strerr=%s", strerror(ToolGetErrorCode()));
-                return;
-            }
-            numCurrent = 1;
-        }
+        numCurrent = 0;
     }
 
     // process the last pid
@@ -216,7 +226,10 @@ STATIC void SysmonitorFdProcessTopResult(FILE* fp, char* result, int32_t size)
 
 STATIC void SysmonitorFdProcessTopThree(void)
 {
-    const char command[] = {"/usr/sbin/lsof"};
+    // -Fpf: field output (p<PID> per process, f<FD> per descriptor) - see the parser above;
+    // the field list must be attached to -F: a space-separated "pf" can be parsed as a
+    // path argument by some option parsers and silently break the whole report
+    const char command[] = {"/usr/sbin/lsof -Fpf"};
     FILE* fp = popen(command, "r");
     ONE_ACT_ERR_LOG(fp == NULL, return, "print top three process failed, strerr=%s", strerror(ToolGetErrorCode()));
 

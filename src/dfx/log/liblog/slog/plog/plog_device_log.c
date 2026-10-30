@@ -193,7 +193,8 @@ STATIC int32_t DlogReportGetFlushTimeout(void)
 STATIC LogStatus DlogWriteReportLog(char* buf, uint32_t bufLen, int32_t devId)
 {
     if ((buf == NULL) || (bufLen == 0)) {
-        SELF_LOG_WARN("recv log buf empty, buf=%s, len=%u.", buf, bufLen);
+        // passing NULL to %s is UB outside glibc - guard it explicitly
+        SELF_LOG_WARN("recv log buf empty, buf=%s, len=%u.", (buf == NULL) ? "(null)" : buf, bufLen);
         return LOG_SESSION_RECV_NULL;
     } else if (strncmp(buf, HDC_END_BUF, sizeof(HDC_END_BUF)) == 0) {
         SELF_LOG_WARN("recv end buf by hdc.");

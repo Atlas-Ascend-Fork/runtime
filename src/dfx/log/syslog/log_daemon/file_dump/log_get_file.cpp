@@ -10,6 +10,7 @@
 #include "log_get_file.h"
 #include <mutex>
 #include <algorithm>
+#include <functional>
 #include "mmpa_api.h"
 #include "log_file_utils.h"
 #include "log_dsmi_drv.h"
@@ -21,6 +22,26 @@
 
 namespace Adx {
 static std::mutex g_pidMtx;
+
+namespace {
+// minimal scope-exit helper: the message pid mapping must be erased on every Process
+// return path, a hand-written unlock-per-return is fragile against future early returns
+class ScopeExit {
+public:
+    explicit ScopeExit(std::function<void()> fn) : fn_(std::move(fn)) {}
+    ~ScopeExit()
+    {
+        if (fn_ != nullptr) {
+            fn_();
+        }
+    }
+    ScopeExit(const ScopeExit&) = delete;
+    ScopeExit& operator=(const ScopeExit&) = delete;
+
+private:
+    std::function<void()> fn_;
+};
+} // namespace
 using stringMap = std::map<std::string, std::string>;
 static const stringMap TYPE_TO_PATH(
     {{"slog", "/var/log/npu/slog/"},
@@ -47,6 +68,7 @@ static constexpr int32_t SCRIPT_COLLECT_MODE = 1;
 static constexpr int32_t SCRIPT_CLEAR_MODE = 2;
 static constexpr int32_t TEN_MILLISECOND = 10;
 LogGetFile::intMap LogGetFile::g_numToPid;
+LogGetFile::intMap LogGetFile::g_pidRefcnt;
 int32_t LogGetFile::Init()
 {
     mappingNum_ = 0;
@@ -188,11 +210,56 @@ int32_t LogGetFile::Process(const CommHandle& handle, const std::shared_ptr<MsgP
         return SYS_ERROR;
     }
 
+    int32_t msgSlot = -1;
+    bool slotExhausted = false;
     if (logType == MESSAGE_LOG) {
         std::lock_guard<std::mutex> lck(g_pidMtx);
-        mappingNum_ = (mappingNum_ + 1) % MAX_PARALLEL_NUM;
-        g_numToPid[mappingNum_ + MAX_PARALLEL_NUM] = pid;
+        // reuse the existing slot of the same pid (ref-counted): GetMappingPid resolves by
+        // pid, a second concurrent request on a second slot would make the lookup flip
+        // mid-request when the first one erases its entry
+        auto mine = std::find_if(
+            g_numToPid.begin(), g_numToPid.end(), [pid](std::pair<int32_t, int32_t> p) { return p.second == pid; });
+        if (mine != g_numToPid.end()) {
+            msgSlot = mine->first;
+            g_pidRefcnt[msgSlot]++;
+        } else {
+            // pick a free slot instead of blindly rotating the ring: a blind write evicts
+            // the oldest LIVE request's mapping once more than MAX_PARALLEL_NUM requests
+            // are in flight, and the evicted request then fails with the sentinel path
+            for (int32_t probe = 0; probe < MAX_PARALLEL_NUM; probe++) {
+                mappingNum_ = (mappingNum_ + 1) % MAX_PARALLEL_NUM;
+                if (g_numToPid.find(mappingNum_ + MAX_PARALLEL_NUM) == g_numToPid.end()) {
+                    msgSlot = mappingNum_ + MAX_PARALLEL_NUM;
+                    break;
+                }
+            }
+            if (msgSlot >= 0) {
+                g_numToPid[msgSlot] = pid;
+                g_pidRefcnt[msgSlot] = 1;
+            } else {
+                slotExhausted = true;
+            }
+        }
     }
+    if (slotExhausted) {
+        // reject OUTSIDE g_pidMtx: SendEndMsg is a blocking HDC send and a slow peer must
+        // not stall every other message transfer waiting on the mapping lock
+        SELF_LOG_ERROR("too many concurrent message transfers (limit %d), reject pid=%d.", MAX_PARALLEL_NUM, pid);
+        (void)SendEndMsg(handle);
+        return SYS_ERROR;
+    }
+    // drop this request's hold when Process leaves: the slot is erased only after the last
+    // in-flight request of the pid ends, keeping the mapping stable for all of them
+    ScopeExit msgSlotGuard([msgSlot]() {
+        if (msgSlot >= 0) {
+            std::lock_guard<std::mutex> lck(g_pidMtx);
+            auto cnt = g_pidRefcnt.find(msgSlot);
+            if ((cnt != g_pidRefcnt.end()) && (--(cnt->second) <= 0)) {
+                g_pidRefcnt.erase(cnt);
+                g_numToPid.erase(msgSlot);
+            }
+        }
+    });
 
     err = GetFileList(logType, list, pid);
     const bool moduleUnsupported = (err == SYS_INVALID_PARAM);

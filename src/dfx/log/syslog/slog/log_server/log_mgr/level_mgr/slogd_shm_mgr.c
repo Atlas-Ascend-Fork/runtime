@@ -129,9 +129,10 @@ STATIC LogStatus LogSetConfigPathToShm(const char* configPath)
         return LOG_FAILURE;
     }
     size_t len = strlen(configPath);
-    if ((len == 0) || (len > (uint32_t)SLOG_CONF_PATH_MAX_LENGTH)) {
-        SYSLOG_WARN(
-            "[input] config Path length is invalid, length=%zu, max_length=%d.\n", len, SLOG_CONF_PATH_MAX_LENGTH);
+    // the shm segment below only takes CONFIG_PATH_LEN bytes: anything longer is silently
+    // truncated by the %s write while still returning success - reject at the boundary
+    if ((len == 0) || (len >= CONFIG_PATH_LEN)) {
+        SYSLOG_WARN("[input] config Path length is invalid, length=%zu, max_length=%u.\n", len, CONFIG_PATH_LEN);
         return LOG_FAILURE;
     }
     int32_t shmId = 0;

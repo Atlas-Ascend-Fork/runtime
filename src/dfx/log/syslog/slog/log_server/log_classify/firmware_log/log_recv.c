@@ -587,15 +587,22 @@ LogStatus SlogdFirmwareLogResInit(void)
     for (uint32_t i = 0; i < devNum; i++) {
         ret = SlogdBufferInit(FIRM_LOG_TYPE, bufSize, deviceIdArray[i], NULL);
         if (ret != LOG_SUCCESS) {
+            // roll back the devices initialised so far (mirrors SlogdSyslogInit's symmetric
+            // rollback): without it a re-init leaks every prepared queue and buffer
+            SlogdFirmwareLogResExit();
             return LOG_FAILURE;
         }
         ret = PrepareThreadRes(deviceIdArray[i]);
         if (ret != LOG_SUCCESS) {
+            SlogdFirmwareLogResExit();
             return LOG_FAILURE;
         }
     }
     ret = SlogdFirmwareLogDirInit();
     if (ret != LOG_SUCCESS) {
+        // symmetric rollback for the last init step too: the loop above has already
+        // prepared queues, buffers and threads, leaving them behind leaks on every retry
+        SlogdFirmwareLogResExit();
         return LOG_FAILURE;
     }
     return LOG_SUCCESS;

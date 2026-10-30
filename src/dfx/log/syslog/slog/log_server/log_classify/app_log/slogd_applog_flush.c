@@ -212,6 +212,13 @@ static int32_t SlogdFlushToAppNode(const char* msg, uint32_t msgLen, const LogIn
 static int32_t SlogdFlushToAppAll(const char* msg, uint32_t msgLen, const LogInfo* info)
 {
     void* handle = SlogdBufferHandleOpen(DEBUG_APP_LOG_TYPE + (int32_t)info->type, NULL, LOG_BUFFER_WRITE_MODE, 0);
+    if (handle == NULL) {
+        // align with SlogdFlushToAppNode: the whole-type open has no per-node attr to match,
+        // a missing buffer means the logs of this type are dropped - say so instead of
+        // silently feeding NULL into the check/write helpers below
+        SELF_LOG_ERROR("get app log buffer handle failed, type=%d.", info->type);
+        return LOG_FAILURE;
+    }
     if (SlogdBufferCheckFull(handle, msgLen)) {
         uint32_t bufSize = SlogdBufferGetBufSize(DEBUG_APP_LOG_TYPE + (int32_t)info->type);
         void* buffer = LogMalloc((size_t)bufSize + 1U);

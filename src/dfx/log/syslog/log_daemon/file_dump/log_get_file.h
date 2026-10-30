@@ -43,6 +43,9 @@ private:
     int32_t mappingNum_;
     using intMap = std::map<int32_t, int32_t>;
     static intMap g_numToPid;
+    // per-slot reference count of in-flight requests of the same pid: one slot per pid is
+    // reused by concurrent requests so GetMappingPid(pid) stays stable for all of them
+    static intMap g_pidRefcnt;
 };
 } // namespace Adx
 #endif

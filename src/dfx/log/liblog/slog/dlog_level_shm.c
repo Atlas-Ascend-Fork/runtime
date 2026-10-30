@@ -151,7 +151,9 @@ STATIC LogRt ParseLogLevel(const char* levelStr, const char* moduleStr)
         int32_t pre = i;
         for (; i < INVALID_MODULE_ID; i++) {
             const char* name = moduleInfos[i].moduleName;
-            if (strncmp(name, moduleStr + offPre, strlen(name)) == 0) {
+            // exact-token match: the token spans [offPre, off), a bare prefix match lets a
+            // short module name (e.g. TS) capture the level of a longer token (TSDUMP)
+            if ((strncmp(name, moduleStr + offPre, strlen(name)) == 0) && (offPre + strlen(name) == off)) {
                 ParseModuleLevel(levelStr, n, &moduleInfos[i]); // parse n module level
                 break;
             }

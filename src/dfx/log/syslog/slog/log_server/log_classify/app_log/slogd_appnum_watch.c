@@ -160,11 +160,16 @@ STATIC int32_t GetSortResult(SortArg* sortArg, int type, int numA, int numB)
             sortArg->listB[numB - 1]->d_name);
         if (ret == -1) {
             SELF_LOG_ERROR("snprintf_s B dir failed, strerr=%s", strerror(ToolGetErrorCode()));
+            FreeDir(sortArg->listA, numA, sortArg->listB, numB);
             return SYS_ERROR;
         }
-        ONE_ACT_ERR_LOG(
-            ToolStatGet(sortArg->bFileName, &sortArg->bStatbuff) != SYS_OK, return SYS_ERROR,
-            "get status %s failed, strerr=%s", sortArg->bFileName, strerror(ToolGetErrorCode()));
+        if (ToolStatGet(sortArg->bFileName, &sortArg->bStatbuff) != SYS_OK) {
+            SELF_LOG_ERROR("get status %s failed, strerr=%s", sortArg->bFileName, strerror(ToolGetErrorCode()));
+            // free the scandir arrays on the error path too: every early return below
+            // leaks both lists, repeated every 15s scan cycle
+            FreeDir(sortArg->listA, numA, sortArg->listB, numB);
+            return SYS_ERROR;
+        }
         FreeDir(sortArg->listA, numA, sortArg->listB, numB);
         return (sortArg->aDirStatbuff.st_mtime > sortArg->bStatbuff.st_mtime) ? 1 : 0;
     } else {
@@ -173,11 +178,14 @@ STATIC int32_t GetSortResult(SortArg* sortArg, int type, int numA, int numB)
             sortArg->listA[numA - 1]->d_name);
         if (ret == -1) {
             SELF_LOG_ERROR("snprintf_s A dir failed, strerr=%s", strerror(ToolGetErrorCode()));
+            FreeDir(sortArg->listA, numA, sortArg->listB, numB);
             return SYS_ERROR;
         }
-        ONE_ACT_ERR_LOG(
-            ToolStatGet(sortArg->aFileName, &sortArg->aStatbuff) != SYS_OK, return SYS_ERROR,
-            "get status %s failed, strerr=%s", sortArg->aFileName, strerror(ToolGetErrorCode()));
+        if (ToolStatGet(sortArg->aFileName, &sortArg->aStatbuff) != SYS_OK) {
+            SELF_LOG_ERROR("get status %s failed, strerr=%s", sortArg->aFileName, strerror(ToolGetErrorCode()));
+            FreeDir(sortArg->listA, numA, sortArg->listB, numB);
+            return SYS_ERROR;
+        }
         FreeDir(sortArg->listA, numA, sortArg->listB, numB);
         return (sortArg->aStatbuff.st_mtime > sortArg->bDirStatbuff.st_mtime) ? 1 : 0;
     }

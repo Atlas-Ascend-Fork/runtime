@@ -74,9 +74,16 @@ int32_t LogCmdSendLogMsg(LogCmdMsg* rcvMsg, const char* msg, uint16_t devId)
 
     LOCK_WARN_LOG(&g_logconfigLock);
     // clear message queue
+    int32_t clearRetry = 0;
     do {
         int32_t rcvRes = MsgQueueRecv(queueId, (void*)(rcvMsg), MSG_MAX_LEN, false, FEEDBACK_MSG_TYPE);
         if ((rcvRes != LOG_SUCCESS) && (ToolGetErrorCode() != EINTR)) {
+            break;
+        }
+        // bound the EINTR spin: a signal storm would hold g_logconfigLock forever and
+        // stall every level query behind this loop
+        if ((rcvRes != LOG_SUCCESS) && (++clearRetry >= MSG_RETRY_TIMES)) {
+            SELF_LOG_WARN("clear feedback queue kept being interrupted, give up after %d retries.", clearRetry);
             break;
         }
     } while (true);

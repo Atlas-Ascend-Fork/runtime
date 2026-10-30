@@ -260,7 +260,15 @@ STATIC LogRt CheckGernelConfig(void)
     char finalSymbol = g_groupInfo.agentFileDir[dirLen - 1U];
     if (finalSymbol != '/') {
         if (dirLen == SLOG_AGENT_FILE_DIR) {
-            g_groupInfo.agentFileDir[dirLen - 1U] = '/';
+            // a full-length dir has no room to append '/': fall back to the default dir
+            // (which ends with '/') instead of silently overwriting the last configured
+            // character and redirecting the logs to a wrong path
+            SELF_LOG_ERROR("agentFileDir is too long to append '/', default %s will be used.", DEFAULT_FILE_DIR);
+            int ret = strcpy_s(g_groupInfo.agentFileDir, SLOG_AGENT_FILE_DIR + 1, DEFAULT_FILE_DIR);
+            if (ret != EOK) {
+                SELF_LOG_ERROR(
+                    "strcpy_s config value to buffer failed, result=%d, strerr=%s.", ret, strerror(ToolGetErrorCode()));
+            }
         } else {
             g_groupInfo.agentFileDir[dirLen] = '/';
         }
