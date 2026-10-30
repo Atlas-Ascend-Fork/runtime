@@ -11,7 +11,6 @@
 #ifndef TSD_BASIC_COMPONENT_DEVICE_COMM_TSD_HDC_COMMON_H
 #define TSD_BASIC_COMPONENT_DEVICE_COMM_TSD_HDC_COMMON_H
 
-#include <functional>
 #include <mutex>
 #include <future>
 #include "proto/tsd_message.pb.h"

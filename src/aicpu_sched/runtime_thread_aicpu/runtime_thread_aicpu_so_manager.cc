@@ -42,7 +42,7 @@ RuntimeThreadAicpuStatus SoManager::GetFunction(
         return RuntimeThreadAicpuStatus::INVALID_PARAM;
     }
 
-    const std::string functionKey = soName + '\n' + functionName;
+    const std::string functionKey = soName + "\n" + functionName;
     std::lock_guard<std::mutex> lock(mutex_);
     const auto functionIt = functions_.find(functionKey);
     if (functionIt != functions_.end()) {

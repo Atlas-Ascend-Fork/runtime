@@ -219,7 +219,7 @@ bool CheckValidatePath(const std::string& path)
     return ValidateStr(path, pathPattern);
 }
 
-int32_t TsdExecuteCmd(const std::string& cmd)
+static int32_t TsdExecuteCmd(const std::string& cmd)
 {
     if (cmd.empty()) {
         return -1;
