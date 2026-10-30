@@ -34,7 +34,7 @@ bool g_isCustAicpuSd = false;
 
 namespace aicpu {
 // Host scheduler does not manage device AICPU worker busy states.
-status_t SetCoreBusyState(const uint32_t coreIndex, const bool busy)
+status_t SetCoreBusyState(uint32_t coreIndex, bool busy)
 {
     (void)coreIndex;
     (void)busy;

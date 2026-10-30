@@ -100,7 +100,7 @@ std::map<std::string, std::string>& GetThreadCtx(const aicpu::CtxType type, cons
 }
 } // namespace
 extern "C" {
-void AicpuSetReservedCpuCnt(const uint8_t type, const uint32_t reservedCnt)
+void AicpuSetReservedCpuCnt(uint8_t type, uint32_t reservedCnt)
 {
     if ((type >= MAX_RESERVED_TYPE) || (g_aicpuCoreCnt == 0U) || (reservedCnt > g_aicpuCoreCnt)) {
         AICPUE_LOGW(
@@ -133,7 +133,7 @@ uint32_t AicpuGetIdleCpuCnt()
 } // extern "C"
 
 namespace aicpu {
-status_t SetCoreBusyState(const uint32_t coreIndex, const bool busy)
+status_t SetCoreBusyState(uint32_t coreIndex, bool busy)
 {
     if ((coreIndex >= g_aicpuCoreCnt) || (coreIndex >= MAX_BUSY_CPU_COUNT)) {
         return AICPU_ERROR_FAILED;
