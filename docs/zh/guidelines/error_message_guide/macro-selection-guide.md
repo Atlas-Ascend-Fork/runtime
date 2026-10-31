@@ -478,6 +478,7 @@ Stream capture 模式检查专用。检查当前上下文是否支持 capture �
 | `UNSUPPORTED_SYSTEM_MSG` | EH0011 | 不支持的系统 |
 | `INVALID_PARAM_NO_VALUE_MSG` | EH0012 | 非法参数（无值） |
 | `STANDARD_FUNC_FAILED_MSG` | EH0013 | 标准函数调用失败 |
+| `LOAD_DYNAMIC_LIBRARY_FAILED_MSG` | EH0015 | 动态库加载或必需符号解析失败 |
 | （硬编码） | EH9999 | 内部错误/调用错误（兜底） |
 
 ---

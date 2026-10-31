@@ -367,7 +367,8 @@ rtError_t NpuDriver::MemQueueCreate(const int32_t devId, const rtMemQueueAttr_t*
         &halQueueCreate == nullptr, RT_ERROR_FEATURE_NOT_SUPPORT, "[drv api] halQueueCreate does not exist.");
     if (queAttr->depth < RT_MQ_DEPTH_MIN) {
         RT_LOG_OUTER_MSG_INVALID_PARAM_WITH_DESC(
-            "Memory queue creation", queAttr->depth, std::to_string(RT_MQ_DEPTH_MIN));
+            "Memory queue creation", queAttr->depth,
+            RtFmtMsg("greater than or equal to %u", static_cast<uint32_t>(RT_MQ_DEPTH_MIN)));
         return RT_ERROR_INVALID_VALUE;
     }
 

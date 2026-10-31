@@ -27,3 +27,5 @@
 - [EH0013 Invalid\_Argument](EH0013-Invalid_Argument.md)
 
 - [EH0014 Invalid\_Argument\_Null\_Pointer](EH0014-Invalid_Argument_Null_Pointer.md)
+
+- [EH0015 File\_Operation\_Error](EH0015-File_Operation_Error.md)

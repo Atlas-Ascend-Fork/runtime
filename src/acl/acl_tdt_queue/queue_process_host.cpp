@@ -56,7 +56,14 @@ aclError QueueProcessorHost::acltdtDestroyQueue(const uint32_t qid)
         ACL_REQUIRES_OK(GetQueueRouteNum(&queryInfo, deviceId, eventSum, ack, routeNum));
     }
     if (routeNum > 0UL) {
-        ACL_LOG_ERROR("qid [%u] can not be destroyed, it needs to be unbound first.", qid);
+        ACL_LOG_ERROR("qid [%u] cannot be destroyed, it needs to be unbound first.", qid);
+        const std::string feature =
+            acl::AclErrorLogManager::FormatStr("Destroying queue (qid=%u) with bound routes", qid);
+        acl::AclErrorLogManager::ReportInputError(
+            acl::UNSUPPORTED_FEATURE_MSG, std::vector<const char*>({"feature", "reason"}),
+            std::vector<const char*>(
+                {feature.c_str(), "Unbind all routes involving this queue using acltdtUnbindQueueRoutes before calling "
+                                  "acltdtDestroyQueue"}));
         return ACL_ERROR_FAILURE;
     }
     ACL_REQUIRES_RTS_OK_WARN_NOT_SUPPORT(rtMemQueueDestroy(deviceId, qid), rtMemQueueDestroy);
@@ -203,7 +210,8 @@ aclError QueueProcessorHost::SendBindUnbindMsg(
     }
     bqs::QsProcMsgRsp* const rsp = reinterpret_cast<bqs::QsProcMsgRsp*>(ack.buf);
     if (rsp->retCode != 0) {
-        ACL_LOG_INNER_ERROR("send connect qs failed, ret code is %d", rsp->retCode);
+        ACL_LOG_INNER_ERROR(
+            "Failed to %s queue routes. Service response code=%d.", isBind ? "bind" : "unbind", rsp->retCode);
         (void)rtFree(devPtr);
         devPtr = nullptr;
         return ACL_ERROR_FAILURE;

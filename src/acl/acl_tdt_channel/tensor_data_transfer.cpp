@@ -55,7 +55,7 @@ void* GetHandler()
 {
     std::string soPath;
     if (acl::file_utils::GetSoRealPath(soPath) != ACL_SUCCESS) {
-        ACL_LOG_ERROR("Get libacl_tdt_channel.so path failed.");
+        ACL_LOG_INNER_ERROR("Failed to get the path of libacl_tdt_channel.so.");
         return nullptr;
     }
     std::string soName = soPath + "libdatatransfer.so";
@@ -69,6 +69,13 @@ void* GetHandler()
             "installed. "
             "soName is %s.",
             soName.c_str());
+        const char_t* const dlRet = mmDlerror();
+        const char_t* const reason = ((dlRet == nullptr) || (dlRet[0] == '\0')) ?
+                                         "The library or its dependencies may be missing, inaccessible, "
+                                         "or incompatible with the current environment" :
+                                         dlRet;
+        acl::AclErrorLogManager::ReportInputError(
+            acl::LOAD_DYNAMIC_LIBRARY_FAILED_MSG, {"library_name", "reason"}, {soName.c_str(), reason});
     }
     return handler;
 }
@@ -95,12 +102,15 @@ void* GetFunction(const std::string& func_name)
         ACL_LOG_ERROR("Get handler failed when get %s function.", func_name.c_str());
         return nullptr;
     }
+    (void)mmDlerror();
     void* func_ptr = mmDlsym(handler, func_name.c_str());
     if (func_ptr == nullptr) {
-        ACL_LOG_ERROR(
-            "The corresponding symbol cannot be found. Please confirm whether the installed extension package is "
-            "correct, %s.",
-            mmDlerror());
+        const char_t* const dlRet = mmDlerror();
+        const std::string reason =
+            (dlRet == nullptr) ? ("Required symbol " + func_name + " cannot be resolved") : dlRet;
+        ACL_LOG_ERROR("Failed to load dynamic library %s. Reason: %s.", "libdatatransfer.so", reason.c_str());
+        acl::AclErrorLogManager::ReportInputError(
+            acl::LOAD_DYNAMIC_LIBRARY_FAILED_MSG, {"library_name", "reason"}, {"libdatatransfer.so", reason.c_str()});
     }
     return func_ptr;
 #endif
@@ -1016,6 +1026,7 @@ acltdtChannelHandle* acltdtCreateChannel(uint32_t deviceId, const char* name)
     ACL_REQUIRES_NOT_NULL_RET_NULL_INPUT_REPORT(name);
     static TdtHostInitFunc tdtHostInit = (TdtHostInitFunc)GetFunction("TdtHostInit");
     if (tdtHostInit == nullptr) {
+        ACL_LOG_ERROR("acltdtCreateChannel failed because TdtHostInit is unavailable.");
         return nullptr;
     }
     const auto ret = tdtHostInit(deviceId);
@@ -1029,6 +1040,7 @@ acltdtChannelHandle* acltdtCreateChannel(uint32_t deviceId, const char* name)
             static TdtHostPreparePopDataFunc tdtHostPreparePopData =
                 (TdtHostPreparePopDataFunc)GetFunction("TdtHostPreparePopData");
             if (tdtHostPreparePopData == nullptr) {
+                ACL_LOG_ERROR("acltdtCreateChannel failed because TdtHostPreparePopData is unavailable.");
                 return nullptr;
             }
             (void)tdtHostPreparePopData();
@@ -1115,6 +1127,7 @@ aclError acltdtStopChannel(acltdtChannelHandle* handle)
     if (!handle->recvName.empty()) {
         static TdtHostStopFunc tdtHostStop = (TdtHostStopFunc)GetFunction("TdtHostStop");
         if (tdtHostStop == nullptr) {
+            ACL_LOG_ERROR("acltdtStopChannel failed because TdtHostStop is unavailable.");
             return ACL_ERROR_FAILURE;
         }
         const auto ret = tdtHostStop(handle->recvName);
@@ -1144,6 +1157,7 @@ aclError acltdtDestroyChannel(acltdtChannelHandle* handle)
     if (aclChannleMap.size() == 0) {
         static TdtHostDestroyFunc tdtHostDestroy = (TdtHostDestroyFunc)GetFunction("TdtHostDestroy");
         if (tdtHostDestroy == nullptr) {
+            ACL_LOG_ERROR("acltdtDestroyChannel failed because TdtHostDestroy is unavailable.");
             return ACL_ERROR_FAILURE;
         }
         const auto ret = tdtHostDestroy();
@@ -1165,6 +1179,10 @@ aclError acltdtCleanChannel(acltdtChannelHandle* handle)
         ACL_LOG_INFO("acltdtCleanChannel success, device is %u, name is %s", handle->devId, handle->name.c_str());
         return ACL_SUCCESS;
     }
+    acl::AclErrorLogManager::ReportInputError(
+        acl::UNSUPPORTED_FEATURE_MSG, std::vector<const char*>({"feature", "reason"}),
+        std::vector<const char*>(
+            {__func__, "This operation requires a channel created with acltdtCreateChannelWithCapacity"}));
     return ACL_ERROR_FEATURE_UNSUPPORTED;
 }
 
@@ -1193,6 +1211,7 @@ aclError acltdtSendTensor(const acltdtChannelHandle* handle, const acltdtDataset
 
     static TdtHostPushDataFunc tdtHostPushData = (TdtHostPushDataFunc)GetFunction("TdtHostPushData");
     if (tdtHostPushData == nullptr) {
+        ACL_LOG_ERROR("acltdtSendTensor failed because TdtHostPushData is unavailable.");
         return ACL_ERROR_FAILURE;
     }
     int32_t sendRet = tdtHostPushData(handle->name, itemVec, 0);
@@ -1230,6 +1249,7 @@ aclError acltdtReceiveTensor(const acltdtChannelHandle* handle, acltdtDataset* d
     std::vector<tdt::DataItem> itemVec;
     static TdtHostPopDataFunc tdtHostPopData = (TdtHostPopDataFunc)GetFunction("TdtHostPopData");
     if (tdtHostPopData == nullptr) {
+        ACL_LOG_ERROR("acltdtReceiveTensor failed because TdtHostPopData is unavailable.");
         return ACL_ERROR_FAILURE;
     }
     const int32_t recvRet = tdtHostPopData(handle->recvName, itemVec);

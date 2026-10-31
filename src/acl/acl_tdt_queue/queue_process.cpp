@@ -121,6 +121,13 @@ aclError QueueProcessor::acltdtDestroyQueueOndevice(const uint32_t qid, const bo
     }
     if (routeNum > 0U) {
         ACL_LOG_ERROR("qid [%u] cannot be destroyed, it needs to be unbound first.", qid);
+        const std::string feature =
+            acl::AclErrorLogManager::FormatStr("Destroying queue (qid=%u) with bound routes", qid);
+        acl::AclErrorLogManager::ReportInputError(
+            acl::UNSUPPORTED_FEATURE_MSG, std::vector<const char*>({"feature", "reason"}),
+            std::vector<const char*>(
+                {feature.c_str(), "Unbind all routes involving this queue using acltdtUnbindQueueRoutes before calling "
+                                  "acltdtDestroyQueue"}));
         return ACL_ERROR_FAILURE;
     }
     ACL_REQUIRES_RTS_OK_WARN_NOT_SUPPORT(rtMemQueueDestroy(deviceId, qid), rtMemQueueDestroy);
@@ -275,7 +282,8 @@ aclError QueueProcessor::SendBindUnbindMsgOnDevice(
     }
     bqs::QsProcMsgRsp* const rsp = reinterpret_cast<bqs::QsProcMsgRsp*>(ack.buf);
     if (rsp->retCode != 0) {
-        ACL_LOG_INNER_ERROR("send connect qs failed, ret code is %d", rsp->retCode);
+        ACL_LOG_INNER_ERROR(
+            "Failed to %s queue routes. Service response code=%d.", isBind ? "bind" : "unbind", rsp->retCode);
         (void)rtMbufFree(mBuf);
         mBuf = nullptr;
         devPtr = nullptr;
@@ -427,7 +435,14 @@ aclError QueueProcessor::QueryAllocGroup()
     ACL_REQUIRES_RTS_OK_WARN_NOT_SUPPORT(rtMemGrpQuery(&input, &output), rtMemGrpQuery);
     grpNum = output.resultNum;
     if ((grpNum == 0U) || (output.groupsOfProc == nullptr)) {
-        ACL_LOG_ERROR("[Check] grpNum is 0 or groupsOfProc is nullptr, grpNum is %zu", grpNum);
+        if (grpNum == 0U) {
+            ACL_LOG_INNER_ERROR(
+                "Cannot allocate a buffer in SP mode because no memory group was found "
+                "for the current process. Process ID=%d.",
+                pid);
+        } else {
+            ACL_LOG_ERROR("[Check] groupsOfProc is nullptr while grpNum is %zu.", grpNum);
+        }
         return ACL_ERROR_FAILURE;
     }
     for (size_t num = 0U; num < grpNum; num++) {
@@ -440,7 +455,11 @@ aclError QueueProcessor::QueryAllocGroup()
             return ACL_SUCCESS;
         }
     }
-    ACL_LOG_ERROR("[Check] has no alloc");
+    ACL_LOG_INNER_ERROR(
+        "Cannot allocate a buffer in SP mode because the current process does not have "
+        "allocation permission in any of the queried memory groups. "
+        "Process ID=%d, queried group count=%zu.",
+        pid, grpNum);
     return ACL_ERROR_FAILURE;
 }
 
