@@ -1174,7 +1174,7 @@ rtError_t NpuDriver::DevMemAllocPolicyOffline(
 }
 
 rtError_t NpuDriver::DevMemAllocOffline(
-    void** dptr, const uint64_t size, rtMemType_t type, const uint64_t flag,
+    void** const dptr, const uint64_t size, rtMemType_t type, const uint64_t flag,
     const DevMemAllocConfig* const config) const
 {
     const uint32_t memPolicy = type & static_cast<uint32_t>(~MEM_ALLOC_TYPE_BIT);

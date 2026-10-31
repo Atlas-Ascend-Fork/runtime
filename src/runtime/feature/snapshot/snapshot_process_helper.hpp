@@ -19,8 +19,6 @@ namespace cce {
 namespace runtime {
 class Device;
 
-rtError_t AdviseTaskMemoryForSnapshot(const TaskInfo* const taskInfo, const void* const devAddr, const uint64_t size);
-
 rtError_t SnapShotPreProcessBackup(ContextDataManage& ctxMan);
 rtError_t SnapShotDeviceRestore(const uint32_t restoreFlags);
 rtError_t SnapShotResourceRestore(ContextDataManage& ctxMan);

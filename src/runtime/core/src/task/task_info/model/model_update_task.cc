@@ -16,7 +16,6 @@
 #include "model_update_task.h"
 #include "task.hpp"
 #include "npu_driver.hpp"
-#include "snapshot_process_helper.hpp"
 
 namespace cce {
 namespace runtime {
@@ -136,20 +135,12 @@ rtError_t ModelTaskUpdateInit(
         mdlUpdateTaskInfo->tilingTabOffset = tilingTaboffset;
         mdlUpdateTaskInfo->blockDimAddr = para->blockDimAddr;
         mdlUpdateTaskInfo->tilingKeyAddr = para->tilingKeyAddr;
-        error = AdviseTaskMemoryForSnapshot(taskInfo, mdlUpdateTaskInfo->tilingKeyAddr, sizeof(uint64_t));
-        ERROR_RETURN(error, "Snapshot advise model task update tiling key failed, retCode=%#x.", error);
-        error = AdviseTaskMemoryForSnapshot(taskInfo, mdlUpdateTaskInfo->blockDimAddr, sizeof(uint64_t));
-        ERROR_RETURN(error, "Snapshot advise model task update block dim failed, retCode=%#x.", error);
         return RT_ERROR_NONE;
     }
     // david process
     mdlUpdateTaskInfo->tilingKeyOffset = RtPtrToValue(para->tilingKeyAddr);
     mdlUpdateTaskInfo->blockDimOffset = RtPtrToValue(para->blockDimAddr);
     mdlUpdateTaskInfo->tilingTabOffset = RtPtrToValue(devCopyMem);
-    rtError_t error = AdviseTaskMemoryForSnapshot(taskInfo, para->tilingKeyAddr, sizeof(uint64_t));
-    ERROR_RETURN(error, "Snapshot advise model task update tiling key failed, retCode=%#x.", error);
-    error = AdviseTaskMemoryForSnapshot(taskInfo, para->blockDimAddr, sizeof(uint64_t));
-    ERROR_RETURN(error, "Snapshot advise model task update block dim failed, retCode=%#x.", error);
     return RT_ERROR_NONE;
 }
 #endif

@@ -64,7 +64,7 @@ struct DevMemAllocConfig {
     uint16_t moduleId = MODULEID_RUNTIME;
 };
 
-static const DevMemAllocConfig defaultDevMemAllocConfig;
+static constexpr DevMemAllocConfig defaultDevMemAllocConfig{};
 
 // facade interface for driver.
 class Driver : public NoCopy {

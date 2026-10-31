@@ -25,7 +25,6 @@
 #include "device/device_error_proc.hpp"
 #include "hwts.hpp"
 #include "common_task.h"
-#include "snapshot_process_helper.hpp"
 #include "runtime_task_manager.h"
 #include "model.hpp"
 #include "error_code.h"
@@ -435,8 +434,6 @@ rtError_t FftsPlusTaskInit(TaskInfo* taskInfo, const rtFftsPlusTaskInfo_t* const
         error = CheckFftsPlusDsaContextFromDevice(taskInfo, fftsPlusTaskInfo);
         COND_PROC(error != RT_ERROR_NONE, return error);
         fftsPlusTask->descAlignBuf = const_cast<void*>(fftsPlusTaskInfo->descBuf);
-        error = AdviseTaskMemoryForSnapshot(taskInfo, fftsPlusTaskInfo->descBuf, fftsPlusTask->descBufLen);
-        ERROR_RETURN(error, "Snapshot advise ffts plus device desc buf failed, retCode=%#x.", error);
         RT_LOG(
             RT_LOG_INFO, "stream_id=%d, task_id=%u, Device addr:descAlignBuf=%" PRIu64 ", descBufLen=%" PRIu64 ".",
             taskInfo->stream->Id_(), taskInfo->id, fftsPlusTask->descAlignBuf, fftsPlusTask->descBufLen);

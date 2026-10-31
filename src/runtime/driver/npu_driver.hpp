@@ -301,7 +301,7 @@ public:
     static uint64_t BuildDevMemAllocFlag(const uint32_t deviceId, const DevMemAllocConfig* const config);
 
     rtError_t DevMemAllocWithFlag(
-        void** const dptr, const uint64_t size, const rtMemType_t memType, const uint32_t deviceId,
+        void** const dptr, const uint64_t size, const rtMemType_t type, const uint32_t deviceId,
         const DevMemAllocConfig* const config, const uint64_t curFlag) override;
 
     // Alloc contiguous memory.

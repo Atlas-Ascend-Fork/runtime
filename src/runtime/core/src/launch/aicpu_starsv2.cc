@@ -20,7 +20,6 @@
 #include "profiler_c.hpp"
 #include "para_convertor.hpp"
 #include "npu_driver.hpp"
-#include "snapshot_process_helper.hpp"
 
 namespace cce {
 namespace runtime {
@@ -107,9 +106,6 @@ rtError_t StreamLaunchKernelEx(const void* const args, const uint32_t argsSize, 
         RT_LOG_INFO, "flags=%u, kernelFlag=0x%x, blkdim=%u.", flags, kernelTask->u.aicpuTaskInfo.comm.kernelFlag,
         kernelTask->u.aicpuTaskInfo.comm.dim);
     SetAicpuArgs(kernelTask, args, argsSize, nullptr);
-    error = AdviseTaskMemoryForSnapshot(
-        kernelTask, kernelTask->u.aicpuTaskInfo.comm.args, kernelTask->u.aicpuTaskInfo.comm.argsSize);
-    ERROR_RETURN(error, "Snapshot advise kernel launch ex aicpu args failed, retCode=%#x.", error);
     kernelTask->stmArgPos = static_cast<DavidStream*>(dstStm)->GetArgPos();
     AicpuTaskInfo* aicpuTask = &(kernelTask->u.aicpuTaskInfo);
     aicpuTask->aicpuKernelType = static_cast<uint8_t>(TS_AICPU_KERNEL_FMK);

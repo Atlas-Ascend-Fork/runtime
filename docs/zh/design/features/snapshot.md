@@ -92,7 +92,7 @@ Snapshot 特性采用分层架构设计：
 - **备份恢复协调层**：命名空间级别函数实现备份恢复流程协调
 - **设备操作层**：DeviceSnapshot 实现旧 Runtime 内存备份/恢复，并承担参数池地址刷新
 - **驱动能力层**：NpuDriver 调用 `halProcessResBackup` / `halProcessResRestore` 执行进程级设备内存快照
-- **内存标签层**：设备内存申请或 `MemAdvise` 时写入 required/optional/no_backup 标签，供驱动按 flags 选择备份范围
+- **内存标签层**：Runtime 内部设备内存申请时指定 required/optional/no_backup 标签，供驱动按 flags 选择备份范围
 
 ### 架构分层图
 
@@ -128,7 +128,6 @@ graph TB
 
     subgraph MemTag["内存标签层"]
         Alloc["DevMemAllocWithBackupFlag"]
-        Advise["MemAdvise"]
     end
     
     ACL_API --> RT_API
@@ -144,7 +143,6 @@ graph TB
     Restore --> NpuDrv
     NpuDrv --> Hal
     Alloc --> NpuDrv
-    Advise --> NpuDrv
 ```
 
 ### 核心模块交互图
@@ -482,7 +480,6 @@ DeviceSnapshot --> TaskHandlers
 - `ProcessResBackup`：调用 `halProcessResBackup`，当 `backupFlags == 1U` 时携带 optional 备份标记。
 - `ProcessResRestore`：调用 `halProcessResRestore`，当 `restoreFlags == 1U` 时携带 optional 恢复标记。
 - `DevMemAllocWithBackupFlag` / `DevMemAllocWithFlag`：在设备内存申请时写入 `DevMemBackupType` 标签（前者经 `type` 入参传入；后者由调用方设置 `config.type`，再通过 `NpuDriver::BuildDevMemAllocFlag(deviceId, &config)` 将备份类型与其他申请属性统一编入 flag）。
-- `MemAdvise`：对已申请或由任务持有的设备地址补充 required 标签。
 
 关键文件位置：
 - 头文件：`src/runtime/driver/npu_driver.hpp`
@@ -576,7 +573,6 @@ class NpuDriver {
 +DevMemAllocWithBackupFlag(type)
 +DevMemAllocWithFlag(flag)
 +BuildDevMemAllocFlag(deviceId, config)
-+MemAdvise(advise)
 }
 GlobalStateManager --> rtProcessState
 SnapshotCallbackManager --> SnapShotCallBackInfo
@@ -742,7 +738,7 @@ API 层通过 `GLOBAL_STATE_WAIT_IF_LOCKED()` 宏实现阻塞：
 | 状态管理实现 | `src/runtime/core/src/common/global_state_manager.cc` | 进程状态管理实现 |
 | 回调管理 | `src/runtime/feature/snapshot/snapshot_callback_manager.hpp` | SnapshotCallbackManager 类定义 |
 | 回调管理实现 | `src/runtime/feature/snapshot/snapshot_callback_manager.cc` | 回调注册/注销/触发实现 |
-| 驱动抽象 | `src/runtime/core/inc/drv/driver.hpp` | `DevMemAllocWithBackupFlag`、`MemAdvise` 抽象接口 |
+| 驱动抽象 | `src/runtime/core/inc/drv/driver.hpp` | `DevMemAllocWithBackupFlag` 抽象接口 |
 | 驱动封装 | `src/runtime/driver/npu_driver.hpp`、`src/runtime/driver/npu_driver.cc` | 进程资源备份/恢复、内存标签转换 |
 | 设备内存申请 | `src/runtime/driver/npu_driver_mem.cc` | 申请设备内存时写入快照标签 |
 | 设备快照接口 | `src/runtime/core/inc/common/idevice_snapshot_ops.hpp` | IDeviceSnapshotOps 抽象接口 |

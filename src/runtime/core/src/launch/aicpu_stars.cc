@@ -24,7 +24,6 @@
 #include "inner_thread_local.hpp"
 #include "para_convertor.hpp"
 #include "npu_driver.hpp"
-#include "snapshot_process_helper.hpp"
 
 namespace cce {
 namespace runtime {
@@ -166,10 +165,6 @@ rtError_t StreamLaunchKernelEx(const void* const args, const uint32_t argsSize, 
         kernelTask->u.aicpuTaskInfo.comm.dim);
 
     SetAicpuArgs(kernelTask, args, argsSize, nullptr);
-    error = AdviseTaskMemoryForSnapshot(
-        kernelTask, kernelTask->u.aicpuTaskInfo.comm.args, kernelTask->u.aicpuTaskInfo.comm.argsSize);
-    ERROR_GOTO_MSG_INNER(
-        error, ERROR_RECYCLE, "Snapshot advise kernel launch ex aicpu args failed, retCode=%#x.", error);
     kernelTask->u.aicpuTaskInfo.aicpuKernelType = static_cast<uint8_t>(TS_AICPU_KERNEL_FMK);
     kernelTask->u.aicpuTaskInfo.aicpuFlags = flags;
 

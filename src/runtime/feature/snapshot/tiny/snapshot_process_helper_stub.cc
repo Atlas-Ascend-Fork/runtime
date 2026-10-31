@@ -12,14 +12,6 @@
 namespace cce {
 namespace runtime {
 
-rtError_t AdviseTaskMemoryForSnapshot(const TaskInfo* const taskInfo, const void* const devAddr, const uint64_t size)
-{
-    UNUSED(taskInfo);
-    UNUSED(devAddr);
-    UNUSED(size);
-    return RT_ERROR_NONE;
-}
-
 rtError_t SnapShotPreProcessBackup(ContextDataManage& ctxMan)
 {
     UNUSED(ctxMan);

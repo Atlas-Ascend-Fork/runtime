@@ -30,34 +30,6 @@
 namespace cce {
 namespace runtime {
 
-rtError_t AdviseTaskMemoryForSnapshot(const TaskInfo* const taskInfo, const void* const devAddr, const uint64_t size)
-{
-    if ((devAddr == nullptr) || (size == 0U)) {
-        return RT_ERROR_NONE;
-    }
-
-    // Legacy OpMemoryBackup only collects retained tasks on model streams.
-    // AICPU streams can have a model but save commands without retaining TaskInfo.
-    // Use the task's stream, which may differ from the API stream during capture.
-    const Stream* const stm = taskInfo->stream;
-    if (!stm->IsModelStream() || !stm->IsTaskSink()) {
-        return RT_ERROR_NONE;
-    }
-
-    // IPC wait and capture external wait addresses are not collected by the legacy
-    // OpMemoryBackup (RecordArgsAddrAndSize / RecordFuncCallAddrAndSize), and such
-    // memory is not owned by this process, so the driver rejects snapshot advise.
-    if ((taskInfo->type == TS_TASK_TYPE_IPC_WAIT) || (taskInfo->type == TS_TASK_TYPE_CAPTURE_WAIT_EXTERNAL)) {
-        return RT_ERROR_NONE;
-    }
-
-    Device* const dev = stm->Device_();
-    if (!dev->IsProcessDeviceMemSnapshotAdviseSupported()) {
-        return RT_ERROR_NONE;
-    }
-    return dev->Driver_()->MemAdvise(const_cast<void*>(devAddr), size, ADVISE_SNAPSHOT_REQUIRED, dev->Id_());
-}
-
 static rtError_t GetCurrentSnapShotVersionInfo(uint32_t& runtimeApiVersion, uint32_t& driverApiVersion)
 {
     COND_RETURN_WARN(
