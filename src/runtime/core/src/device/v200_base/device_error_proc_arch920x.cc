@@ -52,19 +52,19 @@ static void PrintArch920xCoreErrInfo(
     std::ostringstream oss;
     oss << std::showbase << std::dec << "The error from device(chipId:" << info->u.davidCoreErrorInfo.comm.chipId
         << ", dieId:" << info->u.davidCoreErrorInfo.comm.dieId << "), serial number is " << errorNumber
-        << ". There is an " << GetStarsRingBufferHeadMsg(info->u.davidCoreErrorInfo.comm.type).c_str()
-        << " exception , core id is " << coreErrInfo.coreId << ", error code = " << errorCode.c_str()
-        << ", errorStr: " << errorString.c_str() << " Dump info: pc start: " << std::hex << coreErrInfo.pcStart
-        << ", current:" << coreErrInfo.currentPC << ", sc error info: " << coreErrInfo.scErrInfo
-        << ", su error info: " << coreErrInfo.suErrInfo[0] << "," << coreErrInfo.suErrInfo[1] << ","
-        << coreErrInfo.suErrInfo[2] << "," << coreErrInfo.suErrInfo[3]
+        << ", the error is " << GetStarsRingBufferHeadMsg(info->u.davidCoreErrorInfo.comm.type).c_str()
+        << ", core id is " << coreErrInfo.coreId << ", error code = " << errorCode.c_str()
+        << ", dump info: pc start: " << std::hex << coreErrInfo.pcStart << ", current: " << coreErrInfo.currentPC
+        << ", sc error info: " << coreErrInfo.scErrInfo << ", su error info: " << coreErrInfo.suErrInfo[0] << ","
+        << coreErrInfo.suErrInfo[1] << "," << coreErrInfo.suErrInfo[2] << "," << coreErrInfo.suErrInfo[3]
         << ", mte error info: " << coreErrInfo.mteErrInfo[0] << ", vec error info: " << coreErrInfo.vecErrInfo[0] << ","
         << coreErrInfo.vecErrInfo[1] << "," << coreErrInfo.vecErrInfo[2] << "," << coreErrInfo.vecErrInfoT06
         << ", cube error info: " << coreErrInfo.cubeErrInfo << ", l1 error info: " << coreErrInfo.l1ErrInfo
         << ", aic error mask: " << coreErrInfo.aicErrorMask << ", para base: " << coreErrInfo.paraBase
         << ", aic cond: " << coreErrInfo.aicCond << ", first pc start: " << coreErrInfo.ostTaskOneCore[0].pcStart
         << std::dec << ", first taskid: " << coreErrInfo.ostTaskOneCore[0].taskId
-        << ", first streamid: " << firstStreamId;
+        << ", first streamid: " << firstStreamId << ".\nThe extend info: errcode:(" << errorCode.c_str()
+        << ") errorStr: " << errorString.c_str() << " subErrType: " << std::hex << coreErrInfo.subErrType;
     if (coreErrInfo.ostTaskOneCore[1].pcStart != 0) {
         uint32_t secondStreamId = UINT32_MAX;
         (void)dev->GetStreamSqCqManage()->GetStreamIdBySqId(coreErrInfo.ostTaskOneCore[1].rtsqId, secondStreamId);
