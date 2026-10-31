@@ -322,7 +322,6 @@ set(libruntime_v100_src_files
     ${RUNTIME_FEATURE_DIR}/aclgraph/v100/api_impl_capture_event.cc
     ${RUNTIME_API_DIR}/impl/api_impl_mbuf.cc
     ${RUNTIME_API_DIR}/impl/api_impl_event.cc
-    ${RUNTIME_API_DIR}/impl/api_impl_event_common.cc
     ${RUNTIME_API_DIR}/impl/api_impl_esched.cc
     ${RUNTIME_API_DIR}/impl/api_error.cc
     ${RUNTIME_FEATURE_DIR}/aclgraph/api_error_aclgraph.cc

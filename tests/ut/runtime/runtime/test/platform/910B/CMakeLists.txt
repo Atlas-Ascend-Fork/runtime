@@ -280,7 +280,6 @@ set(runtimeut_910b_src_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_ipc_memory.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_soma.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_esched.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology.cc

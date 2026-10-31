@@ -54,5 +54,19 @@ rtError_t ApiImplEvent::EventGetTimeStamp(uint64_t* const timeStamp, Event* cons
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
+rtError_t ApiImplEvent::IpcGetEventHandle(IpcEvent* const event, rtIpcEventHandle_t* handle)
+{
+    UNUSED(event);
+    UNUSED(handle);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
+rtError_t ApiImplEvent::IpcOpenEventHandle(rtIpcEventHandle_t* handle, IpcEvent** const event)
+{
+    UNUSED(event);
+    UNUSED(handle);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
 } // namespace runtime
 } // namespace cce

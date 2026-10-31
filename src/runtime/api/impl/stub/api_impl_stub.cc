@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "api_impl.hpp"
-#include "api_impl_event.hpp"
 #include "api_impl_soma.hpp"
 #include "notify.hpp"
 
@@ -312,20 +311,6 @@ rtError_t ApiImpl::EventWorkModeSet(uint8_t mode)
 rtError_t ApiImpl::EventWorkModeGet(uint8_t* mode)
 {
     UNUSED(mode);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiImplEvent::IpcGetEventHandle(IpcEvent* const event, rtIpcEventHandle_t* handle)
-{
-    UNUSED(event);
-    UNUSED(handle);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiImplEvent::IpcOpenEventHandle(rtIpcEventHandle_t* handle, IpcEvent** const event)
-{
-    UNUSED(event);
-    UNUSED(handle);
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 

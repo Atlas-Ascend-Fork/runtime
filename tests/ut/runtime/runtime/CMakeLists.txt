@@ -413,7 +413,6 @@ set(runtimeut_src_tiny_exclude_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_ipc_memory.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_soma.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_kernel_func.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_david.cc
@@ -628,7 +627,6 @@ set(runtimeut_src_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_ipc_memory.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_soma.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_esched.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology.cc
@@ -780,7 +778,6 @@ set(runtimeut_david_src_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_vmm.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_mbuf.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_esched.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology.cc
@@ -1744,7 +1741,6 @@ set(runtimeut_v201_src_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_vmm.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_mbuf.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_esched.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_rt_config.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_device_topology.cc

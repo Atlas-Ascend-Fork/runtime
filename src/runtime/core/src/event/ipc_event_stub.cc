@@ -78,5 +78,18 @@ bool IpcEvent::TryFreeEventIdAndCheckCanBeDelete(const int32_t id, bool isNeedDe
 }
 
 rtError_t IpcEvent::ReleaseDrvResource() { return RT_ERROR_NONE; }
+
+rtError_t IpcEvent::IpcGetEventHandle(rtIpcEventHandle_t* handle)
+{
+    UNUSED(handle);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
+rtError_t IpcEvent::IpcOpenEventHandle(rtIpcEventHandle_t* handle)
+{
+    UNUSED(handle);
+    return RT_ERROR_FEATURE_NOT_SUPPORT;
+}
+
 } // namespace runtime
 } // namespace cce

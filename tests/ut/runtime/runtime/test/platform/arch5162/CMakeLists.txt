@@ -121,7 +121,7 @@ set(runtimeut_src_api_impl_list
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_kernel_args_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_kernel_func_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_creator.cc
-    ${TOP_DIR}/src/runtime/api/impl/api_impl_event_common.cc
+    ${TOP_DIR}/src/runtime/api/impl/api_impl_event.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_mbuf_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_esched_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_snapshot_stub.cc
