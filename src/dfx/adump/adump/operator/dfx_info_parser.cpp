@@ -1232,7 +1232,7 @@ void DfxInfoParser::ParseDfxInfo(const rtDfxParseParam* param, uint64_t* consume
         return;
     }
     *consumedLen = 0U;
-    if ((param != nullptr) && IsCcMode(static_cast<int32_t>(param->deviceId))) {
+    if ((param != nullptr) && IsCcDumpRestricted(static_cast<int32_t>(param->deviceId))) {
         if ((param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_SIMT) ||
             (param->coreType == RT_KERNEL_DFX_INFO_CORE_TYPE_AICPU)) {
             *consumedLen = param->writeIdx - param->readIdx;

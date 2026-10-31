@@ -238,7 +238,7 @@ const char* acldumpGetPath(acldumpType dumpType)
 aclError acldumpSaveExceptionInfo(
     const char* fileName, const char* userTag, const acldumpTensorInfo* tensors, size_t tensorCount)
 {
-    if (Adx::IsCurrentDeviceCcMode()) {
+    if (Adx::IsCurrentDeviceCcDumpRestricted()) {
         return ACL_SUCCESS;
     }
     if (fileName == nullptr) {

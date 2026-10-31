@@ -106,7 +106,7 @@ int32_t AdxDumpReceive::Receive(const CommHandle& handle, const SharedPtr<MsgPro
             "chunk bufLen(%u) exceeds actual chunk data buffer size(%u)", dumpChunk->bufLen, chunkDataLen);
 
         MsgStatus status = MsgStatus::MSG_STATUS_NONE_ERROR;
-        if (!IsCcMode(static_cast<int32_t>(proto->devId))) {
+        if (!IsCcDumpRestricted(static_cast<int32_t>(proto->devId))) {
             IDE_LOGI(
                 "fileName: %s, bufLen: %u, isLastChunk: %u, offset: %ld, flag: %d", dumpChunk->fileName,
                 dumpChunk->bufLen, dumpChunk->isLastChunk, dumpChunk->offset, dumpChunk->flag);

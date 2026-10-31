@@ -163,7 +163,7 @@ std::string ExceptionDumper::GetDumpSceneName() const
 int32_t ExceptionDumper::DumpException(const rtExceptionInfo& exception)
 {
     IDE_CTRL_VALUE_WARN(!destructionFlag_, return ADUMP_FAILED, "ExceptionDumper has been destructed.");
-    if (IsCcMode(static_cast<int32_t>(exception.deviceid))) {
+    if (IsCcDumpRestricted(static_cast<int32_t>(exception.deviceid))) {
         return ADUMP_SUCCESS;
     }
     IDE_CTRL_VALUE_WARN(

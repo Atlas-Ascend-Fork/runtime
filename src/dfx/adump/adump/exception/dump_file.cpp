@@ -286,7 +286,7 @@ int32_t DumpFile::Dump(std::vector<std::string>& record)
         return ADUMP_SUCCESS;
     }
 
-    if (IsCcMode(static_cast<int32_t>(deviceId_))) {
+    if (IsCcDumpRestricted(static_cast<int32_t>(deviceId_))) {
         return ADUMP_SUCCESS;
     }
 

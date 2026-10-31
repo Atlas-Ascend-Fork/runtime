@@ -485,7 +485,7 @@ int32_t DumpManager::DumpOperatorWithCfg(
     const std::string& opType, const std::string& opName, const std::vector<TensorInfo>& tensors, aclrtStream stream,
     const DumpCfg& dumpCfg)
 {
-    if (IsCurrentDeviceCcMode()) {
+    if (IsCurrentDeviceCcDumpRestricted()) {
         return ADUMP_SUCCESS;
     }
     std::lock_guard<std::mutex> lk(resourceMtx_);
@@ -539,7 +539,7 @@ int32_t DumpManager::DumpOperator(
 int32_t DumpManager::DumpOperatorV2(
     const std::string& opType, const std::string& opName, const std::vector<TensorInfoV2>& tensors, aclrtStream stream)
 {
-    if (IsCurrentDeviceCcMode()) {
+    if (IsCurrentDeviceCcDumpRestricted()) {
         return ADUMP_SUCCESS;
     }
     std::lock_guard<std::mutex> lk(resourceMtx_);
@@ -855,7 +855,7 @@ int32_t DumpManager::SaveExceptionInfo(
 
 int32_t DumpManager::SaveFile(const char* data, size_t dataLen, const char* fileName, SaveType type)
 {
-    if (IsCurrentDeviceCcMode()) {
+    if (IsCurrentDeviceCcDumpRestricted()) {
         return ADUMP_SUCCESS;
     }
     // opInfoRecordPath_ 写侧在 StartDumpArgs 的 resourceMtx_ 内，读侧在此同步拷贝快照，

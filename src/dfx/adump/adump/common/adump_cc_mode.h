@@ -107,7 +107,15 @@ inline bool IsDeterministicCcQueryFailure(const rtError_t error)
            (error == ACL_ERROR_RT_INVALID_DEVICEID);
 }
 
-inline bool IsCcMode(const int32_t deviceId)
+inline bool IsKnownCcMode(const int32_t mode)
+{
+    return (mode == static_cast<int32_t>(HAL_CC_MODE_OFF)) || (mode == static_cast<int32_t>(HAL_CC_MODE_NORMAL)) ||
+           (mode == static_cast<int32_t>(HAL_CC_MODE_ADDITIONAL));
+}
+
+inline bool IsDumpRestrictedCcMode(const int32_t mode) { return mode == static_cast<int32_t>(HAL_CC_MODE_NORMAL); }
+
+inline bool IsCcDumpRestricted(const int32_t deviceId)
 {
     if (deviceId < 0) {
         return false;
@@ -116,8 +124,7 @@ inline bool IsCcMode(const int32_t deviceId)
     CcModeCache& cache = GetCcModeCache();
     int32_t cachedMode = CC_MODE_UNCACHED;
     if (cache.TryGetCachedMode(deviceId, cachedMode)) {
-        return (cachedMode == static_cast<int32_t>(HAL_CC_MODE_NORMAL)) ||
-               (cachedMode == static_cast<int32_t>(HAL_CC_MODE_ADDITIONAL));
+        return IsDumpRestrictedCcMode(cachedMode);
     }
 
     int32_t mode = 0;
@@ -130,9 +137,8 @@ inline bool IsCcMode(const int32_t deviceId)
         return false;
     }
 
-    const bool isCcMode =
-        (mode == static_cast<int32_t>(HAL_CC_MODE_NORMAL)) || (mode == static_cast<int32_t>(HAL_CC_MODE_ADDITIONAL));
-    if (!isCcMode && (mode != static_cast<int32_t>(HAL_CC_MODE_OFF))) {
+    const bool isCcMode = IsDumpRestrictedCcMode(mode);
+    if (!IsKnownCcMode(mode)) {
         LogCcQueryFailureOnce(deviceId, false, mode);
     }
 
@@ -154,7 +160,7 @@ inline bool IsCcMode(const int32_t deviceId)
 #endif
 }
 
-inline bool IsCurrentDeviceCcMode()
+inline bool IsCurrentDeviceCcDumpRestricted()
 {
     int32_t deviceId = -1;
     if (!GetCurrentDeviceId(deviceId)) {
@@ -165,7 +171,7 @@ inline bool IsCurrentDeviceCcMode()
         }
         return false;
     }
-    return IsCcMode(deviceId);
+    return IsCcDumpRestricted(deviceId);
 }
 
 #if defined(__ADUMP_LLT) || defined(__IDE_UT)

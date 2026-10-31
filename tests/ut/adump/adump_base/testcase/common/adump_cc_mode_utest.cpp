@@ -55,70 +55,81 @@ protected:
     }
 };
 
-TEST_F(CcModeUtest, IsCcModeReturnsTrueOnlyWhenQuerySucceedsWithCcMode)
+TEST_F(CcModeUtest, IsCcModeReturnsTrueOnlyWhenQuerySucceedsWithNormalCcMode)
 {
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(0));
+    EXPECT_TRUE(IsCcDumpRestricted(0));
 
     ResetCcModeCacheForUt();
     SetStubCcMode(ADDITIONAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     ResetCcModeCacheForUt();
     SetStubCcMode(NON_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     ResetCcModeCacheForUt();
     SetStubCcMode(NORMAL_CC_MODE, TRANSIENT_QUERY_FAILED);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
+}
+
+TEST_F(CcModeUtest, CcModeAdditionalIsKnownAndCachedAsNonRestrictedMode)
+{
+    SetStubCcMode(ADDITIONAL_CC_MODE, RT_ERROR_NONE);
+    EXPECT_FALSE(IsCcDumpRestricted(0));
+
+    const auto iter = GetCcModeCache().entries.find(0);
+    ASSERT_NE(iter, GetCcModeCache().entries.end());
+    EXPECT_EQ(iter->second.mode, ADDITIONAL_CC_MODE);
+    EXPECT_FALSE(iter->second.failureLogReported);
 }
 
 TEST_F(CcModeUtest, CcModeQueryResultIsCachedPerDevice)
 {
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(0));
+    EXPECT_TRUE(IsCcDumpRestricted(0));
 
     SetStubCcMode(NON_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(0));
+    EXPECT_TRUE(IsCcDumpRestricted(0));
 
     ResetCcModeCacheForUt();
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 }
 
 TEST_F(CcModeUtest, CcModeFeatureNotSupportFailureIsCachedAsNonCcMode)
 {
     SetStubCcMode(NORMAL_CC_MODE, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 }
 
 TEST_F(CcModeUtest, CcModeInvalidDeviceIdFailureIsCachedAsNonCcMode)
 {
     SetStubCcMode(NORMAL_CC_MODE, ACL_ERROR_RT_INVALID_DEVICEID);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 }
 
 TEST_F(CcModeUtest, CcModeTransientQueryFailureIsNotCached)
 {
     SetStubCcMode(NORMAL_CC_MODE, TRANSIENT_QUERY_FAILED);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(0));
+    EXPECT_TRUE(IsCcDumpRestricted(0));
 }
 
 TEST_F(CcModeUtest, CcModeUnknownQueryResultIsCachedAsNonCcMode)
 {
     SetStubCcMode(UNKNOWN_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
 }
 
 TEST_F(CcModeUtest, CcModeConcurrentQueriesUseSingleCacheEntry)
@@ -126,8 +137,8 @@ TEST_F(CcModeUtest, CcModeConcurrentQueriesUseSingleCacheEntry)
     SetStubCcMode(NORMAL_CC_MODE, RT_ERROR_NONE);
     bool firstResult = false;
     bool secondResult = false;
-    std::thread firstThread([&firstResult]() { firstResult = IsCcMode(0); });
-    std::thread secondThread([&secondResult]() { secondResult = IsCcMode(0); });
+    std::thread firstThread([&firstResult]() { firstResult = IsCcDumpRestricted(0); });
+    std::thread secondThread([&secondResult]() { secondResult = IsCcDumpRestricted(0); });
     firstThread.join();
     secondThread.join();
 
@@ -171,6 +182,15 @@ TEST_F(CcModeUtest, CcModeKernelDfxCallbackDoesNotDependOnCurrentDevice)
 
     DumpKernelDfxInfoCallback(rtKernelDfxInfoType::RT_KERNEL_DFX_INFO_DEFAULT, 0U, 0U, buffer, sizeof(buffer));
     EXPECT_EQ(GetStubCcModeQueryCount(), 1U);
+}
+
+TEST_F(CcModeUtest, CcModeAdditionalAllowsKernelDfxCallback)
+{
+    SetStubCcMode(ADDITIONAL_CC_MODE, RT_ERROR_NONE);
+    const uint8_t buffer[] = "kernel dfx";
+    MOCKER(&KernelDfxDumper::DumpKernelDfxInfo).expects(once()).will(returnValue(ADUMP_SUCCESS));
+
+    DumpKernelDfxInfoCallback(rtKernelDfxInfoType::RT_KERNEL_DFX_INFO_DEFAULT, 0U, 0U, buffer, sizeof(buffer));
 }
 
 TEST_F(CcModeUtest, CcModeExceptionEntrySkipsDumpAndFailOpenKeepsValidation)
@@ -271,7 +291,7 @@ TEST_F(CcModeUtest, QueryFailureKeepsOriginalValidationBehavior)
     ResetCcModeCacheForUt();
     SetStubCcMode(NORMAL_CC_MODE, TRANSIENT_QUERY_FAILED);
 
-    EXPECT_FALSE(IsCurrentDeviceCcMode());
+    EXPECT_FALSE(IsCurrentDeviceCcDumpRestricted());
 }
 
 TEST_F(CcModeUtest, CcModeQuerySupportsExplicitDeviceId)
@@ -279,8 +299,8 @@ TEST_F(CcModeUtest, CcModeQuerySupportsExplicitDeviceId)
     constexpr int32_t ccDeviceId = 1;
     ResetCcModeCacheForUt();
     SetStubCcModeForDevice(ccDeviceId, NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_FALSE(IsCcMode(0));
-    EXPECT_TRUE(IsCcMode(ccDeviceId));
+    EXPECT_FALSE(IsCcDumpRestricted(0));
+    EXPECT_TRUE(IsCcDumpRestricted(ccDeviceId));
 }
 
 TEST_F(CcModeUtest, CcModeQuerySupportsDeviceIdWithoutFixedUpperLimit)
@@ -288,6 +308,6 @@ TEST_F(CcModeUtest, CcModeQuerySupportsDeviceIdWithoutFixedUpperLimit)
     constexpr int32_t deviceId = 128;
     ResetCcModeCacheForUt();
     SetStubCcModeForDevice(deviceId, NORMAL_CC_MODE, RT_ERROR_NONE);
-    EXPECT_TRUE(IsCcMode(deviceId));
-    EXPECT_FALSE(IsCcMode(-1));
+    EXPECT_TRUE(IsCcDumpRestricted(deviceId));
+    EXPECT_FALSE(IsCcDumpRestricted(-1));
 }

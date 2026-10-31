@@ -932,7 +932,7 @@ void AdxPrintWorkSpace(
     const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
     bool enableSync = true)
 {
-    if (Adx::IsCurrentDeviceCcMode()) {
+    if (Adx::IsCurrentDeviceCcDumpRestricted()) {
         return;
     }
     std::vector<uint8_t> printData(dumpWorkSpaceSize);
@@ -952,7 +952,7 @@ void AdxPrintTimeStamp(
     const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
     std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
 {
-    if (Adx::IsCurrentDeviceCcMode()) {
+    if (Adx::IsCurrentDeviceCcDumpRestricted()) {
         return;
     }
     std::vector<uint8_t> printData(dumpWorkSpaceSize);
@@ -1125,7 +1125,7 @@ void AdxAssertCallBack(rtExceptionInfo_t* exceptionInfo)
     } else if (!Adx::GetCurrentDeviceId(deviceId)) {
         deviceId = -1;
     }
-    if (Adx::IsCcMode(deviceId)) {
+    if (Adx::IsCcDumpRestricted(deviceId)) {
         return;
     }
 

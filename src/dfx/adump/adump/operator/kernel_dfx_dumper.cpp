@@ -46,7 +46,7 @@ void DumpKernelDfxInfoCallback(
     rtKernelDfxInfoType dfxType, uint32_t coreType, uint32_t coreId, const uint8_t* buffer, size_t length)
 {
     // CC mode is global: once enabled, all logical devices are in CC mode.
-    if (IsCcMode(0)) {
+    if (IsCcDumpRestricted(0)) {
         return;
     }
 
