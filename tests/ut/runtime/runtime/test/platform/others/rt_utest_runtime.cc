@@ -329,6 +329,24 @@ TEST_F(ChipRuntimeTest, ut_GetSocVersionByHardwareVer_610lite)
     rtInstance->SetSocVersion(oriSocVersion);
 }
 
+TEST_F(ChipRuntimeTest, ut_GetSocVersionByHardwareVer_5162a)
+{
+    Runtime* const rtInstance = static_cast<Runtime*>(Runtime::Instance());
+    ASSERT_NE(rtInstance, nullptr);
+    const rtChipType_t oriChipType = rtInstance->chipType_;
+    const std::string oriSocVersion = rtInstance->GetRawSocVersion();
+
+    // Select 5162A explicitly to exercise the hardware-version fallback mapping.
+    rtInstance->SetChipType(CHIP_5162A);
+    rtInstance->SetSocVersion("");
+    const rtError_t ret = rtInstance->GetSocVersionByHardwareVer(PLAT_COMBINE(ARCH_V100, CHIP_5162A, VER_NA), 0, 0);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(rtInstance->GetRawSocVersion(), "Ascend5162A");
+
+    rtInstance->SetChipType(oriChipType);
+    rtInstance->SetSocVersion(oriSocVersion);
+}
+
 TEST_F(ChipRuntimeTest, ut_GetSocVersionByHardwareVer02)
 {
     Runtime* rtInstance = ((Runtime*)Runtime::Instance());
