@@ -30,7 +30,8 @@ rtError_t MemsetD32OnDeviceByMemcpy(
     void* dst, uint64_t destMax, uint32_t value, uint64_t count, Stream* stm, bool isAsync);
 rtError_t DevMemSetAsyncByMemcpy(Stream* stm, void* ptr, uint64_t destMax, uint32_t fillVal, uint64_t fillCount);
 rtError_t DevMemSetAsyncByMemset(
-    Stream* stm, void* ptr, uint64_t destMax, uint32_t fillVal, uint64_t fillCount, uint32_t elementSize = 1U);
+    Stream* const stm, void* const ptr, const uint64_t destMax, const uint32_t fillVal, const uint64_t fillCount,
+    const uint32_t elementSize = 1U);
 
 // Host fill template size for batch memset, empirically 2MB is the performance crossover point:
 // below 2MB the fixed overhead of host alloc/free + SIMD fill exceeds batch benefit

@@ -26,7 +26,7 @@ constexpr uint8_t COND_TASK_IF_SWITCH_SQE_NUM = 2U;
 constexpr uint8_t COND_TASK_WHILE_SQE_NUM = 3U;
 
 rtError_t CaptureConditionTaskInit(TaskInfo* taskInfo, CondHandle* condHandle);
-rtError_t GetCondTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t GetCondTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 void CaptureConditionTaskUnInit(TaskInfo* const taskInfo);
 void ConstructCaptureConditionJumpBackFc(TaskInfo* const taskInfo, RtStarsCaptureWhileCondJumpBackFc& fc);
 rtError_t ReConstructCaptureConditionTaskFc(TaskInfo* taskInfo, CondHandle* condHandle);

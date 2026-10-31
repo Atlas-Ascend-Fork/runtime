@@ -849,7 +849,7 @@ rtError_t GetWaitValueTaskLastestParams(const TaskInfo* const taskInfo, rtTaskPa
 static rtError_t CheckUpdatingTaskParams(TaskInfo* const taskInfo, rtTaskParams* const params)
 {
     rtTaskType taskType;
-    rtError_t error = ConvertTaskType(taskInfo, &taskType);
+    const rtError_t error = ConvertTaskType(taskInfo, &taskType);
     ERROR_RETURN(error, "get task type failed, retCode=%#x.", error);
     const bool isSupportedTaskType = (taskType == RT_TASK_KERNEL) || (taskType == RT_TASK_EVENT_RECORD) ||
                                      (taskType == RT_TASK_EVENT_WAIT) || (taskType == RT_TASK_EVENT_RESET) ||

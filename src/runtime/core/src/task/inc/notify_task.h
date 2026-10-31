@@ -20,7 +20,7 @@ rtError_t NotifyRecordTaskInit(
     TaskInfo* taskInfo, const uint32_t notifyIndex, const int32_t deviceIndex, const uint32_t phyIndex,
     const SingleBitNotifyRecordInfo* const singleInfo, const rtCntNtyRecordInfo_t* const countInfo, void* const notify,
     bool isCountNotify = false);
-rtError_t GetNotifyRecordTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t GetNotifyRecordTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 rtError_t NotifyResetTaskInit(
     TaskInfo* taskInfo, const uint32_t notifyIndex, const SingleBitNotifyRecordInfo* const singleInfo,
     void* const notify);
@@ -31,7 +31,7 @@ rtError_t GetIpcSqeWriteAddrForNotifyRecordTask(TaskInfo* taskInfo, uint64_t& ad
 rtError_t NotifyWaitTaskInit(
     TaskInfo* taskInfo, const uint32_t notifyIndex, const uint32_t timeOutNum,
     const CountNotifyWaitInfo* const cntNtfyInfo, void* const inNotify, const bool isCountNotify = false);
-rtError_t GetNotifyWaitTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t GetNotifyWaitTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 void ToCommandBodyForNotifyWaitTask(TaskInfo* taskInfo, rtCommand_t* const command);
 void DoCompleteSuccessForNotifyWaitTask(TaskInfo* taskInfo, const uint32_t devId);
 void PrintErrorInfoForNotifyWaitTask(TaskInfo* const taskInfo, const uint32_t devId);

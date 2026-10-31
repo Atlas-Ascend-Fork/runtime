@@ -335,7 +335,7 @@ static rtError_t AllocMemcpyBatchTaskParamArrays(MemcpyBatchTaskParamsInfo* cons
 {
     const size_t count = params->numBatches;
     const size_t numAttrs = params->numAttrs;
-    typedef void* MemcpyDataPtr;
+    using MemcpyDataPtr = void*;
     // 四个数组按相同下标共同描述一条子拷贝，长度均为当前 task 的 count。
     params->dsts = new (std::nothrow) MemcpyDataPtr[count];
     params->destMaxs = new (std::nothrow) size_t[count];

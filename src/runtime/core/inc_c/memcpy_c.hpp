@@ -32,7 +32,7 @@ rtError_t Memcpy2DAsync(
     const uint64_t fixedSize);
 rtError_t MemcopyBatchAsync(
     AsyncDmaBatchInfo& batchInfo, uint64_t* const realCnt, uint64_t* const realSize, Stream* const stm,
-    const MemcpyBatchTaskParamsInput* params = nullptr);
+    const MemcpyBatchTaskParamsInput* const params = nullptr);
 rtError_t MemcopyAsync(
     void* const dst, const uint64_t destMax, const void* const src, const uint64_t cpySize, const rtMemcpyKind_t kind,
     Stream* const stm, uint64_t* const realSize, const std::shared_ptr<void>& guardMem = nullptr,

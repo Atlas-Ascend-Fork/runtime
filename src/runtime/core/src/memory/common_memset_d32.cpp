@@ -205,7 +205,8 @@ rtError_t MemsetD32OnDevice(
         Device* device = stm->Device_();
         const DevProperties& props = device->GetDevProperties();
         if (IsSupportMemsetTask(memDevId, device->Id_(), props)) {
-            return DevMemSetAsyncByMemset(stm, dst, destMax, value, totalBytes, sizeof(uint32_t));
+            return DevMemSetAsyncByMemset(
+                stm, dst, destMax, value, totalBytes, static_cast<uint32_t>(sizeof(uint32_t)));
         }
     }
 

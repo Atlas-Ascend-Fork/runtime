@@ -242,7 +242,7 @@ rtError_t CaptureConditionTaskInit(TaskInfo* taskInfo, CondHandle* condHandle)
         ERROR_RETURN(ret, "alloc jumpBack func call mem failed, retCode=%#x.", ret);
     }
 
-    rtError_t error = AllocCondTaskFuncCallMem(taskInfo);
+    const rtError_t error = AllocCondTaskFuncCallMem(taskInfo);
     ERROR_RETURN(error, "alloc condition task func call mem failed, retCode=%#x.", error);
 
     const std::vector<Model*>& subModels = condHandle->GetSubCaptureModels();

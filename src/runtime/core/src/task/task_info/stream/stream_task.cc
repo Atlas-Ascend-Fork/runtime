@@ -262,7 +262,7 @@ void ToCmdBodyForSetStreamModeTask(TaskInfo* taskInfo, rtCommand_t* const comman
 
 #if F_DESC("CallbackLaunchTask")
 rtError_t CallbackLaunchTaskInit(
-    TaskInfo* taskInfo, const rtCallback_t callBackFunction, void* const functionData, const bool isBlockFlag,
+    TaskInfo* taskInfo, rtCallback_t const callBackFunction, void* const functionData, const bool isBlockFlag,
     const int32_t evtId)
 {
     TaskCommonInfoInit(taskInfo);

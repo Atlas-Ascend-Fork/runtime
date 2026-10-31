@@ -43,9 +43,9 @@ rtError_t StreamTagSetTaskInit(TaskInfo* taskInfo, Stream* const stm, const uint
 rtError_t SetStreamModeTaskInit(TaskInfo* taskInfo, const uint64_t mode);
 void ToCmdBodyForSetStreamModeTask(TaskInfo* taskInfo, rtCommand_t* const command);
 rtError_t CallbackLaunchTaskInit(
-    TaskInfo* taskInfo, const rtCallback_t callBackFunction, void* const functionData, const bool isBlockFlag,
+    TaskInfo* taskInfo, rtCallback_t const callBackFunction, void* const functionData, const bool isBlockFlag,
     const int32_t evtId);
-rtError_t GetHostTaskParams(const TaskInfo* taskInfo, rtTaskParams* params);
+rtError_t GetHostTaskParams(const TaskInfo* const taskInfo, rtTaskParams* const params);
 void ToCmdBodyForCallbackLaunchTask(TaskInfo* taskInfo, rtCommand_t* const command);
 void FlipTaskInit(
     TaskInfo* taskInfo, const uint16_t flipNum, const uint16_t streamId = 0U, const uint16_t subType = 0U);
