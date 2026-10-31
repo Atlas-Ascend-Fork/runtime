@@ -46,7 +46,7 @@ aclError aclrtCreateEventWithFlagImpl(aclrtEvent* event, uint32_t flag)
 {
     if (flag == ACL_EVENT_EXTERNAL) {
         static std::once_flag deprecatedWarningFlag;
-        std::call_once(deprecatedWarningFlag, [] {
+        std::call_once(deprecatedWarningFlag, []() {
             ACL_LOG_WARN("ACL_EVENT_EXTERNAL is deprecated since CANN 9.3.0,"
                          " will be removed after 2027/12/30,"
                          " use aclrtRecordEventWithFlag(ACL_EVENT_RECORD_EXTERNAL) or"
