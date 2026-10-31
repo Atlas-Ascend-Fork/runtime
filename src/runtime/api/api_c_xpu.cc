@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "api.hpp"
+#include "api_xpu.hpp"
 #include "api_c.h"
 #include "rt_external_device.h"
 using namespace cce::runtime;
@@ -18,10 +18,11 @@ extern "C" {
 VISIBILITY_DEFAULT
 rtError_t rtGetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
 {
-    Api* const apiInstance = Api::Instance();
+    ApiXpu* const apiInstance = ApiXpu::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
 
     const rtError_t error = apiInstance->GetXpuDevCount(devType, devCount);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -29,9 +30,10 @@ rtError_t rtGetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
 VISIBILITY_DEFAULT
 rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 {
-    Api* const apiInstance = Api::Instance();
+    ApiXpu* const apiInstance = ApiXpu::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->SetXpuDevice(devType, devId);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -39,9 +41,10 @@ rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 VISIBILITY_DEFAULT
 rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 {
-    Api* const apiInstance = Api::Instance();
+    ApiXpu* const apiInstance = ApiXpu::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->ResetXpuDevice(devType, devId);
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }
@@ -49,9 +52,10 @@ rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 VISIBILITY_DEFAULT
 rtError_t rtXpuSetTaskFailCallback(rtXpuDevType devType, const char_t* moduleName, rtTaskFailCallback callback)
 {
-    Api* const apiInstance = Api::Instance();
+    ApiXpu* const apiInstance = ApiXpu::Instance();
     NULL_RETURN_ERROR_WITH_EXT_ERRCODE(apiInstance);
     const rtError_t error = apiInstance->XpuSetTaskFailCallback(devType, moduleName, RtPtrToPtr<void*>(callback));
+    COND_RETURN_WITH_NOLOG(error == RT_ERROR_FEATURE_NOT_SUPPORT, ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     ERROR_RETURN_WITH_EXT_ERRCODE(error);
     return ACL_RT_SUCCESS;
 }

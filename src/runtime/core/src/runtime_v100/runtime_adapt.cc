@@ -88,6 +88,7 @@ Runtime::~Runtime()
     apiIpcMemory_ = nullptr;
     apiHostMemory_ = nullptr;
     apiVmm_ = nullptr;
+    apiXpu_ = nullptr;
 
     DELETE_O(apiImpl_);
     DestroyImplMbuf(apiImplMbuf_);
@@ -100,6 +101,7 @@ Runtime::~Runtime()
     DestroyImplIpcMemory(apiImplIpcMemory_);
     DestroyImplHostMemory(apiImplHostMemory_);
     DestroyImplVmm(apiImplVmm_);
+    DestroyImplXpu(apiImplXpu_);
     DestroyImplKernelArgs(apiImplKernelArgs_);
     DestroyImplKernelFunc(apiImplKernelFunc_);
     DELETE_O(apiError_);

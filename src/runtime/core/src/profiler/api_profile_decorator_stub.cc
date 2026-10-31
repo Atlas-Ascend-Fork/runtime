@@ -121,42 +121,5 @@ rtError_t ApiProfileDecorator::RdmaDbSend(const uint32_t dbIndex, const uint64_t
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
-rtError_t ApiDecorator::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiDecorator::ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiDecorator::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
-{
-    UNUSED(devType);
-    UNUSED(devCount);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiDecorator::XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback)
-{
-    UNUSED(devType);
-    UNUSED(moduleName);
-    UNUSED(callback);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiDecorator::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
-{
-    UNUSED(type);
-    UNUSED(data);
-    UNUSED(len);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
 } // namespace runtime
 } // namespace cce

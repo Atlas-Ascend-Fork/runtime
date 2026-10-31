@@ -255,20 +255,6 @@ rtError_t ApiErrorDecorator::MemsetD32Async(
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
-rtError_t ApiErrorDecorator::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiErrorDecorator::ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
 rtError_t ApiErrorDecorator::EventWorkModeSet(uint8_t mode)
 {
     UNUSED(mode);
@@ -278,29 +264,6 @@ rtError_t ApiErrorDecorator::EventWorkModeSet(uint8_t mode)
 rtError_t ApiErrorDecorator::EventWorkModeGet(uint8_t* mode)
 {
     UNUSED(mode);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiErrorDecorator::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
-{
-    UNUSED(devType);
-    UNUSED(devCount);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-rtError_t ApiErrorDecorator::XpuSetTaskFailCallback(
-    const rtXpuDevType devType, const char_t* moduleName, void* callback)
-{
-    UNUSED(devType);
-    UNUSED(moduleName);
-    UNUSED(callback);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiErrorDecorator::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
-{
-    UNUSED(type);
-    UNUSED(data);
-    UNUSED(len);
     return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 

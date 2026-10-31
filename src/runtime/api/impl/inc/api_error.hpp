@@ -332,9 +332,6 @@ public:
     rtError_t HdcSessionClose(rtHdcSession_t const session) override;
     rtError_t GetHostCpuDevId(int32_t* const devId) override;
     rtError_t DeviceResourceClean(const int32_t devId) override;
-    rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) override;
     rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) override;
     // context
     rtError_t ContextCreate(Context** const inCtx, const int32_t devId) override;
@@ -502,7 +499,6 @@ public:
     rtError_t RegProfCtrlCallback(const uint32_t moduleId, const rtProfCtrlHandle callback) override;
     rtError_t RegStreamStateCallback(
         const char_t* regName, void* callback, void* args, StreamStateCallback type) override;
-    rtError_t XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback) override;
 
     // callback api
     rtError_t SubscribeReport(const uint64_t threadId, Stream* const stm) override;
@@ -516,7 +512,6 @@ public:
     rtError_t GetAiCpuCount(uint32_t* const aiCpuCnt) override;
     rtError_t LaunchHostFunc(Stream* const stm, const rtCallback_t callBackFunc, void* const fnData) override;
     rtError_t LaunchHostFuncV2(Stream* const stm, const rtHostCpuFunc callBackFunc, void* const fnData) override;
-    rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len) override;
     // stream label func
     rtError_t LabelSwitchByIndex(
         void* const ptr, const uint32_t maxVal, void* const labelInfoPtr, Stream* const stm) override;

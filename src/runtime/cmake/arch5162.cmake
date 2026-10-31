@@ -149,6 +149,8 @@ set(libruntime_api_impl_src_files
     ${RUNTIME_API_DIR}/impl/api_impl_arch5162.cc
     ${RUNTIME_API_DIR}/impl/stub/api_impl_memory_stub.cc
     ${RUNTIME_API_DIR}/impl/v100/api_impl_creator_c.cc
+    ${RUNTIME_API_DIR}/impl/api_impl_xpu_creator.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_stub.cc
 )
 
 set(common_src_files
@@ -244,7 +246,6 @@ set(runtime_src_aclgraph_list
 
 set(libruntime_src_files_include_for_arch5162
     ${RUNTIME_API_DIR}/impl/stub/api_error_stub.cc
-    ${RUNTIME_API_DIR}/impl/v100/api_impl_v100.cc
     ${RUNTIME_CORE_DIR}/src/context/context_stub.cc
     ${RUNTIME_CORE_DIR}/src/dfx/printf_stub.cc
     ${RUNTIME_CORE_DIR}/src/event/ipc_event_stub.cc

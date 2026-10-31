@@ -17,27 +17,6 @@
 
 namespace cce {
 namespace runtime {
-rtError_t ApiImplDavid::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiImplDavid::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
-{
-    UNUSED(devType);
-    UNUSED(devCount);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiImplDavid::ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    UNUSED(devId);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
 rtError_t ApiImplDavid::LaunchKernelV2(
     Kernel* const kernel, uint32_t blockDim, const RtArgsWithType* const argsWithType, Stream* const stm,
     const rtKernelLaunchCfg_t* const cfg)
@@ -72,22 +51,6 @@ rtError_t ApiImplDavid::LaunchKernelV2(
     }
 
     return LaunchKernelByArgsWithType(kernel, blockDim, curStm, argsWithType, taskCfg);
-}
-
-rtError_t ApiImplDavid::XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback)
-{
-    UNUSED(devType);
-    UNUSED(moduleName);
-    UNUSED(callback);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
-}
-
-rtError_t ApiImplDavid::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
-{
-    UNUSED(type);
-    UNUSED(data);
-    UNUSED(len);
-    return RT_ERROR_FEATURE_NOT_SUPPORT;
 }
 
 } // namespace runtime

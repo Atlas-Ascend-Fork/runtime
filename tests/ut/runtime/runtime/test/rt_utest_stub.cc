@@ -21,6 +21,7 @@
 #include "api.hpp"
 #include "api_host_memory.hpp"
 #include "api_impl.hpp"
+#include "api_impl_xpu.hpp"
 #include "api_impl_creator.hpp"
 #include "api_impl_event.hpp"
 #include "api_error.hpp"
@@ -318,17 +319,9 @@ TEST_F(TinyStubTest, api_error_stub)
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = api.GetDeviceInfoByAttr(0, RT_DEV_ATTR_AICORE_CORE_NUM, nullptr);
     EXPECT_EQ(ret, RT_ERROR_INVALID_VALUE);
-    ret = api.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.GetXpuDevCount(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = api.EventWorkModeSet(0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = api.EventWorkModeGet(nullptr);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, "", nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     rtMemManagedLocation location;
     ret = api.MemManagedAdvise(nullptr, 0, 0, location);
@@ -409,12 +402,6 @@ TEST_F(TinyStubTest, api_impl_stub)
     ret = impl.MemGetInfoByDeviceId(0, false, nullptr, nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = impl.GetDeviceInfoFromPlatformInfo(0, "", "", nullptr);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = impl.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = impl.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = impl.GetXpuDevCount(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = impl.EventWorkModeSet(0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
@@ -501,15 +488,19 @@ TEST_F(TinyStubTest, api_profile_stub)
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
     ret = api.RdmaDbSend(0, 0, nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
+}
+
+TEST_F(TinyStubTest, api_impl_xpu_stub)
+{
+    ApiImplXpu impl;
+    rtError_t ret = RT_ERROR_NONE;
+    ret = impl.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
+    ret = impl.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.GetXpuDevCount(RT_DEV_TYPE_DPU, 0);
+    ret = impl.GetXpuDevCount(RT_DEV_TYPE_DPU, nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, nullptr, nullptr);
-    EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
-    ret = api.XpuProfilingCommandHandle(0, nullptr, 0);
+    ret = impl.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, "", nullptr);
     EXPECT_EQ(ret, RT_ERROR_FEATURE_NOT_SUPPORT);
 }
 

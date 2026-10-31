@@ -429,9 +429,6 @@ public:
     virtual rtError_t SetDeviceFailureMode(uint64_t failureMode) = 0;
     virtual rtError_t GetLastErr(rtLastErrLevel_t level) = 0;
     virtual rtError_t PeekLastErr(rtLastErrLevel_t level) = 0;
-    virtual rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) = 0;
-    virtual rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) = 0;
-    virtual rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) = 0;
     virtual rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) = 0;
 
     // context
@@ -546,7 +543,6 @@ public:
         const char_t* regName, void* callback, void* args, TaskFailCallbackType type) = 0;
     virtual rtError_t RegStreamStateCallback(
         const char_t* regName, void* callback, void* args, StreamStateCallback type) = 0;
-    virtual rtError_t XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback) = 0;
 
     // IPC API
     virtual rtError_t IpcSetMemoryAttr(const char* name, uint32_t type, uint64_t attr) = 0;
@@ -618,7 +614,6 @@ public:
     virtual rtError_t GetAicpuDeploy(rtAicpuDeployType_t* const deployType) = 0;
     virtual rtError_t GetAiCoreCount(uint32_t* const aiCoreCnt) = 0;
     virtual rtError_t GetAiCpuCount(uint32_t* const aiCpuCnt) = 0;
-    virtual rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len) = 0;
 
     // stream label func
     virtual ::rtError_t LabelSwitchByIndex(

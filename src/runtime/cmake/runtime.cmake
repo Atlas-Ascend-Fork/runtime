@@ -277,9 +277,9 @@ set_source_files_properties(${libruntime_api_aclrt_impl_src_files}
 
 #------------------------- runtime v100 -------------------------
 set(xpu_tprt_api_file
-    ${RUNTIME_FEATURE_DIR}/xpu/api_error_xpu.cc
-    ${RUNTIME_API_DIR}/impl/v100/api_impl_v100_xpu.cc
-    ${RUNTIME_FEATURE_DIR}/xpu/api_decorator_xpu.cc
+    ${RUNTIME_API_DIR}/impl/api_impl_xpu_creator.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_common.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_v100.cc
 )
 
 set(xpu_tprt_src_file

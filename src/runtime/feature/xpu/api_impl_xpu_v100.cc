@@ -7,18 +7,22 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "api_impl.hpp"
+#include "api_impl_xpu.hpp"
+#include "api_impl_xpu_common.hpp"
 #include "base.hpp"
+#include "context.hpp"
+#include "error_message_manage.hpp"
 #include "inner_thread_local.hpp"
 #include "runtime.hpp"
-#include "error_message_manage.hpp"
+#include "tprt.hpp"
+#include "tprt_api.h"
 #include "xpu_device.hpp"
-#include "task_fail_callback_manager.hpp"
-#include "context.hpp"
 
 namespace cce {
 namespace runtime {
-rtError_t ApiImpl::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
+namespace {
+// 仅供 XpuProfilingHandle 回调调用，不作为对外接口
+rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
 {
     if (type != PROF_CTRL_SWITCH) {
         RT_LOG(RT_LOG_WARNING, "does not support the type: %u", type);
@@ -54,15 +58,20 @@ rtError_t ApiImpl::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t
     }
     return RT_ERROR_NONE;
 }
+} // namespace
 
-rtError_t XpuProfilingHandleV100(uint32_t type, void* data, uint32_t len)
+rtError_t XpuProfilingHandle(uint32_t type, void* data, uint32_t len)
 {
-    Api* const apiInstance = Runtime::Instance()->ApiImpl_();
-    return apiInstance->XpuProfilingCommandHandle(type, data, len);
+    return XpuProfilingCommandHandle(type, data, len);
 }
 
-rtError_t ApiImpl::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
+rtError_t ApiImplXpu::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
 {
+    const rtError_t paramRet = CheckSetXpuDeviceParam(devType, devId);
+    if (paramRet != RT_ERROR_NONE) {
+        return paramRet;
+    }
+
     RT_LOG(RT_LOG_INFO, "Set xpu device drv devId=%u, devType=%d.", devId, devType);
     Runtime* const rtInstance = Runtime::Instance();
     Context* context = nullptr;
@@ -78,45 +87,9 @@ rtError_t ApiImpl::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId
     }
     InnerThreadLocalContainer::SetCurRef(nullptr);
     InnerThreadLocalContainer::SetCurCtx(context);
-    MsprofRegisterCallback(RUNTIME, &XpuProfilingHandleV100);
+    MsprofRegisterCallback(RUNTIME, &XpuProfilingHandle);
     RT_LOG(RT_LOG_INFO, "Set current context success, drv devId=%u, curCtx=%p.", devId, context);
     return RT_ERROR_NONE;
-}
-
-rtError_t ApiImpl::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
-{
-    rtError_t error = RT_ERROR_NONE;
-    switch (devType) {
-        case RT_DEV_TYPE_DPU:
-            *devCount = 1;
-            break;
-        default:
-            RT_LOG(
-                RT_LOG_ERROR, "devType=UNKNOWN(%d) is invalid, retCode=%#x", devType,
-                static_cast<uint32_t>(RT_ERROR_INVALID_VALUE));
-            error = RT_ERROR_INVALID_VALUE;
-            break;
-    }
-    return error;
-}
-
-rtError_t ApiImpl::ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    UNUSED(devType);
-    rtError_t error;
-    Runtime* const rt = Runtime::Instance();
-    error = rt->PrimaryXpuContextRelease(devId);
-    COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "DeviceReset failed, drv devId=%u, retCode=%#x", devId,
-        static_cast<uint32_t>(error));
-    RT_LOG(RT_LOG_INFO, "Succ, drv devId=%u.", devId);
-    return error;
-}
-
-rtError_t ApiImpl::XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback)
-{
-    UNUSED(devType);
-    return XpuTaskFailCallbackReg(moduleName, callback);
 }
 
 } // namespace runtime

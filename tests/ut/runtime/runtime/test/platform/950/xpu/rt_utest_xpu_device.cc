@@ -12,7 +12,7 @@
 #define protected public
 #define private public
 #include "utils.h"
-#include "api_impl_david.hpp"
+#include "api_impl_xpu.hpp"
 #include "runtime.hpp"
 #include "xpu_context.hpp"
 #include "tprt.hpp"
@@ -340,16 +340,13 @@ TEST_F(XpuDeviceTest, GetXpuDevCount_devType_error)
 
 TEST_F(XpuDeviceTest, GetXpuDevCount_devCount_null)
 {
-    ApiImplDavid impl;
-    MOCKER_CPP_VIRTUAL(impl, &ApiImplDavid::GetXpuDevCount).expects(never());
-
     const rtError_t error = rtGetXpuDevCount(RT_DEV_TYPE_DPU, nullptr);
     EXPECT_EQ(error, ACL_ERROR_RT_PARAM_INVALID);
 }
 
 TEST_F(XpuDeviceTest, Impl_GetXpuDevCount_devType_error)
 {
-    ApiImplDavid impl;
+    ApiImplXpu impl;
     uint32_t devCount = 0U;
     rtError_t error = impl.GetXpuDevCount(RT_DEV_TYPE_REV, &devCount);
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
@@ -357,24 +354,22 @@ TEST_F(XpuDeviceTest, Impl_GetXpuDevCount_devType_error)
 
 TEST_F(XpuDeviceTest, ApiDecorator_SetXpuDevice)
 {
-    ApiImplDavid impl;
-    ApiDecorator api(&impl);
+    ApiImplXpu impl;
 
     MOCKER(drvGetPlatformInfo).stubs().will(invoke(drvGetPlatformInfo_online));
     MOCKER_CPP(&XpuDevice::ParseXpuConfigInfo).stubs().will(invoke(ParseXpuConfigInfo_mock));
-    rtError_t error = api.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
+    rtError_t error = impl.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
-    error = api.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
+    error = impl.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
 TEST_F(XpuDeviceTest, ApiDecorator_GetXpuDevCount)
 {
-    ApiImplDavid impl;
-    ApiDecorator api(&impl);
+    ApiImplXpu impl;
     uint32_t devCount = 0U;
 
-    rtError_t error = api.GetXpuDevCount(RT_DEV_TYPE_DPU, &devCount);
+    rtError_t error = impl.GetXpuDevCount(RT_DEV_TYPE_DPU, &devCount);
     EXPECT_EQ(error, RT_ERROR_NONE);
     EXPECT_EQ(devCount, 1U);
 }
@@ -390,9 +385,8 @@ TEST_F(XpuDeviceTest, XpuDriver_GetDrvErrCode_error)
 
 TEST_F(XpuDeviceTest, ApiDecorator_XpuSetTaskFailCallback)
 {
-    ApiImplDavid impl;
-    ApiDecorator api(&impl);
+    ApiImplXpu impl;
     char* regName = "lltruntime";
-    rtError_t error = api.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, regName, nullptr);
+    rtError_t error = impl.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, regName, nullptr);
     EXPECT_EQ(error, RT_ERROR_NONE);
 }

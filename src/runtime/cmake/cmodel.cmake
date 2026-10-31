@@ -397,10 +397,9 @@ set(libruntime_cmodel_api_src_files
 )
 
 set(xpu_tprt_api_file
-    ${RUNTIME_FEATURE_DIR}/xpu/api_error_xpu.cc
-    ${RUNTIME_API_DIR}/impl/v100/api_impl_v100.cc
+    ${RUNTIME_API_DIR}/impl/api_impl_xpu_creator.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_stub.cc
     ${RUNTIME_CORE_DIR}/src/launch/xpu_aicpu_c_stub.cc
-    ${RUNTIME_FEATURE_DIR}/xpu/api_decorator_xpu.cc
 )
 
 set(libruntime_cmodel_src_files

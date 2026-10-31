@@ -67,11 +67,5 @@ rtError_t ApiImplDavid::LaunchKernelV2(
     return error;
 }
 
-rtError_t ApiImplDavid::XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback)
-{
-    UNUSED(devType);
-    return XpuTaskFailCallbackReg(moduleName, callback);
-}
-
 } // namespace runtime
 } // namespace cce

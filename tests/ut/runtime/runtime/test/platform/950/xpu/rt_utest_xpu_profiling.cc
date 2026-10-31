@@ -26,7 +26,6 @@
 #include "task_manager_xpu.hpp"
 #include "xpu_aicpu_c.hpp"
 #include "xpu_kernel_task.h"
-#include "api_impl_david.hpp"
 #undef private
 #undef protected
 #include "raw_device.hpp"
@@ -34,6 +33,12 @@
 #include "tprt.hpp"
 #include "rt_inner_xpu.h"
 #include "../../../common/rt_utest_xpu_helper.hpp"
+
+namespace cce {
+namespace runtime {
+rtError_t XpuProfilingHandle(uint32_t type, void* data, uint32_t len);
+}
+} // namespace cce
 
 using namespace cce::runtime;
 class XpuProfilingTest : public ut::XpuRuntimeMockTest {
@@ -51,8 +56,7 @@ protected:
 TEST_F(XpuProfilingTest, xpu_profiling_command_handle_should_fail_when_data_is_null)
 {
     uint32_t len = 8;
-    ApiImplDavid impl;
-    rtError_t error = impl.XpuProfilingCommandHandle(PROF_CTRL_SWITCH, nullptr, len);
+    rtError_t error = XpuProfilingHandle(PROF_CTRL_SWITCH, nullptr, len);
     EXPECT_EQ(error, RT_ERROR_INVALID_VALUE);
 }
 
@@ -60,8 +64,7 @@ TEST_F(XpuProfilingTest, xpu_profiling_command_handle_should_fail_when_type_is_w
 {
     void* data = malloc(8);
     uint32_t len = 8;
-    ApiImplDavid impl;
-    rtError_t error = impl.XpuProfilingCommandHandle(PROF_CTRL_INVALID, data, len);
+    rtError_t error = XpuProfilingHandle(PROF_CTRL_INVALID, data, len);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
     free(data);
 }
@@ -78,8 +81,7 @@ TEST_F(XpuProfilingTest, rtXpuProfilingCommandHandle_01)
     profilerConfig.type = PROF_COMMANDHANDLE_TYPE_START;
     profilerConfig.profSwitch = 1;
     profilerConfig.devNums = 1;
-    ApiImplDavid impl;
-    error = impl.XpuProfilingCommandHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
+    error = XpuProfilingHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rtResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
@@ -97,8 +99,7 @@ TEST_F(XpuProfilingTest, rtXpuProfilingCommandHandle_02)
     profilerConfig.type = PROF_COMMANDHANDLE_TYPE_STOP;
     profilerConfig.profSwitch = 1;
     profilerConfig.devNums = 1;
-    ApiImplDavid impl;
-    error = impl.XpuProfilingCommandHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
+    error = XpuProfilingHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
     EXPECT_EQ(error, RT_ERROR_NONE);
     error = rtResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
@@ -111,9 +112,7 @@ TEST_F(XpuProfilingTest, rtXpuProfilingCommandHandle_03)
     profilerConfig.type = 0;
     profilerConfig.profSwitch = 1;
     profilerConfig.devNums = 1;
-    ApiImplDavid impl;
-    rtError_t error =
-        impl.XpuProfilingCommandHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
+    rtError_t error = XpuProfilingHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
     EXPECT_EQ(error, RT_ERROR_NONE);
 }
 
@@ -129,8 +128,7 @@ TEST_F(XpuProfilingTest, rtXpuProfilingCommandHandle_04)
     profilerConfig.type = 0;
     profilerConfig.profSwitch = 1;
     profilerConfig.devNums = 1;
-    ApiImplDavid impl;
-    (void)impl.XpuProfilingCommandHandle(0, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
+    (void)XpuProfilingHandle(0, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
     error = rtResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
 }
@@ -148,8 +146,7 @@ TEST_F(XpuProfilingTest, rtXpuProfilingCommandHandle_05)
     profilerConfig.type = PROF_COMMANDHANDLE_TYPE_START;
     profilerConfig.profSwitch = 1;
     profilerConfig.devNums = 1;
-    ApiImplDavid impl;
-    error = impl.XpuProfilingCommandHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
+    error = XpuProfilingHandle(PROF_CTRL_SWITCH, (void*)(&profilerConfig), sizeof(rtProfCommandHandle_t));
     EXPECT_EQ(error, RT_ERROR_NONE);
     Runtime* rt = (Runtime*)Runtime::Instance();
     XpuContext* context = static_cast<XpuContext*>(rt->GetXpuCtxt());

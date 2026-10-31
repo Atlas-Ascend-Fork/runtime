@@ -350,6 +350,7 @@ Runtime::Runtime() : RuntimeIntf()
     apiIpcMemory_ = nullptr;
     apiHostMemory_ = nullptr;
     apiVmm_ = nullptr;
+    apiXpu_ = nullptr;
     apiImpl_ = nullptr;
     apiImplMbuf_ = nullptr;
     apiImplSoma_ = nullptr;
@@ -363,6 +364,7 @@ Runtime::Runtime() : RuntimeIntf()
     apiImplIpcMemory_ = nullptr;
     apiImplHostMemory_ = nullptr;
     apiImplVmm_ = nullptr;
+    apiImplXpu_ = nullptr;
     logger_ = nullptr;
     apiError_ = nullptr;
     profiler_ = nullptr;
@@ -1215,6 +1217,13 @@ rtError_t Runtime::InitApiImplies()
             return RT_ERROR_API_NEW;
         }
     }
+
+    if (IsImplXpuSupported()) {
+        apiImplXpu_ = CreateImplXpuAndGet();
+        if (apiImplXpu_ == nullptr) {
+            return RT_ERROR_API_NEW;
+        }
+    }
     return RT_ERROR_NONE;
 }
 
@@ -1687,6 +1696,7 @@ rtError_t Runtime::Init()
     apiIpcMemory_ = apiImplIpcMemory_;
     apiHostMemory_ = apiImplHostMemory_;
     apiVmm_ = apiImplVmm_;
+    apiXpu_ = apiImplXpu_; // apiImplXpu_ no Profiler and Decorator
 
     error = InitThreadGuard();
     COND_GOTO_ERROR(error != RT_ERROR_NONE, INIT_FAIL, error, error, "Failed to new ThreadGuard.");
@@ -1752,6 +1762,7 @@ INIT_FAIL:
     DestroyImplIpcMemory(apiImplIpcMemory_);
     DestroyImplHostMemory(apiImplHostMemory_);
     DestroyImplVmm(apiImplVmm_);
+    DestroyImplXpu(apiImplXpu_);
     return error;
 }
 

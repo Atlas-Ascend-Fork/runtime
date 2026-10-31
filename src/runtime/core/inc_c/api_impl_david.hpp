@@ -187,11 +187,6 @@ public:
         const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm) override;
     rtError_t MemWaitValue(
         const void* const devAddr, const uint64_t value, const uint32_t flag, Stream* const stm) override;
-    rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) override;
-    rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback) override;
-    rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len) override;
     rtError_t StreamAddCondTask(rtCondTaskParams params, Stream* const stm, uint32_t flags) override;
     rtError_t IpcSetMemoryAttr(const char* name, uint32_t type, uint64_t attr) override;
 

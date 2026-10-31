@@ -8,9 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "api_impl_david.hpp"
+#include "api_impl_xpu.hpp"
+#include "api_impl_xpu_common.hpp"
 #include "base.hpp"
 #include "context.hpp"
+#include "error_message_manage.hpp"
 #include "inner_thread_local.hpp"
 #include "runtime.hpp"
 #include "tprt.hpp"
@@ -19,8 +21,9 @@
 
 namespace cce {
 namespace runtime {
-
-rtError_t ApiImplDavid::XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
+namespace {
+// 仅供 XpuProfilingHandle 回调调用，不作为对外接口
+rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len)
 {
     if (type != PROF_CTRL_SWITCH) {
         RT_LOG(RT_LOG_WARNING, "does not support the type: %u", type);
@@ -40,6 +43,7 @@ rtError_t ApiImplDavid::XpuProfilingCommandHandle(uint32_t type, void* data, uin
         Context* const curCtx = Runtime::Instance()->GetXpuCtxt();
         CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
         XpuDevice* const xpuDevice = static_cast<XpuDevice*>(curCtx->Device_());
+        NULL_PTR_RETURN_MSG(xpuDevice, RT_ERROR_DEVICE_NULL);
         xpuDevice->SetXpuTaskReportEnable(true);
         TprtProfilingEnable(true);
         return RT_ERROR_NONE;
@@ -47,6 +51,7 @@ rtError_t ApiImplDavid::XpuProfilingCommandHandle(uint32_t type, void* data, uin
         Context* const curCtx = Runtime::Instance()->GetXpuCtxt();
         CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
         XpuDevice* const xpuDevice = static_cast<XpuDevice*>(curCtx->Device_());
+        NULL_PTR_RETURN_MSG(xpuDevice, RT_ERROR_DEVICE_NULL);
         xpuDevice->SetXpuTaskReportEnable(false);
         TprtProfilingEnable(false);
         return RT_ERROR_NONE;
@@ -55,15 +60,23 @@ rtError_t ApiImplDavid::XpuProfilingCommandHandle(uint32_t type, void* data, uin
     }
     return RT_ERROR_NONE;
 }
+} // namespace
 
 rtError_t XpuProfilingHandle(uint32_t type, void* data, uint32_t len)
 {
-    Api* const apiInstance = Runtime::Instance()->ApiImpl_();
-    return apiInstance->XpuProfilingCommandHandle(type, data, len);
+    Runtime* const runtime = Runtime::Instance();
+    NULL_PTR_RETURN_MSG(runtime, RT_ERROR_INSTANCE_NULL);
+
+    return XpuProfilingCommandHandle(type, data, len);
 }
 
-rtError_t ApiImplDavid::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
+rtError_t ApiImplXpu::SetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
 {
+    const rtError_t paramRet = CheckSetXpuDeviceParam(devType, devId);
+    if (paramRet != RT_ERROR_NONE) {
+        return paramRet;
+    }
+
     RT_LOG(RT_LOG_INFO, "Set xpu device device_id=%u, devType=%u.", devId, devType);
     Runtime* const rt = Runtime::Instance();
     Context* context = nullptr;
@@ -82,36 +95,6 @@ rtError_t ApiImplDavid::SetXpuDevice(const rtXpuDevType devType, const uint32_t 
     MsprofRegisterCallback(RUNTIME, &XpuProfilingHandle);
     RT_LOG(RT_LOG_INFO, "Set current context success, device_id=%u, curCtx=%p.", devId, context);
     return RT_ERROR_NONE;
-}
-
-rtError_t ApiImplDavid::GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount)
-{
-    rtError_t error = RT_ERROR_NONE;
-    switch (devType) {
-        case RT_DEV_TYPE_DPU:
-            *devCount = 1;
-            break;
-        default:
-            RT_LOG(
-                RT_LOG_ERROR, "devType=UNKNOWN(%d) is invalid, retCode=%#x", devType,
-                static_cast<uint32_t>(RT_ERROR_INVALID_VALUE));
-            error = RT_ERROR_INVALID_VALUE;
-            break;
-    }
-    return error;
-}
-
-rtError_t ApiImplDavid::ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId)
-{
-    (void)devType;
-    rtError_t error = RT_ERROR_NONE;
-    Runtime* const rt = Runtime::Instance();
-    error = rt->PrimaryXpuContextRelease(devId);
-    COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "DeviceReset failed, drv devId=%u, retCode=%#x", devId,
-        static_cast<uint32_t>(error));
-    RT_LOG(RT_LOG_INFO, "Succ, drv devId=%u.", devId);
-    return error;
 }
 
 } // namespace runtime

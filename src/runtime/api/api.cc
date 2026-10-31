@@ -21,6 +21,7 @@
 #include "api_soma.hpp"
 #include "api_vmm.hpp"
 #include "thread_local_container.hpp"
+#include "api_xpu.hpp"
 
 namespace cce {
 namespace runtime {
@@ -153,6 +154,16 @@ ApiVmm* ApiVmm::Instance()
         return nullptr;
     }
     return rtInstance->ApiVmm_();
+}
+
+ApiXpu* ApiXpu::Instance()
+{
+    const Runtime* const rtInstance = Runtime::Instance();
+    if (unlikely(rtInstance == nullptr)) {
+        RT_LOG(RT_LOG_ERROR, "Runtime::Instance == nullptr");
+        return nullptr;
+    }
+    return rtInstance->ApiXpu_();
 }
 
 } // namespace runtime

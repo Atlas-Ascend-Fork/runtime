@@ -145,6 +145,7 @@ class ApiEsched;
 class ApiIpcMemory;
 class ApiSnapshot;
 class ApiRtConfig;
+class ApiXpu;
 class Context;
 class Device;
 class Kernel;
@@ -228,6 +229,8 @@ public:
     ApiHostMemory* ApiHostMemory_() const { return apiHostMemory_; }
 
     ApiVmm* ApiVmm_() const { return apiVmm_; }
+
+    ApiXpu* ApiXpu_() const { return apiXpu_; }
 
     Api* ApiImpl_() const { return apiImpl_; }
 
@@ -832,6 +835,7 @@ private:
     ApiIpcMemory* apiIpcMemory_;
     ApiHostMemory* apiHostMemory_;
     ApiVmm* apiVmm_;
+    ApiXpu* apiXpu_;
 
     Api* apiImpl_;
     ApiMbuf* apiImplMbuf_;
@@ -842,6 +846,7 @@ private:
     ApiIpcMemory* apiImplIpcMemory_;
     ApiHostMemory* apiImplHostMemory_;
     ApiVmm* apiImplVmm_;
+    ApiXpu* apiImplXpu_;
 
     RefObject<Context*> priCtxs_[RT_MAX_DEV_NUM][RT_MAX_TS_NUM];
     RefObject<Device*> devices_[RT_MAX_DEV_NUM + 1][RT_MAX_TS_NUM]; // Last one is stub device

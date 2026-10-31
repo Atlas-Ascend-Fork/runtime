@@ -10,10 +10,14 @@
 include_guard(GLOBAL)
 include(${RUNTIME_DIR}/pkg_inc/runtime/runtime/runtime_headers.cmake)
 
-set(xpu_tprt_api_file
-    ${RUNTIME_FEATURE_DIR}/xpu/api_error_xpu.cc
-    ${RUNTIME_API_DIR}/impl/v100/api_impl_v100.cc
-    ${RUNTIME_FEATURE_DIR}/xpu/api_decorator_xpu.cc
+set(xpu_tprt_api_file_v200
+    ${RUNTIME_API_DIR}/impl/api_impl_xpu_creator.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_common.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_v200.cc
+)
+set(xpu_tprt_api_file_v201
+    ${RUNTIME_API_DIR}/impl/api_impl_xpu_creator.cc
+    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_stub.cc
 )
 
 set(xpu_tprt_src_file
@@ -32,7 +36,6 @@ set(xpu_tprt_src_file
     ${RUNTIME_FEATURE_DIR}/xpu/arg_manage_xpu.cc
     ${RUNTIME_FEATURE_DIR}/xpu/xpu_aicpu_c.cc
     ${RUNTIME_FEATURE_DIR}/xpu/program_plat.cc
-    ${RUNTIME_FEATURE_DIR}/xpu/api_impl_xpu_v200.cc
     ${RUNTIME_CORE_DIR}/src/kernel/json_parse.cc
     ${RUNTIME_API_DIR}/impl/v200/api_impl_v200.cc
 )
@@ -433,7 +436,7 @@ set(libruntime_v200_src_files
     ${libruntime_v200_profile_src_files}
     ${libruntime_v200_arg_loader_files}
     ${libruntime_v200_callback_files}
-    ${xpu_tprt_api_file}
+    ${xpu_tprt_api_file_v200}
     ${xpu_tprt_src_file}
     ${RUNTIME_CORE_DIR}/src/plugin_manage/v200/plugin_old_arch.cc
     $<$<NOT:$<STREQUAL:${PRODUCT},ascend031>>:${RUNTIME_DIR}/src/runtime/driver/npu_driver_addr_seg.cc>
@@ -468,7 +471,7 @@ set(libruntime_v201_src_files
     ${libruntime_v200_profile_src_files}
     ${libruntime_v200_arg_loader_files}
     ${libruntime_v200_callback_files}
-    ${xpu_tprt_api_file}
+    ${xpu_tprt_api_file_v201}
     ${RUNTIME_CORE_DIR}/src/plugin_manage/v100/plugin_old_arch.cc
     ${RUNTIME_CORE_DIR}/src/launch/xpu_aicpu_c_stub.cc
     ${RUNTIME_CORE_DIR}/src/task/v201/task_david_stub.cc

@@ -59,6 +59,7 @@
 #include "../../rt_utest_api.hpp"
 #include "driver/ascend_hal.h"
 #include "api_impl_david.hpp"
+#include "api_impl_xpu.hpp"
 #include "aicpu_c.hpp"
 #include "aix_c.hpp"
 #include "fusion_c.hpp"
@@ -1764,28 +1765,28 @@ TEST_F(TaskTestV201, TestCpuKernelLaunch)
 
 TEST_F(TaskTestV201, TestSetXpuDevice)
 {
-    ApiImplDavid apiImpl;
+    ApiImplXpu apiImpl;
     rtError_t error = apiImpl.SetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 }
 
 TEST_F(TaskTestV201, TestGetXpuDevCount)
 {
-    ApiImplDavid apiImpl;
+    ApiImplXpu apiImpl;
     rtError_t error = apiImpl.GetXpuDevCount(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 }
 
 TEST_F(TaskTestV201, DISABLED_TestResetXpuDevice)
 {
-    ApiImplDavid apiImpl;
+    ApiImplXpu apiImpl;
     rtError_t error = apiImpl.ResetXpuDevice(RT_DEV_TYPE_DPU, 0);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 }
 
 TEST_F(TaskTestV201, TestXpuSetTaskFailCallback)
 {
-    ApiImplDavid apiImpl;
+    ApiImplXpu apiImpl;
     rtError_t error = apiImpl.XpuSetTaskFailCallback(RT_DEV_TYPE_DPU, nullptr, nullptr);
     EXPECT_EQ(error, RT_ERROR_FEATURE_NOT_SUPPORT);
 }

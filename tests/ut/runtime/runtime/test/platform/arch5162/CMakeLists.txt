@@ -67,7 +67,7 @@ set(runtimeut_src_task_list
 set(libruntime_src_files_include_for_arch5162
     ${TOP_DIR}/src/runtime/api/impl/stub/api_error_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_stub.cc
-    ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_v100.cc
+    ${TOP_DIR}/src/runtime/feature/xpu/api_impl_xpu_stub.cc
     ${TOP_DIR}/src/runtime/core/src/context/context_stub.cc
     ${TOP_DIR}/src/runtime/core/src/dfx/printf_stub.cc
     ${TOP_DIR}/src/runtime/core/src/event/ipc_event_stub.cc
@@ -134,6 +134,7 @@ set(runtimeut_src_api_impl_list
     ${TOP_DIR}/src/runtime/api/impl/api_impl_arch5162.cc
     ${TOP_DIR}/src/runtime/api/impl/stub/api_impl_memory_stub.cc
     ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_creator_c.cc
+    ${TOP_DIR}/src/runtime/api/impl/api_impl_xpu_creator.cc
 )
 
 set(runtimeut_src_common_list

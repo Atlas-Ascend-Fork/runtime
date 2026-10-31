@@ -396,9 +396,9 @@ set(runtimeut_910b_src_list
     ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_creator_c.cc
     ${runtimeut_src_common_list}
     ${runtimeut_platform_list}
-    ${TOP_DIR}/src/runtime/feature/xpu/api_decorator_xpu.cc
-    ${TOP_DIR}/src/runtime/api/impl/v100/api_impl_v100_xpu.cc
-    ${TOP_DIR}/src/runtime/feature/xpu/api_error_xpu.cc
+    ${TOP_DIR}/src/runtime/api/impl/api_impl_xpu_creator.cc
+    ${TOP_DIR}/src/runtime/feature/xpu/api_impl_xpu_common.cc
+    ${TOP_DIR}/src/runtime/feature/xpu/api_impl_xpu_v100.cc
     ${TOP_DIR}/src/runtime/api/impl/api_impl_creator.cc
  	${TOP_DIR}/src/runtime/api/impl/v100/api_impl_creator_c.cc
     ${TOP_DIR}/src/runtime/core/src/kernel/json_parse.cc

@@ -345,9 +345,6 @@ public:
     rtError_t GetLastErr(rtLastErrLevel_t level) override;
     rtError_t PeekLastErr(rtLastErrLevel_t level) override;
     rtError_t DeviceResourceClean(int32_t devId) override;
-    rtError_t SetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t ResetXpuDevice(const rtXpuDevType devType, const uint32_t devId) override;
-    rtError_t GetXpuDevCount(const rtXpuDevType devType, uint32_t* devCount) override;
     rtError_t DeviceGetCcMode(int32_t deviceId, int32_t* mode) override;
 
     // context
@@ -463,7 +460,6 @@ public:
     rtError_t RegProfCtrlCallback(const uint32_t moduleId, const rtProfCtrlHandle callback) override;
     rtError_t RegStreamStateCallback(
         const char_t* regName, void* callback, void* args, StreamStateCallback type) override;
-    rtError_t XpuSetTaskFailCallback(const rtXpuDevType devType, const char_t* moduleName, void* callback) override;
 
     // IPC API
     rtError_t IpcSetMemoryAttr(const char* name, uint32_t type, uint64_t attr) override;
@@ -547,7 +543,6 @@ public:
     rtError_t GetAicpuDeploy(rtAicpuDeployType_t* const deployType) override;
     rtError_t GetAiCoreCount(uint32_t* const aiCoreCnt) override;
     rtError_t GetAiCpuCount(uint32_t* const aiCpuCnt) override;
-    rtError_t XpuProfilingCommandHandle(uint32_t type, void* data, uint32_t len) override;
     // group info
     rtError_t SetGroup(const int32_t groupId) override;
     rtError_t GetGroupCount(uint32_t* const cnt) override;
