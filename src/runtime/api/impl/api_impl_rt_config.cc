@@ -190,7 +190,8 @@ rtError_t ApiImplRtConfig::CtxGetSysParamOpt(const rtSysParamOpt configOpt, int6
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
         (configOpt >= SYS_OPT_RESERVED) || (configOpt == SYS_OPT_ENABLE_KERNEL_EARLY_START) || (configOpt < 0),
         RT_ERROR_INVALID_VALUE, "Obtaining the system parameter value in the current context",
-        SysParamOptToString(configOpt), "configOpt", "[0, " + std::to_string(SYS_OPT_ENABLE_KERNEL_EARLY_START) + ")");
+        SysParamOptToString(configOpt), "configOpt",
+        RtFmtMsg("[0, %d)", static_cast<int32_t>(SYS_OPT_ENABLE_KERNEL_EARLY_START)));
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
         configVal, RT_ERROR_INVALID_VALUE, "Obtaining the system parameter value in the current context");
 

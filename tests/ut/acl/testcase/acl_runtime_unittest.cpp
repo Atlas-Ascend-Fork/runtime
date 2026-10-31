@@ -54,6 +54,24 @@ using namespace std;
 using namespace acl;
 
 namespace {
+struct ErrorMsgCapture {
+    int32_t Capture(const char* code, const ErrorMsgArgs& argKeys, const ErrorMsgArgs& argValues)
+    {
+        errorCode = code;
+        for (const char* key : argKeys) {
+            keys.emplace_back(key);
+        }
+        for (const char* value : argValues) {
+            values.emplace_back(value);
+        }
+        return 0;
+    }
+
+    std::string errorCode;
+    std::vector<std::string> keys;
+    std::vector<std::string> values;
+};
+
 uint64_t GetResourceCounterValue(ResourceType resourceType, ApplyReleaseType applyReleaseType)
 {
     return ResourceStatistics::GetInstance().counter_[resourceType].appplyReleaseValue[applyReleaseType].load();
@@ -7243,9 +7261,21 @@ TEST_F(UTEST_ACL_Runtime, aclrtDeviceGetLimit_failed_with_null_value)
 // Coverage path: Get-side enum mapping invalid value validation
 TEST_F(UTEST_ACL_Runtime, aclrtDeviceGetLimit_failed_with_invalid_limit)
 {
+    ErrorMsgCapture capture;
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), ReportPredefinedErrMsg(_, _, _))
+        .WillOnce(Invoke(&capture, &ErrorMsgCapture::Capture));
     size_t value = 0U;
     const auto ret = aclrtDeviceGetLimit(static_cast<aclrtDeviceLimit>(99), &value);
     EXPECT_EQ(ret, ACL_ERROR_INVALID_PARAM);
+    EXPECT_EQ(capture.errorCode, "EH0007");
+    EXPECT_THAT(capture.keys, ElementsAre("func", "value", "param", "expect"));
+    EXPECT_THAT(
+        capture.values,
+        ElementsAre(
+            "aclrtDeviceGetLimit", "UNKNOWN(99)", "limit",
+            "ACL_RT_DEV_LIMIT_SIMT_STACK_SIZE(0), ACL_RT_DEV_LIMIT_SIMT_DVG_WARP_STACK_SIZE(1), "
+            "ACL_RT_DEV_LIMIT_SIMD_STACK_SIZE(2), ACL_RT_DEV_LIMIT_SIMD_PRINTF_FIFO_SIZE_PER_CORE(3), or "
+            "ACL_RT_DEV_LIMIT_SIMT_PRINTF_FIFO_SIZE(4)"));
 }
 
 TEST_F(UTEST_ACL_Runtime, aclrtDeviceGetLimit_success)

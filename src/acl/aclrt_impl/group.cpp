@@ -30,6 +30,7 @@ static aclError FillAttrValue(
         ACL_LOG_ERROR(
             "[Check][valueLen]valueLen[%zu] is smaller than required size[%zu] for group computing power info", dstLen,
             srcLen);
+        const std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(functionName);
         const std::string dstLenVal = std::to_string(dstLen);
         std::string reason = std::to_string(dstLen) +
                              " is shorter than the length of the group computing power information, "
@@ -37,12 +38,13 @@ static aclError FillAttrValue(
                              std::to_string(srcLen) + ", cannot save the computing power information";
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_PARAM_REASON_MSG, std::vector<const char*>({"func", "value", "param", "reason"}),
-            std::vector<const char*>({functionName, dstLenVal.c_str(), "valueLen", reason.c_str()}));
+            std::vector<const char*>({funcName.c_str(), dstLenVal.c_str(), "valueLen", reason.c_str()}));
         return ACL_ERROR_INVALID_PARAM;
     }
     const auto ret = memcpy_s(dst, dstLen, src, srcLen);
     if (ret != EOK) {
         ACL_LOG_ERROR("call memcpy_s failed, result = %d, srcLen = %zu, dstLen = %zu", ret, srcLen, dstLen);
+        const std::string funcName = acl::AclErrorLogManager::GetFuncNameWithoutImplSuffix(functionName);
         const std::string retVal = std::to_string(ret);
         std::stringstream ss;
         ss << std::hex << "src=0x" << reinterpret_cast<uintptr_t>(src) << ", attrValue=0x"
@@ -51,7 +53,8 @@ static aclError FillAttrValue(
         acl::AclErrorLogManager::ReportInputError(
             acl::STANDARD_FUNC_FAILED_MSG,
             std::vector<const char*>({"func1", "func2", "ret_code", "reason", "extend_info"}),
-            std::vector<const char*>({functionName, "memcpy_s", retVal.c_str(), strerror(ret), extendInfo.c_str()}));
+            std::vector<const char*>(
+                {funcName.c_str(), "memcpy_s", retVal.c_str(), strerror(ret), extendInfo.c_str()}));
         return ACL_ERROR_FAILURE;
     }
     *paramRetSize = srcLen;

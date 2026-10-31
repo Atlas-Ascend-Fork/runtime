@@ -49,12 +49,12 @@ namespace {
 rtError_t ValidateAtomicOperations(const rtAtomicOperation* const operations, const uint32_t count)
 {
     for (uint32_t i = 0U; i < count; ++i) {
-        COND_RETURN_AND_MSG_OUTER(
+        COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
             (operations[i] < RT_ATOMIC_OPERATION_INTEGER_ADD) || (operations[i] > RT_ATOMIC_OPERATION_SIMD_SCALAR_EXCH),
-            RT_ERROR_INVALID_VALUE, ErrorCode::EE1011, "Validating atomic operations",
+            RT_ERROR_INVALID_VALUE, "Validating atomic operations",
             RtFmtMsg("UNKNOWN(%d)", static_cast<int32_t>(operations[i])), RtFmtMsg("operations[%u]", i),
             RtFmtMsg(
-                "the operation must be in [%d, %d]", static_cast<int32_t>(RT_ATOMIC_OPERATION_INTEGER_ADD),
+                "[%d, %d]", static_cast<int32_t>(RT_ATOMIC_OPERATION_INTEGER_ADD),
                 static_cast<int32_t>(RT_ATOMIC_OPERATION_SIMD_SCALAR_EXCH)));
     }
     return RT_ERROR_NONE;
@@ -467,8 +467,7 @@ rtError_t ApiImplDeviceTopology::GetHostAtomicCapabilities(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%d, retCode=%#x", realDeviceId,
         static_cast<uint32_t>(error));
     error = ValidateAtomicOperations(operations, count);
-    COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "validate atomic operations failed, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Validate atomic operations failed, retCode=%#x.", static_cast<uint32_t>(error));
 
     rt->CallApiBegin(RT_PROF_API_GET_HOST_ATOMIC_CAPABILITIES);
 
@@ -504,10 +503,12 @@ rtError_t ApiImplDeviceTopology::GetP2PAtomicCapabilities(
         operations, RT_ERROR_INVALID_VALUE, "Querying details about the atomic operations supported between devices");
     ZERO_RETURN_AND_MSG_OUTER_WITH_FUNC_DESC(
         count, "Querying details about the atomic operations supported between devices");
-    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
-        srcDeviceId == dstDeviceId, RT_ERROR_DEVICE_ID,
-        "Querying details about the atomic operations supported between devices", srcDeviceId,
-        "srcDeviceId must be different from dstDeviceId");
+    COND_RETURN_AND_MSG_OUTER(
+        srcDeviceId == dstDeviceId, RT_ERROR_DEVICE_ID, ErrorCode::EE1017,
+        "Querying details about the atomic operations supported between devices", "srcDeviceId and dstDeviceId",
+        RtFmtMsg(
+            "srcDeviceId must be different from dstDeviceId, current srcDeviceId is %d, dstDeviceId is %d", srcDeviceId,
+            dstDeviceId));
 
     Runtime* const rt = Runtime::Instance();
     int32_t realSrcDeviceId;
@@ -532,8 +533,7 @@ rtError_t ApiImplDeviceTopology::GetP2PAtomicCapabilities(
         error != RT_ERROR_NONE, error, "drv devId is invalid, drv devId=%d, retCode=%#x", realDstDeviceId,
         static_cast<uint32_t>(error));
     error = ValidateAtomicOperations(operations, count);
-    COND_RETURN_ERROR_MSG_INNER(
-        error != RT_ERROR_NONE, error, "validate atomic operations failed, retCode=%#x", static_cast<uint32_t>(error));
+    ERROR_RETURN(error, "Validate atomic operations failed, retCode=%#x.", static_cast<uint32_t>(error));
 
     rt->CallApiBegin(RT_PROF_API_GET_P2P_ATOMIC_CAPABILITIES);
 

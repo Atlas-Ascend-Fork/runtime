@@ -4714,10 +4714,10 @@ rtError_t ApiErrorDecorator::CheckArchCompatibility(
         omSocVersion, RT_ERROR_INVALID_VALUE, "Checking operator instruction compatibility based on the SoC version");
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
         canCompatible, RT_ERROR_INVALID_VALUE, "Checking operator instruction compatibility based on the SoC version");
-    if (omSocVersion != nullptr && omSocVersion[0U] == '\0') {
-        RT_LOG(RT_LOG_ERROR, "Input omSocVersion is null, please check.");
-        return RT_ERROR_INVALID_VALUE;
-    }
+    COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
+        omSocVersion[0U] == '\0', RT_ERROR_INVALID_VALUE,
+        "Checking operator instruction compatibility based on the SoC version", "\"\"", "omSocVersion", "not empty");
+
     const rtError_t error = impl_->CheckArchCompatibility(socVersion, omSocVersion, canCompatible);
     ERROR_RETURN(error, "Check ArchType Compatibility failed, omSocVersion=%s.", omSocVersion);
     return error;
@@ -5648,7 +5648,7 @@ rtError_t ApiErrorDecorator::GetVisibleDeviceIdByLogicDeviceId(
 rtError_t ApiErrorDecorator::CtxGetOverflowAddr(void** const overflowAddr)
 {
     NULL_PTR_RETURN_MSG_OUTER_WITH_FUNC_DESC(
-        overflowAddr, RT_ERROR_INVALID_VALUE, "Check param failed, overflowAddr can not be null.");
+        overflowAddr, RT_ERROR_INVALID_VALUE, "Obtaining the float overflow address of the current context");
     return impl_->CtxGetOverflowAddr(overflowAddr);
 }
 

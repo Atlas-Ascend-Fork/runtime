@@ -40,7 +40,7 @@ rtError_t DeviceStateCallbackManager::RegDeviceStateCallback(
         COND_RETURN_AND_MSG_OUTER(
             callbackMap_.count(regName) > 0, RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
             "Registering the device status callback function", regName, "regName",
-            "The callback function " + std::string(regName) + " has been registered and cannot be registered again");
+            RtFmtMsg("The callback function %s has been registered and cannot be registered again", regName));
         callbackMap_[regName].callback = nullptr;
         callbackMap_[regName].callbackV2 = RtPtrToPtr<rtsDeviceStateCallback>(callback);
         callbackMap_[regName].args = args;

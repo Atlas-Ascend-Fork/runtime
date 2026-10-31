@@ -665,7 +665,11 @@ aclError aclrtDeviceGetLimitImpl(aclrtDeviceLimit limit, size_t* value)
         const char_t* const limitStr = acl::GetDeviceLimitDesc(limit);
         acl::AclErrorLogManager::ReportInputError(
             acl::INVALID_VALUE_MSG, std::vector<const char*>({"func", "value", "param", "expect"}),
-            std::vector<const char*>({funcName.c_str(), limitStr, "limit", "[0, 4]"}));
+            std::vector<const char*>(
+                {funcName.c_str(), limitStr, "limit",
+                 "ACL_RT_DEV_LIMIT_SIMT_STACK_SIZE(0), ACL_RT_DEV_LIMIT_SIMT_DVG_WARP_STACK_SIZE(1), "
+                 "ACL_RT_DEV_LIMIT_SIMD_STACK_SIZE(2), ACL_RT_DEV_LIMIT_SIMD_PRINTF_FIFO_SIZE_PER_CORE(3), or "
+                 "ACL_RT_DEV_LIMIT_SIMT_PRINTF_FIFO_SIZE(4)"}));
         return ACL_ERROR_INVALID_PARAM;
     }
     uint32_t rtValue = 0U;

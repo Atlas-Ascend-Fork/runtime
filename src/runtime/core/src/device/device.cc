@@ -192,7 +192,7 @@ rtError_t GroupDevice::SetGroup(const int32_t grpId)
     if ((grpId < MIN_GROUP_ID) || (grpId > maxGroupId)) {
         RT_LOG_OUTER_MSG_INVALID_PARAM_WITH_DESC(
             "Specifying the group used for the current operation", grpId,
-            "[" + std::to_string(MIN_GROUP_ID) + ", " + std::to_string(maxGroupId) + "]");
+            RtFmtMsg("[%d, %d]", MIN_GROUP_ID, maxGroupId));
         return RT_ERROR_INVALID_VALUE;
     }
 
@@ -201,7 +201,9 @@ rtError_t GroupDevice::SetGroup(const int32_t grpId)
     }
 
     if (groupInfoCache_.find(grpId) == groupInfoCache_.end()) {
-        RT_LOG_INNER_MSG(RT_LOG_ERROR, "The group id %d does not exist.", grpId);
+        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+            ErrorCode::EE1011, "Specifying the group used for the current operation", RtFmtMsg("%d", grpId), "groupId",
+            "The group does not exist. Query the group information first");
         return RT_ERROR_GROUP_NOT_CREATE;
     }
 

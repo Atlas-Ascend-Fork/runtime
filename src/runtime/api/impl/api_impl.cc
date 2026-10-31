@@ -4203,7 +4203,6 @@ rtError_t ApiImpl::LabelSet(Label* const lbl, Stream* const stm)
     COND_RETURN_WARN(
         IsStreamBindWithSubModel(stm), RT_ERROR_FEATURE_NOT_SUPPORT,
         "stream belongs to sub ACL Graph, does not support setting label");
-
     return lbl->Set(stm);
 }
 
@@ -4580,9 +4579,12 @@ rtError_t ApiImpl::LabelSwitchByIndex(
         stm, curCtx, RT_ERROR_STREAM_CONTEXT,
         "Redirecting to the corresponding label position based on the label index");
     COND_RETURN_AND_MSG_OUTER(
-        !stm->IsModelStream(), RT_ERROR_STREAM_MODEL, ErrorCode::EE1011,
-        "Redirecting to the corresponding label position based on the label index", 0, "stm->modelNum",
-        RtFmtMsg("The stream (stream_id=%d) is not bound to a model", stm->Id_()));
+        !stm->IsModelStream(), RT_ERROR_STREAM_MODEL, ErrorCode::EE1017,
+        "Redirecting to the corresponding label position based on the label index", "stream",
+        RtFmtMsg(
+            "The stream (stream_id=%d) is not bound to a model. Call aclmdlRIBindStream to bind the stream to "
+            "a model runtime instance before switching the label by index",
+            stm->Id_()));
 
     COND_RETURN_WARN(
         IsStreamBindWithSubModel(stm), RT_ERROR_FEATURE_NOT_SUPPORT,
@@ -5286,7 +5288,8 @@ rtError_t ApiImpl::CheckArchCompatibility(const char_t* socVersion, const char_t
     COND_RETURN_AND_MSG_OUTER(
         (ret != RT_ERROR_NONE), RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
         "Checking operator instruction compatibility based on the SoC version", omSocVersion, "omSocVersion",
-        "SoC version " + std::string(omSocVersion) + " is invalid");
+        "The NPU arch corresponding to the SoC version cannot be found. Check "
+        "that omSocVersion is correct and supported by the current CANN version");
 
     // Get the NpuArch to the hardwareSocVersion
     int32_t hardwareNpuArch;
@@ -5294,7 +5297,9 @@ rtError_t ApiImpl::CheckArchCompatibility(const char_t* socVersion, const char_t
     COND_RETURN_AND_MSG_OUTER(
         (ret != RT_ERROR_NONE), RT_ERROR_INVALID_VALUE, ErrorCode::EE1011,
         "Checking operator instruction compatibility based on the SoC version", socVersion, "socVersion",
-        "SoC version " + std::string(socVersion) + " is invalid");
+        "The NPU arch corresponding to the hardware SoC version cannot be found. "
+        "Check whether the device is initialized or the SoC version is set "
+        "using rtSetSocVersion");
 
     if (inputNpuArch != hardwareNpuArch) {
         constexpr int32_t archVerInCompatible = 0U;

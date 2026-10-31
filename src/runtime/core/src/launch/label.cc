@@ -150,16 +150,21 @@ rtError_t Label::Setup(Context* const curCtx)
 
 rtError_t Label::Set(Stream* const stm)
 {
-    NULL_PTR_RETURN_MSG(stm->Model_(), RT_ERROR_STREAM_MODEL);
+    COND_RETURN_AND_MSG_OUTER(
+        stm->Model_() == nullptr, RT_ERROR_STREAM_MODEL, ErrorCode::EE1017, "Label setting", "stream",
+        RtFmtMsg(
+            "The stream (stream_id=%d) is not bound to a model. Call aclmdlRIBindStream to bind the stream to "
+            "a model runtime instance before setting the label",
+            stm->Id_()));
     COND_RETURN_AND_MSG_OUTER(
         (mgrType_ == LABEL_MGR_TYPE_MODEL) && (stm->Model_() != model_), RT_ERROR_LABEL_MODEL, ErrorCode::EE1017,
-        "rtLabelSet", "stream",
+        "Label setting", "stream",
         RtFmtMsg(
             "Model (model_id=%u) bound to the stream is inconsistent with model (model_id=%u) to which the label "
             "belongs",
             stm->Model_()->Id_(), (model_ != nullptr) ? model_->Id_() : UINT32_MAX));
     COND_RETURN_AND_MSG_OUTER(
-        (stream_ != nullptr) && (stream_ != stm), RT_ERROR_LABEL_STREAM, ErrorCode::EE1017, "rtLabelSet", "stream",
+        (stream_ != nullptr) && (stream_ != stm), RT_ERROR_LABEL_STREAM, ErrorCode::EE1017, "Label setting", "stream",
         RtFmtMsg(
             "The current stream (stream_id=%d) is inconsistent with the stream (stream_id=%d) associated with the "
             "label",

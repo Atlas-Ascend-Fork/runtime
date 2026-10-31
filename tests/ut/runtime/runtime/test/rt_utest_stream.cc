@@ -3281,10 +3281,29 @@ TEST_F(StreamTest, rtsStreamQuery_normal)
 
 TEST_F(StreamTest, rtsStreamGetAvailableNum_normal)
 {
+    Runtime* const runtime = Runtime::Instance();
+    ASSERT_NE(runtime, nullptr);
+    const rtChipType_t originalRuntimeChipType = runtime->GetChipType();
+    const rtChipType_t originalGlobalChipType = GlobalContainer::GetRtChipType();
+    std::array<bool, FEATURE_MAX_VALUE> originalFeatureSet{};
+    (void)GET_CHIP_FEATURE_SET(CHIP_910_B_93, originalFeatureSet);
+    std::unordered_set<RtOptionalFeatureType> features;
+    FillFeatureSetFromArray(originalFeatureSet, features);
+    features.insert(RtOptionalFeatureType::RT_FEATURE_STREAM_GET_AVILIABLE_NUM);
+    (void)DevInfoManage::Instance().RegChipFeatureSet(CHIP_910_B_93, features);
+    runtime->SetChipType(CHIP_910_B_93);
+    GlobalContainer::SetRtChipType(CHIP_910_B_93);
+
     rtError_t error;
     uint32_t avaliStrCount1;
     error = rtsStreamGetAvailableNum(&avaliStrCount1);
     EXPECT_EQ(error, ACL_RT_SUCCESS);
+
+    runtime->SetChipType(originalRuntimeChipType);
+    GlobalContainer::SetRtChipType(originalGlobalChipType);
+    features.clear();
+    FillFeatureSetFromArray(originalFeatureSet, features);
+    (void)DevInfoManage::Instance().RegChipFeatureSet(CHIP_910_B_93, features);
 }
 
 TEST_F(StreamTest, rtsStreamSynchronize_aicpu_flag)

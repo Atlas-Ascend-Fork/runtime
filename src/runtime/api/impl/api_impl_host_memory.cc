@@ -494,7 +494,7 @@ rtError_t ApiImplHostMemory::HostMemMapCapabilities(
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_NAME_AND_FUNC_DESC(
         hacType >= RT_HAC_TYPE_MAX, RT_ERROR_INVALID_VALUE,
         "Querying the host memory mapping capability on a specified device", HacTypeToString(hacType), "hacType",
-        "[0, " + std::to_string(RT_HAC_TYPE_MAX) + ")");
+        RtFmtMsg("[%d, %d)", static_cast<int32_t>(RT_HAC_TYPE_STARS), static_cast<int32_t>(RT_HAC_TYPE_MAX)));
     Context* const curCtx = Runtime::Instance()->CurrentContext(true, DEFAULT_DEVICE_ID);
     CHECK_CONTEXT_VALID_WITH_RETURN(curCtx, RT_ERROR_CONTEXT_NULL);
 

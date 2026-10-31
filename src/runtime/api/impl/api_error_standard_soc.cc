@@ -473,7 +473,7 @@ rtError_t ApiErrorDecorator::DeviceTaskAbort(const int32_t devId, const uint32_t
         ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         (timeout > TASK_ABORT_TIMEOUT_MAX), RT_ERROR_INVALID_VALUE, "Stopping all tasks running on the current device",
-        timeout, "[0, " + std::to_string(TASK_ABORT_TIMEOUT_MAX) + "]");
+        timeout, RtFmtMsg("[0, %u]", TASK_ABORT_TIMEOUT_MAX));
 
     rtError_t error = rt->ChgUserDevIdToDeviceId(static_cast<uint32_t>(devId), RtPtrToPtr<uint32_t*>(&realDeviceId));
     COND_RETURN_ERROR(
@@ -483,7 +483,7 @@ rtError_t ApiErrorDecorator::DeviceTaskAbort(const int32_t devId, const uint32_t
     ERROR_RETURN_MSG_CALL(ERR_MODULE_DRV, error, "Get device cnt failed, retCode=%#x", static_cast<uint32_t>(error));
     COND_RETURN_AND_MSG_OUTER_WITH_PARAM_AND_FUNC_DESC(
         ((realDeviceId < 0) || (realDeviceId >= deviceCnt)), RT_ERROR_DEVICE_ID,
-        "Stopping all tasks running on the current device", realDeviceId, "[0, " + std::to_string(deviceCnt) + ")");
+        "Stopping all tasks running on the current device", realDeviceId, RtFmtMsg("[0, %d)", deviceCnt));
 
     return impl_->DeviceTaskAbort(realDeviceId, timeout);
 }
@@ -507,8 +507,8 @@ rtError_t ApiErrorDecorator::StreamTaskClean(Stream* const stm)
     COND_RETURN_WITH_NOLOG(!isSupport, RT_ERROR_FEATURE_NOT_SUPPORT);
     COND_RETURN_AND_MSG_OUTER(
         ((stm->Flags() & RT_STREAM_PERSISTENT) == 0U), RT_ERROR_STREAM_INVALID, ErrorCode::EE1011,
-        "Clearing tasks in a stream", "RT_STREAM_PERSISTENT", "stream flag",
-        RtFmtMsg("Non-persistent stream (stream_id=%d) does not support stream task clearance", stm->Id_()));
+        "Clearing tasks in a stream", RtFmtMsg("%#x", stm->Flags()), "stream flag",
+        RtFmtMsg("Stream (stream_id=%d) flags must include RT_STREAM_PERSISTENT(0x01U)", stm->Id_()));
     COND_RETURN_AND_MSG_OUTER(
         (!stm->GetBindFlag()), RT_ERROR_STREAM_INVALID, ErrorCode::EE1017, "Clearing tasks in a stream", "stream",
         RtFmtMsg("Stream (stream_id=%d) must be bound to a model", stm->Id_()));

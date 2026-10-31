@@ -2176,6 +2176,56 @@ TEST_F(UTEST_ACL_Common, ACLSetGroup)
     EXPECT_EQ(aclrtDestroyGroupInfo(groupInfo), ACL_SUCCESS);
 }
 
+TEST_F(UTEST_ACL_Common, GetGroupInfoDetailValueLenErrorUsesPublicFunctionName)
+{
+    aclrtGroupInfo* groupInfo = aclrtCreateGroupInfo();
+    ASSERT_NE(groupInfo, nullptr);
+    uint32_t value = 0U;
+    size_t paramRetSize = 0U;
+    ErrorMsgCapture capture;
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), ReportPredefinedErrMsg(_, _, _))
+        .WillOnce(Invoke(&capture, &ErrorMsgCapture::Capture));
+
+    EXPECT_EQ(
+        aclrtGetGroupInfoDetail(groupInfo, 0U, ACL_GROUP_AICORE_INT, &value, 1U, &paramRetSize),
+        ACL_ERROR_INVALID_PARAM);
+    EXPECT_EQ(capture.errorCode, "EH0009");
+    EXPECT_THAT(capture.keys, ElementsAre("func", "value", "param", "reason"));
+    EXPECT_THAT(
+        capture.values,
+        ElementsAre(
+            "aclrtGetGroupInfoDetail", "1", "valueLen",
+            "1 is shorter than the length of the group computing power information, required size is 4, cannot save "
+            "the computing power information"));
+
+    EXPECT_EQ(aclrtDestroyGroupInfo(groupInfo), ACL_SUCCESS);
+}
+
+TEST_F(UTEST_ACL_Common, GetGroupInfoDetailMemcpyErrorUsesPublicFunctionName)
+{
+    aclrtGroupInfo* groupInfo = aclrtCreateGroupInfo();
+    ASSERT_NE(groupInfo, nullptr);
+    uint32_t value = 0U;
+    size_t paramRetSize = 0U;
+    ErrorMsgCapture capture;
+    EXPECT_CALL(MockFunctionTest::aclStubInstance(), ReportPredefinedErrMsg(_, _, _))
+        .WillOnce(Invoke(&capture, &ErrorMsgCapture::Capture));
+
+    EXPECT_EQ(
+        aclrtGetGroupInfoDetail(groupInfo, 0U, ACL_GROUP_AICORE_INT, &value, 0x80000000UL, &paramRetSize),
+        ACL_ERROR_FAILURE);
+    EXPECT_EQ(capture.errorCode, "EH0013");
+    EXPECT_THAT(capture.keys, ElementsAre("func1", "func2", "ret_code", "reason", "extend_info"));
+    ASSERT_EQ(capture.values.size(), 5U);
+    EXPECT_EQ(capture.values[0], "aclrtGetGroupInfoDetail");
+    EXPECT_EQ(capture.values[1], "memcpy_s");
+    EXPECT_THAT(capture.values[4], HasSubstr("valueLen=2147483648"));
+    EXPECT_THAT(capture.values[4], HasSubstr("count=4"));
+    EXPECT_EQ(paramRetSize, 0U);
+
+    EXPECT_EQ(aclrtDestroyGroupInfo(groupInfo), ACL_SUCCESS);
+}
+
 TEST_F(UTEST_ACL_Common, ACLDeviceCanAccessPeer)
 {
     int32_t canAccessPeer = 0;
