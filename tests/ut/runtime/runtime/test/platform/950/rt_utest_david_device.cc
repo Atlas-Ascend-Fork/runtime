@@ -741,11 +741,46 @@ TEST_F(DavidDeviceLimitTest, GetLimit_UnsupportedType_ReturnsNotSupport)
 
 TEST_F(DavidDeviceLimitTest, SetLimit_BothSimtStacksZero_ReturnsError)
 {
-    rtError_t ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_STACK_SIZE, 0U);
+    constexpr uint32_t simtStackSize = 256U;
+    constexpr uint32_t dvgWarpStackSize = 512U;
+    rtError_t ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_STACK_SIZE, simtStackSize);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE, dvgWarpStackSize);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_STACK_SIZE, 0U);
     EXPECT_EQ(ret, RT_ERROR_NONE);
 
     ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE, 0U);
-    EXPECT_NE(ret, RT_ERROR_NONE);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    uint32_t val = 0U;
+    ret = rtDeviceGetLimit(RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE, &val);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(val, dvgWarpStackSize);
+}
+
+TEST_F(DavidDeviceLimitTest, SetLimit_BothSimtStacksZeroInReverseOrder_ReturnsError)
+{
+    constexpr uint32_t simtStackSize = 256U;
+    constexpr uint32_t dvgWarpStackSize = 512U;
+    rtError_t ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_STACK_SIZE, simtStackSize);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE, dvgWarpStackSize);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE, 0U);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+
+    ret = rtDeviceSetLimit(0, RT_LIMIT_TYPE_SIMT_STACK_SIZE, 0U);
+    EXPECT_EQ(ret, ACL_ERROR_RT_PARAM_INVALID);
+
+    uint32_t val = 0U;
+    ret = rtDeviceGetLimit(RT_LIMIT_TYPE_SIMT_STACK_SIZE, &val);
+    EXPECT_EQ(ret, RT_ERROR_NONE);
+    EXPECT_EQ(val, simtStackSize * RT_MAX_THREAD_NUM_PER_WARP);
 }
 
 TEST_F(DavidDeviceLimitTest, SetLimit_SimtStackSize_LargeValue)

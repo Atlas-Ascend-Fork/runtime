@@ -1968,9 +1968,21 @@ static rtError_t SetLimitSizeByType(const rtLimitType_t type, const uint32_t val
     uint32_t alignVal = (val + STACK_PHY_BASE_ALIGN_LEN - 1U) / STACK_PHY_BASE_ALIGN_LEN * STACK_PHY_BASE_ALIGN_LEN;
     switch (type) {
         case RT_LIMIT_TYPE_SIMT_STACK_SIZE:
+            if ((alignVal == 0U) && (rt->GetSimtDvgWarpStkSize() == 0U)) {
+                RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                    ErrorCode::EE1011, "Setting the SIMT stack size", val, "val",
+                    "simtStackSize and simtDvgWarpStackSize cannot both be 0");
+                return RT_ERROR_INVALID_VALUE;
+            }
             rt->SetSimtWarpStkSize(alignVal * RT_MAX_THREAD_NUM_PER_WARP);
             break;
         case RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE:
+            if ((rt->GetSimtWarpStkSize() == 0ULL) && (alignVal == 0U)) {
+                RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
+                    ErrorCode::EE1011, "Setting the SIMT stack size", val, "val",
+                    "simtStackSize and simtDvgWarpStackSize cannot both be 0");
+                return RT_ERROR_INVALID_VALUE;
+            }
             rt->SetSimtDvgWarpStkSize(alignVal);
             break;
         default:
@@ -1979,12 +1991,6 @@ static rtError_t SetLimitSizeByType(const rtLimitType_t type, const uint32_t val
                 LimitTypeToString(RT_LIMIT_TYPE_SIMT_STACK_SIZE) + " or " +
                     LimitTypeToString(RT_LIMIT_TYPE_SIMT_DVG_WARP_STACK_SIZE));
             return RT_ERROR_DEVICE_LIMIT;
-    }
-    if ((rt->GetSimtWarpStkSize() == 0ULL) && (rt->GetSimtDvgWarpStkSize() == 0U)) {
-        RT_LOG_OUTER_MSG_WITH_FUNC_DESC(
-            ErrorCode::EE1011, "Setting the SIMT stack size", val, "val",
-            "simtStackSize and simtDvgWarpStackSize cannot both be 0");
-        return RT_ERROR_INVALID_VALUE;
     }
     return RT_ERROR_NONE;
 }
